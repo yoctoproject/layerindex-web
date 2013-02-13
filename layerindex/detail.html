@@ -1,0 +1,227 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% comment %}
+
+  layerindex-web - layer detail page template
+
+  Copyright (C) 2013 Intel Corporation
+  Licensed under the MIT license, see COPYING.MIT for details
+
+{% endcomment %}
+
+
+<!--
+{% block title %}OpenEmbedded metadata index - {{ layeritem.name }}{% endblock %}
+-->
+
+{% block content %}
+
+{% autoescape on %}
+
+
+        <div class="container-fluid">
+            <div class="row-fluid">
+                <div class="span9 offset1">
+                    <h1 style="margin-bottom: 1em;">{{ layeritem.name }}</h1>
+                </div> <!--  end of span9 -->
+            </div> <!--  end of row-fluid -->
+        </div>
+
+        <div class="container-fluid">
+            <div class="row-fluid offset1">
+                <div class="span3">
+                    <div class="accordion" id="accordion2">
+
+                        <div class="accordion-group">
+                            <div class="accordion-heading">
+                                <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion2" href="#collapseOne">
+                                    Description
+                                </a>
+                            </div>
+                            <div id="collapseOne" class="accordion-body collapse in">
+                                <div class="accordion-inner">
+                                    <p>
+                                    {{ layeritem.description }}
+                                    </p>
+                                    <p>
+                                    {% if layeritem.usage_url %}
+                                    <span class="label label-info">
+                                        <a href="{{ layeritem.usage_url }}">Setup information</a>
+                                    </span>
+                                    {% endif %}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {% if layeritem.dependencies_set.all %}
+                        <div class="accordion-group">
+
+                            <div class="accordion-heading">
+                                <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion2" href="#collapseTwo">
+                                    Dependencies
+                                </a>
+                            </div>
+                            <div id="collapseTwo" class="accordion-body collapse">
+                                <div class="accordion-inner">
+                                    <p>The {{ layeritem.name }} layer depends upon:</p>
+                                    <ul>
+                                        {% for dep in layeritem.dependencies_set.all %}
+                                            <li><a href="{% url layer_item dep.dependency.name %}">{{ dep.dependency.name }}</a></li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <div class="accordion-group">
+
+                            <div class="accordion-heading">
+                                <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion2" href="#collapseThree">
+                                    Repository
+                                </a>
+                            </div>
+                            <div id="collapseThree" class="accordion-body collapse">
+                                <div class="accordion-inner">
+                                    <h4>Git repository</h4>
+                                    <p>{{ layeritem.vcs_url }}</p>
+                                    {% if layeritem.vcs_subdir %}
+                                        <h4>Subdirectory</h4>
+                                        <p>{{ layeritem.vcs_subdir }}</p>
+                                    {% endif %}
+                                    <p>
+                                    {% if layeritem.vcs_web_url %}
+                                    <span class="label label-info">
+                                        <a href="{{ layeritem.vcs_web_url }}">web repo</a>
+                                    </span>
+                                    {% endif %}
+                                    {% if layeritem.tree_url %}
+                                        <span class="label label-info">
+                                            <a href="{{ layeritem.tree_url }}">tree</a>
+                                        </span>
+                                    {% endif %}
+                                    </p>
+
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-group">
+
+                            <div class="accordion-heading">
+                                <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion2" href="#collapseFour">
+                                    Maintainer information
+                                </a>
+                            </div>
+                            <div id="collapseFour" class="accordion-body collapse">
+                                <div class="accordion-inner">
+                                    <dl>
+                                    {% for maintainer in layeritem.active_maintainers %}
+                                        <dt class="showRollie">
+                                        {{ maintainer.name }}
+                                        <a class="rollie" href="mailto:{{ maintainer.email }}">
+                                        <span class="label label-info">
+                                            <i class="icon-envelope icon-white"></i>
+                                        </span>
+                                        </a>
+                                        </dt>
+                                        {% if maintainer.responsibility %}
+                                        <dd>- {{ maintainer.responsibility }}</dd>
+                                        {% endif %}
+                                    {% endfor %}
+                                    </dl>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>  <!--  end of accordion2 -->
+
+                </div>
+
+                <div class="span6">
+
+                    <div class="navbar">
+
+                        <div class="navbar-inner">
+
+                            <!--  a class="btn btn-big pull-left back-button" href="index.html"><i class="icon-chevron-left"></i></a -->
+
+                            <a class="brand pull-left">{{ layeritem.name }} recipes</a>
+
+                            <ul class="nav pull-right">
+                                <li>
+                                    <form action="" class="navbar-search pull-right" id="filter-form">
+                                        <input type="text" placeholder="Search recipes" class="search-query" id="filter">
+                                    </form>
+                                </li>
+                            </ul>
+
+                        </div>
+
+                    </div>
+
+                     <table class="table table-bordered recipestable">
+                        <thead>
+                            <tr>
+                                <th>Recipe name</th>
+                                <th>Version</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for recipe in layeritem.sorted_recipes %}
+                                <tr>
+                                    <td><a href="{{ recipe.vcs_web_url }}">{{ recipe.pn }}</a></td>
+                                    <td>{{ recipe.pv }}</td>
+                                    <td>{{ recipe.short_desc }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+
+
+                </div>
+            </div>
+        </div>
+
+    {% if user.is_authenticated %}
+    <div class="well">
+        {% if layeritem.status = "N" %}
+        <a href="{% url publish layeritem.name %}" class="btn">Publish</a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+{% endautoescape %}
+
+{% endblock %}
+
+
+
+
+{% block scripts %}
+    <script src="/static/js/uitablefilter.js" ></script>
+
+    <script>
+        $(document).ready(function() {
+
+            $(function() {
+                var theTable = $('table.recipestable');
+
+                $("#filter").keyup(function() {
+                $.uiTableFilter( theTable, this.value );
+                })
+
+                $('#filter-form').submit(function(){
+                theTable.find("tbody > tr:visible > td:eq(1)").mousedown();
+                return false;
+                }).focus(); //Give focus to input field
+            });
+
+
+        });
+    </script>
+{% endblock %}
+

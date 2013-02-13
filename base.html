@@ -1,0 +1,77 @@
+{% comment %}
+
+  layerindex-web - base template for output pages
+
+  Copyright (C) 2013 Intel Corporation
+  Licensed under the MIT license, see COPYING.MIT for details
+
+{% endcomment %}
+
+
+{% load i18n %}
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+    <link rel="stylesheet" href="/static/css/bootstrap.css" />
+    <link rel="stylesheet" href="/static/css/bootstrap-responsive.css" />
+    <link rel="stylesheet" href="/static/css/additional.css" />
+    <title>{% block title %}OpenEmbedded metadata index{% endblock %}</title>
+</head>
+
+<body>
+    {% block header %}
+    <div class="navbar navbar-fixed-top">
+        <div class="navbar-inner">
+            <div class="container">
+                <a class="brand" href="{% url layer_list %}">OpenEmbedded metadata index</a>
+
+                {% if user.is_authenticated and perms.layeritem.publish_layer %}
+                <ul class="nav">
+                    <li><a href="{% url layer_list_review %}">{% trans "review" %}</a></li>
+                </ul>
+                {% endif %}
+
+                <ul class="nav pull-right">
+                    {% if user.is_authenticated %}
+                    <li><a href="{% url submit_layer %}">Submit layer</a></li>
+                    <li class="divider-vertical"></li>
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                        {{ user.username }}
+                        <b class="caret"></b>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a href="{% url auth_logout %}">{% trans "Log out" %}</a></li>
+                            <li><a href="{% url auth_password_change %}">{% trans "Change password" %}</a></li>
+                        </ul>
+                    </li>
+                    {% else %}
+                    <li>
+                    <a href="{% url auth_login %}">{% trans "log in" %}</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div> <!-- end of "container" -->
+        </div> <!--  "end of "navbar-inner" -->
+    </div> <!--  end of "navbar" -->
+    {% endblock %}
+
+    <div id="content" class="container top-padded">
+        {% block content %}{% endblock %}
+    </div>
+
+    <div id="footer">
+        {% block footer %}
+        <hr />
+        {% endblock %}
+    </div>
+
+    <script src="/static/js/jquery-1.7.2.js"></script>
+    <script src="/static/js/bootstrap.js"></script>
+{% block scripts %}
+{% endblock %}
+
+</body>
+</html>

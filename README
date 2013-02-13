@@ -1,0 +1,93 @@
+OE Layer Index web interface
+============================
+
+This is a small Django-based web application that provides a way to
+manage an index of OpenEmbedded metadata layers for use on top of
+OE-Core.
+
+
+Setup
+-----
+
+In order to make use of this application you will need:
+
+* A web server set up to host Django applications
+* A database supported by Django (SQLite, MySQL, etc.). Django takes
+  care of creating the database itself, you just need to ensure that the
+  database server (if not using SQLite) is configured and running.
+* On the machine that will run the update script (which does not have to
+  be the same machine as the web server, however it does still have to
+  have Django installed and have access to the database used by the web
+  application):
+  * Python 2.6 or Python 2.7
+  * A copy of BitBake and OE-Core (or Poky, which includes both) -
+    the "danny" release or newer is required. It does not need to be
+    configured specially nor do all of the normal pre-requisites need to
+    be installed (it is only used for parsing recipes, not actual
+    building).
+  * GitPython (python-git) version 0.3.1 or later
+* django-registration
+
+Setup instructions:
+
+1. Edit settings.py to specify a database, EMAIL_HOST and other settings
+   specific to your installation. Ensure you set LAYER_FETCH_DIR to a
+   location with sufficient space for fetching layer repositories.
+
+2. Run the following command within the layerindex-web directory to
+   initialise the database:
+
+   python manage.py syncdb
+
+3. You can test the web application locally by running the following:
+
+   python manage.py runserver
+
+   Then visit http://127.0.0.1:8000/layerindex/ with your browser. This
+   should only be used for testing - for production you need to use a
+   proper web server.
+
+
+Usage
+-----
+
+On a regular basis you need to run the update script within an
+environment set up for OE-Core build:
+
+$ cd path/to/oe-core
+$ . ./oe-init-build-env
+$ path/to/layerindex/update.py
+
+This will fetch all of the layer repositories, analyse their contents
+and update the database with the results.
+
+
+Maintenance
+-----------
+
+The code for this application is maintained by the Yocto Project.
+
+The latest version of the code can always be found here:
+
+  http://git.yoctoproject.org/cgit/cgit.cgi/layerindex-web/
+
+Contributions are welcome. Please send patches / pull requests to
+yocto@yoctoproject.org with '[layerindex-web]' in the subject.
+
+
+License
+-------
+
+This application is based upon the Django project template, whose files
+are covered by the BSD license and are copyright (c) Django Software
+Foundation and individual contributors.
+
+Bundled Twitter Bootstrap is redistributed under the Apache License 2.0.
+
+Bundled jQuery is redistributed under the MIT license.
+
+Bundled uitablefilter.js is redistributed under the MIT license.
+
+All other content is copyright (C) 2013 Intel Corporation and licensed
+under the MIT license - see COPYING.MIT for details.
+

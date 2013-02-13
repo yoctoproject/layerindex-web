@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% comment %}
+
+  layerindex-web - layer submission acknowledgement page template
+
+  Copyright (C) 2013 Intel Corporation
+  Licensed under the MIT license, see COPYING.MIT for details
+
+{% endcomment %}
+
+
+<!--
+{% block title %}OpenEmbedded metadata index - layer submitted{% endblock %}
+-->
+
+{% block content %}
+{% autoescape on %}
+
+<p>Thank you for submitting a layer. Your submission will be reviewed and if accepted should appear in the index soon.</p>
+
+
+{% endautoescape %}
+
+{% endblock %}

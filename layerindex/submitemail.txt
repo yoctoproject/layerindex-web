@@ -1,0 +1,7 @@
+Hi {{ user_name }},
+
+A user has submitted a new layer, {{ layer_name }}. Please review it at the following URL:
+
+ {{ layer_url }}
+
+Thanks!

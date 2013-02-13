@@ -1,0 +1,2 @@
+{% for recipe in recipe_list %}{{ recipe.layer.name }}	{{ recipe.pn }}	{{ recipe.pv }}	{{ recipe.full_path }}
+{% endfor %}

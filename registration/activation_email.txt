@@ -1,0 +1,12 @@
+{% load i18n %}
+{% blocktrans %}
+A request has been made to activate an account at {{ site.name }} using your email address.
+
+If you made this request, please click on the link below to activate your account. The
+link is valid for {{ expiration_days }} days.
+
+http://{{ site.domain }}{% url registration_activate activation_key %}
+
+If you did not make this request, please ignore this message.
+{% endblocktrans %}
+

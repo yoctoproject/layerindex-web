@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% comment %}
+
+  layerindex-web - main layer index page template
+
+  Copyright (C) 2013 Intel Corporation
+  Licensed under the MIT license, see COPYING.MIT for details
+
+{% endcomment %}
+
+
+<!--
+{% block title %}OpenEmbedded metadata index - layers{% endblock %}
+-->
+
+{% block content %}
+{% autoescape on %}
+
+{% if layer_list %}
+    <div class="row-fluid">
+        <div class="span9 offset1">
+
+            <ul class="nav nav-tabs">
+                <li class="active">
+                    <a href="{% url layer_list %}">Layer index</a>
+                </li>
+                <li><a href="{% url recipe_search %}">Recipe index</a></li>
+            </ul>
+
+            <div class="row-fluid">
+                <div class="span5">
+                    <form id="filter-form">
+                        <input type="text" class="input-xxlarge" id="filter" placeholder="Search layers">
+                    </form>
+                </div>
+
+                <div class="pull-right">
+                    <div class="btn-group">
+                        <a class="btn dropdown-toggle" data-toggle="dropdown" href="#">
+                            Filter layers
+                            <span class="caret"></span>
+                        </a>
+                        <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownMenu">
+                            {% for choice_id, choice_label in layer_type_choices %}
+                            <li><a tabindex="-1" href="#">
+                                <label class="checkbox">
+                                    <input type="checkbox" checked value="{{ choice_id }}">{{ choice_label }}
+                                </label>
+                            </a></li>
+                            {% endfor %}
+
+                        </ul>
+
+                    </div>
+                </div>
+            </div>
+
+            <table class="table table-striped table-bordered layerstable">
+                <thead>
+                    <tr>
+                        <th>Layer name</th>
+                        <th class="span4">Description</th>
+                        <th>Type</th>
+                        <th>Repository</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for layeritem in layer_list %}
+                    <tr class="layertype_{{ layeritem.layer_type }}">
+                        <td><a href="{% url layer_item layeritem.name %}">{{ layeritem.name }}</a></td>
+                        <td>{{ layeritem.summary }}</td>
+                        <td>{{ layeritem.get_layer_type_display }}</td>
+                        <td class="showRollie">
+                            {{ layeritem.vcs_url }}
+                                {% if layeritem.vcs_web_url %}
+                                <a class="rollie" href="{{ layeritem.vcs_web_url }}">
+                                <span class="label label-info">
+                                    web repo
+                                </span>
+                                </a>
+                                {% endif %}
+                                {% if layeritem.tree_url %}
+                                <a class="rollie" href="{{ layeritem.tree_url }}">
+                                <span class="label label-info">
+                                    tree
+                                </span>
+                                </a>
+                                {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {% if is_paginated %}
+        <div class="pagination pagination-centered">
+            <ul>
+            {% if page_obj.has_previous %}
+                <li><a href="?page={{ page_obj.previous_page_number }}">prev</a></li>
+            {% else %}
+                <li class="disabled"><a href="#">prev</a></li>
+            {% endif %}
+            {% for i in paginator.page_range %}
+                {% if i == page_obj.number %}
+                <li class="active"><a href="#">{{ page_obj.number }}</a></li>
+                {% else %}
+                <li><a href="?page={{i}}">{{i}}</a></li>
+                {% endif %}
+            {% endfor %}
+            {% if page_obj.has_next %}
+                <li><a href="?page={{ page_obj.next_page_number }}">next</a></li>
+            {% else %}
+                <li class="disabled"><a href="#">next</a></li>
+            {% endif %}
+            </ul>
+        </div>
+    {% endif %}
+{% else %}
+    <p>No matching layers in database.</p>
+{% endif %}
+
+{% endautoescape %}
+
+{% endblock %}
+
+
+{% block scripts %}
+<script src="/static/js/uitablefilter.js"></script>
+
+<script>
+    $(document).ready(function() {
+        $("input:checkbox").change();
+
+        $("input:checkbox").change(function(){
+                var selectedType = $(this).val();
+                if($(this).is(":checked")){
+                    $(".layertype_"+selectedType).show();
+                }
+                else{
+                    $(".layertype_"+selectedType).hide();
+                }
+
+        });
+
+        $(function() {
+            var theTable = $('table.layerstable');
+
+            $("#filter").keyup(function() {
+            $.uiTableFilter( theTable, this.value );
+            })
+
+            $('#filter-form').submit(function(){
+            theTable.find("tbody > tr:visible > td:eq(1)").mousedown();
+            return false;
+            }).focus(); //Give focus to input field
+        });
+
+    });
+</script>
+{% endblock %}
+

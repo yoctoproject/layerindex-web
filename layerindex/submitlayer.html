@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% comment %}
+
+  layerindex-web - layer submission form page template
+
+  Copyright (C) 2013 Intel Corporation
+  Licensed under the MIT license, see COPYING.MIT for details
+
+{% endcomment %}
+
+
+<!--
+{% block title %}OpenEmbedded metadata index - submit layer{% endblock %}
+-->
+
+{% block content %}
+{% autoescape on %}
+
+<form action="{% url submit_layer %}" method="post">
+{% csrf_token %}
+{{ form.as_p }}
+<input type="submit" value="Submit" class='btn' />
+</form>
+
+{% endautoescape %}
+
+{% endblock %}
