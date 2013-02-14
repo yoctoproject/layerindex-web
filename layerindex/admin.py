@@ -6,9 +6,22 @@
 
 from layerindex.models import *
 from django.contrib import admin
+from reversion_compare.admin import CompareVersionAdmin
 
-admin.site.register(LayerItem)
-admin.site.register(LayerMaintainer)
-admin.site.register(LayerDependency)
-admin.site.register(LayerNote)
+class LayerItemAdmin(CompareVersionAdmin):
+    """ Admin settings here """
+
+class LayerMaintainerAdmin(CompareVersionAdmin):
+    """ Admin settings here """
+
+class LayerDependencyAdmin(CompareVersionAdmin):
+    """ Admin settings here """
+
+class LayerNoteAdmin(CompareVersionAdmin):
+    """ Admin settings here """
+
+admin.site.register(LayerItem, LayerItemAdmin)
+admin.site.register(LayerMaintainer, LayerMaintainerAdmin)
+admin.site.register(LayerDependency, LayerDependencyAdmin)
+admin.site.register(LayerNote, LayerNoteAdmin)
 admin.site.register(Recipe)

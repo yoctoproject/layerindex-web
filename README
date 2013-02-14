@@ -27,6 +27,8 @@ In order to make use of this application you will need:
     building).
   * GitPython (python-git) version 0.3.1 or later
 * django-registration
+* django-reversion
+* django-reversion-compare
 
 Setup instructions:
 
