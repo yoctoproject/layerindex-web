@@ -77,8 +77,9 @@ def publish(request, name):
 
 def _statuschange(request, name, newstatus):
     w = get_object_or_404(LayerItem, name=name)
-    w.change_status(newstatus, request.user.username)
-    w.save()
+    if w.status != newstatus:
+        w.change_status(newstatus, request.user.username)
+        w.save()
     return HttpResponseRedirect(reverse('layer_item', args=(name,)))
 
 class LayerListView(ListView):
