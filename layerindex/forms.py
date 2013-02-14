@@ -38,8 +38,9 @@ class SubmitLayerForm(forms.ModelForm):
 
     def clean_vcs_web_tree_base_url(self):
         url = self.cleaned_data['vcs_web_tree_base_url'].strip()
-        val = URLValidator(verify_exists=False)
-        val(url)
+        if url:
+            val = URLValidator(verify_exists=False)
+            val(url)
         return url
 
     def clean_maintainers(self):
