@@ -118,5 +118,11 @@ class Recipe(models.Model):
         else:
             return self.description
 
+    def name(self):
+        if self.pn:
+            return self.pn
+        else:
+            return self.filename.split('_')[0]
+
     def __unicode__(self):
         return os.path.join(self.filepath, self.filename)
