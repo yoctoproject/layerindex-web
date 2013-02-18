@@ -171,6 +171,8 @@ def main():
 
     # Clear the default value of SUMMARY so that we can use DESCRIPTION instead if it hasn't been set
     tinfoil.config_data.setVar('SUMMARY', '')
+    # Clear the default value of DESCRIPTION so that we can see where it's not set
+    tinfoil.config_data.setVar('DESCRIPTION', '')
     # Clear the default value of HOMEPAGE ('unknown')
     tinfoil.config_data.setVar('HOMEPAGE', '')
 
