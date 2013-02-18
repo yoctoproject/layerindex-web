@@ -107,7 +107,10 @@ class Recipe(models.Model):
     homepage = models.URLField(blank=True)
 
     def vcs_web_url(self):
-        return os.path.join(self.layer.tree_url(), self.filepath, self.filename)
+        if self.layer.tree_url():
+            return os.path.join(self.layer.tree_url(), self.filepath, self.filename)
+        else:
+            return ''
 
     def full_path(self):
         return os.path.join(self.filepath, self.filename)
