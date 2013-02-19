@@ -85,7 +85,6 @@ def _statuschange(request, name, newstatus):
 
 class LayerListView(ListView):
     context_object_name = 'layer_list'
-    paginate_by = 20
 
     def get_queryset(self):
         return LayerItem.objects.filter(status__in=self.request.session.get('status_filter', 'P')).order_by('name')
