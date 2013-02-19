@@ -7,21 +7,38 @@
 from layerindex.models import *
 from django.contrib import admin
 from reversion_compare.admin import CompareVersionAdmin
+from django.forms import TextInput
 
 class LayerItemAdmin(CompareVersionAdmin):
-    """ Admin settings here """
+    list_filter = ['status', 'layer_type']
+    save_as = True
+    search_fields = ['name', 'summary']
+    readonly_fields = ['vcs_last_fetch', 'vcs_last_rev', 'vcs_last_commit']
+    formfield_overrides = {
+        models.URLField: {'widget': TextInput(attrs={'size':'100'})},
+        models.CharField: {'widget': TextInput(attrs={'size':'100'})},
+    }
 
 class LayerMaintainerAdmin(CompareVersionAdmin):
-    """ Admin settings here """
+    list_filter = ['status', 'layer__name']
 
 class LayerDependencyAdmin(CompareVersionAdmin):
-    """ Admin settings here """
+    list_filter = ['layer__name']
 
 class LayerNoteAdmin(CompareVersionAdmin):
-    """ Admin settings here """
+    list_filter = ['layer__name']
+
+class RecipeAdmin(admin.ModelAdmin):
+    search_fields = ['filename', 'pn']
+    list_filter = ['layer__name']
+    readonly_fields = Recipe._meta.get_all_field_names()
+    def has_add_permission(self, request, obj=None):
+        return False
+    def has_delete_permission(self, request, obj=None):
+        return False
 
 admin.site.register(LayerItem, LayerItemAdmin)
 admin.site.register(LayerMaintainer, LayerMaintainerAdmin)
 admin.site.register(LayerDependency, LayerDependencyAdmin)
 admin.site.register(LayerNote, LayerNoteAdmin)
-admin.site.register(Recipe)
+admin.site.register(Recipe, RecipeAdmin)

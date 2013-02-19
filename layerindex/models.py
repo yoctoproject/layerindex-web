@@ -21,14 +21,14 @@ class LayerItem(models.Model):
         ('D', 'Distribution'),
         ('M', 'Miscellaneous'),
     )
-    name = models.CharField(max_length=40, unique=True)
+    name = models.CharField('Layer name', max_length=40, unique=True)
     created_date = models.DateTimeField('Created')
     status = models.CharField(max_length=1, choices=LAYER_STATUS_CHOICES, default='N')
     layer_type = models.CharField(max_length=1, choices=LAYER_TYPE_CHOICES, default='M')
     summary = models.CharField(max_length=200)
     description = models.TextField()
     vcs_last_fetch = models.DateTimeField('Last successful fetch', blank=True, null=True)
-    vcs_last_rev = models.CharField(max_length=80, blank=True)
+    vcs_last_rev = models.CharField('Last revision fetched', max_length=80, blank=True)
     vcs_last_commit = models.DateTimeField('Last commit date', blank=True, null=True)
     vcs_subdir = models.CharField('Repository subdirectory', max_length=40, blank=True)
     vcs_url = models.CharField('Repository URL', max_length=200)
@@ -37,6 +37,7 @@ class LayerItem(models.Model):
     usage_url = models.URLField('Usage web page URL', blank=True)
 
     class Meta:
+        verbose_name = "Layer"
         permissions = (
             ("publish_layer", "Can publish layers"),
         )
@@ -74,13 +75,16 @@ class LayerMaintainer(models.Model):
     def __unicode__(self):
         respstr = ""
         if self.responsibility:
-            respstr = " - %s" % self.responsibility
-        return "%s <%s>%s" % (self.name, self.email, respstr)
+            respstr = " (%s)" % self.responsibility
+        return "%s: %s <%s>%s" % (self.layer.name, self.name, self.email, respstr)
 
 
 class LayerDependency(models.Model):
     layer = models.ForeignKey(LayerItem, related_name='dependencies_set')
     dependency = models.ForeignKey(LayerItem, related_name='dependents_set')
+
+    class Meta:
+        verbose_name_plural = "Layer dependencies"
 
     def __unicode__(self):
         return "%s depends on %s" % (self.layer.name, self.dependency.name)
