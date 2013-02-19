@@ -62,27 +62,8 @@
                 </table>
 
     {% if is_paginated %}
-        <div class="pagination pagination-centered">
-            <ul>
-            {% if page_obj.has_previous %}
-                <li><a href="?page={{ page_obj.previous_page_number }}">prev</a></li>
-            {% else %}
-                <li class="disabled"><a href="#">prev</a></li>
-            {% endif %}
-            {% for i in paginator.page_range %}
-                {% if i == page_obj.number %}
-                <li class="active"><a href="#">{{ page_obj.number }}</a></li>
-                {% else %}
-                <li><a href="?page={{i}}">{{i}}</a></li>
-                {% endif %}
-            {% endfor %}
-            {% if page_obj.has_next %}
-                <li><a href="?page={{ page_obj.next_page_number }}">next</a></li>
-            {% else %}
-                <li class="disabled"><a href="#">next</a></li>
-            {% endif %}
-            </ul>
-        </div>
+        {% load pagination %}
+        {% pagination page_obj %}
     {% endif %}
 {% else %}
     {% if search_keyword %}
