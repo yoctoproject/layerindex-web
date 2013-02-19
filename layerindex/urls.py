@@ -32,6 +32,11 @@ urlpatterns = patterns('',
             slug_field = 'name',
             template_name='layerindex/detail.html'),
             name='layer_item'),
+    url(r'^recipe/(?P<pk>[-\w]+)/$',
+        DetailView.as_view(
+            model=Recipe,
+            template_name='layerindex/recipedetail.html'),
+            name='recipe'),
     url(r'^layer/(?P<name>[-\w]+)/publish/$', 'layerindex.views.publish', name="publish"),
     url(r'^raw/recipes.txt$',
         PlainTextListView.as_view(

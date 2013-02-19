@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% comment %}
+
+  layerindex-web - recipe detail page template
+
+  Copyright (C) 2013 Intel Corporation
+  Licensed under the MIT license, see COPYING.MIT for details
+
+{% endcomment %}
+
+
+<!--
+{% block title %}OpenEmbedded metadata index - {{ recipe.pn }}{% endblock %}
+-->
+
+{% block content %}
+{% autoescape on %}
+
+        <div class="row-fluid">
+
+            <div class="span9 offset1">
+
+                <ul class="nav nav-tabs">
+                    <li>
+                        <a href="{% url layer_list %}">Layer index</a>
+                    </li>
+                    <li><a href="{% url recipe_search %}">Recipe index</a></li>
+                    <li class="active"><a href="#">Recipe</a></li>
+                </ul>
+
+                <table class="table table-striped table-bordered">
+                    <tbody>
+                        <tr>
+                            <th>Name</th>
+                            <td>{{ recipe.name }}</td>
+                        </tr>
+                        <tr>
+                            <th>Version</th>
+                            <td>{{ recipe.pv }}</td>
+                        </tr>
+                        <tr>
+                            <th>Summary</th>
+                            <td>{{ recipe.summary }}</td>
+                        </tr>
+                        <tr>
+                            <th>Description</th>
+                            <td>{{ recipe.description }}</td>
+                        </tr>
+                        <tr>
+                            <th>Section</th>
+                            <td>{{ recipe.section }}</td>
+                        </tr>
+                        <tr>
+                            <th>License</th>
+                            <td>{{ recipe.license }}</td>
+                        </tr>
+                        <tr>
+                            <th>Homepage</th>
+                            <td>{% if recipe.homepage %}<a href="{{ recipe.homepage }}">{{ recipe.homepage }}</a>{% endif %}</td>
+                        </tr>
+                        <tr>
+                            <th>Recipe file</th>
+                            <td>
+                                {% if recipe.vcs_web_url %}
+                                    <a href="{{ recipe.vcs_web_url }}">{{ recipe.full_path }}</a>
+                                {% else %}
+                                    {{ recipe.full_path }}
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Layer</th>
+                            <td><a href="{% url layer_item recipe.layer.name %}">{{ recipe.layer.name }}</a></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+{% endautoescape %}
+
+{% endblock %}
