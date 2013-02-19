@@ -49,3 +49,7 @@ bs-docs-example:after {
     padding: 39px 19px 14px;
     position: relative;
 }
+
+.footer {
+    text-align: center;
+}

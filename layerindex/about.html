@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+<!--
+{% block title %}OpenEmbedded metadata index - About{% endblock %}
+-->
+
+{% block content %}
+<p>This website indexes layers for the <a href="http://www.openembedded.org">OpenEmbedded</a> build system, suitable for use on top of OpenEmbedded-Core and distributions based upon it, providing additional recipes, machine support and/or distro policy configuration.</p>
+
+<p>If you have a layer for use with OpenEmbedded that you wish to share with others, please <a href="{% url submit_layer %}">submit it</a>!</p>
+
+<p>The code is Open Source and can be found on <a href="http://git.yoctoproject.org/cgit/cgit.cgi/layerindex-web/">git.yoctoproject.org</a>.</p>
+{% endblock %}
+
+{% block footer %}
+{% endblock %}

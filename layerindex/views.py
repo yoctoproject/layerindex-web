@@ -71,6 +71,9 @@ def submit_layer(request):
 def submit_layer_thanks(request):
     return render(request, 'layerindex/submitthanks.html')
 
+def about(request):
+    return render(request, 'layerindex/about.html')
+
 def publish(request, name):
     if not (request.user.is_authenticated() and request.user.has_perm('layerindex.publish_layer')):
         raise PermissionDenied

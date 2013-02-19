@@ -6,7 +6,6 @@ TODO:
 
 - we might consider adding a link to the all layers and all recipes tables from the layer details page
 
-* Need an "About" section descriptibing what the site is for
 * Need an admin contact in footer
 * Some columns are a bit crushed
 * Description is not formatted nicely on detail page
@@ -15,6 +14,7 @@ TODO:
  * Last update date
 * Usage links in list page?
 * Layer submission interface design
+* Style/extend about page
 * Recipe info page
 * Captcha for layer submission interface?
 * Touch up publishing interface

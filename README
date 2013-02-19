@@ -50,6 +50,9 @@ Setup instructions:
    should only be used for testing - for production you need to use a
    proper web server.
 
+4. You may wish to customise layerindex/about.html to suit your
+   installation.
+
 
 Usage
 -----

@@ -44,4 +44,5 @@ urlpatterns = patterns('',
             context_object_name='recipe_list',
             template_name='layerindex/rawrecipes.txt'),
             name='recipe_list_raw'),
+    url(r'^about$', 'layerindex.views.about', name="about"),
 )
