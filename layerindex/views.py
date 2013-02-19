@@ -19,6 +19,7 @@ from django.db.models import Q
 from django.core.mail import EmailMessage
 from django.template.loader import get_template
 from django.template import Context
+import simplesearch
 import settings
 
 
@@ -96,22 +97,19 @@ class LayerListView(ListView):
 
 class RecipeSearchView(ListView):
     context_object_name = 'recipe_list'
-    paginate_by = 20
+    paginate_by = 10
 
     def get_queryset(self):
-        keyword = self.request.session.get('keyword')
-        if keyword:
-            return Recipe.objects.all().filter(pn__icontains=keyword).order_by('pn', 'layer')
+        query_string = self.request.GET.get('q', '')
+        if query_string.strip():
+            entry_query = simplesearch.get_query(query_string, ['pn', 'summary', 'description', 'filename'])
+            return Recipe.objects.filter(entry_query).order_by('pn', 'layer')
         else:
             return Recipe.objects.all().order_by('pn', 'layer')
 
-    def post(self, request, *args, **kwargs):
-        request.session['keyword'] = request.POST['filter']
-        return HttpResponseRedirect(reverse('recipe_search'))
-
     def get_context_data(self, **kwargs):
         context = super(RecipeSearchView, self).get_context_data(**kwargs)
-        context['search_keyword'] = self.request.session.get('keyword') or ''
+        context['search_keyword'] = self.request.GET.get('q', '')
         return context
 
 

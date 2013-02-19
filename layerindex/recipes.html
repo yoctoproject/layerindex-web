@@ -31,9 +31,8 @@
 
                 <div class="row-fluid">
                     <div class="input-append">
-                        <form id="filter-form" action="{% url recipe_search %}" method="post">
-                            {% csrf_token %}
-                            <input type="text" class="input-xxlarge" id="appendedInputButtons" placeholder="Search recipes" name="filter" value="{{ search_keyword }}" />
+                        <form id="filter-form" action="{% url recipe_search %}" method="get">
+                            <input type="text" class="input-xxlarge" id="appendedInputButtons" placeholder="Search recipes" name="q" value="{{ search_keyword }}" />
                             <button class="btn" type="submit">search</button>
                         </form>
                     </div>
