@@ -27,15 +27,12 @@
             <div class="container">
                 <a class="brand" href="{% url layer_list %}">OpenEmbedded metadata index</a>
 
-                {% if user.is_authenticated and perms.layeritem.publish_layer %}
-                <ul class="nav">
-                    <li><a href="{% url layer_list_review %}">{% trans "review" %}</a></li>
-                </ul>
-                {% endif %}
-
                 <ul class="nav pull-right">
                     <li><a href="{% url submit_layer %}">Submit layer</a></li>
                     {% if user.is_authenticated %}
+                    {% if perms.layeritem.publish_layer %}
+                        <li><a href="{% url layer_list_review %}">Review</a></li>
+                    {% endif %}
                     <li class="divider-vertical"></li>
                     <li class="dropdown">
                         <a href="#" class="dropdown-toggle" data-toggle="dropdown">
