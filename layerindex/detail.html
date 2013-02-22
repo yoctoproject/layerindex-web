@@ -36,6 +36,14 @@
 
         <div class="container-fluid">
             <div class="row-fluid">
+                {% for note in layeritem.layernote_set.all %}
+                    <div class="alert">
+                        {{ note.text }}
+                    </div>
+                {% endfor %}
+            </div>
+
+            <div class="row-fluid">
                 <div class="description span7">
                     <p>
                        {{ layeritem.description }}
