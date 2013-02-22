@@ -22,132 +22,93 @@
 
         <div class="container-fluid">
             <div class="row-fluid">
-                <div class="span9 offset1">
-                    <h1 style="margin-bottom: 1em;">{{ layeritem.name }}</h1>
-                </div> <!--  end of span9 -->
+                <div class="page-header">
+                    <h1>{{ layeritem.name }}
+                        {% if user.is_authenticated %}
+                            {% if layeritem.status = "N" %}
+                                <a href="{% url publish layeritem.name %}" class="btn btn-primary pull-right">Publish layer</a>
+                            {% endif %}
+                        {% endif %}
+                    </h1>
+                </div>
             </div> <!--  end of row-fluid -->
-        </div>
+        </div> <!-- end of container-fluid -->
 
         <div class="container-fluid">
-            <div class="row-fluid offset1">
-                <div class="span3">
-                    <div class="accordion" id="accordion2">
-
-                        <div class="accordion-group">
-                            <div class="accordion-heading">
-                                <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion2" href="#collapseOne">
-                                    Description
-                                </a>
-                            </div>
-                            <div id="collapseOne" class="accordion-body collapse in">
-                                <div class="accordion-inner">
-                                    <p>
-                                    {{ layeritem.description }}
-                                    </p>
-                                    <p>
-                                    {% if layeritem.usage_url %}
-                                    <span class="label label-info">
-                                        <a href="{{ layeritem.usage_url }}">Setup information</a>
-                                    </span>
-                                    {% endif %}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-
-                        {% if layeritem.dependencies_set.all %}
-                        <div class="accordion-group">
-
-                            <div class="accordion-heading">
-                                <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion2" href="#collapseTwo">
-                                    Dependencies
-                                </a>
-                            </div>
-                            <div id="collapseTwo" class="accordion-body collapse">
-                                <div class="accordion-inner">
-                                    <p>The {{ layeritem.name }} layer depends upon:</p>
-                                    <ul>
-                                        {% for dep in layeritem.dependencies_set.all %}
-                                            <li><a href="{% url layer_item dep.dependency.name %}">{{ dep.dependency.name }}</a></li>
-                                        {% endfor %}
-                                    </ul>
-                                </div>
-                            </div>
-                        </div>
+            <div class="row-fluid">
+                <div class="description span7">
+                    <p>
+                       {{ layeritem.description }}
+                    </p>
+                    <p>
+                        {% if layeritem.usage_url %}
+                            <span class="label label-info">
+                                <a href="{{ layeritem.usage_url }}">Setup information</a>
+                            </span>
                         {% endif %}
+                    </p>
 
-                        <div class="accordion-group">
+                    <h3>Git repository</h3>
 
-                            <div class="accordion-heading">
-                                <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion2" href="#collapseThree">
-                                    Repository
-                                </a>
-                            </div>
-                            <div id="collapseThree" class="accordion-body collapse">
-                                <div class="accordion-inner">
-                                    <h4>Git repository</h4>
-                                    <p>{{ layeritem.vcs_url }}</p>
-                                    {% if layeritem.vcs_subdir %}
-                                        <h4>Subdirectory</h4>
-                                        <p>{{ layeritem.vcs_subdir }}</p>
-                                    {% endif %}
-                                    <p>
-                                    {% if layeritem.vcs_web_url %}
-                                    <span class="label label-info">
-                                        <a href="{{ layeritem.vcs_web_url }}">web repo</a>
-                                    </span>
-                                    {% endif %}
-                                    {% if layeritem.tree_url %}
-                                        <span class="label label-info">
-                                            <a href="{{ layeritem.tree_url }}">tree</a>
-                                        </span>
-                                    {% endif %}
-                                    </p>
+                    <p> {{ layeritem.vcs_url }}
+                        {% if layeritem.vcs_web_url %}
+                            <span class="label label-info">
+                                <a href="{{ layeritem.vcs_web_url }}">web repo</a>
+                            </span>
+                        {% endif %}
+                    </p>
 
-                                </div>
-                            </div>
-                        </div>
+                    {% if layeritem.vcs_subdir %}
+                        <h4>Subdirectory</h4>
+                        <p>{{ layeritem.vcs_subdir }}
+                            {% if layeritem.tree_url %}
+                                <span class="label label-info">
+                                    <a href="{{ layeritem.tree_url }}">web subdirectory</a>
+                                </span>
+                            {% endif %}
+                        </p>
+                    {% endif %}
 
-                        <div class="accordion-group">
+                    <h3>{% if layeritem.active_maintainers|length = 1 %}Maintainer{% else %}Maintainers{% endif %}</h3>
 
-                            <div class="accordion-heading">
-                                <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion2" href="#collapseFour">
-                                    Maintainer information
-                                </a>
-                            </div>
-                            <div id="collapseFour" class="accordion-body collapse">
-                                <div class="accordion-inner">
-                                    <dl>
-                                    {% for maintainer in layeritem.active_maintainers %}
-                                        <dt class="showRollie">
-                                        {{ maintainer.name }}
-                                        <a class="rollie" href="mailto:{{ maintainer.email }}">
-                                        <span class="label label-info">
-                                            <i class="icon-envelope icon-white"></i>
-                                        </span>
-                                        </a>
-                                        </dt>
-                                        {% if maintainer.responsibility %}
-                                        <dd>- {{ maintainer.responsibility }}</dd>
-                                        {% endif %}
-                                    {% endfor %}
-                                    </dl>
-                                </div>
-                            </div>
-                        </div>
+                    <ul>
+                        {% for maintainer in layeritem.active_maintainers %}
+                        <li>
+                            {{ maintainer.name }}
+                            {% if maintainer.responsibility %}
+                                <span>({{ maintainer.responsibility }})</span>
+                            {% endif %}
 
-                    </div>  <!--  end of accordion2 -->
+                            <span class="label label-info">
+                                <a href="mailto:{{ maintainer.email }}">email</a>
+                            </span>
+                        </li>
+                        {% endfor %}
+                    </ul>
 
-                </div>
+                </div> <!-- end of span7 -->
 
-                <div class="span6">
+                <div class="span4 pull-right description">
+                    {% if layeritem.dependencies_set.all %}
+                         <div class="well dependency-well">
+                            <h3>Dependencies </h3>
+                            <p>The {{ layeritem.name }} layer depends upon:</p>
+                            <ul>
+                                {% for dep in layeritem.dependencies_set.all %}
+                                    <li><a href="{% url layer_item dep.dependency.name %}">{{ dep.dependency.name }}</a></li>
+                                {% endfor %}
+                            </ul>
+                         </div> <!-- end of well -->
+                    {% endif %}
 
-                    <div class="navbar">
+                </div> <!-- end of span4 -->
+            </div>  <!-- end of row-fluid -->
+        </div> <!-- end of container-fluid -->
 
-                        <div class="navbar-inner">
-
-                            <!--  a class="btn btn-big pull-left back-button" href="index.html"><i class="icon-chevron-left"></i></a -->
-
+        <div class="container-fluid" style="margin-bottom:1em;">
+            <div class="row-fluid">
+                <div class="navbar">
+                    <div class="navbar-inner">
                             <a class="brand pull-left">{{ layeritem.name }} recipes</a>
 
                             <ul class="nav pull-right">
@@ -175,24 +136,23 @@
                                 <tr>
                                     <td><a href="{% url recipe recipe.id %}">{{ recipe.name }}</a></td>
                                     <td>{{ recipe.pv }}</td>
-                                    <td>{{ recipe.short_desc }}</td>
+                                    <td class="span8">{{ recipe.short_desc }}</td>
                                 </tr>
                             {% endfor %}
                         </tbody>
                     </table>
+                </div>
 
+                <div class="row-fluid">
+
+                    {% if user.is_authenticated %}
+                        {% if layeritem.status = "N" %}
+                        <a href="{% url publish layeritem.name %}" class="btn btn-primary pull-right">Publish layer</a>
+                        {% endif %}
+                    {% endif %}
 
                 </div>
-            </div>
-        </div>
-
-    {% if user.is_authenticated %}
-    <div class="well">
-        {% if layeritem.status = "N" %}
-        <a href="{% url publish layeritem.name %}" class="btn">Publish</a>
-        {% endif %}
-    </div>
-    {% endif %}
+         </div>
 
 {% endautoescape %}
 

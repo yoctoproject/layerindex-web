@@ -21,6 +21,7 @@ TODO:
 * Show layer notes records
 
 Later:
+* Show count of layers to be reviewed next to review button
 * Ability for users to edit existing layers
 * Something to help with compatibility (although maybe this should just be handled using the existing versioned layer dependencies in layer.conf)
 * Query backend service? i.e. special URL to query information
