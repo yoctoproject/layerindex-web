@@ -9,6 +9,13 @@ from django.contrib import admin
 from reversion_compare.admin import CompareVersionAdmin
 from django.forms import TextInput
 
+class LayerMaintainerInline(admin.StackedInline):
+    model = LayerMaintainer
+
+class LayerDependencyInline(admin.StackedInline):
+    model = LayerDependency
+    fk_name = 'layer'
+
 class LayerItemAdmin(CompareVersionAdmin):
     list_filter = ['status', 'layer_type']
     save_as = True
@@ -18,6 +25,10 @@ class LayerItemAdmin(CompareVersionAdmin):
         models.URLField: {'widget': TextInput(attrs={'size':'100'})},
         models.CharField: {'widget': TextInput(attrs={'size':'100'})},
     }
+    inlines = [
+        LayerMaintainerInline,
+        LayerDependencyInline,
+    ]
 
 class LayerMaintainerAdmin(CompareVersionAdmin):
     list_filter = ['status', 'layer__name']
