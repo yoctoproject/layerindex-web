@@ -16,7 +16,7 @@ class LayerItem(models.Model):
     )
     LAYER_TYPE_CHOICES = (
         ('A', 'Base'),
-        ('B', 'BSP'),
+        ('B', 'Machine (BSP)'),
         ('S', 'Software'),
         ('D', 'Distribution'),
         ('M', 'Miscellaneous'),
