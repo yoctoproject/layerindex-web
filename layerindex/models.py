@@ -33,7 +33,8 @@ class LayerItem(models.Model):
     vcs_subdir = models.CharField('Repository subdirectory', max_length=40, blank=True)
     vcs_url = models.CharField('Repository URL', max_length=200)
     vcs_web_url = models.URLField('Repository web interface URL', blank=True)
-    vcs_web_tree_base_url = models.CharField('Repository web interface tree start URL', max_length=200, blank=True)
+    vcs_web_tree_base_url = models.CharField('Repository web interface tree base URL', max_length=200, blank=True)
+    vcs_web_file_base_url = models.CharField('Repository web interface file base URL', max_length=200, blank=True)
     usage_url = models.URLField('Usage web page URL', blank=True)
 
     class Meta:
@@ -45,11 +46,28 @@ class LayerItem(models.Model):
     def change_status(self, newstatus, username):
         self.status = newstatus
 
-    def tree_url(self):
-        if self.vcs_subdir and self.vcs_web_tree_base_url:
-            return self.vcs_web_tree_base_url + self.vcs_subdir
-        else:
-            return self.vcs_web_tree_base_url
+    def _handle_url_path(self, base_url, path):
+        if base_url:
+            if self.vcs_subdir:
+                extra_path = self.vcs_subdir + '/' + path
+            else:
+                extra_path = path
+            if '%path%' in base_url:
+                if extra_path:
+                    url = re.sub(r'\[([^\]]*%path%[^\]]*)\]', '\\1', base_url)
+                    return url.replace('%path%', extra_path)
+                else:
+                    url = re.sub(r'\[([^\]]*%path%[^\]]*)\]', '', base_url)
+                    return url
+            else:
+                return base_url + extra_path
+        return None
+
+    def tree_url(self, path = ''):
+        return self._handle_url_path(self.vcs_web_tree_base_url, path)
+
+    def file_url(self, path = ''):
+        return self._handle_url_path(self.vcs_web_file_base_url, path)
 
     def sorted_recipes(self):
         return self.recipe_set.order_by('filename')
@@ -111,10 +129,8 @@ class Recipe(models.Model):
     homepage = models.URLField(blank=True)
 
     def vcs_web_url(self):
-        if self.layer.tree_url():
-            return os.path.join(self.layer.tree_url(), self.filepath, self.filename)
-        else:
-            return ''
+        url = self.layer.file_url(os.path.join(self.filepath, self.filename))
+        return url or ''
 
     def full_path(self):
         return os.path.join(self.filepath, self.filename)

@@ -16,7 +16,7 @@ class SubmitLayerForm(forms.ModelForm):
 
     class Meta:
         model = LayerItem
-        fields = ('name', 'layer_type', 'summary', 'description', 'vcs_url', 'vcs_subdir', 'vcs_web_url', 'vcs_web_tree_base_url', 'usage_url')
+        fields = ('name', 'layer_type', 'summary', 'description', 'vcs_url', 'vcs_subdir', 'vcs_web_url', 'vcs_web_tree_base_url', 'vcs_web_file_base_url', 'usage_url')
 
     def clean_name(self):
         name = self.cleaned_data['name'].strip()
@@ -36,8 +36,21 @@ class SubmitLayerForm(forms.ModelForm):
         val(url)
         return url
 
+    def clean_vcs_subdir(self):
+        subdir = self.cleaned_data['vcs_subdir'].strip()
+        if subdir.endswith('/'):
+            subdir = subdir[:-1]
+        return subdir
+
     def clean_vcs_web_tree_base_url(self):
         url = self.cleaned_data['vcs_web_tree_base_url'].strip()
+        if url:
+            val = URLValidator(verify_exists=False)
+            val(url)
+        return url
+
+    def clean_vcs_web_file_base_url(self):
+        url = self.cleaned_data['vcs_web_file_base_url'].strip()
         if url:
             val = URLValidator(verify_exists=False)
             val(url)
