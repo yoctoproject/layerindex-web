@@ -36,6 +36,7 @@ class LayerItem(models.Model):
     vcs_web_tree_base_url = models.CharField('Repository web interface tree base URL', max_length=200, blank=True)
     vcs_web_file_base_url = models.CharField('Repository web interface file base URL', max_length=200, blank=True)
     usage_url = models.URLField('Usage web page URL', blank=True)
+    mailing_list_url = models.URLField('Mailing list URL', blank=True)
 
     class Meta:
         verbose_name = "Layer"

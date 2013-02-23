@@ -16,7 +16,7 @@ class SubmitLayerForm(forms.ModelForm):
 
     class Meta:
         model = LayerItem
-        fields = ('name', 'layer_type', 'summary', 'description', 'vcs_url', 'vcs_subdir', 'vcs_web_url', 'vcs_web_tree_base_url', 'vcs_web_file_base_url', 'usage_url')
+        fields = ('name', 'layer_type', 'summary', 'description', 'vcs_url', 'vcs_subdir', 'vcs_web_url', 'vcs_web_tree_base_url', 'vcs_web_file_base_url', 'usage_url', 'mailing_list_url')
 
     def clean_name(self):
         name = self.cleaned_data['name'].strip()

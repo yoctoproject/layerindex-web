@@ -54,6 +54,11 @@
                                 <a href="{{ layeritem.usage_url }}">Setup information</a>
                             </span>
                         {% endif %}
+                        {% if layeritem.mailing_list_url %}
+                            <span class="label label-info">
+                                <a href="{{ layeritem.mailing_list_url }}">Mailing list</a>
+                            </span>
+                        {% endif %}
                     </p>
 
                     <h3>Git repository</h3>
