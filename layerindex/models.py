@@ -24,7 +24,7 @@ class LayerItem(models.Model):
     name = models.CharField('Layer name', max_length=40, unique=True)
     created_date = models.DateTimeField('Created')
     status = models.CharField(max_length=1, choices=LAYER_STATUS_CHOICES, default='N')
-    layer_type = models.CharField(max_length=1, choices=LAYER_TYPE_CHOICES, default='M')
+    layer_type = models.CharField(max_length=1, choices=LAYER_TYPE_CHOICES)
     summary = models.CharField(max_length=200)
     description = models.TextField()
     vcs_last_fetch = models.DateTimeField('Last successful fetch', blank=True, null=True)
