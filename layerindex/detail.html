@@ -118,6 +118,29 @@
             </div>  <!-- end of row-fluid -->
         </div> <!-- end of container-fluid -->
 
+        {% if layeritem.machine_set.count > 0 %}
+        <div class="container-fluid" style="margin-bottom:1em;">
+            <div class="row-fluid">
+                <div class="navbar">
+                    <div class="navbar-inner">
+                            <a class="brand pull-left">{{ layeritem.name }} machines</a>
+                    </div>
+                </div>
+
+                <table class="table table-bordered">
+                    <tbody>
+                        {% for machine in layeritem.machine_set.all %}
+                            <tr>
+                                <td><a href="{{ machine.vcs_web_url }}">{{ machine.name }}</a></td>
+                                <td>{{ machine.description }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+             </div>
+         </div>
+        {% endif %}
+
         <div class="container-fluid" style="margin-bottom:1em;">
             <div class="row-fluid">
                 <div class="navbar">

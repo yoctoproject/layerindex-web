@@ -150,3 +150,16 @@ class Recipe(models.Model):
 
     def __unicode__(self):
         return os.path.join(self.filepath, self.filename)
+
+
+class Machine(models.Model):
+    layer = models.ForeignKey(LayerItem)
+    name = models.CharField(max_length=255)
+    description = models.CharField(max_length=255)
+
+    def vcs_web_url(self):
+        url = self.layer.file_url(os.path.join('conf/machine/%s.conf' % self.name))
+        return url or ''
+
+    def __unicode__(self):
+        return '%s (%s)' % (self.name, self.layer.name)

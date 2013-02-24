@@ -15,6 +15,7 @@ import logging
 import subprocess
 from datetime import datetime
 import fnmatch
+import re
 from distutils.version import LooseVersion
 
 def logger_create():
@@ -65,7 +66,7 @@ def sanitise_path(inpath):
     return outpath
 
 
-def split_path(subdir_start, recipe_path):
+def split_bb_file_path(recipe_path, subdir_start):
     if recipe_path.startswith(subdir_start) and fnmatch.fnmatch(recipe_path, "*.bb"):
         if subdir_start:
             filepath = os.path.relpath(os.path.dirname(recipe_path), subdir_start)
@@ -74,6 +75,13 @@ def split_path(subdir_start, recipe_path):
         return (filepath, os.path.basename(recipe_path))
     return (None, None)
 
+conf_re = re.compile(r'conf/machine/([^/.]*).conf$')
+def check_machine_conf(path, subdir_start = None):
+    if not subdir_start or path.startswith(subdir_start):
+        res = conf_re.search(path)
+        if res:
+            return res.group(1)
+        return None
 
 def update_recipe_file(data, path, recipe):
     fn = str(os.path.join(path, recipe.filename))
@@ -90,6 +98,14 @@ def update_recipe_file(data, path, recipe):
     except Exception as e:
         logger.info("Unable to read %s: %s", fn, str(e))
 
+def update_machine_conf_file(path, machine):
+    with open(path) as f:
+        for line in f:
+            if line.startswith('#@DESCRIPTION:'):
+                desc = line[14:].strip()
+                desc = re.sub(r'Machine configuration for (the )*', '', desc)
+                machine.description = desc
+                break
 
 def setup_bitbake_path(basepath):
     # Set path to bitbake lib dir
@@ -149,7 +165,7 @@ def main():
 
     from django.core.management import setup_environ
     from django.conf import settings
-    from layerindex.models import LayerItem, Recipe
+    from layerindex.models import LayerItem, Recipe, Machine
     from django.db import transaction
     import settings
 
@@ -236,6 +252,7 @@ def main():
 
             layerdir = os.path.join(repodir, layer.vcs_subdir)
             layerrecipes = Recipe.objects.filter(layer=layer)
+            layermachines = Machine.objects.filter(layer=layer)
             if layer.vcs_last_rev != topcommit.hexsha or options.reload:
                 logger.info("Collecting data for layer %s" % layer.name)
 
@@ -262,13 +279,17 @@ def main():
 
                     for d in diff.iter_change_type('D'):
                         path = d.a_blob.path
-                        (filepath, filename) = split_path(subdir_start, path)
+                        (filepath, filename) = split_bb_file_path(path, subdir_start)
                         if filename:
                             layerrecipes.filter(filepath=filepath).filter(filename=filename).delete()
+                        else:
+                            machinename = check_machine_conf(path, subdir_start)
+                            if machinename:
+                                layermachines.filter(name=machinename).delete()
 
                     for d in diff.iter_change_type('A'):
                         path = d.b_blob.path
-                        (filepath, filename) = split_path(subdir_start, path)
+                        (filepath, filename) = split_bb_file_path(path, subdir_start)
                         if filename:
                             recipe = Recipe()
                             recipe.layer = layer
@@ -276,19 +297,36 @@ def main():
                             recipe.filepath = filepath
                             update_recipe_file(config_data_copy, os.path.join(layerdir, filepath), recipe)
                             recipe.save()
+                        else:
+                            machinename = check_machine_conf(path, subdir_start)
+                            if machinename:
+                                machine = Machine()
+                                machine.layer = layer
+                                machine.name = machinename
+                                update_machine_conf_file(os.path.join(repodir, path), machine)
+                                machine.save()
 
                     for d in diff.iter_change_type('M'):
                         path = d.a_blob.path
-                        (filepath, filename) = split_path(subdir_start, path)
+                        (filepath, filename) = split_bb_file_path(path, subdir_start)
                         if filename:
                             results = layerrecipes.filter(filepath=filepath).filter(filename=filename)[:1]
                             if results:
                                 recipe = results[0]
                                 update_recipe_file(config_data_copy, os.path.join(layerdir, filepath), recipe)
                                 recipe.save()
+                        else:
+                            machinename = check_machine_conf(path, subdir_start)
+                            if machinename:
+                                results = layermachines.filter(name=machinename)
+                                if results:
+                                    machine = results[0]
+                                    update_machine_conf_file(os.path.join(repodir, path), machine)
+                                    machine.save()
                 else:
                     # Collect recipe data from scratch
                     layerrecipes.delete()
+                    layermachines.delete()
                     for root, dirs, files in os.walk(layerdir):
                         for f in files:
                             if fnmatch.fnmatch(f, "*.bb"):
@@ -298,6 +336,15 @@ def main():
                                 recipe.filepath = os.path.relpath(root, layerdir)
                                 update_recipe_file(config_data_copy, root, recipe)
                                 recipe.save()
+                            else:
+                                fullpath = os.path.join(root, f)
+                                machinename = check_machine_conf(fullpath)
+                                if machinename:
+                                    machine = Machine()
+                                    machine.layer = layer
+                                    machine.name = machinename
+                                    update_machine_conf_file(fullpath, machine)
+                                    machine.save()
 
                 # Save repo info
                 layer.vcs_last_rev = topcommit.hexsha

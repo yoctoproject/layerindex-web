@@ -48,8 +48,18 @@ class RecipeAdmin(admin.ModelAdmin):
     def has_delete_permission(self, request, obj=None):
         return False
 
+class MachineAdmin(admin.ModelAdmin):
+    search_fields = ['name']
+    list_filter = ['layer__name']
+    readonly_fields = Machine._meta.get_all_field_names()
+    def has_add_permission(self, request, obj=None):
+        return False
+    def has_delete_permission(self, request, obj=None):
+        return False
+
 admin.site.register(LayerItem, LayerItemAdmin)
 admin.site.register(LayerMaintainer, LayerMaintainerAdmin)
 admin.site.register(LayerDependency, LayerDependencyAdmin)
 admin.site.register(LayerNote, LayerNoteAdmin)
 admin.site.register(Recipe, RecipeAdmin)
+admin.site.register(Machine, MachineAdmin)
