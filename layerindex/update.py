@@ -126,6 +126,9 @@ def main():
         usage = """
     %prog [options]""")
 
+    parser.add_option("-l", "--layer",
+            help = "Specify layers to update (use commas to separate multiple). Default is all published layers.",
+            action="store", dest="layers")
     parser.add_option("-r", "--reload",
             help = "Discard existing recipe data and fetch it from scratch",
             action="store_true", dest="reload")
@@ -180,17 +183,27 @@ def main():
     tinfoil.config_data.setVar('LICENSE', '')
 
 
-    # Fetch all layers
     fetchdir = settings.LAYER_FETCH_DIR
     if not fetchdir:
         logger.error("Please set LAYER_FETCH_DIR in settings.py")
         sys.exit(1)
 
+    if options.layers:
+        layerquery = LayerItem.objects.filter(name__in=options.layers.split(','))
+        if layerquery.count() == 0:
+            logger.error('No layers matching specified query "%s"' % options.layers)
+            sys.exit(1)
+    else:
+        layerquery = LayerItem.objects.filter(status='P')
+        if layerquery.count() == 0:
+            logger.info("No published layers to update")
+            sys.exit(1)
+
     if not os.path.exists(fetchdir):
         os.makedirs(fetchdir)
     fetchedrepos = []
     failedrepos = []
-    for layer in LayerItem.objects.filter(status='P'):
+    for layer in layerquery:
         transaction.enter_transaction_management()
         transaction.managed(True)
         try:
