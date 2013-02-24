@@ -75,10 +75,10 @@ def split_path(subdir_start, recipe_path):
     return (None, None)
 
 
-def update_recipe_file(bbhandler, path, recipe):
+def update_recipe_file(data, path, recipe):
     fn = str(os.path.join(path, recipe.filename))
     try:
-        envdata = bb.cache.Cache.loadDataFull(fn, [], bbhandler.config_data)
+        envdata = bb.cache.Cache.loadDataFull(fn, [], data)
         envdata.setVar('SRCPV', 'X')
         recipe.pn = envdata.getVar("PN", True)
         recipe.pv = envdata.getVar("PV", True)
@@ -226,6 +226,10 @@ def main():
             if layer.vcs_last_rev != topcommit.hexsha or options.reload:
                 logger.info("Collecting data for layer %s" % layer.name)
 
+                # Ensure we have BBPATH set so that files from this layer can be included
+                config_data_copy = bb.data.createCopy(tinfoil.config_data)
+                config_data_copy.setVar('BBPATH', str(':'.join([layerdir, config_data_copy.getVar('BBPATH', True)])))
+
                 if layer.vcs_last_rev and not options.reload:
                     try:
                         diff = repo.commit(layer.vcs_last_rev).diff(topcommit)
@@ -257,7 +261,7 @@ def main():
                             recipe.layer = layer
                             recipe.filename = filename
                             recipe.filepath = filepath
-                            update_recipe_file(tinfoil, os.path.join(layerdir, filepath), recipe)
+                            update_recipe_file(config_data_copy, os.path.join(layerdir, filepath), recipe)
                             recipe.save()
 
                     for d in diff.iter_change_type('M'):
@@ -267,7 +271,7 @@ def main():
                             results = layerrecipes.filter(filepath=filepath).filter(filename=filename)[:1]
                             if results:
                                 recipe = results[0]
-                                update_recipe_file(tinfoil, os.path.join(layerdir, filepath), recipe)
+                                update_recipe_file(config_data_copy, os.path.join(layerdir, filepath), recipe)
                                 recipe.save()
                 else:
                     # Collect recipe data from scratch
@@ -279,7 +283,7 @@ def main():
                                 recipe.layer = layer
                                 recipe.filename = f
                                 recipe.filepath = os.path.relpath(root, layerdir)
-                                update_recipe_file(tinfoil, root, recipe)
+                                update_recipe_file(config_data_copy, root, recipe)
                                 recipe.save()
 
                 # Save repo info
