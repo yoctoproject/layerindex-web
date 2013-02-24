@@ -175,6 +175,9 @@ def main():
     tinfoil.config_data.setVar('DESCRIPTION', '')
     # Clear the default value of HOMEPAGE ('unknown')
     tinfoil.config_data.setVar('HOMEPAGE', '')
+    # Set a blank value for LICENSE so that it doesn't cause the parser to die (e.g. with meta-ti -
+    # why won't they just fix that?!)
+    tinfoil.config_data.setVar('LICENSE', '')
 
 
     # Fetch all layers
