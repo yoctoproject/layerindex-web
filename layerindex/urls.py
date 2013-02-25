@@ -45,4 +45,5 @@ urlpatterns = patterns('',
             template_name='layerindex/rawrecipes.txt'),
             name='recipe_list_raw'),
     url(r'^about$', 'layerindex.views.about', name="about"),
+    url(r'^favicon\.ico$', 'django.views.generic.simple.redirect_to', {'url': 'layerindex/static/img/favicon.ico'}),
 )

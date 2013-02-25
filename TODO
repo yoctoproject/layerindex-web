@@ -23,7 +23,6 @@ TODO:
  * Layout for maintainers (js collapse?)
  * Captcha
  * Show unpublished layers in a different style in the dependency list?
-* Favicon
 
 Later:
 * Provide a delete function for unpublished layers?
