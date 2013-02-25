@@ -6,11 +6,41 @@
 -->
 
 {% block content %}
+<h2>About</h2>
+
 <p>This website indexes layers for the <a href="http://www.openembedded.org">OpenEmbedded</a> build system, suitable for use on top of OpenEmbedded-Core and distributions based upon it, providing additional recipes, machine support and/or distro policy configuration.</p>
 
 <p>If you have a layer for use with OpenEmbedded that you wish to share with others, please <a href="{% url submit_layer %}">submit it</a>!</p>
 
-<p>The code is Open Source and can be found on <a href="http://git.yoctoproject.org/cgit/cgit.cgi/layerindex-web/">git.yoctoproject.org</a>.</p>
+<h2>Technologies</h2>
+
+<p>This website makes use of the following technologies/components:</p>
+<ul>
+<li><a href="http://www.python.org/">Python</a></li>
+<li><a href="http://www.djangoproject.com/">Django</a> as well as the following Django modules:
+    <ul>
+        <li><a href="http://bitbucket.org/ubernostrum/django-registration/">django-registration</a></li>
+        <li><a href="http://github.com/etianen/django-reversion">django-reversion</a></li>
+        <li><a href="http://pypi.python.org/pypi/django-reversion-compare/">django-reversion-compare</a></li>
+    </ul>
+</li>
+<li><a href="http://twitter.github.com/bootstrap/">Twitter Bootstrap</a></li>
+<li><a href="http://glyphicons.com/">Glyphicons</a> (via Bootstrap)</li>
+<li><a href="http://jquery.com/">jQuery</a> (via Bootstrap)</li>
+<li><a href="http://www.openembedded.org/wiki/BitBake_%28user%29">BitBake</a></li>
+</ul>
+
+<h2>Credits</h2>
+
+<p>This application was created for OpenEmbedded by the <a href="http://www.yoctoproject.org">Yocto Project</a>. Individual contributors:</p>
+
+<ul>
+<li>Paul Eggleton</li>
+<li>Belen Barros Pena</li>
+</ul>
+
+<p>The code is Open Source and can be found on <a href="http://git.yoctoproject.org/cgit/cgit.cgi/layerindex-web/">git.yoctoproject.org</a>. Patches welcome!</p>
+
 {% endblock %}
 
 {% block footer %}
