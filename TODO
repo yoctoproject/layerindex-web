@@ -13,14 +13,20 @@ TODO:
  * Last commit date
  * Last update date
 * Usage links in list page?
-* Layer submission interface design
 * Style/extend about page
 * Style machine list on detail
-* Recipe info page
-* Captcha for layer submission interface?
-* Touch up publishing interface
+* Style recipe info page?
+* Show recipes from non-software/base layers differently in recipes list
+* Avoid page content changing size depending on whether scrollbar is there or not?
+* Submit layer form fixes:
+ * Layout for deps box
+ * Layout for maintainers (js collapse?)
+ * Captcha
+ * Show unpublished layers in a different style in the dependency list?
+* Favicon
 
 Later:
+* Provide a delete function for unpublished layers?
 * Show count of layers to be reviewed next to review button
 * Ability for users to edit existing layers
 * Something to help with compatibility (although maybe this should just be handled using the existing versioned layer dependencies in layer.conf)
