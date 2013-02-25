@@ -107,6 +107,11 @@ def update_machine_conf_file(path, machine):
                 machine.description = desc
                 break
 
+def parse_layer_conf(layerdir, data):
+    data.setVar('LAYERDIR', str(layerdir))
+    data = bb.cooker._parse(os.path.join(layerdir, "conf", "layer.conf"), data)
+    data.expandVarref('LAYERDIR')
+
 def setup_bitbake_path(basepath):
     # Set path to bitbake lib dir
     bitbakedir_env = os.environ.get('BITBAKEDIR', '')
@@ -183,6 +188,7 @@ def main():
 
     sys.path.extend([bitbakepath + '/lib'])
     import bb.tinfoil
+    import bb.cooker
     tinfoil = bb.tinfoil.Tinfoil()
     tinfoil.prepare(config_only = True)
 
@@ -219,32 +225,37 @@ def main():
         os.makedirs(fetchdir)
     fetchedrepos = []
     failedrepos = []
+
+    # Fetch latest metadata from repositories
+    for layer in layerquery:
+        # Handle multiple layers in a single repo
+        urldir = sanitise_path(layer.vcs_url)
+        repodir = os.path.join(fetchdir, urldir)
+        if not layer.vcs_url in fetchedrepos:
+            logger.info("Fetching remote repository %s" % layer.vcs_url)
+            out = None
+            try:
+                if not os.path.exists(repodir):
+                    out = runcmd("git clone %s %s" % (layer.vcs_url, urldir), fetchdir)
+                else:
+                    out = runcmd("git pull", repodir)
+            except Exception as e:
+                logger.error("fetch failed: %s" % str(e))
+                failedrepos.append(layer.vcs_url)
+                continue
+            fetchedrepos.append(layer.vcs_url)
+
+    # Process and extract data from each layer
     for layer in layerquery:
         transaction.enter_transaction_management()
         transaction.managed(True)
         try:
-            # Handle multiple layers in a single repo
             urldir = sanitise_path(layer.vcs_url)
             repodir = os.path.join(fetchdir, urldir)
             if layer.vcs_url in failedrepos:
-                logger.info("Skipping remote repository %s as it has already failed" % layer.vcs_url)
+                logger.info("Skipping update of layer %s as fetch of repository %s failed" % (layer.name, layer.vcs_url))
                 transaction.rollback()
                 continue
-            if not layer.vcs_url in fetchedrepos:
-                logger.info("Fetching remote repository %s" % layer.vcs_url)
-                out = None
-                try:
-                    if not os.path.exists(repodir):
-                        out = runcmd("git clone %s %s" % (layer.vcs_url, urldir), fetchdir)
-                    else:
-                        out = runcmd("git pull", repodir)
-                except Exception as e:
-                    logger.error("fetch failed: %s" % str(e))
-                    failedrepos.append(layer.vcs_url)
-                    transaction.rollback()
-                    continue
-                fetchedrepos.append(layer.vcs_url)
-
             # Collect repo info
             repo = git.Repo(repodir)
             assert repo.bare == False
@@ -256,9 +267,20 @@ def main():
             if layer.vcs_last_rev != topcommit.hexsha or options.reload:
                 logger.info("Collecting data for layer %s" % layer.name)
 
-                # Ensure we have BBPATH set so that files from this layer can be included
+                # Parse layer.conf files for this layer and its dependencies
+                # This is necessary not just because BBPATH needs to be set in order
+                # for include/require/inherit to work outside of the current directory
+                # or across layers, but also because custom variable values might be
+                # set in layer.conf.
+
                 config_data_copy = bb.data.createCopy(tinfoil.config_data)
-                config_data_copy.setVar('BBPATH', str(':'.join([layerdir, config_data_copy.getVar('BBPATH', True)])))
+                parse_layer_conf(layerdir, config_data_copy)
+                for dep in layer.dependencies_set.all():
+                    depurldir = sanitise_path(dep.dependency.vcs_url)
+                    deprepodir = os.path.join(fetchdir, depurldir)
+                    deplayerdir = os.path.join(deprepodir, dep.dependency.vcs_subdir)
+                    parse_layer_conf(deplayerdir, config_data_copy)
+                config_data_copy.delVar('LAYERDIR')
 
                 if layer.vcs_last_rev and not options.reload:
                     try:
