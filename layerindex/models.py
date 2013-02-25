@@ -21,22 +21,22 @@ class LayerItem(models.Model):
         ('D', 'Distribution'),
         ('M', 'Miscellaneous'),
     )
-    name = models.CharField('Layer name', max_length=40, unique=True)
+    name = models.CharField('Layer name', max_length=40, unique=True, help_text='Name of the layer - must be unique and can only contain letters, numbers and dashes')
     created_date = models.DateTimeField('Created')
     status = models.CharField(max_length=1, choices=LAYER_STATUS_CHOICES, default='N')
     layer_type = models.CharField(max_length=1, choices=LAYER_TYPE_CHOICES)
-    summary = models.CharField(max_length=200)
+    summary = models.CharField(max_length=200, help_text='One-line description of the layer')
     description = models.TextField()
     vcs_last_fetch = models.DateTimeField('Last successful fetch', blank=True, null=True)
     vcs_last_rev = models.CharField('Last revision fetched', max_length=80, blank=True)
     vcs_last_commit = models.DateTimeField('Last commit date', blank=True, null=True)
-    vcs_subdir = models.CharField('Repository subdirectory', max_length=40, blank=True)
-    vcs_url = models.CharField('Repository URL', max_length=200)
-    vcs_web_url = models.URLField('Repository web interface URL', blank=True)
-    vcs_web_tree_base_url = models.CharField('Repository web interface tree base URL', max_length=200, blank=True)
-    vcs_web_file_base_url = models.CharField('Repository web interface file base URL', max_length=200, blank=True)
-    usage_url = models.URLField('Usage web page URL', blank=True)
-    mailing_list_url = models.URLField('Mailing list URL', blank=True)
+    vcs_subdir = models.CharField('Repository subdirectory', max_length=40, blank=True, help_text='Subdirectory within the repository where the layer is located, if not in the root (usually only used if the repository contains more than one layer)')
+    vcs_url = models.CharField('Repository URL', max_length=200, help_text='Fetch/clone URL of the repository')
+    vcs_web_url = models.URLField('Repository web interface URL', blank=True, help_text='URL of the web interface for browsing the repository, if any')
+    vcs_web_tree_base_url = models.CharField('Repository web interface tree base URL', max_length=200, blank=True, help_text='Base URL for the web interface for browsing directories within the repository, if any')
+    vcs_web_file_base_url = models.CharField('Repository web interface file base URL', max_length=200, blank=True, help_text='Base URL for the web interface for viewing files (blobs) within the repository, if any')
+    usage_url = models.URLField('Usage web page URL', blank=True, help_text='URL of a web page with more information about the layer and how to use it, if any')
+    mailing_list_url = models.URLField('Mailing list URL', blank=True, help_text='URL of the info page for a mailing list for discussing the layer, if any')
 
     class Meta:
         verbose_name = "Layer"
@@ -88,7 +88,7 @@ class LayerMaintainer(models.Model):
     layer = models.ForeignKey(LayerItem)
     name = models.CharField(max_length=50)
     email = models.CharField(max_length=255)
-    responsibility = models.CharField(max_length=200, blank=True)
+    responsibility = models.CharField(max_length=200, blank=True, help_text='Specific area(s) this maintainer is responsible for, if not the entire layer')
     status = models.CharField(max_length=1, choices=MAINTAINER_STATUS_CHOICES, default='A')
 
     def __unicode__(self):
