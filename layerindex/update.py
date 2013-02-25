@@ -95,7 +95,9 @@ def update_recipe_file(data, path, recipe):
         recipe.section = envdata.getVar("SECTION", True)
         recipe.license = envdata.getVar("LICENSE", True)
         recipe.homepage = envdata.getVar("HOMEPAGE", True)
-    except Exception as e:
+    except KeyboardInterrupt:
+        raise
+    except BaseException as e:
         logger.info("Unable to read %s: %s", fn, str(e))
 
 def update_machine_conf_file(path, machine):
