@@ -12,7 +12,7 @@ from django.template import RequestContext
 from layerindex.models import LayerItem, LayerMaintainer, LayerDependency, Recipe
 from datetime import datetime
 from django.views.generic import DetailView, ListView
-from layerindex.forms import SubmitLayerForm
+from layerindex.forms import SubmitLayerForm, LayerMaintainerFormSet
 from django.db import transaction
 from django.contrib.auth.models import User, Permission
 from django.db.models import Q
@@ -27,17 +27,12 @@ def submit_layer(request):
     if request.method == 'POST':
         layeritem = LayerItem()
         form = SubmitLayerForm(request.POST, instance=layeritem)
-        if form.is_valid():
+        maintainerformset = LayerMaintainerFormSet(request.POST, instance=layeritem)
+        if form.is_valid() and maintainerformset.is_valid():
             with transaction.commit_on_success():
                 layeritem.created_date = datetime.now()
                 form.save()
-                # Save maintainers
-                for name, email in form.cleaned_data['maintainers'].items():
-                    maint = LayerMaintainer()
-                    maint.layer = layeritem
-                    maint.name = name
-                    maint.email = email
-                    maint.save()
+                maintainerformset.save()
                 # Save dependencies
                 for dep in form.cleaned_data['deps']:
                     deprec = LayerDependency()
@@ -63,9 +58,11 @@ def submit_layer(request):
                 return HttpResponseRedirect(reverse('submit_layer_thanks'))
     else:
         form = SubmitLayerForm()
+        maintainerformset = LayerMaintainerFormSet()
 
     return render(request, 'layerindex/submitlayer.html', {
         'form': form,
+        'maintainerformset': maintainerformset,
     })
 
 def submit_layer_thanks(request):

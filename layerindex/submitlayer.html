@@ -20,7 +20,36 @@
 
 <form action="{% url submit_layer %}" method="post">
 {% csrf_token %}
-{{ form.as_p }}
+    {% for hidden in form.hidden_fields %}
+        {{ hidden }}
+    {% endfor %}
+
+    {% for field in form.visible_fields %}
+        <div class="fieldWrapper">
+            {{ field.errors }}
+            {{ field.label_tag }}
+            {{ field }}
+            {{ field.help_text }}
+        </div>
+    {% endfor %}
+    <h3>Maintainers</h3>
+    {{ maintainerformset.non_form_errors }}
+    {{ maintainerformset.management_form }}
+    {% for maintainerform in maintainerformset %}
+        <h4>Maintainer {{forloop.counter}}</h4>
+        {% for hidden in maintainerform.hidden_fields %}
+            {{ hidden }}
+        {% endfor %}
+
+        {% for field in maintainerform.visible_fields %}
+            <div class="fieldWrapper">
+                {{ field.errors }}
+                {{ field.label_tag }}
+                {{ field }}
+                {{ field.help_text }}
+            </div>
+        {% endfor %}
+    {% endfor %}
 <input type="submit" value="Submit" class='btn' />
 </form>
 

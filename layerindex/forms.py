@@ -4,14 +4,42 @@
 #
 # Licensed under the MIT license, see COPYING.MIT for details
 
-from layerindex.models import LayerItem
+from layerindex.models import LayerItem, LayerMaintainer
 from django import forms
 from django.core.validators import URLValidator, RegexValidator, email_re
+from django.forms.models import inlineformset_factory
 import re
+
+
+class LayerMaintainerForm(forms.ModelForm):
+    class Meta:
+        model = LayerMaintainer
+        fields = ('name', 'email', 'responsibility')
+
+    def clean_email(self):
+        email = self.cleaned_data['email'].strip()
+        if email:
+            if len(email) < 7:
+                raise forms.ValidationError('%s is not a valid email address' % email)
+            reg = re.compile(email_re)
+            if not reg.match(email):
+                raise forms.ValidationError('%s is not a valid email address' % email)
+
+        return email
+
+class BaseLayerMaintainerFormSet(forms.models.BaseInlineFormSet):
+    def _construct_form(self, i, **kwargs):
+        f = super(BaseLayerMaintainerFormSet, self)._construct_form(i, **kwargs)
+        # Ensure the first form in the formset gets filled in
+        if i == 0:
+            f.empty_permitted = False
+            f.required = True
+        return f
+
+LayerMaintainerFormSet = inlineformset_factory(LayerItem, LayerMaintainer, form=LayerMaintainerForm, formset=BaseLayerMaintainerFormSet,  can_delete=False)
 
 class SubmitLayerForm(forms.ModelForm):
     # Additional form fields
-    maintainers = forms.CharField(max_length=200)
     deps = forms.ModelMultipleChoiceField(label='Other layers this layer depends upon', queryset=LayerItem.objects.all(), required=False)
 
     class Meta:
@@ -55,21 +83,3 @@ class SubmitLayerForm(forms.ModelForm):
             val = URLValidator(verify_exists=False)
             val(url)
         return url
-
-    def clean_maintainers(self):
-        maintainers = self.cleaned_data['maintainers'].strip()
-        addrs = re.split(r'"?([^"@$<>]+)"? *<([^<> ]+)>,? *', maintainers)
-        addrs = [addr.strip() for addr in addrs if addr]
-        if addrs and len(addrs) % 2 == 0:
-            addrdict = {}
-            reg = re.compile(email_re)
-            for i in range(0, len(addrs)-1,2):
-                email = addrs[i+1]
-                if not reg.match(email):
-                    raise forms.ValidationError('%s is not a valid email address' % email)
-                addrdict[addrs[i]] = email
-            maintainers = addrdict
-        else:
-            raise forms.ValidationError('Please enter one or more maintainers in email address format (i.e. "Full Name <emailaddress@example.com> separated by commas")')
-
-        return maintainers
