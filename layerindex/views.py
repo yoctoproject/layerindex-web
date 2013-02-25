@@ -96,7 +96,7 @@ class LayerListView(ListView):
 
 class RecipeSearchView(ListView):
     context_object_name = 'recipe_list'
-    paginate_by = 10
+    paginate_by = 50
 
     def get_queryset(self):
         query_string = self.request.GET.get('q', '')
