@@ -8,6 +8,7 @@ from layerindex.models import LayerItem, LayerMaintainer
 from django import forms
 from django.core.validators import URLValidator, RegexValidator, email_re
 from django.forms.models import inlineformset_factory
+from widgets import TableCheckboxSelectMultiple
 import re
 
 
@@ -40,7 +41,7 @@ LayerMaintainerFormSet = inlineformset_factory(LayerItem, LayerMaintainer, form=
 
 class SubmitLayerForm(forms.ModelForm):
     # Additional form fields
-    deps = forms.ModelMultipleChoiceField(label='Other layers this layer depends upon', queryset=LayerItem.objects.all(), required=False)
+    deps = forms.ModelMultipleChoiceField(label='Other layers this layer depends upon', queryset=LayerItem.objects.all(), required=False, widget=TableCheckboxSelectMultiple, initial=[l.pk for l in LayerItem.objects.filter(name='openembedded-core')])
 
     class Meta:
         model = LayerItem
@@ -57,6 +58,16 @@ class SubmitLayerForm(forms.ModelForm):
         if '--' in name:
             raise forms.ValidationError("Name cannot contain consecutive dashes")
         return name
+
+    def clean_summary(self):
+        # Compress whitespace and use only spaces
+        summary = self.cleaned_data['summary'].strip()
+        summary = re.sub('\s+', ' ', summary)
+        return summary
+
+    def clean_description(self):
+        description = self.cleaned_data['description'].strip()
+        return description
 
     def clean_vcs_url(self):
         url = self.cleaned_data['vcs_url'].strip()

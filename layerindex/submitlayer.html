@@ -28,7 +28,13 @@
         <div class="fieldWrapper">
             {{ field.errors }}
             {{ field.label_tag }}
-            {{ field }}
+            {% if field.name = 'deps' %}
+                <div class="scrolling">
+                {{ field }}
+                </div>
+            {% else %}
+                {{ field }}
+            {% endif %}
             {{ field.help_text }}
         </div>
     {% endfor %}

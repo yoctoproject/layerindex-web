@@ -54,3 +54,9 @@ textarea {
 h1 .btn {
     font-weight: normal;
 }
+
+.scrolling {
+height: auto;
+max-height: 120px;
+overflow: auto;
+}
