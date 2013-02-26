@@ -286,6 +286,12 @@ def main():
             repo = git.Repo(repodir)
             assert repo.bare == False
             topcommit = repo.commit('master')
+            if layer.vcs_subdir:
+                # Find latest commit in subdirectory
+                # A bit odd to do it this way but apparently there's no other way in the GitPython API
+                for commit in repo.iter_commits(paths=layer.vcs_subdir):
+                    topcommit = commit
+                    break
 
             layerdir = os.path.join(repodir, layer.vcs_subdir)
             layerdir_start = os.path.normpath(layerdir) + os.sep
