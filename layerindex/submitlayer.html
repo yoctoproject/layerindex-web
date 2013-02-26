@@ -40,7 +40,11 @@
                             {% if deplayer.id in form.checked_deps %}
                                 <tr>
                                     <td><input type="checkbox" name="deps" value="{{ deplayer.id }}" id="id_deps_{{forloop.counter}}" checked="checked" /></td>
+                                    {% if deplayer.status = 'N' %}
+                                    <td><label class="muted" for="id_deps_{{forloop.counter}}">{{ deplayer.name }} (new)</label></td>
+                                    {% else %}
                                     <td><label for="id_deps_{{forloop.counter}}">{{ deplayer.name }}</label></td>
+                                    {% endif %}
                                 </tr>
                             {% endif %}
                         {% endfor %}
@@ -48,7 +52,11 @@
                             {% if not deplayer.id in form.checked_deps %}
                                 <tr>
                                     <td><input type="checkbox" name="deps" value="{{ deplayer.id }}" id="id_deps_{{forloop.counter}}" /></td>
+                                    {% if deplayer.status = 'N' %}
+                                    <td><label class="muted" for="id_deps_{{forloop.counter}}">{{ deplayer.name }} (new)</label></td>
+                                    {% else %}
                                     <td><label for="id_deps_{{forloop.counter}}">{{ deplayer.name }}</label></td>
+                                    {% endif %}
                                 </tr>
                             {% endif %}
                         {% endfor %}
