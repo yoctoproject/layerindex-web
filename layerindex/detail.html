@@ -26,7 +26,7 @@
             <div class="row-fluid">
                 <div class="page-header">
                     <h1>{{ layeritem.name }}
-                        {% if user.is_authenticated %}
+                        {% if user.is_authenticated and perms.layeritem.publish_layer %}
                             {% if layeritem.status = "N" %}
                                 <a href="{% url publish layeritem.name %}" class="btn btn-primary pull-right">Publish layer</a>
                             {% endif %}
@@ -185,16 +185,6 @@
                             {% endfor %}
                         </tbody>
                     </table>
-                </div>
-
-                <div class="row-fluid">
-
-                    {% if user.is_authenticated %}
-                        {% if layeritem.status = "N" %}
-                        <a href="{% url publish layeritem.name %}" class="btn btn-primary pull-right">Publish layer</a>
-                        {% endif %}
-                    {% endif %}
-
                 </div>
          </div>
 
