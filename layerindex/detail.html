@@ -84,9 +84,11 @@
                         </p>
                     {% endif %}
 
+                    {% if layeritem.vcs_last_commit %}
                     <p>
                     <span class="muted"><small>Last commit: {{ layeritem.vcs_last_commit|timesince }} ago</small></span>
                     </p>
+                    {% endif %}
 
                     <h3>{% if layeritem.active_maintainers|length = 1 %}Maintainer{% else %}Maintainers{% endif %}</h3>
 
