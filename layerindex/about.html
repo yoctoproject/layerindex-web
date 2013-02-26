@@ -6,6 +6,7 @@
 -->
 
 {% block content %}
+{% autoescape on %}
 <h2>About</h2>
 
 <p>This website indexes layers for the <a href="http://www.openembedded.org">OpenEmbedded</a> build system, suitable for use on top of OpenEmbedded-Core and distributions based upon it, providing additional recipes, machine support and/or distro policy configuration.</p>
@@ -41,6 +42,7 @@
 
 <p>The code is Open Source and can be found on <a href="http://git.yoctoproject.org/cgit/cgit.cgi/layerindex-web/">git.yoctoproject.org</a>. Patches welcome!</p>
 
+{% endautoescape %}
 {% endblock %}
 
 {% block footer %}

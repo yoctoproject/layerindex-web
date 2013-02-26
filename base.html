@@ -23,6 +23,7 @@
 
 <body>
     {% block header %}
+    {% autoescape on %}
     <div class="navbar navbar-fixed-top">
         <div class="navbar-inner">
             <div class="container">
@@ -54,6 +55,7 @@
             </div> <!-- end of "container" -->
         </div> <!--  "end of "navbar-inner" -->
     </div> <!--  end of "navbar" -->
+    {% endautoescape %}
     {% endblock %}
 
     <div id="content" class="container top-padded">
