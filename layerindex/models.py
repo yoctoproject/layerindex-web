@@ -85,7 +85,7 @@ class LayerMaintainer(models.Model):
         ('I', 'Inactive'),
     )
     layer = models.ForeignKey(LayerItem)
-    name = models.CharField(max_length=50)
+    name = models.CharField(max_length=255)
     email = models.CharField(max_length=255)
     responsibility = models.CharField(max_length=200, blank=True, help_text='Specific area(s) this maintainer is responsible for, if not the entire layer')
     status = models.CharField(max_length=1, choices=MAINTAINER_STATUS_CHOICES, default='A')

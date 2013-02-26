@@ -111,6 +111,34 @@
         }
     };
 
+    split_email = function() {
+        // Split email name/email address pairs
+        name_input = $(this)
+        split_regex = /^"?([^"@$<>]+)"? *<([^<> ]+)>[ -]*(.*)?$/
+        matches = split_regex.exec(name_input.val())
+        if( matches ){
+            name_input.val($.trim(matches[1]))
+            email_id = name_input.attr('id').replace('-name', '-email')
+            $('#' + email_id).val($.trim(matches[2]))
+            resp_id = email_id.replace('-email', '-responsibility')
+            currval = $('#' + resp_id).val()
+            // Set the responsibility with the remainder of the value unless the user has entered a value for
+            // responsibility already
+            if( currval == window['last_' + resp_id] || currval == "" ) {
+                newval = $.trim(matches[3])
+                $('#' + resp_id).val(newval)
+                window['last_' + resp_id] = newval
+            }
+        }
+    }
+
+    for(i=0;i<{{ maintainerformset.total_form_count }};i++) {
+        name_input = $('#id_layermaintainer_set-' + i + '-name')
+        name_input.change(split_email)
+        resp_id = 'id_layermaintainer_set-' + i + '-responsibility'
+        window['last_' + resp_id] = ""
+    }
+
     $(document).ready(function() {
         $('#id_vcs_url').change(auto_web_fields)
     });
