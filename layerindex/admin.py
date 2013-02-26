@@ -42,7 +42,7 @@ class LayerNoteAdmin(CompareVersionAdmin):
 class RecipeAdmin(admin.ModelAdmin):
     search_fields = ['filename', 'pn']
     list_filter = ['layer__name']
-    readonly_fields = Recipe._meta.get_all_field_names()
+    readonly_fields = [fieldname for fieldname in Recipe._meta.get_all_field_names() if fieldname != 'recipefiledependency']
     def has_add_permission(self, request, obj=None):
         return False
     def has_delete_permission(self, request, obj=None):
@@ -62,4 +62,5 @@ admin.site.register(LayerMaintainer, LayerMaintainerAdmin)
 admin.site.register(LayerDependency, LayerDependencyAdmin)
 admin.site.register(LayerNote, LayerNoteAdmin)
 admin.site.register(Recipe, RecipeAdmin)
+admin.site.register(RecipeFileDependency)
 admin.site.register(Machine, MachineAdmin)

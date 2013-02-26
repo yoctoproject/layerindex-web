@@ -152,6 +152,18 @@ class Recipe(models.Model):
         return os.path.join(self.filepath, self.filename)
 
 
+class RecipeFileDependency(models.Model):
+    recipe = models.ForeignKey(Recipe)
+    layer = models.ForeignKey(LayerItem, related_name='+')
+    path = models.CharField(max_length=255, db_index=True)
+
+    class Meta:
+        verbose_name_plural = "Recipe file dependencies"
+
+    def __unicode__(self):
+        return '%s' % self.path
+
+
 class Machine(models.Model):
     layer = models.ForeignKey(LayerItem)
     name = models.CharField(max_length=255)

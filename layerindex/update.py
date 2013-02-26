@@ -67,7 +67,7 @@ def sanitise_path(inpath):
 
 
 def split_bb_file_path(recipe_path, subdir_start):
-    if recipe_path.startswith(subdir_start) and fnmatch.fnmatch(recipe_path, "*.bb"):
+    if fnmatch.fnmatch(recipe_path, "*.bb"):
         if subdir_start:
             filepath = os.path.relpath(os.path.dirname(recipe_path), subdir_start)
         else:
@@ -76,16 +76,16 @@ def split_bb_file_path(recipe_path, subdir_start):
     return (None, None)
 
 conf_re = re.compile(r'conf/machine/([^/.]*).conf$')
-def check_machine_conf(path, subdir_start = None):
-    if not subdir_start or path.startswith(subdir_start):
-        res = conf_re.search(path)
-        if res:
-            return res.group(1)
-        return None
+def check_machine_conf(path):
+    res = conf_re.search(path)
+    if res:
+        return res.group(1)
+    return None
 
-def update_recipe_file(data, path, recipe):
+def update_recipe_file(data, path, recipe, layerdir_start, repodir):
     fn = str(os.path.join(path, recipe.filename))
     try:
+        logger.debug('Updating recipe %s' % fn)
         envdata = bb.cache.Cache.loadDataFull(fn, [], data)
         envdata.setVar('SRCPV', 'X')
         recipe.pn = envdata.getVar("PN", True)
@@ -95,13 +95,31 @@ def update_recipe_file(data, path, recipe):
         recipe.section = envdata.getVar("SECTION", True)
         recipe.license = envdata.getVar("LICENSE", True)
         recipe.homepage = envdata.getVar("HOMEPAGE", True)
+        recipe.save()
+
+        # Get file dependencies within this layer
+        deps = envdata.getVar('__depends', True)
+        filedeps = []
+        for depstr, date in deps:
+            found = False
+            if depstr.startswith(layerdir_start) and not depstr.endswith('/conf/layer.conf'):
+                filedeps.append(os.path.relpath(depstr, repodir))
+        from layerindex.models import RecipeFileDependency
+        RecipeFileDependency.objects.filter(recipe=recipe).delete()
+        for filedep in filedeps:
+            recipedep = RecipeFileDependency()
+            recipedep.layer = recipe.layer
+            recipedep.recipe = recipe
+            recipedep.path = filedep
+            recipedep.save()
     except KeyboardInterrupt:
         raise
     except BaseException as e:
         logger.info("Unable to read %s: %s", fn, str(e))
 
 def update_machine_conf_file(path, machine):
-    with open(path) as f:
+    logger.debug('Updating machine %s' % path)
+    with open(path, 'r') as f:
         for line in f:
             if line.startswith('#@DESCRIPTION:'):
                 desc = line[14:].strip()
@@ -155,6 +173,12 @@ def main():
     parser.add_option("-r", "--reload",
             help = "Discard existing recipe data and fetch it from scratch",
             action="store_true", dest="reload")
+    parser.add_option("-n", "--dry-run",
+            help = "Don't write any data back to the database",
+            action="store_true", dest="dryrun")
+    parser.add_option("-x", "--nofetch",
+            help = "Don't fetch repositories",
+            action="store_true", dest="nofetch")
     parser.add_option("-d", "--debug",
             help = "Enable debug output",
             action="store_const", const=logging.DEBUG, dest="loglevel", default=logging.INFO)
@@ -172,7 +196,7 @@ def main():
 
     from django.core.management import setup_environ
     from django.conf import settings
-    from layerindex.models import LayerItem, Recipe, Machine
+    from layerindex.models import LayerItem, Recipe, RecipeFileDependency, Machine
     from django.db import transaction
     import settings
 
@@ -206,7 +230,6 @@ def main():
     # why won't they just fix that?!)
     tinfoil.config_data.setVar('LICENSE', '')
 
-
     fetchdir = settings.LAYER_FETCH_DIR
     if not fetchdir:
         logger.error("Please set LAYER_FETCH_DIR in settings.py")
@@ -228,24 +251,25 @@ def main():
     fetchedrepos = []
     failedrepos = []
 
-    # Fetch latest metadata from repositories
-    for layer in layerquery:
-        # Handle multiple layers in a single repo
-        urldir = sanitise_path(layer.vcs_url)
-        repodir = os.path.join(fetchdir, urldir)
-        if not layer.vcs_url in fetchedrepos:
-            logger.info("Fetching remote repository %s" % layer.vcs_url)
-            out = None
-            try:
-                if not os.path.exists(repodir):
-                    out = runcmd("git clone %s %s" % (layer.vcs_url, urldir), fetchdir)
-                else:
-                    out = runcmd("git pull", repodir)
-            except Exception as e:
-                logger.error("fetch failed: %s" % str(e))
-                failedrepos.append(layer.vcs_url)
-                continue
-            fetchedrepos.append(layer.vcs_url)
+    if not options.nofetch:
+        # Fetch latest metadata from repositories
+        for layer in layerquery:
+            # Handle multiple layers in a single repo
+            urldir = sanitise_path(layer.vcs_url)
+            repodir = os.path.join(fetchdir, urldir)
+            if not layer.vcs_url in fetchedrepos:
+                logger.info("Fetching remote repository %s" % layer.vcs_url)
+                out = None
+                try:
+                    if not os.path.exists(repodir):
+                        out = runcmd("git clone %s %s" % (layer.vcs_url, urldir), fetchdir)
+                    else:
+                        out = runcmd("git pull", repodir)
+                except Exception as e:
+                    logger.error("fetch failed: %s" % str(e))
+                    failedrepos.append(layer.vcs_url)
+                    continue
+                fetchedrepos.append(layer.vcs_url)
 
     # Process and extract data from each layer
     for layer in layerquery:
@@ -264,6 +288,7 @@ def main():
             topcommit = repo.commit('master')
 
             layerdir = os.path.join(repodir, layer.vcs_subdir)
+            layerdir_start = os.path.normpath(layerdir) + os.sep
             layerrecipes = Recipe.objects.filter(layer=layer)
             layermachines = Machine.objects.filter(layer=layer)
             if layer.vcs_last_rev != topcommit.hexsha or options.reload:
@@ -301,52 +326,66 @@ def main():
                     else:
                         subdir_start = ""
 
+                    updatedrecipes = set()
                     for d in diff.iter_change_type('D'):
                         path = d.a_blob.path
-                        (filepath, filename) = split_bb_file_path(path, subdir_start)
-                        if filename:
-                            layerrecipes.filter(filepath=filepath).filter(filename=filename).delete()
-                        else:
-                            machinename = check_machine_conf(path, subdir_start)
-                            if machinename:
-                                layermachines.filter(name=machinename).delete()
+                        if path.startswith(subdir_start):
+                            (filepath, filename) = split_bb_file_path(path, subdir_start)
+                            if filename:
+                                layerrecipes.filter(filepath=filepath).filter(filename=filename).delete()
+                            else:
+                                machinename = check_machine_conf(path)
+                                if machinename:
+                                    layermachines.filter(name=machinename).delete()
 
                     for d in diff.iter_change_type('A'):
                         path = d.b_blob.path
-                        (filepath, filename) = split_bb_file_path(path, subdir_start)
-                        if filename:
-                            recipe = Recipe()
-                            recipe.layer = layer
-                            recipe.filename = filename
-                            recipe.filepath = filepath
-                            update_recipe_file(config_data_copy, os.path.join(layerdir, filepath), recipe)
-                            recipe.save()
-                        else:
-                            machinename = check_machine_conf(path, subdir_start)
-                            if machinename:
-                                machine = Machine()
-                                machine.layer = layer
-                                machine.name = machinename
-                                update_machine_conf_file(os.path.join(repodir, path), machine)
-                                machine.save()
-
-                    for d in diff.iter_change_type('M'):
-                        path = d.a_blob.path
-                        (filepath, filename) = split_bb_file_path(path, subdir_start)
-                        if filename:
-                            results = layerrecipes.filter(filepath=filepath).filter(filename=filename)[:1]
-                            if results:
-                                recipe = results[0]
-                                update_recipe_file(config_data_copy, os.path.join(layerdir, filepath), recipe)
+                        if path.startswith(subdir_start):
+                            (filepath, filename) = split_bb_file_path(path, subdir_start)
+                            if filename:
+                                recipe = Recipe()
+                                recipe.layer = layer
+                                recipe.filename = filename
+                                recipe.filepath = filepath
+                                update_recipe_file(config_data_copy, os.path.join(layerdir, filepath), recipe, layerdir_start, repodir)
                                 recipe.save()
-                        else:
-                            machinename = check_machine_conf(path, subdir_start)
-                            if machinename:
-                                results = layermachines.filter(name=machinename)
-                                if results:
-                                    machine = results[0]
+                                updatedrecipes.add(recipe)
+                            else:
+                                machinename = check_machine_conf(path)
+                                if machinename:
+                                    machine = Machine()
+                                    machine.layer = layer
+                                    machine.name = machinename
                                     update_machine_conf_file(os.path.join(repodir, path), machine)
                                     machine.save()
+
+                    dirtyrecipes = set()
+                    for d in diff.iter_change_type('M'):
+                        path = d.a_blob.path
+                        if path.startswith(subdir_start):
+                            (filepath, filename) = split_bb_file_path(path, subdir_start)
+                            if filename:
+                                results = layerrecipes.filter(filepath=filepath).filter(filename=filename)[:1]
+                                if results:
+                                    recipe = results[0]
+                                    update_recipe_file(config_data_copy, os.path.join(layerdir, filepath), recipe, layerdir_start, repodir)
+                                    recipe.save()
+                                    updatedrecipes.add(recipe)
+                            else:
+                                machinename = check_machine_conf(path)
+                                if machinename:
+                                    results = layermachines.filter(name=machinename)
+                                    if results:
+                                        machine = results[0]
+                                        update_machine_conf_file(os.path.join(repodir, path), machine)
+                                        machine.save()
+                            deps = RecipeFileDependency.objects.filter(layer=layer).filter(path=path)
+                            for dep in deps:
+                                dirtyrecipes.add(dep.recipe)
+
+                    dirtyrecipes -= updatedrecipes
+                    for recipe in dirtyrecipes:
+                        update_recipe_file(config_data_copy, os.path.join(layerdir, recipe.filepath), recipe, layerdir_start, repodir)
                 else:
                     # Collect recipe data from scratch
                     layerrecipes.delete()
@@ -358,7 +397,7 @@ def main():
                                 recipe.layer = layer
                                 recipe.filename = f
                                 recipe.filepath = os.path.relpath(root, layerdir)
-                                update_recipe_file(config_data_copy, root, recipe)
+                                update_recipe_file(config_data_copy, root, recipe, layerdir_start, repodir)
                                 recipe.save()
                             else:
                                 fullpath = os.path.join(root, f)
@@ -379,7 +418,10 @@ def main():
             layer.vcs_last_fetch = datetime.now()
             layer.save()
 
-            transaction.commit()
+            if options.dryrun:
+                transaction.rollback()
+            else:
+                transaction.commit()
         except:
             import traceback
             traceback.print_exc()
