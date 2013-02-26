@@ -63,7 +63,7 @@
 
                     <h3>Git repository</h3>
 
-                    <p> {{ layeritem.vcs_url }}
+                    <p><span data-toggle="tooltip" title="Select URL"><i class="icon-circle-arrow-right selectallicon" for="vcs_url" id="vcs_url_select"></i></span><span id="vcs_url" class="copyable">{{ layeritem.vcs_url }}</span>
                         {% if layeritem.vcs_web_url %}
                             <span class="label label-info">
                                 <a href="{{ layeritem.vcs_web_url }}">web repo</a>
@@ -73,7 +73,7 @@
 
                     {% if layeritem.vcs_subdir %}
                         <h4>Subdirectory</h4>
-                        <p>{{ layeritem.vcs_subdir }}
+                        <p><span data-toggle="tooltip" title="Select subdirectory"><i class="icon-circle-arrow-right selectallicon" for="vcs_subdir" id="vcs_subdir_select"></i></span><span id="vcs_subdir" class="copyable">{{ layeritem.vcs_subdir }}</span>
                             {% if layeritem.tree_url %}
                                 <span class="label label-info">
                                     <a href="{{ layeritem.tree_url }}">web subdirectory</a>
@@ -201,6 +201,25 @@
     <script src="/static/js/uitablefilter.js" ></script>
 
     <script>
+        // selectText plugin Borrowed from http://jsfiddle.net/edelman/KcX6A/1506/
+        jQuery.fn.selectText = function() {
+            var doc = document
+                , element = this[0]
+                , range, selection
+            ;
+            if (doc.body.createTextRange) {
+                range = document.body.createTextRange();
+                range.moveToElementText(element);
+                range.select();
+            } else if (window.getSelection) {
+                selection = window.getSelection();
+                range = document.createRange();
+                range.selectNodeContents(element);
+                selection.removeAllRanges();
+                selection.addRange(range);
+            }
+        };
+
         $(document).ready(function() {
 
             $(function() {
@@ -214,9 +233,11 @@
                 theTable.find("tbody > tr:visible > td:eq(1)").mousedown();
                 return false;
                 }).focus(); //Give focus to input field
+
+                $('.selectallicon').mouseup(function() {
+                    $('#' + $(this).attr('for')).selectText();
+                });
             });
-
-
         });
     </script>
 {% endblock %}
