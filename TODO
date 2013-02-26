@@ -6,27 +6,25 @@ TODO:
 
 - we might consider adding a link to the all layers and all recipes tables from the layer details page
 
+* Breadcrumbs / fix tab navigation?
 * Need an admin contact in footer
-* Some columns are a bit crushed
-* Description is not formatted nicely on detail page
-* Usage links in list page?
-* Style/extend about page
-* Style machine list on detail
-* Style recipe info page?
 * Show recipes from non-software/base layers differently in recipes list
-* Avoid page content changing size depending on whether scrollbar is there or not?
 * Submit layer form fixes:
- * Layout for deps box
  * Layout for maintainers (js collapse?)
  * Captcha
  * Show unpublished layers in a different style in the dependency list?
 
 Later:
+* Usage links in list page?
+* Avoid page content changing size depending on whether scrollbar is there or not?
+* Style/extend about page?
+* Style recipe info page?
+* Style machine list on detail
 * Provide a delete function for unpublished layers?
 * Show count of layers to be reviewed next to review button
 * Ability for users to edit existing layers
 * Something to help with compatibility (although maybe this should just be handled using the existing versioned layer dependencies in layer.conf)
-* Query backend service? i.e. special URL to query information
+* Query backend service? i.e. special URL to query information for external apps/scripts
 * Tool for finding/comparing duplicate recipes?
 * Tool for editing SUMMARY/DESCRIPTION?
 * Dynamic loading/filtering for recipes list
