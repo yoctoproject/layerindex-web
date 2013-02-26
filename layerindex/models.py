@@ -22,7 +22,6 @@ class LayerItem(models.Model):
         ('M', 'Miscellaneous'),
     )
     name = models.CharField('Layer name', max_length=40, unique=True, help_text='Name of the layer - must be unique and can only contain letters, numbers and dashes')
-    created_date = models.DateTimeField('Created')
     status = models.CharField(max_length=1, choices=LAYER_STATUS_CHOICES, default='N')
     layer_type = models.CharField(max_length=1, choices=LAYER_TYPE_CHOICES)
     summary = models.CharField(max_length=200, help_text='One-line description of the layer')

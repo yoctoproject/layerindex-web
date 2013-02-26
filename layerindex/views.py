@@ -30,7 +30,6 @@ def submit_layer(request):
         maintainerformset = LayerMaintainerFormSet(request.POST, instance=layeritem)
         if form.is_valid() and maintainerformset.is_valid():
             with transaction.commit_on_success():
-                layeritem.created_date = datetime.now()
                 form.save()
                 maintainerformset.save()
                 # Save dependencies
