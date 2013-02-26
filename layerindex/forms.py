@@ -8,7 +8,6 @@ from layerindex.models import LayerItem, LayerMaintainer
 from django import forms
 from django.core.validators import URLValidator, RegexValidator, email_re
 from django.forms.models import inlineformset_factory
-from widgets import TableCheckboxSelectMultiple
 import re
 
 
@@ -41,11 +40,15 @@ LayerMaintainerFormSet = inlineformset_factory(LayerItem, LayerMaintainer, form=
 
 class SubmitLayerForm(forms.ModelForm):
     # Additional form fields
-    deps = forms.ModelMultipleChoiceField(label='Other layers this layer depends upon', queryset=LayerItem.objects.all(), required=False, widget=TableCheckboxSelectMultiple, initial=[l.pk for l in LayerItem.objects.filter(name='openembedded-core')])
+    deps = forms.ModelMultipleChoiceField(label='Other layers this layer depends upon', queryset=LayerItem.objects.all(), required=False, initial=[l.pk for l in LayerItem.objects.filter(name='openembedded-core')])
 
     class Meta:
         model = LayerItem
         fields = ('name', 'layer_type', 'summary', 'description', 'vcs_url', 'vcs_subdir', 'vcs_web_url', 'vcs_web_tree_base_url', 'vcs_web_file_base_url', 'usage_url', 'mailing_list_url')
+
+    def checked_deps(self):
+        val = [int(v) for v in self['deps'].value()]
+        return val
 
     def clean_name(self):
         name = self.cleaned_data['name'].strip()

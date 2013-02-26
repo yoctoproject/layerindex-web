@@ -62,6 +62,7 @@ def submit_layer(request):
     return render(request, 'layerindex/submitlayer.html', {
         'form': form,
         'maintainerformset': maintainerformset,
+        'deplistlayers': LayerItem.objects.all().order_by('name')
     })
 
 def submit_layer_thanks(request):

@@ -35,7 +35,24 @@
             {{ field.label_tag }}
             {% if field.name = 'deps' %}
                 <div class="scrolling">
-                {{ field }}
+                    <table><tbody>
+                        {% for deplayer in deplistlayers %}
+                            {% if deplayer.id in form.checked_deps %}
+                                <tr>
+                                    <td><input type="checkbox" name="deps" value="{{ deplayer.id }}" id="id_deps_{{forloop.counter}}" checked="checked" /></td>
+                                    <td><label for="id_deps_{{forloop.counter}}">{{ deplayer.name }}</label></td>
+                                </tr>
+                            {% endif %}
+                        {% endfor %}
+                        {% for deplayer in deplistlayers %}
+                            {% if not deplayer.id in form.checked_deps %}
+                                <tr>
+                                    <td><input type="checkbox" name="deps" value="{{ deplayer.id }}" id="id_deps_{{forloop.counter}}" /></td>
+                                    <td><label for="id_deps_{{forloop.counter}}">{{ deplayer.name }}</label></td>
+                                </tr>
+                            {% endif %}
+                        {% endfor %}
+                    </tbody></table>
                 </div>
             {% else %}
                 {{ field }}
