@@ -9,7 +9,7 @@ from django.http import HttpResponseRedirect, HttpResponse
 from django.core.urlresolvers import reverse
 from django.core.exceptions import PermissionDenied
 from django.template import RequestContext
-from layerindex.models import LayerItem, LayerMaintainer, LayerDependency, Recipe
+from layerindex.models import LayerItem, LayerMaintainer, LayerDependency, Recipe, Machine
 from datetime import datetime
 from django.views.generic import DetailView, ListView
 from layerindex.forms import SubmitLayerForm, LayerMaintainerFormSet
@@ -108,6 +108,23 @@ class RecipeSearchView(ListView):
 
     def get_context_data(self, **kwargs):
         context = super(RecipeSearchView, self).get_context_data(**kwargs)
+        context['search_keyword'] = self.request.GET.get('q', '')
+        return context
+
+class MachineSearchView(ListView):
+    context_object_name = 'machine_list'
+    paginate_by = 50
+
+    def get_queryset(self):
+        query_string = self.request.GET.get('q', '')
+        if query_string.strip():
+            entry_query = simplesearch.get_query(query_string, ['name', 'description'])
+            return Machine.objects.filter(entry_query).order_by('name', 'layer')
+        else:
+            return Machine.objects.all().order_by('name', 'layer')
+
+    def get_context_data(self, **kwargs):
+        context = super(MachineSearchView, self).get_context_data(**kwargs)
         context['search_keyword'] = self.request.GET.get('q', '')
         return context
 

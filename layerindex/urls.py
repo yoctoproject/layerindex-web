@@ -7,7 +7,7 @@
 from django.conf.urls.defaults import *
 from django.views.generic import DetailView, ListView
 from layerindex.models import LayerItem, Recipe
-from layerindex.views import LayerListView, RecipeSearchView, PlainTextListView
+from layerindex.views import LayerListView, RecipeSearchView, MachineSearchView, PlainTextListView
 
 urlpatterns = patterns('',
     url(r'^$',
@@ -20,6 +20,10 @@ urlpatterns = patterns('',
         RecipeSearchView.as_view(
             template_name='layerindex/recipes.html'),
             name='recipe_search'),
+    url(r'^machines/$',
+        MachineSearchView.as_view(
+            template_name='layerindex/machines.html'),
+            name='machine_search'),
     url(r'^review/$',
         ListView.as_view(
             queryset=LayerItem.objects.order_by('name').filter(status__in='N'),
