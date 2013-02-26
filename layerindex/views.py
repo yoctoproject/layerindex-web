@@ -5,7 +5,7 @@
 # Licensed under the MIT license, see COPYING.MIT for details
 
 from django.shortcuts import get_object_or_404, render
-from django.http import HttpResponseRedirect, HttpResponse
+from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidden
 from django.core.urlresolvers import reverse
 from django.core.exceptions import PermissionDenied
 from django.template import RequestContext
@@ -93,6 +93,19 @@ class LayerListView(ListView):
         context = super(LayerListView, self).get_context_data(**kwargs)
         context['layer_type_choices'] = LayerItem.LAYER_TYPE_CHOICES
         return context
+
+class LayerDetailView(DetailView):
+    model = LayerItem
+    slug_field = 'name'
+
+    def dispatch(self, request, *args, **kwargs):
+        res = super(LayerDetailView, self).dispatch(request, *args, **kwargs)
+        l = self.get_object()
+        if l:
+            if l.status == 'N':
+                if not (request.user.is_authenticated() and request.user.has_perm('layerindex.publish_layer')):
+                    raise PermissionDenied
+        return res
 
 class RecipeSearchView(ListView):
     context_object_name = 'recipe_list'
