@@ -15,6 +15,11 @@
 {% block title %}OpenEmbedded metadata index - submit layer{% endblock %}
 -->
 
+{% block submitlink %}
+<!-- Disable submit link, otherwise clicking it will blank the form! -->
+<li><a href="#">Submit layer</a></li>
+{% endblock %}
+
 {% block content %}
 {% autoescape on %}
 
