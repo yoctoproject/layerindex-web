@@ -14,7 +14,12 @@ import re
 class LayerMaintainerForm(forms.ModelForm):
     class Meta:
         model = LayerMaintainer
-        fields = ('name', 'email', 'responsibility')
+        fields = ('name', 'email', 'responsibility', 'status')
+
+    def __init__(self, *args, **kwargs):
+        super(LayerMaintainerForm, self).__init__(*args, **kwargs)
+        if not self.instance.pk:
+            del self.fields['status']
 
     def clean_email(self):
         email = self.cleaned_data['email'].strip()
