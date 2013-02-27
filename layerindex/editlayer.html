@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% comment %}
+
+  layerindex-web - layer editing form page template
+
+  Copyright (C) 2013 Intel Corporation
+  Licensed under the MIT license, see COPYING.MIT for details
+
+{% endcomment %}
+
+<!--
+{% block title %}OpenEmbedded metadata index - edit layer{% endblock %}
+-->
+
+{% block content %}
+{% autoescape on %}
+
+{% block formtag %}
+{% if form.was_saved %}
+    <div class="alert alert-success">
+        Changes saved successfully.
+    </div>
+{% endif %}
+<form action="{% url edit_layer form.instance.name %}" method="post">
+{% endblock %}
+{% csrf_token %}
+    {% for hidden in form.hidden_fields %}
+        {{ hidden }}
+    {% endfor %}
+
+    {% for field in form.visible_fields %}
+        <div class="fieldWrapper">
+            {{ field.errors }}
+            {{ field.label_tag }}
+            {% if field.name = 'deps' %}
+                <div class="scrolling">
+                    <table><tbody>
+                        {% for deplayer in deplistlayers %}
+                            {% if deplayer.id in form.checked_deps %}
+                                <tr>
+                                    <td><input type="checkbox" name="deps" value="{{ deplayer.id }}" id="id_deps_{{forloop.counter}}" checked="checked" /></td>
+                                    {% if deplayer.status = 'N' %}
+                                    <td><label class="muted" for="id_deps_{{forloop.counter}}">{{ deplayer.name }} (new)</label></td>
+                                    {% else %}
+                                    <td><label for="id_deps_{{forloop.counter}}">{{ deplayer.name }}</label></td>
+                                    {% endif %}
+                                </tr>
+                            {% endif %}
+                        {% endfor %}
+                        {% for deplayer in deplistlayers %}
+                            {% if not deplayer.id in form.checked_deps %}
+                                <tr>
+                                    <td><input type="checkbox" name="deps" value="{{ deplayer.id }}" id="id_deps_{{forloop.counter}}" /></td>
+                                    {% if deplayer.status = 'N' %}
+                                    <td><label class="muted" for="id_deps_{{forloop.counter}}">{{ deplayer.name }} (new)</label></td>
+                                    {% else %}
+                                    <td><label for="id_deps_{{forloop.counter}}">{{ deplayer.name }}</label></td>
+                                    {% endif %}
+                                </tr>
+                            {% endif %}
+                        {% endfor %}
+                    </tbody></table>
+                </div>
+            {% else %}
+                {{ field }}
+            {% endif %}
+            {{ field.help_text }}
+        </div>
+    {% endfor %}
+    <h3>Maintainers</h3>
+    {{ maintainerformset.non_form_errors }}
+    {{ maintainerformset.management_form }}
+    {% for maintainerform in maintainerformset %}
+        <h4>Maintainer {{forloop.counter}}</h4>
+        {% for hidden in maintainerform.hidden_fields %}
+            {{ hidden }}
+        {% endfor %}
+
+        {% for field in maintainerform.visible_fields %}
+            <div class="fieldWrapper">
+                {{ field.errors }}
+                {{ field.label_tag }}
+                {{ field }}
+                {{ field.help_text }}
+            </div>
+        {% endfor %}
+    {% endfor %}
+{% block submitbuttons %}
+<input type="submit" value="Save" class='btn' />
+{% endblock %}
+</form>
+
+{% endautoescape %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    if (typeof String.prototype.startsWith != 'function') {
+        String.prototype.startsWith = function (str){
+            return this.slice(0, str.length) == str;
+        };
+    }
+
+    auto_web_fields = function (e) {
+        repoval = $('#id_vcs_url').val()
+        if( repoval[repoval.length-1] == '/' )
+            repoval = repoval.slice(0, repoval.length-1)
+
+        if( repoval.startsWith('git://git.openembedded.org/') ) {
+            reponame = repoval.replace(/^.*\//, '')
+            $('#id_vcs_web_url').val('http://cgit.openembedded.org/cgit.cgi/' + reponame)
+            $('#id_vcs_web_tree_base_url').val('http://cgit.openembedded.org/cgit.cgi/' + reponame + '/tree/')
+            $('#id_vcs_web_file_base_url').val('http://cgit.openembedded.org/cgit.cgi/' + reponame + '/tree/')
+        }
+        else if( repoval.indexOf('git.yoctoproject.org/') > -1 ) {
+            reponame = repoval.replace(/^.*\//, '')
+            $('#id_vcs_web_url').val('http://git.yoctoproject.org/cgit/cgit.cgi/' + reponame)
+            $('#id_vcs_web_tree_base_url').val('http://git.yoctoproject.org/cgit/cgit.cgi/' + reponame + '/tree/')
+            $('#id_vcs_web_file_base_url').val('http://git.yoctoproject.org/cgit/cgit.cgi/' + reponame + '/tree/')
+        }
+        else if( repoval.indexOf('github.com/') > -1 ) {
+            reponame = repoval.replace(/^.*github.com\//, '')
+            reponame = reponame.replace(/.git$/, '')
+            $('#id_vcs_web_url').val('http://github.com/' + reponame)
+            $('#id_vcs_web_tree_base_url').val('http://github.com/' + reponame + '/tree/master/')
+            $('#id_vcs_web_file_base_url').val('http://github.com/' + reponame + '/blob/master/')
+        }
+        else if( repoval.indexOf('gitorious.org/') > -1 ) {
+            reponame = repoval.replace(/^.*gitorious.org\//, '')
+            reponame = reponame.replace(/.git$/, '')
+            $('#id_vcs_web_url').val('http://gitorious.org/' + reponame)
+            $('#id_vcs_web_tree_base_url').val('http://gitorious.org/' + reponame + '/trees/master/')
+            $('#id_vcs_web_file_base_url').val('http://gitorious.org/' + reponame + '/blobs/master/')
+        }
+        else if( repoval.indexOf('bitbucket.org/') > -1 ) {
+            reponame = repoval.replace(/^.*bitbucket.org\//, '')
+            reponame = reponame.replace(/.git$/, '')
+            $('#id_vcs_web_url').val('http://bitbucket.org/' + reponame)
+            $('#id_vcs_web_tree_base_url').val('http://bitbucket.org/' + reponame + '/src/master/%path%?at=master')
+            $('#id_vcs_web_file_base_url').val('http://bitbucket.org/' + reponame + '/src/master/%path%?at=master')
+        }
+    };
+
+    split_email = function() {
+        // Split email name/email address pairs
+        name_input = $(this)
+        split_regex = /^"?([^"@$<>]+)"? *<([^<> ]+)>[ -]*(.*)?$/
+        matches = split_regex.exec(name_input.val())
+        if( matches ){
+            name_input.val($.trim(matches[1]))
+            email_id = name_input.attr('id').replace('-name', '-email')
+            $('#' + email_id).val($.trim(matches[2]))
+            resp_id = email_id.replace('-email', '-responsibility')
+            currval = $('#' + resp_id).val()
+            // Set the responsibility with the remainder of the value unless the user has entered a value for
+            // responsibility already
+            if( currval == window['last_' + resp_id] || currval == "" ) {
+                newval = $.trim(matches[3])
+                $('#' + resp_id).val(newval)
+                window['last_' + resp_id] = newval
+            }
+        }
+    }
+
+    for(i=0;i<{{ maintainerformset.total_form_count }};i++) {
+        name_input = $('#id_layermaintainer_set-' + i + '-name')
+        name_input.change(split_email)
+        resp_id = 'id_layermaintainer_set-' + i + '-responsibility'
+        window['last_' + resp_id] = ""
+    }
+
+    $(document).ready(function() {
+        $('#id_vcs_url').change(auto_web_fields)
+    });
+</script>
+{% endblock %}
