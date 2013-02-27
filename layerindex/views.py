@@ -9,10 +9,10 @@ from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidde
 from django.core.urlresolvers import reverse
 from django.core.exceptions import PermissionDenied
 from django.template import RequestContext
-from layerindex.models import LayerItem, LayerMaintainer, LayerDependency, Recipe, Machine
+from layerindex.models import LayerItem, LayerMaintainer, LayerDependency, LayerNote, Recipe, Machine
 from datetime import datetime
 from django.views.generic import DetailView, ListView
-from layerindex.forms import SubmitLayerForm, LayerMaintainerFormSet
+from layerindex.forms import SubmitLayerForm, LayerMaintainerFormSet, EditNoteForm
 from django.db import transaction
 from django.contrib.auth.models import User, Permission
 from django.db.models import Q
@@ -21,6 +21,46 @@ from django.template.loader import get_template
 from django.template import Context
 import simplesearch
 import settings
+
+
+def edit_layernote_view(request, template_name, slug, pk=None):
+    layeritem = get_object_or_404(LayerItem, name=slug)
+    if not (request.user.is_authenticated() and (request.user.has_perm('layerindex.publish_layer') or layeritem.user_can_edit(request.user))):
+        raise PermissionDenied
+    if pk:
+        # Edit mode
+        layernote = get_object_or_404(LayerNote, pk=pk)
+    else:
+        # Add mode
+        layernote = LayerNote()
+        layernote.layer = layeritem
+
+    if request.method == 'POST':
+        form = EditNoteForm(request.POST, instance=layernote)
+        if form.is_valid():
+            form.save()
+            return HttpResponseRedirect(layeritem.get_absolute_url())
+    else:
+        form = EditNoteForm(instance=layernote)
+
+    return render(request, template_name, {
+        'form': form,
+    })
+
+def delete_layernote_view(request, template_name, slug, pk):
+    layeritem = get_object_or_404(LayerItem, name=slug)
+    if not (request.user.is_authenticated() and (request.user.has_perm('layerindex.publish_layer') or layeritem.user_can_edit(request.user))):
+        raise PermissionDenied
+    layernote = get_object_or_404(LayerNote, pk=pk)
+    if request.method == 'POST':
+        layernote.delete()
+        return HttpResponseRedirect(layeritem.get_absolute_url())
+    else:
+        return render(request, template_name, {
+            'object': layernote,
+            'object_type': layernote._meta.verbose_name,
+            'return_url': layeritem.get_absolute_url()
+        })
 
 
 def edit_layer_view(request, template_name, slug=None):
@@ -68,7 +108,7 @@ def edit_layer_view(request, template_name, slug=None):
                         d = Context({
                             'user_name': user.get_full_name(),
                             'layer_name': layeritem.name,
-                            'layer_url': request.build_absolute_uri(reverse('layer_item', args=(layeritem.name,))),
+                            'layer_url': request.build_absolute_uri(layeritem.get_absolute_url()),
                         })
                         subject = '%s - %s' % (settings.SUBMIT_EMAIL_SUBJECT, layeritem.name)
                         from_email = settings.SUBMIT_EMAIL_FROM
@@ -105,7 +145,7 @@ def _statuschange(request, name, newstatus):
     if w.status != newstatus:
         w.change_status(newstatus, request.user.username)
         w.save()
-    return HttpResponseRedirect(reverse('layer_item', args=(name,)))
+    return HttpResponseRedirect(w.get_absolute_url())
 
 class LayerListView(ListView):
     context_object_name = 'layer_list'

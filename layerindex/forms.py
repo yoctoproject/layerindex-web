@@ -4,7 +4,7 @@
 #
 # Licensed under the MIT license, see COPYING.MIT for details
 
-from layerindex.models import LayerItem, LayerMaintainer
+from layerindex.models import LayerItem, LayerMaintainer, LayerNote
 from django import forms
 from django.core.validators import URLValidator, RegexValidator, email_re
 from django.forms.models import inlineformset_factory
@@ -110,3 +110,13 @@ class SubmitLayerForm(forms.ModelForm):
             val = URLValidator(verify_exists=False)
             val(url)
         return url
+
+
+class EditNoteForm(forms.ModelForm):
+    class Meta:
+        model = LayerNote
+        fields = ('text',)
+
+    def clean_text(self):
+        text = self.cleaned_data['text'].strip()
+        return text

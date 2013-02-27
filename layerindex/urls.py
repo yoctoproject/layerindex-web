@@ -7,7 +7,7 @@
 from django.conf.urls.defaults import *
 from django.views.generic import DetailView, ListView
 from layerindex.models import LayerItem, Recipe
-from layerindex.views import LayerListView, RecipeSearchView, MachineSearchView, PlainTextListView, LayerDetailView, edit_layer_view
+from layerindex.views import LayerListView, RecipeSearchView, MachineSearchView, PlainTextListView, LayerDetailView, edit_layer_view, edit_layernote_view, delete_layernote_view
 
 urlpatterns = patterns('',
     url(r'^$',
@@ -35,6 +35,12 @@ urlpatterns = patterns('',
         LayerDetailView.as_view(
             template_name='layerindex/detail.html'),
             name='layer_item'),
+    url(r'^layer/(?P<slug>[-\w]+)/addnote/$',
+        edit_layernote_view, {'template_name': 'layerindex/editlayernote.html'}, name="add_layernote"),
+    url(r'^layer/(?P<slug>[-\w]+)/editnote/(?P<pk>[-\w]+)/$',
+        edit_layernote_view, {'template_name': 'layerindex/editlayernote.html'}, name="edit_layernote"),
+    url(r'^layer/(?P<slug>[-\w]+)/deletenote/(?P<pk>[-\w]+)/$',
+        delete_layernote_view, {'template_name': 'layerindex/deleteconfirm.html'}, name="delete_layernote"),
     url(r'^recipe/(?P<pk>[-\w]+)/$',
         DetailView.as_view(
             model=Recipe,

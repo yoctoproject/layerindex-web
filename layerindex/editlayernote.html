@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% comment %}
+
+  layerindex-web - add/edit layer note form page template
+
+  Copyright (C) 2013 Intel Corporation
+  Licensed under the MIT license, see COPYING.MIT for details
+
+{% endcomment %}
+
+<!--
+{% block title %}OpenEmbedded metadata index - {% if form.instance.pk %}add layer note{% else %}edit layer note{% endif %}{% endblock %}
+-->
+
+{% block content %}
+{% autoescape on %}
+
+<h2>Add layer note to {{ form.instance.layer.name }}</h2>
+
+<p>This note will appear at the very top of the layer detail page. This would typically be used for important notices, e.g. &quot;This layer is obsolete, use layer xyz instead&quot;.</p>
+
+<form id="edit_layernote_form" method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+<input type="submit" value="Save" class='btn' />
+<a href="{% url layer_item form.instance.layer.name %}" class='btn'>Cancel</a>
+</form>
+
+{% endautoescape %}
+
+{% endblock %}
+
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        $("#edit_layernote_form input:text, #edit_layernote_form textarea").first().focus();
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% comment %}
+
+  layerindex-web - delete confirmation template
+
+  Copyright (C) 2013 Intel Corporation
+  Licensed under the MIT license, see COPYING.MIT for details
+
+{% endcomment %}
+
+<!--
+{% autoescape on %}
+{% block title %}OpenEmbedded metadata index - delete {{ object_type }}{% endblock %}
+{% endautoescape %}
+-->
+
+{% block content %}
+{% autoescape on %}
+
+<h2>Delete {{ object_type }}</h2>
+
+<p>Are you sure you want to delete &quot;{{ object }}&quot;?</p>
+
+<form action="" method="post">
+    {% csrf_token %}
+    <input type="submit" value="Delete" class='btn btn-warning' />
+    <a href="{{ return_url }}" class='btn'>Cancel</a>
+</form>
+
+{% endautoescape %}
+
+{% endblock %}

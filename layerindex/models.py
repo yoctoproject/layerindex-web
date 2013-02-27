@@ -7,6 +7,7 @@
 from django.db import models
 from datetime import datetime
 from django.contrib.auth.models import User
+from django.core.urlresolvers import reverse
 import os.path
 
 class LayerItem(models.Model):
@@ -87,6 +88,9 @@ class LayerItem(models.Model):
                 if maintainer.email == user.email:
                     return True
         return False
+
+    def get_absolute_url(self):
+        return reverse('layer_item', args=(self.name,));
 
     def __unicode__(self):
         return self.name
