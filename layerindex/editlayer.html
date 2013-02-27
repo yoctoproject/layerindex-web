@@ -73,6 +73,7 @@
     {{ maintainerformset.non_form_errors }}
     {{ maintainerformset.management_form }}
     {% for maintainerform in maintainerformset %}
+        <div class="maintainerform" id="maintainerform-{{forloop.counter0}}">
         <h4>Maintainer {{forloop.counter}}</h4>
         {% for hidden in maintainerform.hidden_fields %}
             {{ hidden }}
@@ -86,9 +87,11 @@
                 {{ field.help_text }}
             </div>
         {% endfor %}
+        </div>
     {% endfor %}
+    <p><a href="#" class="btn" id="addanothermaintainer">Add another maintainer</a><p>
 {% block submitbuttons %}
-<input type="submit" value="Save" class='btn' />
+<input type="submit" value="Save" class="btn btn-primary" />
 {% endblock %}
 </form>
 
@@ -165,14 +168,32 @@
         }
     }
 
-    for(i=0;i<{{ maintainerformset.total_form_count }};i++) {
-        name_input = $('#id_layermaintainer_set-' + i + '-name')
-        name_input.change(split_email)
-        resp_id = 'id_layermaintainer_set-' + i + '-responsibility'
-        window['last_' + resp_id] = ""
+    expand_maintainer = function() {
+        for(i=0;i<{{ maintainerformset.total_form_count }};i++) {
+            maintbox = $('#maintainerform-' + i)
+            if( maintbox.is(':hidden') ) {
+                maintbox.slideToggle();
+                if( i == {{maintainerformset.total_form_count}} - 1 )
+                    $('#addanothermaintainer').hide()
+                break
+            }
+        }
+        return false;
     }
 
     $(document).ready(function() {
+        $('.maintainerform').hide()
+
+        for(i=0;i<{{ maintainerformset.total_form_count }};i++) {
+            name_input = $('#id_layermaintainer_set-' + i + '-name')
+            name_input.change(split_email)
+            resp_id = 'id_layermaintainer_set-' + i + '-responsibility'
+            window['last_' + resp_id] = ""
+            if( i==0 || name_input.val() )
+                $('#maintainerform-' + i).show()
+        }
+        $('#addanothermaintainer').click(expand_maintainer)
+
         $('#id_vcs_url').change(auto_web_fields)
     });
 </script>

@@ -41,7 +41,7 @@ class BaseLayerMaintainerFormSet(forms.models.BaseInlineFormSet):
             f.required = True
         return f
 
-LayerMaintainerFormSet = inlineformset_factory(LayerItem, LayerMaintainer, form=LayerMaintainerForm, formset=BaseLayerMaintainerFormSet,  can_delete=False)
+LayerMaintainerFormSet = inlineformset_factory(LayerItem, LayerMaintainer, form=LayerMaintainerForm, formset=BaseLayerMaintainerFormSet,  can_delete=False, extra=10, max_num=10)
 
 class SubmitLayerForm(forms.ModelForm):
     # Additional form fields
