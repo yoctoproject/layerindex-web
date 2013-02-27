@@ -59,9 +59,60 @@ h1 .btn {
 height: auto;
 max-height: 120px;
 overflow: auto;
+width: 40.1709%;
+border: 1px solid #DDDDDD;
+padding: 8px;
+}
+
+.scrolling td {
+    padding: 4px;
+}
+
+.scrolling checkbox, label {
+    margin: 0px;
+}
+
+.formfields input {
+    width: 50%;
+}
+
+.formfields textarea {
+    width: 50%;
+}
+
+#maintainers {
+    padding-top: 0.75em;
+}
+
+.maintainerform {
+    /* Fix slight jumping at end of expand in Firefox */
+    padding-top: 1px;
+}
+
+.maintainerformfields input {
+    width: 25em;
+}
+
+.custom-help {
+    margin-left: 10px;
+    max-width: 40%;
+    color: #999;
+    vertical-align:top;
+}
+
+.errorlist {
+    color: #b94a48;
+    list-style-type: none;
+    margin-left: 0px;
 }
 
 .copyable {
     padding-left: 5px;
     padding-right: 3px;
+}
+
+.submitbuttons {
+    margin-top: 2em;
+    padding-top: 1em;
+    border-top: 1px solid rgb(238, 238, 238);
 }

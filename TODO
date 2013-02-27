@@ -10,7 +10,6 @@ TODO:
 * Need an admin contact in footer
 * Show recipes from non-software/base layers differently in recipes list
 * Submit layer form fixes:
- * Layout for maintainers (js collapse?)
  * Captcha
 
 Later:

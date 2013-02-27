@@ -17,83 +17,118 @@
 {% block content %}
 {% autoescape on %}
 
+<div class="container-fluid">
+    <div class="row-fluid">
+        {% block heading %}
+        <div class="page-header">
+            <h1>Edit layer</h1>
+        </div>
+        {% endblock %}
+
 {% block formtag %}
 {% if form.was_saved %}
     <div class="alert alert-success">
         Changes saved successfully.
     </div>
 {% endif %}
-<form action="{% url edit_layer form.instance.name %}" method="post">
+<form id="edit_layer_form" action="{% url edit_layer form.instance.name %}" method="post">
 {% endblock %}
 {% csrf_token %}
     {% for hidden in form.hidden_fields %}
         {{ hidden }}
     {% endfor %}
 
-    {% for field in form.visible_fields %}
-        <div class="fieldWrapper">
+    <div class="formfields">
+        {% for field in form.visible_fields %}
+            {% if field.errors %}
+            <div class="control-group alert alert-error">
             {{ field.errors }}
-            {{ field.label_tag }}
-            {% if field.name = 'deps' %}
-                <div class="scrolling">
-                    <table><tbody>
-                        {% for deplayer in deplistlayers %}
-                            {% if deplayer.id in form.checked_deps %}
-                                <tr>
-                                    <td><input type="checkbox" name="deps" value="{{ deplayer.id }}" id="id_deps_{{forloop.counter}}" checked="checked" /></td>
-                                    {% if deplayer.status = 'N' %}
-                                    <td><label class="muted" for="id_deps_{{forloop.counter}}">{{ deplayer.name }} (unpublished)</label></td>
-                                    {% else %}
-                                    <td><label for="id_deps_{{forloop.counter}}">{{ deplayer.name }}</label></td>
-                                    {% endif %}
-                                </tr>
-                            {% endif %}
-                        {% endfor %}
-                        {% for deplayer in deplistlayers %}
-                            {% if not deplayer.id in form.checked_deps %}
-                                <tr>
-                                    <td><input type="checkbox" name="deps" value="{{ deplayer.id }}" id="id_deps_{{forloop.counter}}" /></td>
-                                    {% if deplayer.status = 'N' %}
-                                    <td><label class="muted" for="id_deps_{{forloop.counter}}">{{ deplayer.name }} (unpublished)</label></td>
-                                    {% else %}
-                                    <td><label for="id_deps_{{forloop.counter}}">{{ deplayer.name }}</label></td>
-                                    {% endif %}
-                                </tr>
-                            {% endif %}
-                        {% endfor %}
-                    </tbody></table>
-                </div>
             {% else %}
-                {{ field }}
+            <div class="control-group">
             {% endif %}
-            {{ field.help_text }}
-        </div>
-    {% endfor %}
-    <h3>Maintainers</h3>
+                <div class="control-label">
+                    {{ field.label_tag }}
+                </div>
+                <div class="controls">
+                    {% if field.name = 'deps' %}
+                        <div class="scrolling">
+                            <table><tbody>
+                                {% for deplayer in deplistlayers %}
+                                    {% if deplayer.id in form.checked_deps %}
+                                        <tr>
+                                            <td><input type="checkbox" name="deps" value="{{ deplayer.id }}" id="id_deps_{{forloop.counter}}" checked="checked" /></td>
+                                            {% if deplayer.status = 'N' %}
+                                            <td><label class="muted" for="id_deps_{{forloop.counter}}">{{ deplayer.name }} (unpublished)</label></td>
+                                            {% else %}
+                                            <td><label for="id_deps_{{forloop.counter}}">{{ deplayer.name }}</label></td>
+                                            {% endif %}
+                                        </tr>
+                                    {% endif %}
+                                {% endfor %}
+                                {% for deplayer in deplistlayers %}
+                                    {% if not deplayer.id in form.checked_deps %}
+                                        <tr>
+                                            <td><input type="checkbox" name="deps" value="{{ deplayer.id }}" id="id_deps_{{forloop.counter}}" /></td>
+                                            {% if deplayer.status = 'N' %}
+                                            <td><label class="muted" for="id_deps_{{forloop.counter}}">{{ deplayer.name }} (unpublished)</label></td>
+                                            {% else %}
+                                            <td><label for="id_deps_{{forloop.counter}}">{{ deplayer.name }}</label></td>
+                                            {% endif %}
+                                        </tr>
+                                    {% endif %}
+                                {% endfor %}
+                            </tbody></table>
+                        </div>
+                    {% else %}
+                        {{ field }}
+                    {% endif %}
+                    <span class="help-inline custom-help">
+                        {{ field.help_text }}
+                    </span>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+    <h3 id="maintainers">Maintainers</h3>
     {{ maintainerformset.non_form_errors }}
     {{ maintainerformset.management_form }}
     {% for maintainerform in maintainerformset %}
         <div class="maintainerform" id="maintainerform-{{forloop.counter0}}">
-        <h4>Maintainer {{forloop.counter}}</h4>
-        {% for hidden in maintainerform.hidden_fields %}
-            {{ hidden }}
-        {% endfor %}
+            <h4>Maintainer {{forloop.counter}}</h4>
+            <div class="maintainerformfields">
+                {% for hidden in maintainerform.hidden_fields %}
+                    {{ hidden }}
+                {% endfor %}
 
-        {% for field in maintainerform.visible_fields %}
-            <div class="fieldWrapper">
-                {{ field.errors }}
-                {{ field.label_tag }}
-                {{ field }}
-                {{ field.help_text }}
+                {% for field in maintainerform.visible_fields %}
+                    {% if field.errors %}
+                    <div class="control-group alert alert-error">
+                    {{ field.errors }}
+                    {% else %}
+                    <div class="control-group">
+                    {% endif %}
+                        <div class="control-label">
+                            {{ field.label_tag }}
+                        </div>
+                        {{ field }}
+                        <span class="help-inline custom-help">
+                            {{ field.help_text }}
+                        </span>
+                    </div>
+                {% endfor %}
             </div>
-        {% endfor %}
         </div>
     {% endfor %}
-    <p><a href="#" class="btn" id="addanothermaintainer">Add another maintainer</a><p>
+    <p><a href="#" class="btn btn-small" id="addanothermaintainer"><i class="icon-plus"></i>Add maintainer</a><p>
+<div class="submitbuttons">
 {% block submitbuttons %}
-<input type="submit" value="Save" class="btn btn-primary" />
+<input type="submit" value="Save layer" class="btn btn-primary btn-large" />
 {% endblock %}
+</div>
 </form>
+
+    </div>
+</div>
 
 {% endautoescape %}
 

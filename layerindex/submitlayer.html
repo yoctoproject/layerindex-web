@@ -14,16 +14,22 @@
 {% block title %}OpenEmbedded metadata index - submit layer{% endblock %}
 -->
 
+        {% block heading %}
+        <div class="page-header">
+            <h1>Submit layer</h1>
+        </div>
+        {% endblock %}
+
+
 {% block submitlink %}
 <!-- Disable submit link, otherwise clicking it will blank the form! -->
 <li><a href="#">Submit layer</a></li>
 {% endblock %}
 
-
 {% block formtag %}
-<form action="{% url submit_layer %}" method="post">
+<form id="edit_layer_form" action="{% url submit_layer %}" method="post">
 {% endblock %}
 
 {% block submitbuttons %}
-<input type="submit" value="Submit" class="btn btn-primary" />
+<input type="submit" value="Submit layer" class="btn btn-primary btn-large" />
 {% endblock %}
