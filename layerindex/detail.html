@@ -26,6 +26,9 @@
             <div class="row-fluid">
                 <div class="page-header">
                     <h1>{{ layeritem.name }}
+                        {% if layeritem.status = "N" %}
+                            <span class="label label-warning">Unpublished</span>
+                        {% endif %}
                         {% if user.is_authenticated %}
                             <span class="pull-right">
                                 {% if perms.layeritem.publish_layer or useredit %}
@@ -131,6 +134,28 @@
             </div>  <!-- end of row-fluid -->
         </div> <!-- end of container-fluid -->
 
+        {% if layeritem.status = 'N' %}
+            <div class="container-fluid" style="margin-bottom:1em;">
+                {% if layeritem.vcs_web_file_base_url %}
+                <span class="label label-important">
+                    <a href="{{ layeritem.test_file_url }}">test file link</a>
+                </span>
+                {% else %}
+                <span class="label">
+                    No base file URL provided
+                </span>
+                {% endif %}
+                {% if layeritem.vcs_web_tree_base_url %}
+                <span class="label label-important">
+                    <a href="{{ layeritem.test_tree_url }}">test tree link</a>
+                </span>
+                {% else %}
+                <span class="label">
+                    No base tree URL provided
+                </span>
+                {% endif %}
+            </div>
+        {% else %}
         {% if layeritem.machine_set.count > 0 %}
         <div class="container-fluid" style="margin-bottom:1em;">
             <div class="row-fluid">
@@ -191,7 +216,8 @@
                         </tbody>
                     </table>
                 </div>
-         </div>
+        </div>
+        {% endif %}
 
 {% endautoescape %}
 

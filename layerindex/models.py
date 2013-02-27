@@ -69,6 +69,12 @@ class LayerItem(models.Model):
     def file_url(self, path = ''):
         return self._handle_url_path(self.vcs_web_file_base_url, path)
 
+    def test_tree_url(self):
+        return self.tree_url('conf')
+
+    def test_file_url(self):
+        return self.file_url('conf/layer.conf')
+
     def sorted_recipes(self):
         return self.recipe_set.order_by('filename')
 
