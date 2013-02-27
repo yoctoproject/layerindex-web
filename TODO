@@ -12,7 +12,6 @@ TODO:
 * Submit layer form fixes:
  * Layout for maintainers (js collapse?)
  * Captcha
- * Show unpublished layers in a different style in the dependency list?
 
 Later:
 * Allow adding/editing notes
