@@ -7,14 +7,15 @@
 from django.conf.urls.defaults import *
 from django.views.generic import DetailView, ListView
 from layerindex.models import LayerItem, Recipe
-from layerindex.views import LayerListView, RecipeSearchView, MachineSearchView, PlainTextListView, LayerDetailView
+from layerindex.views import LayerListView, RecipeSearchView, MachineSearchView, PlainTextListView, LayerDetailView, edit_layer_view
 
 urlpatterns = patterns('',
     url(r'^$',
         LayerListView.as_view(
             template_name='layerindex/index.html'),
             name='layer_list'),
-    url(r'^submit/$', 'layerindex.views.submit_layer', name="submit_layer"),
+    url(r'^submit/$', edit_layer_view, {'template_name': 'layerindex/submitlayer.html'}, name="submit_layer"),
+    url(r'^edit/(?P<slug>[-\w]+)/$', edit_layer_view, {'template_name': 'layerindex/editlayer.html'}, name="edit_layer"),
     url(r'^submit/thanks$', 'layerindex.views.submit_layer_thanks', name="submit_layer_thanks"),
     url(r'^recipes/$',
         RecipeSearchView.as_view(

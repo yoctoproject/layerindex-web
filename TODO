@@ -15,6 +15,7 @@ TODO:
  * Show unpublished layers in a different style in the dependency list?
 
 Later:
+* Allow adding/editing notes
 * Usage links in list page?
 * Avoid page content changing size depending on whether scrollbar is there or not?
 * Style/extend about page?
@@ -22,7 +23,6 @@ Later:
 * Style machine list on detail
 * Provide a delete function for unpublished layers?
 * Show count of layers to be reviewed next to review button
-* Ability for users to edit existing layers
 * Something to help with compatibility (although maybe this should just be handled using the existing versioned layer dependencies in layer.conf)
 * Query backend service? i.e. special URL to query information for external apps/scripts
 * Tool for finding/comparing duplicate recipes?

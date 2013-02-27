@@ -75,6 +75,13 @@ class LayerItem(models.Model):
     def active_maintainers(self):
         return self.layermaintainer_set.filter(status='A')
 
+    def user_can_edit(self, user):
+        if user.is_authenticated():
+            for maintainer in self.active_maintainers():
+                if maintainer.email == user.email:
+                    return True
+        return False
+
     def __unicode__(self):
         return self.name
 

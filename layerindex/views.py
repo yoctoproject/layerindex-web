@@ -23,46 +23,70 @@ import simplesearch
 import settings
 
 
-def submit_layer(request):
-    if request.method == 'POST':
+def edit_layer_view(request, template_name, slug=None):
+    useredit = False
+    if slug:
+        # Edit mode
+        layeritem = get_object_or_404(LayerItem, name=slug)
+        if not (request.user.is_authenticated() and (request.user.has_perm('layerindex.publish_layer') or layeritem.user_can_edit(request.user))):
+            raise PermissionDenied
+    else:
+        # Submit mode
         layeritem = LayerItem()
+
+    if request.method == 'POST':
         form = SubmitLayerForm(request.POST, instance=layeritem)
         maintainerformset = LayerMaintainerFormSet(request.POST, instance=layeritem)
         if form.is_valid() and maintainerformset.is_valid():
             with transaction.commit_on_success():
                 form.save()
                 maintainerformset.save()
-                # Save dependencies
-                for dep in form.cleaned_data['deps']:
-                    deprec = LayerDependency()
-                    deprec.layer = layeritem
-                    deprec.dependency = dep
-                    deprec.save()
-                # Send email
-                plaintext = get_template('layerindex/submitemail.txt')
-                perm = Permission.objects.get(codename='publish_layer')
-                users = User.objects.filter(Q(groups__permissions=perm) | Q(user_permissions=perm) ).distinct()
-                for user in users:
-                    d = Context({
-                        'user_name': user.get_full_name(),
-                        'layer_name': layeritem.name,
-                        'layer_url': request.build_absolute_uri(reverse('layer_item', args=(layeritem.name,))),
-                    })
-                    subject = '%s - %s' % (settings.SUBMIT_EMAIL_SUBJECT, layeritem.name)
-                    from_email = settings.SUBMIT_EMAIL_FROM
-                    to_email = user.email
-                    text_content = plaintext.render(d)
-                    msg = EmailMessage(subject, text_content, from_email, [to_email])
-                    msg.send()
-                return HttpResponseRedirect(reverse('submit_layer_thanks'))
+                if slug:
+                    new_deps = form.cleaned_data['deps']
+                    existing_deps = [deprec.dependency for deprec in layeritem.dependencies_set.all()]
+                    for dep in new_deps:
+                        if dep not in existing_deps:
+                            deprec = LayerDependency()
+                            deprec.layer = layeritem
+                            deprec.dependency = dep
+                            deprec.save()
+                    for dep in existing_deps:
+                        if dep not in new_deps:
+                            layeritem.dependencies_set.filter(dependency=dep).delete()
+                else:
+                    # Save dependencies
+                    for dep in form.cleaned_data['deps']:
+                        deprec = LayerDependency()
+                        deprec.layer = layeritem
+                        deprec.dependency = dep
+                        deprec.save()
+                    # Send email
+                    plaintext = get_template('layerindex/submitemail.txt')
+                    perm = Permission.objects.get(codename='publish_layer')
+                    users = User.objects.filter(Q(groups__permissions=perm) | Q(user_permissions=perm) ).distinct()
+                    for user in users:
+                        d = Context({
+                            'user_name': user.get_full_name(),
+                            'layer_name': layeritem.name,
+                            'layer_url': request.build_absolute_uri(reverse('layer_item', args=(layeritem.name,))),
+                        })
+                        subject = '%s - %s' % (settings.SUBMIT_EMAIL_SUBJECT, layeritem.name)
+                        from_email = settings.SUBMIT_EMAIL_FROM
+                        to_email = user.email
+                        text_content = plaintext.render(d)
+                        msg = EmailMessage(subject, text_content, from_email, [to_email])
+                        msg.send()
+                    return HttpResponseRedirect(reverse('submit_layer_thanks'))
+            form.was_saved = True
     else:
-        form = SubmitLayerForm()
-        maintainerformset = LayerMaintainerFormSet()
+        form = SubmitLayerForm(instance=layeritem)
+        maintainerformset = LayerMaintainerFormSet(instance=layeritem)
 
-    return render(request, 'layerindex/submitlayer.html', {
+    return render(request, template_name, {
         'form': form,
         'maintainerformset': maintainerformset,
-        'deplistlayers': LayerItem.objects.all().order_by('name')
+        'deplistlayers': LayerItem.objects.all().order_by('name'),
+        'useredit': useredit
     })
 
 def submit_layer_thanks(request):
@@ -98,7 +122,9 @@ class LayerDetailView(DetailView):
     model = LayerItem
     slug_field = 'name'
 
+    # This is a bit of a mess. Surely there has to be a better way to handle this...
     def dispatch(self, request, *args, **kwargs):
+        self.user = request.user
         res = super(LayerDetailView, self).dispatch(request, *args, **kwargs)
         l = self.get_object()
         if l:
@@ -106,6 +132,12 @@ class LayerDetailView(DetailView):
                 if not (request.user.is_authenticated() and request.user.has_perm('layerindex.publish_layer')):
                     raise PermissionDenied
         return res
+
+    def get_context_data(self, **kwargs):
+        context = super(LayerDetailView, self).get_context_data(**kwargs)
+        layer = context['layeritem']
+        context['useredit'] = layer.user_can_edit(self.user)
+        return context
 
 class RecipeSearchView(ListView):
     context_object_name = 'recipe_list'

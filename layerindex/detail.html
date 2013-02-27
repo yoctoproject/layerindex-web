@@ -26,10 +26,15 @@
             <div class="row-fluid">
                 <div class="page-header">
                     <h1>{{ layeritem.name }}
-                        {% if user.is_authenticated and perms.layeritem.publish_layer %}
-                            {% if layeritem.status = "N" %}
-                                <a href="{% url publish layeritem.name %}" class="btn btn-primary pull-right">Publish layer</a>
-                            {% endif %}
+                        {% if user.is_authenticated %}
+                            <span class="pull-right">
+                                {% if perms.layeritem.publish_layer or useredit %}
+                                    <a href="{% url edit_layer layeritem.name %}" class="btn">Edit layer</a>
+                                {% endif %}
+                                {% if layeritem.status = "N" and perms.layeritem.publish_layer %}
+                                    <a href="{% url publish layeritem.name %}" class="btn btn-primary">Publish layer</a>
+                                {% endif %}
+                            </span>
                         {% endif %}
                     </h1>
                 </div>

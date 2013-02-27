@@ -40,11 +40,19 @@ LayerMaintainerFormSet = inlineformset_factory(LayerItem, LayerMaintainer, form=
 
 class SubmitLayerForm(forms.ModelForm):
     # Additional form fields
-    deps = forms.ModelMultipleChoiceField(label='Other layers this layer depends upon', queryset=LayerItem.objects.all(), required=False, initial=[l.pk for l in LayerItem.objects.filter(name='openembedded-core')])
+    deps = forms.ModelMultipleChoiceField(label='Other layers this layer depends upon', queryset=LayerItem.objects.all(), required=False)
 
     class Meta:
         model = LayerItem
         fields = ('name', 'layer_type', 'summary', 'description', 'vcs_url', 'vcs_subdir', 'vcs_web_url', 'vcs_web_tree_base_url', 'vcs_web_file_base_url', 'usage_url', 'mailing_list_url')
+
+    def __init__(self, *args, **kwargs):
+        super(self.__class__, self).__init__(*args, **kwargs)
+        if self.instance.pk:
+            self.fields['deps'].initial = [d.dependency.pk for d in self.instance.dependencies_set.all()]
+        else:
+            self.fields['deps'].initial = [l.pk for l in LayerItem.objects.filter(name='openembedded-core')]
+        self.was_saved = False
 
     def checked_deps(self):
         val = [int(v) for v in self['deps'].value()]
