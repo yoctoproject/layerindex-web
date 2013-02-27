@@ -19,7 +19,6 @@ Later:
 * Style/extend about page?
 * Style recipe info page?
 * Style machine list on detail
-* Provide a delete function for unpublished layers?
 * Show count of layers to be reviewed next to review button
 * Something to help with compatibility (although maybe this should just be handled using the existing versioned layer dependencies in layer.conf)
 * Query backend service? i.e. special URL to query information for external apps/scripts

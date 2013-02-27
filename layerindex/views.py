@@ -62,6 +62,19 @@ def delete_layernote_view(request, template_name, slug, pk):
             'return_url': layeritem.get_absolute_url()
         })
 
+def delete_layer_view(request, template_name, slug):
+    layeritem = get_object_or_404(LayerItem, name=slug)
+    if not (request.user.is_authenticated() and request.user.has_perm('layerindex.publish_layer') and layeritem.status == 'N'):
+        raise PermissionDenied
+    if request.method == 'POST':
+        layeritem.delete()
+        return HttpResponseRedirect(reverse('layer_list'))
+    else:
+        return render(request, template_name, {
+            'object': layeritem,
+            'object_type': layeritem._meta.verbose_name,
+            'return_url': layeritem.get_absolute_url()
+        })
 
 def edit_layer_view(request, template_name, slug=None):
     useredit = False

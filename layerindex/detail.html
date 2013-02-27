@@ -38,6 +38,7 @@
                                     {% endif %}
                                 {% endif %}
                                 {% if layeritem.status = "N" and perms.layeritem.publish_layer %}
+                                    <a href="{% url delete_layer layeritem.name %}" class="btn btn-warning">Delete layer</a>
                                     <a href="{% url publish layeritem.name %}" class="btn btn-primary">Publish layer</a>
                                 {% endif %}
                             </span>
