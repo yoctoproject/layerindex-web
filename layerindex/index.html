@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load i18n %}
+{% load static %}
 
 {% comment %}
 
@@ -111,7 +112,7 @@
 
 
 {% block scripts %}
-<script src="/static/js/uitablefilter.js"></script>
+<script src="{% static "js/uitablefilter.js" %}"></script>
 
 <script>
     $(document).ready(function() {

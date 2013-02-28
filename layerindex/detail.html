@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load i18n %}
+{% load static %}
 
 {% comment %}
 
@@ -237,7 +238,7 @@
 
 
 {% block scripts %}
-    <script src="/static/js/uitablefilter.js" ></script>
+    <script src="{% static "js/uitablefilter.js" %}"></script>
 
     <script>
         // selectText plugin Borrowed from http://jsfiddle.net/edelman/KcX6A/1506/
