@@ -43,13 +43,14 @@ Setup instructions:
 
    python manage.py syncdb
 
-3. You can test the web application locally by running the following:
+3. You can test the web application locally by setting DEBUG = True in
+   settings.py and running the following:
 
    python manage.py runserver
 
    Then visit http://127.0.0.1:8000/layerindex/ with your browser. This
    should only be used for testing - for production you need to use a
-   proper web server.
+   proper web server and have DEBUG set to False.
 
 4. You may wish to customise layerindex/about.html to suit your
    installation.
