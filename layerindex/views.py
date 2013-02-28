@@ -77,7 +77,6 @@ def delete_layer_view(request, template_name, slug):
         })
 
 def edit_layer_view(request, template_name, slug=None):
-    useredit = False
     if slug:
         # Edit mode
         layeritem = get_object_or_404(LayerItem, name=slug)
@@ -139,7 +138,6 @@ def edit_layer_view(request, template_name, slug=None):
         'form': form,
         'maintainerformset': maintainerformset,
         'deplistlayers': LayerItem.objects.all().order_by('name'),
-        'useredit': useredit
     })
 
 def submit_layer_thanks(request):
