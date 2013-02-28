@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% comment %}
+
+  layerindex-web - 404 page template
+
+  Copyright (C) 2013 Intel Corporation
+  Licensed under the MIT license, see COPYING.MIT for details
+
+{% endcomment %}
+
+
+<!--
+{% block title %}OpenEmbedded metadata index - page not found{% endblock %}
+-->
+
+{% block content %}
+{% autoescape on %}
+
+<p>The page you requested was not found.</p>
+
+<p><a href="{% url layer_list %}">Return to the index</a></p>
+
+{% endautoescape %}
+{% endblock %}
