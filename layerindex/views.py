@@ -12,7 +12,7 @@ from django.template import RequestContext
 from layerindex.models import LayerItem, LayerMaintainer, LayerDependency, LayerNote, Recipe, Machine
 from datetime import datetime
 from django.views.generic import DetailView, ListView
-from layerindex.forms import SubmitLayerForm, LayerMaintainerFormSet, EditNoteForm
+from layerindex.forms import EditLayerForm, LayerMaintainerFormSet, EditNoteForm
 from django.db import transaction
 from django.contrib.auth.models import User, Permission
 from django.db.models import Q
@@ -87,7 +87,7 @@ def edit_layer_view(request, template_name, slug=None):
         layeritem = LayerItem()
 
     if request.method == 'POST':
-        form = SubmitLayerForm(request.user, request.POST, instance=layeritem)
+        form = EditLayerForm(request.user, request.POST, instance=layeritem)
         maintainerformset = LayerMaintainerFormSet(request.POST, instance=layeritem)
         if form.is_valid() and maintainerformset.is_valid():
             with transaction.commit_on_success():
@@ -131,7 +131,7 @@ def edit_layer_view(request, template_name, slug=None):
                     return HttpResponseRedirect(reverse('submit_layer_thanks'))
             form.was_saved = True
     else:
-        form = SubmitLayerForm(request.user, instance=layeritem)
+        form = EditLayerForm(request.user, instance=layeritem)
         maintainerformset = LayerMaintainerFormSet(instance=layeritem)
 
     return render(request, template_name, {

@@ -44,7 +44,7 @@ class BaseLayerMaintainerFormSet(forms.models.BaseInlineFormSet):
 
 LayerMaintainerFormSet = inlineformset_factory(LayerItem, LayerMaintainer, form=LayerMaintainerForm, formset=BaseLayerMaintainerFormSet,  can_delete=False, extra=10, max_num=10)
 
-class SubmitLayerForm(forms.ModelForm):
+class EditLayerForm(forms.ModelForm):
     # Additional form fields
     deps = forms.ModelMultipleChoiceField(label='Other layers this layer depends upon', queryset=LayerItem.objects.all(), required=False)
     captcha = CaptchaField(label='Verification', help_text='Please enter the letters displayed for verification purposes', error_messages={'invalid':'Incorrect entry, please try again'})
