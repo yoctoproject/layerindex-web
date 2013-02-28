@@ -21,11 +21,6 @@
         {% endblock %}
 
 
-{% block submitlink %}
-<!-- Disable submit link, otherwise clicking it will blank the form! -->
-<li><a href="#">Submit layer</a></li>
-{% endblock %}
-
 {% block formtag %}
 <form id="edit_layer_form" action="{% url submit_layer %}" method="post">
 {% endblock %}

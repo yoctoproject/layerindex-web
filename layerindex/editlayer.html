@@ -14,6 +14,11 @@
 {% block title %}OpenEmbedded metadata index - edit layer{% endblock %}
 -->
 
+{% block submitlink %}
+<!-- Remove submit link added by base.html, otherwise clicking it may lose changes -->
+{% endblock %}
+
+
 {% block content %}
 {% autoescape on %}
 
