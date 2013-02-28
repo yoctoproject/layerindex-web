@@ -30,14 +30,14 @@
         </div>
         {% endblock %}
 
-{% block formtag %}
+{% block formtop %}
 {% if form.was_saved %}
     <div class="alert alert-success">
         Changes saved successfully.
     </div>
 {% endif %}
-<form id="edit_layer_form" action="{% url edit_layer form.instance.name %}" method="post">
 {% endblock %}
+<form id="edit_layer_form" method="post">
 {% csrf_token %}
     {% for hidden in form.hidden_fields %}
         {{ hidden }}
@@ -235,6 +235,10 @@
         $('#addanothermaintainer').click(expand_maintainer)
 
         $('#id_vcs_url').change(auto_web_fields)
+
+        firstfield = $("#edit_layer_form input:text, #edit_layer_form textarea").first();
+        if( ! firstfield.val() )
+            firstfield.focus()
     });
 </script>
 {% endblock %}

@@ -72,6 +72,10 @@ padding: 8px;
     margin: 0px;
 }
 
+.submitformintro {
+    padding-bottom: 0.75em;
+}
+
 .formfields input {
     width: 50%;
 }
