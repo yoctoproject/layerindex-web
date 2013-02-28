@@ -88,7 +88,7 @@ def edit_layer_view(request, template_name, slug=None):
         layeritem = LayerItem()
 
     if request.method == 'POST':
-        form = SubmitLayerForm(request.POST, instance=layeritem)
+        form = SubmitLayerForm(request.user, request.POST, instance=layeritem)
         maintainerformset = LayerMaintainerFormSet(request.POST, instance=layeritem)
         if form.is_valid() and maintainerformset.is_valid():
             with transaction.commit_on_success():
@@ -132,7 +132,7 @@ def edit_layer_view(request, template_name, slug=None):
                     return HttpResponseRedirect(reverse('submit_layer_thanks'))
             form.was_saved = True
     else:
-        form = SubmitLayerForm(instance=layeritem)
+        form = SubmitLayerForm(request.user, instance=layeritem)
         maintainerformset = LayerMaintainerFormSet(instance=layeritem)
 
     return render(request, template_name, {

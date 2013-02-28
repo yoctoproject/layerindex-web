@@ -29,6 +29,7 @@ In order to make use of this application you will need:
 * django-registration
 * django-reversion
 * django-reversion-compare
+* django-simple-captcha
 
 Setup instructions:
 

@@ -45,6 +45,7 @@
 
     <div class="formfields">
         {% for field in form.visible_fields %}
+            {% if field.name != 'captcha' %}
             {% if field.errors %}
             <div class="control-group alert alert-error">
             {{ field.errors }}
@@ -92,6 +93,7 @@
                     </span>
                 </div>
             </div>
+            {% endif %}
         {% endfor %}
     </div>
     <h3 id="maintainers">Maintainers</h3>
@@ -115,16 +117,39 @@
                         <div class="control-label">
                             {{ field.label_tag }}
                         </div>
-                        {{ field }}
-                        <span class="help-inline custom-help">
-                            {{ field.help_text }}
-                        </span>
+                        <div class="controls">
+                            {{ field }}
+                            <span class="help-inline custom-help">
+                                {{ field.help_text }}
+                            </span>
+                        </div>
                     </div>
                 {% endfor %}
             </div>
         </div>
     {% endfor %}
     <p><a href="#" class="btn btn-small" id="addanothermaintainer"><i class="icon-plus"></i>Add maintainer</a><p>
+
+
+    {% if form.captcha %}
+        <div class="captchafield">
+            <h3>Verification</h3>
+            {% if form.captcha.errors %}
+            <div class="control-group alert alert-error">
+            {{ form.captcha.errors }}
+            {% else %}
+            <div class="control-group">
+            {% endif %}
+                <div class="controls">
+                    {{ form.captcha }}
+                    <span class="help-inline custom-help">
+                        {{ form.captcha.help_text }}
+                    </span>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
 <div class="submitbuttons">
 {% block submitbuttons %}
 <input type="submit" value="Save layer" class="btn btn-primary btn-large" />

@@ -14,5 +14,6 @@ urlpatterns = patterns('',
     url(r'^layerindex/', include('layerindex.urls')),
     url(r'^admin/', include(admin.site.urls)),
     url(r'^accounts/', include('registration.urls')),
+    url(r'^captcha/', include('captcha.urls')),
 )
 

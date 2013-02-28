@@ -140,7 +140,8 @@ INSTALLED_APPS = (
     'layerindex',
     'registration',
     'reversion',
-    'reversion_compare'
+    'reversion_compare',
+    'captcha'
 )
 
 # A sample logging configuration. The only tangible logging

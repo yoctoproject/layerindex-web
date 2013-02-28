@@ -8,6 +8,7 @@ from layerindex.models import LayerItem, LayerMaintainer, LayerNote
 from django import forms
 from django.core.validators import URLValidator, RegexValidator, email_re
 from django.forms.models import inlineformset_factory
+from captcha.fields import CaptchaField
 import re
 
 
@@ -46,17 +47,21 @@ LayerMaintainerFormSet = inlineformset_factory(LayerItem, LayerMaintainer, form=
 class SubmitLayerForm(forms.ModelForm):
     # Additional form fields
     deps = forms.ModelMultipleChoiceField(label='Other layers this layer depends upon', queryset=LayerItem.objects.all(), required=False)
+    captcha = CaptchaField(label='Verification', help_text='Please enter the letters displayed for verification purposes', error_messages={'invalid':'Incorrect entry, please try again'})
 
     class Meta:
         model = LayerItem
         fields = ('name', 'layer_type', 'summary', 'description', 'vcs_url', 'vcs_subdir', 'vcs_web_url', 'vcs_web_tree_base_url', 'vcs_web_file_base_url', 'usage_url', 'mailing_list_url')
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, user, *args, **kwargs):
         super(self.__class__, self).__init__(*args, **kwargs)
         if self.instance.pk:
             self.fields['deps'].initial = [d.dependency.pk for d in self.instance.dependencies_set.all()]
+            del self.fields['captcha']
         else:
             self.fields['deps'].initial = [l.pk for l in LayerItem.objects.filter(name='openembedded-core')]
+            if user.is_authenticated():
+                del self.fields['captcha']
         self.was_saved = False
 
     def checked_deps(self):
