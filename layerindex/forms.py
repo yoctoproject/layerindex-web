@@ -117,6 +117,13 @@ class EditLayerForm(forms.ModelForm):
             val(url)
         return url
 
+    def clean_usage_url(self):
+        usage = self.cleaned_data['usage_url'].strip()
+        if usage.startswith('http'):
+            val = URLValidator(verify_exists=False)
+            val(usage)
+        return usage
+
 
 class EditNoteForm(forms.ModelForm):
     class Meta:

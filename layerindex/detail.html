@@ -79,7 +79,7 @@
                     <p>
                         {% if layeritem.usage_url %}
                             <span class="label label-info">
-                                <a href="{{ layeritem.usage_url }}">Setup information</a>
+                                <a href="{{ layerbranch.get_usage_url }}">Setup information</a>
                             </span>
                         {% endif %}
                         {% if layeritem.mailing_list_url %}

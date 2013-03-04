@@ -44,7 +44,7 @@ class LayerItem(models.Model):
     vcs_web_url = models.URLField('Repository web interface URL', blank=True, help_text='URL of the web interface for browsing the repository, if any')
     vcs_web_tree_base_url = models.CharField('Repository web interface tree base URL', max_length=200, blank=True, help_text='Base URL for the web interface for browsing directories within the repository, if any')
     vcs_web_file_base_url = models.CharField('Repository web interface file base URL', max_length=200, blank=True, help_text='Base URL for the web interface for viewing files (blobs) within the repository, if any')
-    usage_url = models.URLField('Usage web page URL', blank=True, help_text='URL of a web page with more information about the layer and how to use it, if any')
+    usage_url = models.CharField('Usage web page URL', max_length=200, blank=True, help_text='URL of a web page with more information about the layer and how to use it, if any (or path to file within repository)')
     mailing_list_url = models.URLField('Mailing list URL', blank=True, help_text='URL of the info page for a mailing list for discussing the layer, if any')
 
     class Meta:
@@ -131,6 +131,13 @@ class LayerBranch(models.Model):
 
     def test_file_url(self):
         return self.file_url('conf/layer.conf')
+
+    def get_usage_url(self):
+        usage_url = self.layer.usage_url
+        if usage_url.startswith('http'):
+            return usage_url
+        else:
+            return self.file_url(usage_url)
 
     def __unicode__(self):
         return "%s: %s" % (self.layer.name, self.branch.name)
