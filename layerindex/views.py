@@ -82,9 +82,11 @@ def edit_layer_view(request, template_name, slug=None):
         layeritem = get_object_or_404(LayerItem, name=slug)
         if not (request.user.is_authenticated() and (request.user.has_perm('layerindex.publish_layer') or layeritem.user_can_edit(request.user))):
             raise PermissionDenied
+        deplistlayers = LayerItem.objects.exclude(id=layeritem.id).order_by('name')
     else:
         # Submit mode
         layeritem = LayerItem()
+        deplistlayers = LayerItem.objects.all().order_by('name')
 
     if request.method == 'POST':
         form = EditLayerForm(request.user, request.POST, instance=layeritem)
@@ -137,7 +139,7 @@ def edit_layer_view(request, template_name, slug=None):
     return render(request, template_name, {
         'form': form,
         'maintainerformset': maintainerformset,
-        'deplistlayers': LayerItem.objects.all().order_by('name'),
+        'deplistlayers': deplistlayers,
     })
 
 def submit_layer_thanks(request):
