@@ -15,16 +15,12 @@ In order to make use of this application you will need:
 * A database supported by Django (SQLite, MySQL, etc.). Django takes
   care of creating the database itself, you just need to ensure that the
   database server (if not using SQLite) is configured and running.
-* On the machine that will run the update script (which does not have to
-  be the same machine as the web server, however it does still have to
-  have Django installed and have access to the database used by the web
+* On the machine that will run the backend update script (which does not
+  have to be the same machine as the web server, however it does still
+  have to have Django installed, have the same or similar configuration
+  in settings.py and have access to the database used by the web
   application):
   * Python 2.6 or Python 2.7
-  * A copy of BitBake and OE-Core (or Poky, which includes both) -
-    the "danny" release or newer is required. It does not need to be
-    configured specially nor do all of the normal pre-requisites need to
-    be installed (it is only used for parsing recipes, not actual
-    building).
   * GitPython (python-git) version 0.3.1 or later
 * django-registration
 * django-reversion
@@ -43,31 +39,45 @@ Setup instructions:
 
    python manage.py syncdb
 
+   You should answer "yes" when asked to create an admin account.
+
 3. You can test the web application locally by setting DEBUG = True in
    settings.py and running the following:
 
    python manage.py runserver
 
-   Then visit http://127.0.0.1:8000/layerindex/ with your browser. This
-   should only be used for testing - for production you need to use a
-   proper web server and have DEBUG set to False.
+   Then visit http://127.0.0.1:8000/layerindex/ with your browser. As
+   with all Django applications there is an admin interface available
+   at http://127.0.0.1:8000/admin/ also.
 
-4. You may wish to customise layerindex/about.html to suit your
+   NOTE: This local server should only be used for testing - for
+   production you need to use a proper web server and have DEBUG set
+   to False.
+
+4. You'll need to add at least the openembedded-core layer to the
+   database (or some equivalent for use in basic BitBake configuration;
+   if it's not called "openembedded-core" then you'll need to set
+   CORE_LAYER_NAME in settings.py to match.) You can use the 
+   "Submit Layer" feature within the interface itself (easiest) or the
+   admin interface to do this.
+
+5. You may wish to customise layerindex/about.html to suit your
    installation.
 
 
 Usage
 -----
 
-On a regular basis you need to run the update script within an
-environment set up for OE-Core build:
+On a regular basis you need to run the update script:
 
-$ cd path/to/oe-core
-$ . ./oe-init-build-env
-$ path/to/layerindex/update.py
+path/to/layerindex/update.py
 
 This will fetch all of the layer repositories, analyse their contents
-and update the database with the results.
+and update the database with the results. Note that if you set up more
+than just the master branch in the database, you will need to run the
+script once for each branch using -b (or --branch) to specify the
+branch name. Run the script with --help for further information on
+available options.
 
 
 Maintenance

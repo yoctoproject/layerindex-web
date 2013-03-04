@@ -115,6 +115,7 @@ X_FRAME_OPTIONS = 'DENY'
 from django.conf.global_settings import TEMPLATE_CONTEXT_PROCESSORS as TCP
 TEMPLATE_CONTEXT_PROCESSORS = TCP + (
     'django.core.context_processors.request',
+    'layerindex.context_processors.layerindex_context',
 )
 
 ROOT_URLCONF = 'urls'
@@ -174,6 +175,12 @@ LOGIN_REDIRECT_URL = '/layerindex'
 
 # Full path to directory where layers should be fetched into by the update script
 LAYER_FETCH_DIR = ""
+
+# Fetch URL of the BitBake repository for the update script
+BITBAKE_REPO_URL = "git://git.openembedded.org/bitbake"
+
+# Core layer to be used by the update script for basic BitBake configuration
+CORE_LAYER_NAME = "openembedded-core"
 
 # Settings for layer submission feature
 SUBMIT_EMAIL_FROM = 'noreply@example.com'

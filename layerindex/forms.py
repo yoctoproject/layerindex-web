@@ -4,7 +4,7 @@
 #
 # Licensed under the MIT license, see COPYING.MIT for details
 
-from layerindex.models import LayerItem, LayerMaintainer, LayerNote
+from layerindex.models import LayerItem, LayerBranch, LayerMaintainer, LayerNote
 from django import forms
 from django.core.validators import URLValidator, RegexValidator, email_re
 from django.forms.models import inlineformset_factory
@@ -42,7 +42,7 @@ class BaseLayerMaintainerFormSet(forms.models.BaseInlineFormSet):
             f.required = True
         return f
 
-LayerMaintainerFormSet = inlineformset_factory(LayerItem, LayerMaintainer, form=LayerMaintainerForm, formset=BaseLayerMaintainerFormSet,  can_delete=False, extra=10, max_num=10)
+LayerMaintainerFormSet = inlineformset_factory(LayerBranch, LayerMaintainer, form=LayerMaintainerForm, formset=BaseLayerMaintainerFormSet,  can_delete=False, extra=10, max_num=10)
 
 class EditLayerForm(forms.ModelForm):
     # Additional form fields
@@ -53,10 +53,11 @@ class EditLayerForm(forms.ModelForm):
         model = LayerItem
         fields = ('name', 'layer_type', 'summary', 'description', 'vcs_url', 'vcs_subdir', 'vcs_web_url', 'vcs_web_tree_base_url', 'vcs_web_file_base_url', 'usage_url', 'mailing_list_url')
 
-    def __init__(self, user, *args, **kwargs):
+    def __init__(self, user, layerbranch, *args, **kwargs):
         super(self.__class__, self).__init__(*args, **kwargs)
+        self.layerbranch = layerbranch
         if self.instance.pk:
-            self.fields['deps'].initial = [d.dependency.pk for d in self.instance.dependencies_set.all()]
+            self.fields['deps'].initial = [d.dependency.pk for d in self.layerbranch.dependencies_set.all()]
             del self.fields['captcha']
         else:
             self.fields['deps'].initial = [l.pk for l in LayerItem.objects.filter(name='openembedded-core')]

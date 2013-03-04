@@ -50,6 +50,13 @@
         </div> <!-- end of container-fluid -->
 
         <div class="container-fluid">
+            {% if not layerbranch %}
+            <div class="row-fluid">
+                <div class="alert alert-error">
+                    This layer does not exist for branch {{ current_branch }}.
+                </div>
+            </div>
+            {% endif %}
             <div class="row-fluid">
                 {% for note in layeritem.layernote_set.all %}
                     <div class="alert">
@@ -95,24 +102,25 @@
                     {% if layeritem.vcs_subdir %}
                         <h4>Subdirectory</h4>
                         <p><span data-toggle="tooltip" title="Select subdirectory"><i class="icon-circle-arrow-right selectallicon" for="vcs_subdir" id="vcs_subdir_select"></i></span><span id="vcs_subdir" class="copyable">{{ layeritem.vcs_subdir }}</span>
-                            {% if layeritem.tree_url %}
+                            {% if layerbranch.tree_url %}
                                 <span class="label label-info">
-                                    <a href="{{ layeritem.tree_url }}">web subdirectory</a>
+                                    <a href="{{ layerbranch.tree_url }}">web subdirectory</a>
                                 </span>
                             {% endif %}
                         </p>
                     {% endif %}
 
-                    {% if layeritem.vcs_last_commit %}
+                    {% if layerbranch.vcs_last_commit %}
                     <p>
-                    <span class="muted"><small>Last commit: {{ layeritem.vcs_last_commit|timesince }} ago</small></span>
+                    <span class="muted"><small>Last commit: {{ layerbranch.vcs_last_commit|timesince }} ago</small></span>
                     </p>
                     {% endif %}
 
-                    <h3>{% if layeritem.active_maintainers|length = 1 %}Maintainer{% else %}Maintainers{% endif %}</h3>
+                    {% if layerbranch.active_maintainers.count > 0 %}
+                    <h3>{% if layerbranch.active_maintainers|length = 1 %}Maintainer{% else %}Maintainers{% endif %}</h3>
 
                     <ul>
-                        {% for maintainer in layeritem.active_maintainers %}
+                        {% for maintainer in layerbranch.active_maintainers %}
                         <li>
                             {{ maintainer.name }}
                             {% if maintainer.responsibility %}
@@ -125,16 +133,17 @@
                         </li>
                         {% endfor %}
                     </ul>
+                    {% endif %}
 
                 </div> <!-- end of span7 -->
 
                 <div class="span4 pull-right description">
-                    {% if layeritem.dependencies_set.all %}
+                    {% if layerbranch.dependencies_set.count > 0 %}
                          <div class="well dependency-well">
                             <h3>Dependencies </h3>
                             <p>The {{ layeritem.name }} layer depends upon:</p>
                             <ul>
-                                {% for dep in layeritem.dependencies_set.all %}
+                                {% for dep in layerbranch.dependencies_set.all %}
                                     <li><a href="{% url layer_item dep.dependency.name %}">{{ dep.dependency.name }}</a></li>
                                 {% endfor %}
                             </ul>
@@ -145,11 +154,11 @@
             </div>  <!-- end of row-fluid -->
         </div> <!-- end of container-fluid -->
 
-        {% if layeritem.status = 'N' %}
+        {% if layeritem.status = 'N' and layerbranch %}
             <div class="container-fluid" style="margin-bottom:1em;">
                 {% if layeritem.vcs_web_file_base_url %}
                 <span class="label label-important">
-                    <a href="{{ layeritem.test_file_url }}">test file link</a>
+                    <a href="{{ layerbranch.test_file_url }}">test file link</a>
                 </span>
                 {% else %}
                 <span class="label">
@@ -158,7 +167,7 @@
                 {% endif %}
                 {% if layeritem.vcs_web_tree_base_url %}
                 <span class="label label-important">
-                    <a href="{{ layeritem.test_tree_url }}">test tree link</a>
+                    <a href="{{ layerbranch.test_tree_url }}">test tree link</a>
                 </span>
                 {% else %}
                 <span class="label">
@@ -167,7 +176,7 @@
                 {% endif %}
             </div>
         {% else %}
-        {% if layeritem.machine_set.count > 0 %}
+        {% if layerbranch.machine_set.count > 0 %}
         <div class="container-fluid" style="margin-bottom:1em;">
             <div class="row-fluid">
                 <div class="navbar">
@@ -178,7 +187,7 @@
 
                 <table class="table table-bordered">
                     <tbody>
-                        {% for machine in layeritem.machine_set.all %}
+                        {% for machine in layerbranch.machine_set.all %}
                             <tr>
                                 <td><a href="{{ machine.vcs_web_url }}">{{ machine.name }}</a></td>
                                 <td>{{ machine.description }}</td>
@@ -190,6 +199,7 @@
          </div>
         {% endif %}
 
+        {% if layerbranch.recipe_set.count > 0 %}
         <div class="container-fluid" style="margin-bottom:1em;">
             <div class="row-fluid">
                 <div class="navbar">
@@ -217,7 +227,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {% for recipe in layeritem.sorted_recipes %}
+                            {% for recipe in layerbranch.sorted_recipes %}
                                 <tr>
                                     <td><a href="{% url recipe recipe.id %}">{{ recipe.name }}</a></td>
                                     <td>{{ recipe.pv }}</td>
@@ -228,6 +238,7 @@
                     </table>
                 </div>
         </div>
+        {% endif %}
         {% endif %}
 
 {% endautoescape %}

@@ -14,34 +14,39 @@ class LayerMaintainerInline(admin.StackedInline):
 
 class LayerDependencyInline(admin.StackedInline):
     model = LayerDependency
-    fk_name = 'layer'
+
+class BranchAdmin(CompareVersionAdmin):
+    model = Branch
 
 class LayerItemAdmin(CompareVersionAdmin):
     list_filter = ['status', 'layer_type']
     save_as = True
     search_fields = ['name', 'summary']
-    readonly_fields = ['vcs_last_fetch', 'vcs_last_rev', 'vcs_last_commit']
     formfield_overrides = {
         models.URLField: {'widget': TextInput(attrs={'size':'100'})},
         models.CharField: {'widget': TextInput(attrs={'size':'100'})},
     }
+
+class LayerBranchAdmin(CompareVersionAdmin):
+    list_filter = ['layer__name']
+    readonly_fields = ['layer', 'branch', 'vcs_last_fetch', 'vcs_last_rev', 'vcs_last_commit']
     inlines = [
-        LayerMaintainerInline,
         LayerDependencyInline,
+        LayerMaintainerInline,
     ]
 
 class LayerMaintainerAdmin(CompareVersionAdmin):
-    list_filter = ['status', 'layer__name']
+    list_filter = ['status', 'layerbranch__layer__name']
 
 class LayerDependencyAdmin(CompareVersionAdmin):
-    list_filter = ['layer__name']
+    list_filter = ['layerbranch__layer__name']
 
 class LayerNoteAdmin(CompareVersionAdmin):
     list_filter = ['layer__name']
 
 class RecipeAdmin(admin.ModelAdmin):
     search_fields = ['filename', 'pn']
-    list_filter = ['layer__name']
+    list_filter = ['layerbranch__layer__name', 'layerbranch__branch__name']
     readonly_fields = [fieldname for fieldname in Recipe._meta.get_all_field_names() if fieldname != 'recipefiledependency']
     def has_add_permission(self, request, obj=None):
         return False
@@ -50,14 +55,16 @@ class RecipeAdmin(admin.ModelAdmin):
 
 class MachineAdmin(admin.ModelAdmin):
     search_fields = ['name']
-    list_filter = ['layer__name']
+    list_filter = ['layerbranch__layer__name', 'layerbranch__branch__name']
     readonly_fields = Machine._meta.get_all_field_names()
     def has_add_permission(self, request, obj=None):
         return False
     def has_delete_permission(self, request, obj=None):
         return False
 
+admin.site.register(Branch, BranchAdmin)
 admin.site.register(LayerItem, LayerItemAdmin)
+admin.site.register(LayerBranch, LayerBranchAdmin)
 admin.site.register(LayerMaintainer, LayerMaintainerAdmin)
 admin.site.register(LayerDependency, LayerDependencyAdmin)
 admin.site.register(LayerNote, LayerNoteAdmin)

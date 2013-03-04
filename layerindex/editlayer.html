@@ -180,35 +180,35 @@
         if( repoval.startsWith('git://git.openembedded.org/') ) {
             reponame = repoval.replace(/^.*\//, '')
             $('#id_vcs_web_url').val('http://cgit.openembedded.org/cgit.cgi/' + reponame)
-            $('#id_vcs_web_tree_base_url').val('http://cgit.openembedded.org/cgit.cgi/' + reponame + '/tree/')
-            $('#id_vcs_web_file_base_url').val('http://cgit.openembedded.org/cgit.cgi/' + reponame + '/tree/')
+            $('#id_vcs_web_tree_base_url').val('http://cgit.openembedded.org/cgit.cgi/' + reponame + '/tree/%path%?h=%branch%')
+            $('#id_vcs_web_file_base_url').val('http://cgit.openembedded.org/cgit.cgi/' + reponame + '/tree/%path%?h=%branch%')
         }
         else if( repoval.indexOf('git.yoctoproject.org/') > -1 ) {
             reponame = repoval.replace(/^.*\//, '')
             $('#id_vcs_web_url').val('http://git.yoctoproject.org/cgit/cgit.cgi/' + reponame)
-            $('#id_vcs_web_tree_base_url').val('http://git.yoctoproject.org/cgit/cgit.cgi/' + reponame + '/tree/')
-            $('#id_vcs_web_file_base_url').val('http://git.yoctoproject.org/cgit/cgit.cgi/' + reponame + '/tree/')
+            $('#id_vcs_web_tree_base_url').val('http://git.yoctoproject.org/cgit/cgit.cgi/' + reponame + '/tree/%path%?h=%branch%')
+            $('#id_vcs_web_file_base_url').val('http://git.yoctoproject.org/cgit/cgit.cgi/' + reponame + '/tree/%path%?h=%branch%')
         }
         else if( repoval.indexOf('github.com/') > -1 ) {
             reponame = repoval.replace(/^.*github.com\//, '')
             reponame = reponame.replace(/.git$/, '')
             $('#id_vcs_web_url').val('http://github.com/' + reponame)
-            $('#id_vcs_web_tree_base_url').val('http://github.com/' + reponame + '/tree/master/')
-            $('#id_vcs_web_file_base_url').val('http://github.com/' + reponame + '/blob/master/')
+            $('#id_vcs_web_tree_base_url').val('http://github.com/' + reponame + '/tree/%branch%/')
+            $('#id_vcs_web_file_base_url').val('http://github.com/' + reponame + '/blob/%branch%/')
         }
         else if( repoval.indexOf('gitorious.org/') > -1 ) {
             reponame = repoval.replace(/^.*gitorious.org\//, '')
             reponame = reponame.replace(/.git$/, '')
             $('#id_vcs_web_url').val('http://gitorious.org/' + reponame)
-            $('#id_vcs_web_tree_base_url').val('http://gitorious.org/' + reponame + '/trees/master/')
-            $('#id_vcs_web_file_base_url').val('http://gitorious.org/' + reponame + '/blobs/master/')
+            $('#id_vcs_web_tree_base_url').val('http://gitorious.org/' + reponame + '/trees/%branch%/')
+            $('#id_vcs_web_file_base_url').val('http://gitorious.org/' + reponame + '/blobs/%branch%/')
         }
         else if( repoval.indexOf('bitbucket.org/') > -1 ) {
             reponame = repoval.replace(/^.*bitbucket.org\//, '')
             reponame = reponame.replace(/.git$/, '')
             $('#id_vcs_web_url').val('http://bitbucket.org/' + reponame)
-            $('#id_vcs_web_tree_base_url').val('http://bitbucket.org/' + reponame + '/src/master/%path%?at=master')
-            $('#id_vcs_web_file_base_url').val('http://bitbucket.org/' + reponame + '/src/master/%path%?at=master')
+            $('#id_vcs_web_tree_base_url').val('http://bitbucket.org/' + reponame + '/src/%branch%/%path%?at=%branch%')
+            $('#id_vcs_web_file_base_url').val('http://bitbucket.org/' + reponame + '/src/%branch%/%path%?at=%branch%')
         }
     };
 

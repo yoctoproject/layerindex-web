@@ -108,7 +108,7 @@ def update_recipe_file(data, path, recipe, layerdir_start, repodir):
         RecipeFileDependency.objects.filter(recipe=recipe).delete()
         for filedep in filedeps:
             recipedep = RecipeFileDependency()
-            recipedep.layer = recipe.layer
+            recipedep.layerbranch = recipe.layerbranch
             recipedep.recipe = recipe
             recipedep.path = filedep
             recipedep.save()
@@ -132,30 +132,19 @@ def parse_layer_conf(layerdir, data):
     data = bb.cooker._parse(os.path.join(layerdir, "conf", "layer.conf"), data)
     data.expandVarref('LAYERDIR')
 
-def setup_bitbake_path(basepath):
-    # Set path to bitbake lib dir
-    bitbakedir_env = os.environ.get('BITBAKEDIR', '')
-    if bitbakedir_env and os.path.exists(bitbakedir_env + '/lib/bb'):
-        bitbakepath = bitbakedir_env
-    elif basepath and os.path.exists(basepath + '/bitbake/lib/bb'):
-        bitbakepath = basepath + '/bitbake'
-    elif basepath and os.path.exists(basepath + '/../bitbake/lib/bb'):
-        bitbakepath = os.path.abspath(basepath + '/../bitbake')
-    else:
-        # look for bitbake/bin dir in PATH
-        bitbakepath = None
-        for pth in os.environ['PATH'].split(':'):
-            if os.path.exists(os.path.join(pth, '../lib/bb')):
-                bitbakepath = os.path.abspath(os.path.join(pth, '..'))
-                break
-        if not bitbakepath:
-            if basepath:
-                logger.error("Unable to find bitbake by searching BITBAKEDIR, specified path '%s' or its parent, or PATH" % basepath)
-            else:
-                logger.error("Unable to find bitbake by searching BITBAKEDIR or PATH")
-            sys.exit(1)
-    return bitbakepath
+def get_branch(branchname):
+    from layerindex.models import Branch
+    res = list(Branch.objects.filter(name=branchname)[:1])
+    if res:
+        return res[0]
+    return None
 
+def get_layer(layername):
+    from layerindex.models import LayerItem
+    res = list(LayerItem.objects.filter(name=layername)[:1])
+    if res:
+        return res[0]
+    return None
 
 def main():
     if LooseVersion(git.__version__) < '0.3.1':
@@ -167,6 +156,9 @@ def main():
         usage = """
     %prog [options]""")
 
+    parser.add_option("-b", "--branch",
+            help = "Specify branch to update",
+            action="store", dest="branch", default='master')
     parser.add_option("-l", "--layer",
             help = "Specify layers to update (use commas to separate multiple). Default is all published layers.",
             action="store", dest="layers")
@@ -196,39 +188,16 @@ def main():
 
     from django.core.management import setup_environ
     from django.conf import settings
-    from layerindex.models import LayerItem, Recipe, RecipeFileDependency, Machine
+    from layerindex.models import LayerItem, LayerBranch, Recipe, RecipeFileDependency, Machine
     from django.db import transaction
     import settings
 
     setup_environ(settings)
 
-    if len(sys.argv) > 1:
-        basepath = os.path.abspath(sys.argv[1])
-    else:
-        basepath = None
-    bitbakepath = setup_bitbake_path(None)
-
-    # Skip sanity checks
-    os.environ['BB_ENV_EXTRAWHITE'] = 'DISABLE_SANITY_CHECKS'
-    os.environ['DISABLE_SANITY_CHECKS'] = '1'
-
-    sys.path.extend([bitbakepath + '/lib'])
-    import bb.tinfoil
-    import bb.cooker
-    tinfoil = bb.tinfoil.Tinfoil()
-    tinfoil.prepare(config_only = True)
-
-    logger.setLevel(options.loglevel)
-
-    # Clear the default value of SUMMARY so that we can use DESCRIPTION instead if it hasn't been set
-    tinfoil.config_data.setVar('SUMMARY', '')
-    # Clear the default value of DESCRIPTION so that we can see where it's not set
-    tinfoil.config_data.setVar('DESCRIPTION', '')
-    # Clear the default value of HOMEPAGE ('unknown')
-    tinfoil.config_data.setVar('HOMEPAGE', '')
-    # Set a blank value for LICENSE so that it doesn't cause the parser to die (e.g. with meta-ti -
-    # why won't they just fix that?!)
-    tinfoil.config_data.setVar('LICENSE', '')
+    branch = get_branch(options.branch)
+    if not branch:
+        logger.error("Specified branch %s is not valid" % options.branch)
+        sys.exit(1)
 
     fetchdir = settings.LAYER_FETCH_DIR
     if not fetchdir:
@@ -251,6 +220,8 @@ def main():
     fetchedrepos = []
     failedrepos = []
 
+    bitbakepath = os.path.join(fetchdir, 'bitbake')
+
     if not options.nofetch:
         # Fetch latest metadata from repositories
         for layer in layerquery:
@@ -264,12 +235,56 @@ def main():
                     if not os.path.exists(repodir):
                         out = runcmd("git clone %s %s" % (layer.vcs_url, urldir), fetchdir)
                     else:
-                        out = runcmd("git pull", repodir)
+                        out = runcmd("git fetch", repodir)
                 except Exception as e:
                     logger.error("fetch failed: %s" % str(e))
                     failedrepos.append(layer.vcs_url)
                     continue
                 fetchedrepos.append(layer.vcs_url)
+
+        logger.info("Fetching bitbake from remote repository %s" % settings.BITBAKE_REPO_URL)
+        if not os.path.exists(bitbakepath):
+            out = runcmd("git clone %s %s" % (settings.BITBAKE_REPO_URL, 'bitbake'), fetchdir)
+        else:
+            out = runcmd("git fetch", bitbakepath)
+
+    # Check out the branch of BitBake appropriate for this branch and clean out any stale files (e.g. *.pyc)
+    out = runcmd("git checkout origin/%s" % branch.bitbake_branch, bitbakepath)
+    out = runcmd("git clean -f -x", bitbakepath)
+
+    # Skip sanity checks
+    os.environ['BB_ENV_EXTRAWHITE'] = 'DISABLE_SANITY_CHECKS'
+    os.environ['DISABLE_SANITY_CHECKS'] = '1'
+
+    # Ensure we have OE-Core set up to get some base configuration
+    core_layer = get_layer(settings.CORE_LAYER_NAME)
+    if not core_layer:
+        logger.error("Unable to find core layer %s in database; check CORE_LAYER_NAME setting" % settings.CORE_LAYER_NAME)
+        sys.exit(1)
+    core_urldir = sanitise_path(core_layer.vcs_url)
+    core_repodir = os.path.join(fetchdir, core_urldir)
+    core_layerdir = os.path.join(core_repodir, core_layer.vcs_subdir)
+    out = runcmd("git checkout origin/%s" % options.branch, core_repodir)
+    out = runcmd("git clean -f -x", core_repodir)
+    os.environ['BBPATH'] = str("%s:%s" % (os.path.realpath('.'), core_layerdir))
+
+    sys.path.extend([bitbakepath + '/lib'])
+    import bb.tinfoil
+    import bb.cooker
+    tinfoil = bb.tinfoil.Tinfoil()
+    tinfoil.prepare(config_only = True)
+
+    logger.setLevel(options.loglevel)
+
+    # Clear the default value of SUMMARY so that we can use DESCRIPTION instead if it hasn't been set
+    tinfoil.config_data.setVar('SUMMARY', '')
+    # Clear the default value of DESCRIPTION so that we can see where it's not set
+    tinfoil.config_data.setVar('DESCRIPTION', '')
+    # Clear the default value of HOMEPAGE ('unknown')
+    tinfoil.config_data.setVar('HOMEPAGE', '')
+    # Set a blank value for LICENSE so that it doesn't cause the parser to die (e.g. with meta-ti -
+    # why won't they just fix that?!)
+    tinfoil.config_data.setVar('LICENSE', '')
 
     # Process and extract data from each layer
     for layer in layerquery:
@@ -282,23 +297,51 @@ def main():
                 logger.info("Skipping update of layer %s as fetch of repository %s failed" % (layer.name, layer.vcs_url))
                 transaction.rollback()
                 continue
+
             # Collect repo info
             repo = git.Repo(repodir)
             assert repo.bare == False
-            topcommit = repo.commit('master')
+            try:
+                topcommit = repo.commit('origin/%s' % options.branch)
+            except:
+                logger.info("Skipping update of layer %s - branch %s doesn't exist" % (layer.name, options.branch))
+                transaction.rollback()
+                continue
+
             if layer.vcs_subdir:
                 # Find latest commit in subdirectory
                 # A bit odd to do it this way but apparently there's no other way in the GitPython API
-                for commit in repo.iter_commits(paths=layer.vcs_subdir):
+                for commit in repo.iter_commits('origin/%s' % options.branch, paths=layer.vcs_subdir):
                     topcommit = commit
                     break
 
+            layerbranch = layer.get_layerbranch(options.branch)
+            if not layerbranch:
+                # LayerBranch doesn't exist for this branch, create it
+                layerbranch = LayerBranch()
+                layerbranch.layer = layer
+                layerbranch.branch = branch
+                layerbranch.save()
+
             layerdir = os.path.join(repodir, layer.vcs_subdir)
             layerdir_start = os.path.normpath(layerdir) + os.sep
-            layerrecipes = Recipe.objects.filter(layer=layer)
-            layermachines = Machine.objects.filter(layer=layer)
-            if layer.vcs_last_rev != topcommit.hexsha or options.reload:
-                logger.info("Collecting data for layer %s" % layer.name)
+            layerrecipes = Recipe.objects.filter(layerbranch=layerbranch)
+            layermachines = Machine.objects.filter(layerbranch=layerbranch)
+            if layerbranch.vcs_last_rev != topcommit.hexsha or options.reload:
+                # Check out appropriate branch
+                out = runcmd("git checkout origin/%s" % options.branch, repodir)
+
+                if not os.path.exists(layerdir):
+                    if options.branch == 'master':
+                        logger.error("Subdirectory for layer %s does not exist on master branch!" % layer.name)
+                        transaction.rollback()
+                        continue
+                    else:
+                        logger.info("Skipping update of layer %s for branch %s - subdirectory does not exist on this branch" % (layer.name, options.branch))
+                        transaction.rollback()
+                        continue
+
+                logger.info("Collecting data for layer %s on branch %s" % (layer.name, options.branch))
 
                 # Parse layer.conf files for this layer and its dependencies
                 # This is necessary not just because BBPATH needs to be set in order
@@ -308,16 +351,16 @@ def main():
 
                 config_data_copy = bb.data.createCopy(tinfoil.config_data)
                 parse_layer_conf(layerdir, config_data_copy)
-                for dep in layer.dependencies_set.all():
+                for dep in layerbranch.dependencies_set.all():
                     depurldir = sanitise_path(dep.dependency.vcs_url)
                     deprepodir = os.path.join(fetchdir, depurldir)
                     deplayerdir = os.path.join(deprepodir, dep.dependency.vcs_subdir)
                     parse_layer_conf(deplayerdir, config_data_copy)
                 config_data_copy.delVar('LAYERDIR')
 
-                if layer.vcs_last_rev and not options.reload:
+                if layerbranch.vcs_last_rev and not options.reload:
                     try:
-                        diff = repo.commit(layer.vcs_last_rev).diff(topcommit)
+                        diff = repo.commit(layerbranch.vcs_last_rev).diff(topcommit)
                     except Exception as e:
                         logger.warn("Unable to get diff from last commit hash for layer %s - falling back to slow update: %s" % (layer.name, str(e)))
                         diff = None
@@ -350,7 +393,7 @@ def main():
                             (filepath, filename) = split_bb_file_path(path, subdir_start)
                             if filename:
                                 recipe = Recipe()
-                                recipe.layer = layer
+                                recipe.layerbranch = layerbranch
                                 recipe.filename = filename
                                 recipe.filepath = filepath
                                 update_recipe_file(config_data_copy, os.path.join(layerdir, filepath), recipe, layerdir_start, repodir)
@@ -360,7 +403,7 @@ def main():
                                 machinename = check_machine_conf(path)
                                 if machinename:
                                     machine = Machine()
-                                    machine.layer = layer
+                                    machine.layerbranch = layerbranch
                                     machine.name = machinename
                                     update_machine_conf_file(os.path.join(repodir, path), machine)
                                     machine.save()
@@ -385,7 +428,7 @@ def main():
                                         machine = results[0]
                                         update_machine_conf_file(os.path.join(repodir, path), machine)
                                         machine.save()
-                            deps = RecipeFileDependency.objects.filter(layer=layer).filter(path=path)
+                            deps = RecipeFileDependency.objects.filter(layerbranch=layerbranch).filter(path=path)
                             for dep in deps:
                                 dirtyrecipes.add(dep.recipe)
 
@@ -400,7 +443,7 @@ def main():
                         for f in files:
                             if fnmatch.fnmatch(f, "*.bb"):
                                 recipe = Recipe()
-                                recipe.layer = layer
+                                recipe.layerbranch = layerbranch
                                 recipe.filename = f
                                 recipe.filepath = os.path.relpath(root, layerdir)
                                 update_recipe_file(config_data_copy, root, recipe, layerdir_start, repodir)
@@ -410,19 +453,19 @@ def main():
                                 machinename = check_machine_conf(fullpath)
                                 if machinename:
                                     machine = Machine()
-                                    machine.layer = layer
+                                    machine.layerbranch = layerbranch
                                     machine.name = machinename
                                     update_machine_conf_file(fullpath, machine)
                                     machine.save()
 
                 # Save repo info
-                layer.vcs_last_rev = topcommit.hexsha
-                layer.vcs_last_commit = datetime.fromtimestamp(topcommit.committed_date)
+                layerbranch.vcs_last_rev = topcommit.hexsha
+                layerbranch.vcs_last_commit = datetime.fromtimestamp(topcommit.committed_date)
             else:
-                logger.info("Layer %s is already up-to-date" % layer.name)
+                logger.info("Layer %s is already up-to-date for branch %s" % (layer.name, options.branch))
 
-            layer.vcs_last_fetch = datetime.now()
-            layer.save()
+            layerbranch.vcs_last_fetch = datetime.now()
+            layerbranch.save()
 
             if options.dryrun:
                 transaction.rollback()

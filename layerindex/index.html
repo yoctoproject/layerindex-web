@@ -19,7 +19,7 @@
 {% block content %}
 {% autoescape on %}
 
-{% if layer_list %}
+{% if layerbranch_list %}
     <div class="row-fluid">
         <div class="span9 offset1">
 
@@ -68,22 +68,22 @@
                 </thead>
 
                 <tbody>
-                    {% for layeritem in layer_list %}
-                    <tr class="layertype_{{ layeritem.layer_type }}">
-                        <td><a href="{% url layer_item layeritem.name %}">{{ layeritem.name }}</a></td>
-                        <td>{{ layeritem.summary }}</td>
-                        <td>{{ layeritem.get_layer_type_display }}</td>
+                    {% for layerbranch in layerbranch_list %}
+                    <tr class="layertype_{{ layerbranch.layer.layer_type }}">
+                        <td><a href="{% url layer_item layerbranch.layer.name %}">{{ layerbranch.layer.name }}</a></td>
+                        <td>{{ layerbranch.layer.summary }}</td>
+                        <td>{{ layerbranch.layer.get_layer_type_display }}</td>
                         <td class="showRollie">
-                            {{ layeritem.vcs_url }}
-                                {% if layeritem.vcs_web_url %}
-                                <a class="rollie" href="{{ layeritem.vcs_web_url }}">
+                            {{ layerbranch.layer.vcs_url }}
+                                {% if layerbranch.layer.vcs_web_url %}
+                                <a class="rollie" href="{{ layerbranch.layer.vcs_web_url }}">
                                 <span class="label label-info">
                                     web repo
                                 </span>
                                 </a>
                                 {% endif %}
-                                {% if layeritem.tree_url %}
-                                <a class="rollie" href="{{ layeritem.tree_url }}">
+                                {% if layerbranch.tree_url %}
+                                <a class="rollie" href="{{ layerbranch.tree_url }}">
                                 <span class="label label-info">
                                     tree
                                 </span>

@@ -32,6 +32,12 @@
                     <li class="active"><a href="#">Recipe</a></li>
                 </ul>
 
+                {% if recipe.layerbranch.branch.name != current_branch %}
+                <div class="alert alert-error">
+                    This recipe record is for a different branch than the one you have selected. To search for the equivalent recipe on the {{ current_branch }} branch, click <a href="{% url recipe_search %}?q={{ recipe.name }}">here</a>.
+                </div>
+                {% endif %}
+
                 <table class="table table-striped table-bordered">
                     <tbody>
                         <tr>
@@ -74,7 +80,7 @@
                         </tr>
                         <tr>
                             <th>Layer</th>
-                            <td><a href="{% url layer_item recipe.layer.name %}">{{ recipe.layer.name }}</a></td>
+                            <td><a href="{% url layer_item recipe.layerbranch.layer.name %}">{{ recipe.layerbranch.layer.name }}</a> ({{ recipe.layerbranch.branch.name}} branch)</td>
                         </tr>
                     </tbody>
                 </table>

@@ -52,7 +52,7 @@
                             <tr>
                                 <td><a href="{{ machine.vcs_web_url }}">{{ machine.name }}</a></td>
                                 <td>{{ machine.description }}</td>
-                                <td><a href="{% url layer_item machine.layer.name %}">{{ machine.layer.name }}</a></td>
+                                <td><a href="{% url layer_item machine.layerbranch.layer.name %}">{{ machine.layerbranch.layer.name }}</a></td>
                             </tr>
                         {% endfor %}
                     </tbody>

@@ -9,6 +9,18 @@ from datetime import datetime
 from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
 import os.path
+import re
+
+class Branch(models.Model):
+    name = models.CharField(max_length=50)
+    bitbake_branch = models.CharField(max_length=50)
+
+    class Meta:
+        verbose_name_plural = "Branches"
+
+    def __unicode__(self):
+        return self.name
+
 
 class LayerItem(models.Model):
     LAYER_STATUS_CHOICES = (
@@ -27,9 +39,6 @@ class LayerItem(models.Model):
     layer_type = models.CharField(max_length=1, choices=LAYER_TYPE_CHOICES)
     summary = models.CharField(max_length=200, help_text='One-line description of the layer')
     description = models.TextField()
-    vcs_last_fetch = models.DateTimeField('Last successful fetch', blank=True, null=True)
-    vcs_last_rev = models.CharField('Last revision fetched', max_length=80, blank=True)
-    vcs_last_commit = models.DateTimeField('Last commit date', blank=True, null=True)
     vcs_subdir = models.CharField('Repository subdirectory', max_length=40, blank=True, help_text='Subdirectory within the repository where the layer is located, if not in the root (usually only used if the repository contains more than one layer)')
     vcs_url = models.CharField('Repository URL', max_length=200, help_text='Fetch/clone URL of the repository')
     vcs_web_url = models.URLField('Repository web interface URL', blank=True, help_text='URL of the web interface for browsing the repository, if any')
@@ -47,40 +56,21 @@ class LayerItem(models.Model):
     def change_status(self, newstatus, username):
         self.status = newstatus
 
-    def _handle_url_path(self, base_url, path):
-        if base_url:
-            if self.vcs_subdir:
-                extra_path = self.vcs_subdir + '/' + path
-            else:
-                extra_path = path
-            if '%path%' in base_url:
-                if extra_path:
-                    url = re.sub(r'\[([^\]]*%path%[^\]]*)\]', '\\1', base_url)
-                    return url.replace('%path%', extra_path)
-                else:
-                    url = re.sub(r'\[([^\]]*%path%[^\]]*)\]', '', base_url)
-                    return url
-            else:
-                return base_url + extra_path
+    def get_layerbranch(self, branchname):
+        res = list(self.layerbranch_set.filter(branch__name=branchname)[:1])
+        if res:
+            return res[0]
         return None
 
-    def tree_url(self, path = ''):
-        return self._handle_url_path(self.vcs_web_tree_base_url, path)
-
-    def file_url(self, path = ''):
-        return self._handle_url_path(self.vcs_web_file_base_url, path)
-
-    def test_tree_url(self):
-        return self.tree_url('conf')
-
-    def test_file_url(self):
-        return self.file_url('conf/layer.conf')
-
-    def sorted_recipes(self):
-        return self.recipe_set.order_by('filename')
-
     def active_maintainers(self):
-        return self.layermaintainer_set.filter(status='A')
+        matches = None
+        for layerbranch in self.layerbranch_set.all():
+            branchmatches = layerbranch.layermaintainer_set.filter(status='A')
+            if matches:
+                matches |= branchmatches
+            else:
+                matches = branchmatches
+        return matches
 
     def user_can_edit(self, user):
         if user.is_authenticated():
@@ -96,12 +86,62 @@ class LayerItem(models.Model):
         return self.name
 
 
+class LayerBranch(models.Model):
+    layer = models.ForeignKey(LayerItem)
+    branch = models.ForeignKey(Branch)
+    vcs_last_fetch = models.DateTimeField('Last successful fetch', blank=True, null=True)
+    vcs_last_rev = models.CharField('Last revision fetched', max_length=80, blank=True)
+    vcs_last_commit = models.DateTimeField('Last commit date', blank=True, null=True)
+
+    class Meta:
+        verbose_name_plural = "Layer branches"
+
+    def sorted_recipes(self):
+        return self.recipe_set.order_by('filename')
+
+    def active_maintainers(self):
+        return self.layermaintainer_set.filter(status='A')
+
+    def _handle_url_path(self, base_url, path):
+        if base_url:
+            if self.layer.vcs_subdir:
+                extra_path = self.layer.vcs_subdir + '/' + path
+            else:
+                extra_path = path
+            url = base_url.replace('%branch%', self.branch.name)
+            if '%path%' in base_url:
+                if extra_path:
+                    url = re.sub(r'\[([^\]]*%path%[^\]]*)\]', '\\1', url)
+                    return url.replace('%path%', extra_path)
+                else:
+                    url = re.sub(r'\[([^\]]*%path%[^\]]*)\]', '', url)
+                    return url
+            else:
+                return url + extra_path
+        return None
+
+    def tree_url(self, path = ''):
+        return self._handle_url_path(self.layer.vcs_web_tree_base_url, path)
+
+    def file_url(self, path = ''):
+        return self._handle_url_path(self.layer.vcs_web_file_base_url, path)
+
+    def test_tree_url(self):
+        return self.tree_url('conf')
+
+    def test_file_url(self):
+        return self.file_url('conf/layer.conf')
+
+    def __unicode__(self):
+        return "%s: %s" % (self.layer.name, self.branch.name)
+
+
 class LayerMaintainer(models.Model):
     MAINTAINER_STATUS_CHOICES = (
         ('A', 'Active'),
         ('I', 'Inactive'),
     )
-    layer = models.ForeignKey(LayerItem)
+    layerbranch = models.ForeignKey(LayerBranch)
     name = models.CharField(max_length=255)
     email = models.CharField(max_length=255)
     responsibility = models.CharField(max_length=200, blank=True, help_text='Specific area(s) this maintainer is responsible for, if not the entire layer')
@@ -111,18 +151,18 @@ class LayerMaintainer(models.Model):
         respstr = ""
         if self.responsibility:
             respstr = " (%s)" % self.responsibility
-        return "%s: %s <%s>%s" % (self.layer.name, self.name, self.email, respstr)
+        return "%s: %s <%s>%s" % (self.layerbranch.layer.name, self.name, self.email, respstr)
 
 
 class LayerDependency(models.Model):
-    layer = models.ForeignKey(LayerItem, related_name='dependencies_set')
+    layerbranch = models.ForeignKey(LayerBranch, related_name='dependencies_set')
     dependency = models.ForeignKey(LayerItem, related_name='dependents_set')
 
     class Meta:
         verbose_name_plural = "Layer dependencies"
 
     def __unicode__(self):
-        return "%s depends on %s" % (self.layer.name, self.dependency.name)
+        return "%s depends on %s" % (self.layerbranch.layer.name, self.dependency.name)
 
 
 class LayerNote(models.Model):
@@ -134,7 +174,7 @@ class LayerNote(models.Model):
 
 
 class Recipe(models.Model):
-    layer = models.ForeignKey(LayerItem)
+    layerbranch = models.ForeignKey(LayerBranch)
     filename = models.CharField(max_length=255)
     filepath = models.CharField(max_length=255, blank=True)
     pn = models.CharField(max_length=40, blank=True)
@@ -146,7 +186,7 @@ class Recipe(models.Model):
     homepage = models.URLField(blank=True)
 
     def vcs_web_url(self):
-        url = self.layer.file_url(os.path.join(self.filepath, self.filename))
+        url = self.layerbranch.file_url(os.path.join(self.filepath, self.filename))
         return url or ''
 
     def full_path(self):
@@ -170,7 +210,7 @@ class Recipe(models.Model):
 
 class RecipeFileDependency(models.Model):
     recipe = models.ForeignKey(Recipe)
-    layer = models.ForeignKey(LayerItem, related_name='+')
+    layerbranch = models.ForeignKey(LayerBranch, related_name='+')
     path = models.CharField(max_length=255, db_index=True)
 
     class Meta:
@@ -181,13 +221,13 @@ class RecipeFileDependency(models.Model):
 
 
 class Machine(models.Model):
-    layer = models.ForeignKey(LayerItem)
+    layerbranch = models.ForeignKey(LayerBranch)
     name = models.CharField(max_length=255)
     description = models.CharField(max_length=255)
 
     def vcs_web_url(self):
-        url = self.layer.file_url(os.path.join('conf/machine/%s.conf' % self.name))
+        url = self.layerbranch.file_url(os.path.join('conf/machine/%s.conf' % self.name))
         return url or ''
 
     def __unicode__(self):
-        return '%s (%s)' % (self.name, self.layer.name)
+        return '%s (%s)' % (self.name, self.layerbranch.layer.name)

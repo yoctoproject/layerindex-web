@@ -9,7 +9,7 @@ from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidde
 from django.core.urlresolvers import reverse
 from django.core.exceptions import PermissionDenied
 from django.template import RequestContext
-from layerindex.models import LayerItem, LayerMaintainer, LayerDependency, LayerNote, Recipe, Machine
+from layerindex.models import Branch, LayerItem, LayerMaintainer, LayerBranch, LayerDependency, LayerNote, Recipe, Machine
 from datetime import datetime
 from django.views.generic import DetailView, ListView
 from layerindex.forms import EditLayerForm, LayerMaintainerFormSet, EditNoteForm
@@ -79,39 +79,45 @@ def delete_layer_view(request, template_name, slug):
 def edit_layer_view(request, template_name, slug=None):
     if slug:
         # Edit mode
+        branch = Branch.objects.filter(name=request.session.get('branch', 'master'))[:1].get()
         layeritem = get_object_or_404(LayerItem, name=slug)
         if not (request.user.is_authenticated() and (request.user.has_perm('layerindex.publish_layer') or layeritem.user_can_edit(request.user))):
             raise PermissionDenied
+        layerbranch = get_object_or_404(LayerBranch, layer=layeritem, branch=branch)
         deplistlayers = LayerItem.objects.exclude(id=layeritem.id).order_by('name')
     else:
         # Submit mode
+        branch = Branch.objects.filter(name='master')[:1].get()
         layeritem = LayerItem()
+        layerbranch = LayerBranch(layer=layeritem, branch=branch)
         deplistlayers = LayerItem.objects.all().order_by('name')
 
     if request.method == 'POST':
-        form = EditLayerForm(request.user, request.POST, instance=layeritem)
-        maintainerformset = LayerMaintainerFormSet(request.POST, instance=layeritem)
+        form = EditLayerForm(request.user, layerbranch, request.POST, instance=layeritem)
+        maintainerformset = LayerMaintainerFormSet(request.POST, instance=layerbranch)
         if form.is_valid() and maintainerformset.is_valid():
             with transaction.commit_on_success():
                 form.save()
+                layerbranch.layer = layeritem
+                layerbranch.save()
                 maintainerformset.save()
                 if slug:
                     new_deps = form.cleaned_data['deps']
-                    existing_deps = [deprec.dependency for deprec in layeritem.dependencies_set.all()]
+                    existing_deps = [deprec.dependency for deprec in layerbranch.dependencies_set.all()]
                     for dep in new_deps:
                         if dep not in existing_deps:
                             deprec = LayerDependency()
-                            deprec.layer = layeritem
+                            deprec.layerbranch = layerbranch
                             deprec.dependency = dep
                             deprec.save()
                     for dep in existing_deps:
                         if dep not in new_deps:
-                            layeritem.dependencies_set.filter(dependency=dep).delete()
+                            layerbranch.dependencies_set.filter(dependency=dep).delete()
                 else:
                     # Save dependencies
                     for dep in form.cleaned_data['deps']:
                         deprec = LayerDependency()
-                        deprec.layer = layeritem
+                        deprec.layerbranch = layerbranch
                         deprec.dependency = dep
                         deprec.save()
                     # Send email
@@ -133,8 +139,8 @@ def edit_layer_view(request, template_name, slug=None):
                     return HttpResponseRedirect(reverse('submit_layer_thanks'))
             form.was_saved = True
     else:
-        form = EditLayerForm(request.user, instance=layeritem)
-        maintainerformset = LayerMaintainerFormSet(instance=layeritem)
+        form = EditLayerForm(request.user, layerbranch, instance=layeritem)
+        maintainerformset = LayerMaintainerFormSet(instance=layerbranch)
 
     return render(request, template_name, {
         'form': form,
@@ -144,6 +150,14 @@ def edit_layer_view(request, template_name, slug=None):
 
 def submit_layer_thanks(request):
     return render(request, 'layerindex/submitthanks.html')
+
+def switch_branch_view(request, slug):
+    branch = get_object_or_404(Branch, name=slug)
+    request.session['branch'] = branch.name
+    return_url = request.META.get('HTTP_REFERER')
+    if not return_url:
+        return_url = reverse('layer_list')
+    return HttpResponseRedirect(return_url)
 
 def about(request):
     return render(request, 'layerindex/about.html')
@@ -161,15 +175,19 @@ def _statuschange(request, name, newstatus):
     return HttpResponseRedirect(w.get_absolute_url())
 
 class LayerListView(ListView):
-    context_object_name = 'layer_list'
+    context_object_name = 'layerbranch_list'
 
     def get_queryset(self):
-        return LayerItem.objects.filter(status='P').order_by('name')
+        return LayerBranch.objects.filter(branch__name=self.request.session.get('branch', 'master')).filter(layer__status='P').order_by('layer__name')
 
     def get_context_data(self, **kwargs):
         context = super(LayerListView, self).get_context_data(**kwargs)
         context['layer_type_choices'] = LayerItem.LAYER_TYPE_CHOICES
         return context
+
+class LayerReviewListView(ListView):
+    def get_queryset(self):
+        return LayerBranch.objects.filter(branch__name=self.request.session.get('branch', 'master')).filter(layer__status='N').order_by('layer__name')
 
 class LayerDetailView(DetailView):
     model = LayerItem
@@ -190,6 +208,7 @@ class LayerDetailView(DetailView):
         context = super(LayerDetailView, self).get_context_data(**kwargs)
         layer = context['layeritem']
         context['useredit'] = layer.user_can_edit(self.user)
+        context['layerbranch'] = layer.get_layerbranch(self.request.session.get('branch', 'master'))
         return context
 
 class RecipeSearchView(ListView):
@@ -198,11 +217,12 @@ class RecipeSearchView(ListView):
 
     def get_queryset(self):
         query_string = self.request.GET.get('q', '')
+        init_qs = Recipe.objects.filter(layerbranch__branch__name=self.request.session.get('branch', 'master'))
         if query_string.strip():
             entry_query = simplesearch.get_query(query_string, ['pn', 'summary', 'description', 'filename'])
-            return Recipe.objects.filter(entry_query).order_by('pn', 'layer')
+            return init_qs.filter(entry_query).order_by('pn', 'layerbranch__layer')
         else:
-            return Recipe.objects.all().order_by('pn', 'layer')
+            return init_qs.order_by('pn', 'layerbranch__layer')
 
     def get_context_data(self, **kwargs):
         context = super(RecipeSearchView, self).get_context_data(**kwargs)
@@ -215,11 +235,12 @@ class MachineSearchView(ListView):
 
     def get_queryset(self):
         query_string = self.request.GET.get('q', '')
+        init_qs = Machine.objects.filter(layerbranch__branch__name=self.request.session.get('branch', 'master'))
         if query_string.strip():
             entry_query = simplesearch.get_query(query_string, ['name', 'description'])
-            return Machine.objects.filter(entry_query).order_by('name', 'layer')
+            return init_qs.filter(entry_query).order_by('name', 'layerbranch__layer')
         else:
-            return Machine.objects.all().order_by('name', 'layer')
+            return init_qs.order_by('name', 'layerbranch__layer')
 
     def get_context_data(self, **kwargs):
         context = super(MachineSearchView, self).get_context_data(**kwargs)

@@ -7,7 +7,7 @@
 from django.conf.urls.defaults import *
 from django.views.generic import DetailView, ListView
 from layerindex.models import LayerItem, Recipe
-from layerindex.views import LayerListView, RecipeSearchView, MachineSearchView, PlainTextListView, LayerDetailView, edit_layer_view, delete_layer_view, edit_layernote_view, delete_layernote_view
+from layerindex.views import LayerListView, LayerReviewListView, RecipeSearchView, MachineSearchView, PlainTextListView, LayerDetailView, edit_layer_view, delete_layer_view, edit_layernote_view, delete_layernote_view, switch_branch_view
 
 urlpatterns = patterns('',
     url(r'^$',
@@ -26,9 +26,7 @@ urlpatterns = patterns('',
             template_name='layerindex/machines.html'),
             name='machine_search'),
     url(r'^review/$',
-        ListView.as_view(
-            queryset=LayerItem.objects.order_by('name').filter(status__in='N'),
-            context_object_name='layer_list',
+        LayerReviewListView.as_view(
             template_name='layerindex/index.html'),
             name='layer_list_review'),
     url(r'^layer/(?P<slug>[-\w]+)/$',
@@ -49,6 +47,8 @@ urlpatterns = patterns('',
             template_name='layerindex/recipedetail.html'),
             name='recipe'),
     url(r'^layer/(?P<name>[-\w]+)/publish/$', 'layerindex.views.publish', name="publish"),
+    url(r'^branch/(?P<slug>[-\w]+)/$',
+        switch_branch_view, name="switch_branch"),
     url(r'^raw/recipes.txt$',
         PlainTextListView.as_view(
             queryset=Recipe.objects.order_by('pn', 'layer'),

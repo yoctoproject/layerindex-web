@@ -1,0 +1,10 @@
+[
+  {
+    "model": "layerindex.branch",
+    "pk": 1,
+    "fields": {
+      "name": "master",
+      "bitbake_branch": "master"
+    }
+  }
+]
