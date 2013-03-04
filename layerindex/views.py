@@ -164,7 +164,7 @@ class LayerListView(ListView):
     context_object_name = 'layer_list'
 
     def get_queryset(self):
-        return LayerItem.objects.filter(status__in=self.request.session.get('status_filter', 'P')).order_by('name')
+        return LayerItem.objects.filter(status='P').order_by('name')
 
     def get_context_data(self, **kwargs):
         context = super(LayerListView, self).get_context_data(**kwargs)
