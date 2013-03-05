@@ -2,7 +2,7 @@
 {% load i18n %}
 
 {% block content %}
-<form method="post" action=".">
+<form id="login_form" method="post" action=".">
   {{ form.as_p }}
 
   <input type="submit" class="btn" value="{% trans 'Log in' %}" />
@@ -12,4 +12,13 @@
 
 <p>{% trans "Forgot password" %}? <a href="{% url auth_password_reset %}">{% trans "Reset it" %}</a>!</p>
 <p>{% trans "Not a member" %}? <a href="{% url registration_register %}">{% trans "Register" %}</a>!</p>
+{% endblock %}
+
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        $("#login_form input:text, #login_form textarea").first().focus();
+    });
+</script>
 {% endblock %}

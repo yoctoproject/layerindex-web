@@ -2,10 +2,19 @@
 {% load i18n %}
 
 {% block content %}
-<form method="post" action=".">
+<form id="registration_form" method="post" action=".">
   {{ form.as_p }}
 
   <input type="submit" class="btn" value="{% trans 'Submit' %}" />
   {% csrf_token %}
 </form>
+{% endblock %}
+
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        $("#registration_form input:text, #registration_form textarea").first().focus();
+    });
+</script>
 {% endblock %}
