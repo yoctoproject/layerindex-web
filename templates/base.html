@@ -39,11 +39,14 @@
                         </a>
                         <ul class="dropdown-menu">
                             {% for branch in all_branches %}
-                                {% if branch.name = current_branch %}
-                                    <li><a href="{% url switch_branch branch.name %}"><b>{{ branch.name }}</b></a></li>
-                                {% else %}
-                                    <li><a href="{% url switch_branch branch.name %}">{{ branch.name }}</a></li>
-                                {% endif %}
+                                <li><a href="{% url switch_branch branch.name %}">
+                                    {% if branch.name = current_branch %}<b>{% endif %}
+                                    {{ branch.name }}
+                                    {% if branch.short_description %}
+                                    ({{ branch.short_description }})
+                                    {% endif %}
+                                    {% if branch.name = current_branch %}</b>{% endif %}
+                                </a></li>
                             {% endfor %}
                         </ul>
                     </li>
