@@ -1,23 +1,23 @@
 TODO:
 
-- change the behaviour of the filters menus: they should not close on select (they should stay open so that you can check / uncheck multiple checkboxes)
-
-- display a no-results found message when a search does not return any results (all tables)
-
-- we might consider adding a link to the all layers and all recipes tables from the layer details page
-
 * Breadcrumbs / fix tab navigation?
+* OE version of about page
 * Need an admin contact in footer
-* Show recipes from non-software/base layers differently in recipes list
+* Prevent SMTP failures from breaking submission process
 
 Later:
+* Rawrecipes branch support
+* Add link to the all layers and all recipes tables from the layer details page?
+* Display no-results found message when search does not return any results (all tables)
+* Change behaviour of filter menus to stay open so that you can check / uncheck multiple items
+* Show recipes from non-software/base layers differently in recipes list
+* Show layer type in layer detail?
 * Usage links in list page?
 * Avoid page content changing size depending on whether scrollbar is there or not?
-* Style/extend about page?
-* Style recipe info page?
-* Style machine list on detail
-* Something to help with compatibility (although maybe this should just be handled using the existing versioned layer dependencies in layer.conf)
+* Return to last page (review/detail) after editing (with success alert)?
+* Cancel button on edit form?
 * Query backend service? i.e. special URL to query information for external apps/scripts
 * Tool for finding/comparing duplicate recipes?
 * Tool for editing SUMMARY/DESCRIPTION?
 * Dynamic loading/filtering for recipes list
+* Track PROVIDES and BBCLASSEXTENDS?
