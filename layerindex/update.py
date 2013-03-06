@@ -16,6 +16,8 @@ import subprocess
 from datetime import datetime
 import fnmatch
 import re
+import tempfile
+import shutil
 from distutils.version import LooseVersion
 
 def logger_create():
@@ -268,6 +270,12 @@ def main():
     out = runcmd("git clean -f -x", core_repodir)
     os.environ['BBPATH'] = str("%s:%s" % (os.path.realpath('.'), core_layerdir))
 
+    # Change into a temporary directory so we don't write the cache and other files to the current dir
+    if not os.path.exists(settings.TEMP_BASE_DIR):
+        os.makedirs(settings.TEMP_BASE_DIR)
+    tempdir = tempfile.mkdtemp(dir=settings.TEMP_BASE_DIR)
+    os.chdir(tempdir)
+
     sys.path.extend([bitbakepath + '/lib'])
     import bb.tinfoil
     import bb.cooker
@@ -478,6 +486,7 @@ def main():
         finally:
             transaction.leave_transaction_management()
 
+    shutil.rmtree(tempdir)
     sys.exit(0)
 
 
