@@ -148,9 +148,6 @@ def edit_layer_view(request, template_name, slug=None):
         'deplistlayers': deplistlayers,
     })
 
-def submit_layer_thanks(request):
-    return render(request, 'layerindex/submitthanks.html')
-
 def switch_branch_view(request, slug):
     branch = get_object_or_404(Branch, name=slug)
     request.session['branch'] = branch.name
@@ -158,9 +155,6 @@ def switch_branch_view(request, slug):
     if not return_url:
         return_url = reverse('layer_list')
     return HttpResponseRedirect(return_url)
-
-def about(request):
-    return render(request, 'layerindex/about.html')
 
 def publish(request, name):
     if not (request.user.is_authenticated() and request.user.has_perm('layerindex.publish_layer')):

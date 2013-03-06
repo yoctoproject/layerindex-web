@@ -5,7 +5,7 @@
 # Licensed under the MIT license, see COPYING.MIT for details
 
 from django.conf.urls.defaults import *
-from django.views.generic import DetailView, ListView
+from django.views.generic import TemplateView, DetailView, ListView
 from layerindex.models import LayerItem, Recipe
 from layerindex.views import LayerListView, LayerReviewListView, RecipeSearchView, MachineSearchView, PlainTextListView, LayerDetailView, edit_layer_view, delete_layer_view, edit_layernote_view, delete_layernote_view, switch_branch_view
 
@@ -16,7 +16,10 @@ urlpatterns = patterns('',
             name='layer_list'),
     url(r'^submit/$', edit_layer_view, {'template_name': 'layerindex/submitlayer.html'}, name="submit_layer"),
     url(r'^edit/(?P<slug>[-\w]+)/$', edit_layer_view, {'template_name': 'layerindex/editlayer.html'}, name="edit_layer"),
-    url(r'^submit/thanks$', 'layerindex.views.submit_layer_thanks', name="submit_layer_thanks"),
+    url(r'^submit/thanks$',
+        TemplateView.as_view(
+            template_name='layerindex/submitthanks.html'),
+            name="submit_layer_thanks"),
     url(r'^recipes/$',
         RecipeSearchView.as_view(
             template_name='layerindex/recipes.html'),
@@ -55,5 +58,8 @@ urlpatterns = patterns('',
             context_object_name='recipe_list',
             template_name='layerindex/rawrecipes.txt'),
             name='recipe_list_raw'),
-    url(r'^about$', 'layerindex.views.about', name="about"),
+    url(r'^about$',
+        TemplateView.as_view(
+            template_name='layerindex/about.html'),
+            name="about"),
 )
