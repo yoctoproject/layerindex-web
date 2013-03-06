@@ -128,7 +128,7 @@ def edit_layer_view(request, template_name, slug=None):
                         d = Context({
                             'user_name': user.get_full_name(),
                             'layer_name': layeritem.name,
-                            'layer_url': request.build_absolute_uri(layeritem.get_absolute_url()),
+                            'layer_url': request.build_absolute_uri(layeritem.get_absolute_url()) + '?branch=master',
                         })
                         subject = '%s - %s' % (settings.SUBMIT_EMAIL_SUBJECT, layeritem.name)
                         from_email = settings.SUBMIT_EMAIL_FROM
@@ -147,6 +147,12 @@ def edit_layer_view(request, template_name, slug=None):
         'maintainerformset': maintainerformset,
         'deplistlayers': deplistlayers,
     })
+
+def _check_branch(request):
+    branchname = request.GET.get('branch', '')
+    if branchname:
+        branch = get_object_or_404(Branch, name=branchname)
+        request.session['branch'] = branch.name
 
 def switch_branch_view(request, slug):
     branch = get_object_or_404(Branch, name=slug)
@@ -180,6 +186,10 @@ class LayerListView(ListView):
         return context
 
 class LayerReviewListView(ListView):
+    def dispatch(self, request, *args, **kwargs):
+        _check_branch(request)
+        return super(LayerReviewListView, self).dispatch(request, *args, **kwargs)
+
     def get_queryset(self):
         return LayerBranch.objects.filter(branch__name=self.request.session.get('branch', 'master')).filter(layer__status='N').order_by('layer__name')
 
@@ -189,6 +199,7 @@ class LayerDetailView(DetailView):
 
     # This is a bit of a mess. Surely there has to be a better way to handle this...
     def dispatch(self, request, *args, **kwargs):
+        _check_branch(request)
         self.user = request.user
         res = super(LayerDetailView, self).dispatch(request, *args, **kwargs)
         l = self.get_object()
