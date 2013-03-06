@@ -15,6 +15,7 @@ class Branch(models.Model):
     name = models.CharField(max_length=50)
     bitbake_branch = models.CharField(max_length=50)
     short_description = models.CharField(max_length=50, blank=True)
+    sort_priority = models.IntegerField(blank=True, null=True)
 
     class Meta:
         verbose_name_plural = "Branches"
