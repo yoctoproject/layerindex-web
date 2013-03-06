@@ -268,7 +268,10 @@ def main():
     core_layerdir = os.path.join(core_repodir, core_layer.vcs_subdir)
     out = runcmd("git checkout origin/%s" % options.branch, core_repodir)
     out = runcmd("git clean -f -x", core_repodir)
-    os.environ['BBPATH'] = str("%s:%s" % (os.path.realpath('.'), core_layerdir))
+    # The directory above where this script exists should contain our conf/layer.conf,
+    # so add it to BBPATH along with the core layer directory
+    confparentdir = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
+    os.environ['BBPATH'] = str("%s:%s" % (confparentdir, core_layerdir))
 
     # Change into a temporary directory so we don't write the cache and other files to the current dir
     if not os.path.exists(settings.TEMP_BASE_DIR):
