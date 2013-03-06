@@ -38,10 +38,6 @@
                                         <a href="{% url add_layernote layeritem.name %}" class="btn">Add note</a>
                                     {% endif %}
                                 {% endif %}
-                                {% if layeritem.status = "N" and perms.layeritem.publish_layer %}
-                                    <a href="{% url delete_layer layeritem.name %}" class="btn btn-warning">Delete layer</a>
-                                    <a href="{% url publish layeritem.name %}" class="btn btn-primary">Publish layer</a>
-                                {% endif %}
                             </span>
                         {% endif %}
                     </h1>
@@ -154,28 +150,6 @@
             </div>  <!-- end of row-fluid -->
         </div> <!-- end of container-fluid -->
 
-        {% if layeritem.status = 'N' and layerbranch %}
-            <div class="container-fluid" style="margin-bottom:1em;">
-                {% if layeritem.vcs_web_file_base_url %}
-                <span class="label label-important">
-                    <a href="{{ layerbranch.test_file_url }}">test file link</a>
-                </span>
-                {% else %}
-                <span class="label">
-                    No base file URL provided
-                </span>
-                {% endif %}
-                {% if layeritem.vcs_web_tree_base_url %}
-                <span class="label label-important">
-                    <a href="{{ layerbranch.test_tree_url }}">test tree link</a>
-                </span>
-                {% else %}
-                <span class="label">
-                    No base tree URL provided
-                </span>
-                {% endif %}
-            </div>
-        {% else %}
         {% if layerbranch.machine_set.count > 0 %}
         <div class="container-fluid" style="margin-bottom:1em;">
             <div class="row-fluid">
@@ -238,7 +212,6 @@
                     </table>
                 </div>
         </div>
-        {% endif %}
         {% endif %}
 
 {% endautoescape %}

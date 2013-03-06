@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load static %}
+
+{% comment %}
+
+  layerindex-web - layer review list page template
+
+  Copyright (C) 2013 Intel Corporation
+  Licensed under the MIT license, see COPYING.MIT for details
+
+{% endcomment %}
+
+
+<!--
+{% block title_append %} - review{% endblock %}
+-->
+
+{% block content %}
+{% autoescape on %}
+
+{% if layerbranch_list %}
+    <div class="row-fluid">
+        <div class="span9 offset1">
+
+            <table class="table table-striped table-bordered layerstable">
+                <thead>
+                    <tr>
+                        <th>Layer name</th>
+                        <th class="span4">Description</th>
+                        <th>Type</th>
+                        <th>Repository</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for layerbranch in layerbranch_list %}
+                    <tr class="layertype_{{ layerbranch.layer.layer_type }}">
+                        <td><a href="{% url layer_review layerbranch.layer.name %}">{{ layerbranch.layer.name }}</a></td>
+                        <td>{{ layerbranch.layer.summary }}</td>
+                        <td>{{ layerbranch.layer.get_layer_type_display }}</td>
+                        <td class="showRollie">
+                            {{ layerbranch.layer.vcs_url }}
+                                {% if layerbranch.layer.vcs_web_url %}
+                                <a class="rollie" href="{{ layerbranch.layer.vcs_web_url }}">
+                                <span class="label label-info">
+                                    web repo
+                                </span>
+                                </a>
+                                {% endif %}
+                                {% if layerbranch.tree_url %}
+                                <a class="rollie" href="{{ layerbranch.tree_url }}">
+                                <span class="label label-info">
+                                    tree
+                                </span>
+                                </a>
+                                {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {% if is_paginated %}
+        {% load pagination %}
+        {% pagination page_obj %}
+    {% endif %}
+{% else %}
+    <p>No unpublished layers to review.</p>
+{% endif %}
+
+{% endautoescape %}
+
+{% endblock %}

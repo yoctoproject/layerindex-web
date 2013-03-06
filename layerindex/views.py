@@ -128,7 +128,7 @@ def edit_layer_view(request, template_name, slug=None):
                         d = Context({
                             'user_name': user.get_full_name(),
                             'layer_name': layeritem.name,
-                            'layer_url': request.build_absolute_uri(layeritem.get_absolute_url()) + '?branch=master',
+                            'layer_url': request.build_absolute_uri(reverse('layer_review', args=(layeritem.name,))) + '?branch=master',
                         })
                         subject = '%s - %s' % (settings.SUBMIT_EMAIL_SUBJECT, layeritem.name)
                         from_email = settings.SUBMIT_EMAIL_FROM
@@ -215,6 +215,12 @@ class LayerDetailView(DetailView):
         context['useredit'] = layer.user_can_edit(self.user)
         context['layerbranch'] = layer.get_layerbranch(self.request.session.get('branch', 'master'))
         return context
+
+class LayerReviewDetailView(LayerDetailView):
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.has_perm('layerindex.publish_layer'):
+            raise PermissionDenied
+        return super(LayerReviewDetailView, self).dispatch(request, *args, **kwargs)
 
 class RecipeSearchView(ListView):
     context_object_name = 'recipe_list'

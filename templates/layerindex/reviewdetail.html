@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load static %}
+
+{% comment %}
+
+  layerindex-web - review layer detail page template
+
+  Copyright (C) 2013 Intel Corporation
+  Licensed under the MIT license, see COPYING.MIT for details
+
+{% endcomment %}
+
+
+<!--
+{% autoescape on %}
+{% block title_append %} - {{ layeritem.name }}{% endblock %}
+{% endautoescape %}
+-->
+
+{% block content %}
+
+{% autoescape on %}
+
+
+        <div class="container-fluid">
+            <div class="row-fluid">
+                <div class="page-header">
+                    <h1>{{ layeritem.name }}
+                        {% if layeritem.status = "N" %}
+                            <span class="label label-warning">Unpublished</span>
+                        {% else %}
+                            <span class="label label-info">Published</span>
+                        {% endif %}
+                        {% if user.is_authenticated %}
+                            <span class="pull-right">
+                                {% if perms.layeritem.publish_layer or useredit %}
+                                    <a href="{% url edit_layer layeritem.name %}" class="btn">Edit layer</a>
+                                    {% if layeritem.layernote_set.count = 0 %}
+                                        <a href="{% url add_layernote layeritem.name %}" class="btn">Add note</a>
+                                    {% endif %}
+                                {% endif %}
+                                {% if layeritem.status = "N" and perms.layeritem.publish_layer %}
+                                    <a href="{% url delete_layer layeritem.name %}" class="btn btn-warning">Delete layer</a>
+                                    <a href="{% url publish layeritem.name %}" class="btn btn-primary">Publish layer</a>
+                                {% endif %}
+                            </span>
+                        {% endif %}
+                    </h1>
+                </div>
+            </div> <!--  end of row-fluid -->
+        </div> <!-- end of container-fluid -->
+
+        <div class="container-fluid">
+            {% if not layerbranch %}
+            <div class="row-fluid">
+                <div class="alert alert-error">
+                    This layer does not exist for branch {{ current_branch }}.
+                </div>
+            </div>
+            {% endif %}
+            <div class="row-fluid">
+                {% for note in layeritem.layernote_set.all %}
+                    <div class="alert">
+                        <p>{{ note.text }}</p>
+                        {% if perms.layeritem.publish_layer or useredit %}
+                            <p>
+                                <a href="{% url edit_layernote layeritem.name note.pk %}" class="btn">Edit note</a>
+                                <a href="{% url delete_layernote layeritem.name note.pk %}" class='btn'>Delete note</a>
+                            </p>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+
+            <div class="row-fluid">
+                <div>
+
+                    <table class="table table-striped table-bordered">
+                        <tbody>
+                            <tr>
+                                <th>Name</th>
+                                <td>{{ layeritem.name }}</td>
+                            </tr>
+                            <tr>
+                                <th>Type</th>
+                                <td>{{ layeritem.get_layer_type_display }}</td>
+                            </tr>
+                            <tr>
+                                <th>Summary</th>
+                                <td>{{ layeritem.summary }}</td>
+                            </tr>
+                            <tr>
+                                <th>Description</th>
+                                <td>{{ layeritem.description }}</td>
+                            </tr>
+                            <tr>
+                                <th>Repository</th>
+                                <td>{{ layeritem.vcs_url }}</td>
+                            </tr>
+                            <tr>
+                                <th>Repository subdirectory</th>
+                                <td>{{ layeritem.vcs_subdir }}</td>
+                            </tr>
+                            <tr>
+                                <th>Repo web interface</th>
+                                <td>
+                                    {% if layeritem.vcs_web_url %}
+                                        <a href="{{ layeritem.vcs_web_url }}">{{ layeritem.vcs_web_url }}</a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Repo web interface test links</th>
+                                <td>
+                                    {% if layeritem.vcs_web_file_base_url %}
+                                    <span class="label label-important">
+                                        <a href="{{ layerbranch.test_file_url }}">test file link</a>
+                                    </span>
+                                    {% else %}
+                                    <span class="label">
+                                        No base file URL provided
+                                    </span>
+                                    {% endif %}
+                                    {% if layeritem.vcs_web_tree_base_url %}
+                                    <span class="label label-important">
+                                        <a href="{{ layerbranch.test_tree_url }}">test tree link</a>
+                                    </span>
+                                    {% else %}
+                                    <span class="label">
+                                        No base tree URL provided
+                                    </span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Setup info URL</th>
+                                <td>
+                                    {% if layeritem.usage_url %}
+                                        <a href="{{ layerbranch.get_usage_url }}">{{ layeritem.usage_url }}</a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Mailing list URL</th>
+                                <td>
+                                    {% if layeritem.mailing_list_url %}
+                                        <a href="{{ layerbranch.mailing_list_url }}">{{ layeritem.mailing_list_url }}</a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Maintainers</th>
+                                <td>
+                                    <ul class="unstyled">
+                                        {% for maintainer in layerbranch.active_maintainers %}
+                                        <li>
+                                            {{ maintainer.name }}
+                                            {% if maintainer.responsibility %}
+                                                <span>({{ maintainer.responsibility }})</span>
+                                            {% endif %}
+                                            - <a href="mailto:{{ maintainer.email }}">{{ maintainer.email }}</a>
+                                        </li>
+                                        {% endfor %}
+                                    </ul>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Dependencies</th>
+                                <td>
+                                    <ul class="unstyled">
+                                        {% for dep in layerbranch.dependencies_set.all %}
+                                            <li><a href="{% url layer_item dep.dependency.name %}">{{ dep.dependency.name }}</a></li>
+                                        {% endfor %}
+                                    </ul>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+
+                </div>
+            </div>  <!-- end of row-fluid -->
+        </div> <!-- end of container-fluid -->
+
+
+{% endautoescape %}
+
+{% endblock %}
+
