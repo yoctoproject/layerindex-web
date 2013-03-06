@@ -11,8 +11,12 @@ from layerindex.views import LayerListView, LayerReviewListView, LayerReviewDeta
 
 urlpatterns = patterns('',
     url(r'^$',
+        TemplateView.as_view(
+            template_name='layerindex/frontpage.html'),
+            name='frontpage'),
+    url(r'^layers/$',
         LayerListView.as_view(
-            template_name='layerindex/index.html'),
+            template_name='layerindex/layers.html'),
             name='layer_list'),
     url(r'^submit/$', edit_layer_view, {'template_name': 'layerindex/submitlayer.html'}, name="submit_layer"),
     url(r'^edit/(?P<slug>[-\w]+)/$', edit_layer_view, {'template_name': 'layerindex/editlayer.html'}, name="edit_layer"),

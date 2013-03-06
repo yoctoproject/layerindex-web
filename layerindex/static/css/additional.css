@@ -130,3 +130,29 @@ padding: 8px;
     padding-top: 1em;
     border-top: 1px solid rgb(238, 238, 238);
 }
+
+.hero-evenlyspaced {
+    padding: 35px;
+}
+
+.hero-evenlyspaced h1 {
+    padding-bottom: 0.25em;
+}
+
+.frontpage-button-group {
+    text-align:center !important;
+    padding: 10px;
+}
+
+.frontpage-button-group a {
+    margin: 5px;
+}
+
+.branch {
+    font-weight: bold;
+}
+
+.well-frontpage {
+    background-color: white;
+    height: 100%;
+}

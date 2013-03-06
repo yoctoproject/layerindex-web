@@ -18,9 +18,11 @@
 {% block content %}
 {% autoescape on %}
 
+<h1>Page not found</h1>
+
 <p>The page you requested was not found.</p>
 
-<p><a href="{% url layer_list %}">Return to the index</a></p>
+<p><a href="{% url frontpage %}">Return to the front page</a></p>
 
 {% endautoescape %}
 {% endblock %}

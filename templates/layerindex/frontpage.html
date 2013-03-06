@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load static %}
+
+{% comment %}
+
+  layerindex-web - front page template
+
+  Copyright (C) 2013 Intel Corporation
+  Licensed under the MIT license, see COPYING.MIT for details
+
+{% endcomment %}
+
+
+<!--
+{% block title_append %}{% endblock %}
+-->
+
+{% block content %}
+{% autoescape on %}
+
+<div class="hero-unit hero-evenlyspaced">
+    <h1>Welcome!</h1>
+    <p>Welcome to the OpenEmbedded metadata index. Here you can find metadata (layers, recipes and machines)
+       provided by members of the OpenEmbedded / Yocto Project community for use on top of OpenEmbedded-Core
+       and compatible systems.</p>
+</div>
+<div class="row">
+    <div class="span8">
+        <div class="well well-frontpage">
+            <h2>Finding what you need</h2>
+            <p>You can browse or search by layer, by recipe or by machine.</p>
+            <div class="frontpage-button-group">
+                <a href="{% url layer_list %}" class="btn btn-large btn-primary">Layers</a>
+                <a href="{% url recipe_search %}" class="btn btn-large btn-primary">Recipes</a>
+                <a href="{% url machine_search %}" class="btn btn-large btn-primary">Machines</a>
+            </div>
+            <p><small>Note that you are currently viewing
+            {% if current_branch = 'master' %}
+            the <span class="branch">master</span> branch - the latest development version of the code.
+            {% else %}
+            the <span class="branch">{{ current_branch }}</span> branch.
+            {% endif %}
+            You can change between master and release branches at any time using the branch selector on the bar at the top of the page.</small></p>
+        </div>
+    </div>
+    <div class="span4">
+        <div class="well well-frontpage">
+            <h2>Questions?</h2>
+            <p>Got some questions about layers or this website? See the <a href="http://www.openembedded.org/Layers_FAQ">FAQ</a>.</p>
+        </div>
+    </div>
+</div>
+
+{% endautoescape %}
+
+{% endblock %}
+
+

@@ -65,8 +65,11 @@ Setup instructions:
    "Submit Layer" feature within the interface itself (easiest) or the
    admin interface to do this.
 
-5. You may wish to customise templates/layerindex/about.html to suit
-   your installation.
+5. You may wish to customise some of the page templates to suit your
+   installation, in particular:
+   * templates/base.html
+   * templates/layerindex/frontpage.html
+   * templates/layerindex/about.html
 
 
 Usage
