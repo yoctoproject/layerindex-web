@@ -53,7 +53,12 @@
                     {% block submitlink %}<li><a href="{% url submit_layer %}">Submit layer</a></li>{% endblock %}
                     {% if user.is_authenticated %}
                     {% if perms.layeritem.publish_layer %}
-                        <li><a href="{% url layer_list_review %}">Review</a></li>
+                        <li><a href="{% url layer_list_review %}">
+                            Review
+                            {% if unpublished_count > 0 %}
+                            <span class="badge badge-warning">{{ unpublished_count }}</span>
+                            {% endif %}
+                        </a></li>
                     {% endif %}
                     <li class="divider-vertical"></li>
                     <li class="dropdown">
