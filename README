@@ -107,7 +107,8 @@ This application is based upon the Django project template, whose files
 are covered by the BSD license and are copyright (c) Django Software
 Foundation and individual contributors.
 
-Bundled Twitter Bootstrap is redistributed under the Apache License 2.0.
+Bundled Twitter Bootstrap (including Glyphicons) is redistributed under
+the Apache License 2.0.
 
 Bundled jQuery is redistributed under the MIT license.
 
