@@ -6,7 +6,7 @@
 # All rights reserved.
 
 from django.conf.urls.defaults import patterns, include, url
-from django.views.defaults import page_not_found
+from django.views.generic.simple import redirect_to
 
 from django.contrib import admin
 admin.autodiscover()
@@ -16,6 +16,6 @@ urlpatterns = patterns('',
     url(r'^admin/', include(admin.site.urls)),
     url(r'^accounts/', include('registration.urls')),
     url(r'^captcha/', include('captcha.urls')),
-    url(r'.*', page_not_found)
+    url(r'.*', redirect_to, {'url' : '/layerindex/'})
 )
 
