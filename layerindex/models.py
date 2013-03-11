@@ -80,6 +80,15 @@ class LayerItem(models.Model):
                     return True
         return False
 
+    def get_fetch_dir(self):
+        fetch_dir = ""
+        for c in self.vcs_url:
+            if c in '/ .=+?:':
+                fetch_dir += "_"
+            else:
+                fetch_dir += c
+        return fetch_dir
+
     def get_absolute_url(self):
         return reverse('layer_item', args=(self.name,));
 

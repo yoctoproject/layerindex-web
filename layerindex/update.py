@@ -58,15 +58,6 @@ def runcmd(cmd,destdir=None,printerr=True):
     logger.debug("output: %s" % output.rstrip() )
     return output
 
-def sanitise_path(inpath):
-    outpath = ""
-    for c in inpath:
-        if c in '/ .=+?:':
-            outpath += "_"
-        else:
-            outpath += c
-    return outpath
-
 
 def split_bb_file_path(recipe_path, subdir_start):
     if fnmatch.fnmatch(recipe_path, "*.bb"):
@@ -228,7 +219,7 @@ def main():
         # Fetch latest metadata from repositories
         for layer in layerquery:
             # Handle multiple layers in a single repo
-            urldir = sanitise_path(layer.vcs_url)
+            urldir = layer.get_fetch_dir()
             repodir = os.path.join(fetchdir, urldir)
             if not layer.vcs_url in fetchedrepos:
                 logger.info("Fetching remote repository %s" % layer.vcs_url)
@@ -268,7 +259,7 @@ def main():
         core_subdir = core_layerbranch.vcs_subdir
     else:
         core_subdir = 'meta'
-    core_urldir = sanitise_path(core_layer.vcs_url)
+    core_urldir = core_layer.get_fetch_dir()
     core_repodir = os.path.join(fetchdir, core_urldir)
     core_layerdir = os.path.join(core_repodir, core_subdir)
     out = runcmd("git checkout origin/%s" % options.branch, core_repodir)
@@ -307,7 +298,7 @@ def main():
         transaction.enter_transaction_management()
         transaction.managed(True)
         try:
-            urldir = sanitise_path(layer.vcs_url)
+            urldir = layer.get_fetch_dir()
             repodir = os.path.join(fetchdir, urldir)
             if layer.vcs_url in failedrepos:
                 logger.info("Skipping update of layer %s as fetch of repository %s failed" % (layer.name, layer.vcs_url))
@@ -382,7 +373,7 @@ def main():
                 config_data_copy = bb.data.createCopy(tinfoil.config_data)
                 parse_layer_conf(layerdir, config_data_copy)
                 for dep in layerbranch.dependencies_set.all():
-                    depurldir = sanitise_path(dep.dependency.vcs_url)
+                    depurldir = dep.dependency.get_fetch_dir()
                     deprepodir = os.path.join(fetchdir, depurldir)
                     deplayerbranch = dep.dependency.get_layerbranch(options.branch)
                     if not deplayerbranch:
