@@ -334,6 +334,17 @@ def main():
                 if layerbranch_master:
                     layerbranch.vcs_subdir = layerbranch_master.vcs_subdir
                 layerbranch.save()
+                if layerbranch_master:
+                    for maintainer in layerbranch_master.layermaintainer_set.all():
+                        maintainer.pk = None
+                        maintainer.id = None
+                        maintainer.layerbranch = layerbranch
+                        maintainer.save()
+                    for dep in layerbranch_master.dependencies_set.all():
+                        dep.pk = None
+                        dep.id = None
+                        dep.layerbranch = layerbranch
+                        dep.save()
 
             if layerbranch.vcs_subdir:
                 # Find latest commit in subdirectory
