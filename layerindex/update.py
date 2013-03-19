@@ -263,9 +263,14 @@ def main():
     if not core_layer:
         logger.error("Unable to find core layer %s in database; check CORE_LAYER_NAME setting" % settings.CORE_LAYER_NAME)
         sys.exit(1)
+    core_layerbranch = core_layer.get_layerbranch(options.branch)
+    if core_layerbranch:
+        core_subdir = core_layerbranch.vcs_subdir
+    else:
+        core_subdir = 'meta'
     core_urldir = sanitise_path(core_layer.vcs_url)
     core_repodir = os.path.join(fetchdir, core_urldir)
-    core_layerdir = os.path.join(core_repodir, core_layer.vcs_subdir)
+    core_layerdir = os.path.join(core_repodir, core_subdir)
     out = runcmd("git checkout origin/%s" % options.branch, core_repodir)
     out = runcmd("git clean -f -x", core_repodir)
     # The directory above where this script exists should contain our conf/layer.conf,
@@ -319,22 +324,25 @@ def main():
                 transaction.rollback()
                 continue
 
-            if layer.vcs_subdir:
-                # Find latest commit in subdirectory
-                # A bit odd to do it this way but apparently there's no other way in the GitPython API
-                for commit in repo.iter_commits('origin/%s' % options.branch, paths=layer.vcs_subdir):
-                    topcommit = commit
-                    break
-
             layerbranch = layer.get_layerbranch(options.branch)
             if not layerbranch:
                 # LayerBranch doesn't exist for this branch, create it
                 layerbranch = LayerBranch()
                 layerbranch.layer = layer
                 layerbranch.branch = branch
+                layerbranch_master = layer.get_layerbranch('master')
+                if layerbranch_master:
+                    layerbranch.vcs_subdir = layerbranch_master.vcs_subdir
                 layerbranch.save()
 
-            layerdir = os.path.join(repodir, layer.vcs_subdir)
+            if layerbranch.vcs_subdir:
+                # Find latest commit in subdirectory
+                # A bit odd to do it this way but apparently there's no other way in the GitPython API
+                for commit in repo.iter_commits('origin/%s' % options.branch, paths=layerbranch.vcs_subdir):
+                    topcommit = commit
+                    break
+
+            layerdir = os.path.join(repodir, layerbranch.vcs_subdir)
             layerdir_start = os.path.normpath(layerdir) + os.sep
             layerrecipes = Recipe.objects.filter(layerbranch=layerbranch)
             layermachines = Machine.objects.filter(layerbranch=layerbranch)
@@ -365,7 +373,12 @@ def main():
                 for dep in layerbranch.dependencies_set.all():
                     depurldir = sanitise_path(dep.dependency.vcs_url)
                     deprepodir = os.path.join(fetchdir, depurldir)
-                    deplayerdir = os.path.join(deprepodir, dep.dependency.vcs_subdir)
+                    deplayerbranch = dep.dependency.get_layerbranch(options.branch)
+                    if not deplayerbranch:
+                        logger.error('Dependency %s of layer %s does not have branch record for branch %s' % (dep.dependency.name, layer.name, options.branch))
+                        transaction.rollback()
+                        continue
+                    deplayerdir = os.path.join(deprepodir, deplayerbranch.vcs_subdir)
                     parse_layer_conf(deplayerdir, config_data_copy)
                 config_data_copy.delVar('LAYERDIR')
 
@@ -381,8 +394,8 @@ def main():
                 if diff:
                     # Apply git changes to existing recipe list
 
-                    if layer.vcs_subdir:
-                        subdir_start = os.path.normpath(layer.vcs_subdir) + os.sep
+                    if layerbranch.vcs_subdir:
+                        subdir_start = os.path.normpath(layerbranch.vcs_subdir) + os.sep
                     else:
                         subdir_start = ""
 

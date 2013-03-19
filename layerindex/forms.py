@@ -46,12 +46,13 @@ LayerMaintainerFormSet = inlineformset_factory(LayerBranch, LayerMaintainer, for
 
 class EditLayerForm(forms.ModelForm):
     # Additional form fields
+    vcs_subdir = forms.CharField(label='Repository subdirectory', max_length=40, required=False, help_text='Subdirectory within the repository where the layer is located, if not in the root (usually only used if the repository contains more than one layer)')
     deps = forms.ModelMultipleChoiceField(label='Other layers this layer depends upon', queryset=LayerItem.objects.all(), required=False)
     captcha = CaptchaField(label='Verification', help_text='Please enter the letters displayed for verification purposes', error_messages={'invalid':'Incorrect entry, please try again'})
 
     class Meta:
         model = LayerItem
-        fields = ('name', 'layer_type', 'summary', 'description', 'vcs_url', 'vcs_subdir', 'vcs_web_url', 'vcs_web_tree_base_url', 'vcs_web_file_base_url', 'usage_url', 'mailing_list_url')
+        fields = ('name', 'layer_type', 'summary', 'description', 'vcs_url', 'vcs_web_url', 'vcs_web_tree_base_url', 'vcs_web_file_base_url', 'usage_url', 'mailing_list_url')
 
     def __init__(self, user, layerbranch, *args, **kwargs):
         super(self.__class__, self).__init__(*args, **kwargs)
@@ -63,6 +64,12 @@ class EditLayerForm(forms.ModelForm):
             self.fields['deps'].initial = [l.pk for l in LayerItem.objects.filter(name='openembedded-core')]
             if user.is_authenticated():
                 del self.fields['captcha']
+        # Ensure repo subdir appears after repo URL
+        field_order = self.fields.keyOrder
+        field_order.pop(field_order.index('vcs_subdir'))
+        name_pos = field_order.index('vcs_url') + 1
+        field_order.insert(name_pos, 'vcs_subdir')
+        self.fields['vcs_subdir'].initial = layerbranch.vcs_subdir
         self.was_saved = False
 
     def checked_deps(self):

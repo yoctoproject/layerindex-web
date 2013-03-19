@@ -99,6 +99,7 @@ def edit_layer_view(request, template_name, slug=None):
             with transaction.commit_on_success():
                 form.save()
                 layerbranch.layer = layeritem
+                layerbranch.vcs_subdir = form.cleaned_data['vcs_subdir']
                 layerbranch.save()
                 maintainerformset.save()
                 if slug:

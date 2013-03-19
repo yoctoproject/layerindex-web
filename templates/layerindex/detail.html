@@ -95,9 +95,9 @@
                         {% endif %}
                     </p>
 
-                    {% if layeritem.vcs_subdir %}
+                    {% if layerbranch.vcs_subdir %}
                         <h4>Subdirectory</h4>
-                        <p><span data-toggle="tooltip" title="Select subdirectory"><i class="icon-circle-arrow-right selectallicon" for="vcs_subdir" id="vcs_subdir_select"></i></span><span id="vcs_subdir" class="copyable">{{ layeritem.vcs_subdir }}</span>
+                        <p><span data-toggle="tooltip" title="Select subdirectory"><i class="icon-circle-arrow-right selectallicon" for="vcs_subdir" id="vcs_subdir_select"></i></span><span id="vcs_subdir" class="copyable">{{ layerbranch.vcs_subdir }}</span>
                             {% if layerbranch.tree_url %}
                                 <span class="label label-info">
                                     <a href="{{ layerbranch.tree_url }}">web subdirectory</a>
