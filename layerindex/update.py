@@ -114,13 +114,16 @@ def update_recipe_file(data, path, recipe, layerdir_start, repodir):
 
 def update_machine_conf_file(path, machine):
     logger.debug('Updating machine %s' % path)
+    desc = ""
     with open(path, 'r') as f:
         for line in f:
+            if line.startswith('#@NAME:'):
+                desc = line[7:].strip()
             if line.startswith('#@DESCRIPTION:'):
                 desc = line[14:].strip()
-                desc = re.sub(r'Machine configuration for (the )*', '', desc)
-                machine.description = desc
+                desc = re.sub(r'Machine configuration for( running)*( an)*( the)*', '', desc)
                 break
+    machine.description = desc
 
 def parse_layer_conf(layerdir, data):
     data.setVar('LAYERDIR', str(layerdir))
