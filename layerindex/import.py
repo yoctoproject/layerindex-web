@@ -1,0 +1,185 @@
+#!/usr/bin/env python
+
+# Import layer index wiki page into database
+#
+# Copyright (C) 2013 Intel Corporation
+# Author: Paul Eggleton <paul.eggleton@linux.intel.com>
+#
+# Licensed under the MIT license, see COPYING.MIT for details
+
+
+import sys
+import os.path
+import optparse
+import logging
+import re
+
+def logger_create():
+    logger = logging.getLogger("LayerIndexImport")
+    loggerhandler = logging.StreamHandler()
+    loggerhandler.setFormatter(logging.Formatter("%(levelname)s: %(message)s"))
+    logger.addHandler(loggerhandler)
+    logger.setLevel(logging.INFO)
+    return logger
+
+logger = logger_create()
+
+
+def get_branch(branchname):
+    from layerindex.models import Branch
+    res = list(Branch.objects.filter(name=branchname)[:1])
+    if res:
+        return res[0]
+    return None
+
+def get_layer(layername):
+    from layerindex.models import LayerItem
+    res = list(LayerItem.objects.filter(name=layername)[:1])
+    if res:
+        return res[0]
+    return None
+
+
+def main():
+
+    parser = optparse.OptionParser(
+        usage = """
+    %prog [options]""")
+
+    options, args = parser.parse_args(sys.argv)
+
+    # Get access to our Django model
+    newpath = os.path.abspath(os.path.dirname(os.path.abspath(sys.argv[0])) + '/..')
+    sys.path.append(newpath)
+    os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
+
+    from django.core.management import setup_environ
+    from django.conf import settings
+    from layerindex.models import LayerItem, LayerBranch, LayerDependency
+    from django.db import transaction
+    import settings
+
+    setup_environ(settings)
+
+    import httplib
+    conn = httplib.HTTPConnection("www.openembedded.org")
+    conn.request("GET", "/wiki/LayerIndex?action=raw")
+    resp = conn.getresponse()
+    if resp.status in [200, 302]:
+        data = resp.read()
+        in_table = False
+        layer_type = 'M'
+        nowiki_re = re.compile(r'</?nowiki>')
+        link_re = re.compile(r'\[(http.*) +link\]')
+        readme_re = re.compile(r';f=[a-zA-Z0-9/-]*README;')
+        master_branch = get_branch('master')
+        core_layer = None
+        transaction.enter_transaction_management()
+        transaction.managed(True)
+        try:
+            for line in data.splitlines():
+                if line.startswith('{|'):
+                    in_table = True
+                    continue
+                if in_table:
+                    if line.startswith('|}'):
+                        # We're done
+                        break
+                    elif line.startswith('!'):
+                        section = line.split('|', 1)[1].strip("'")
+                        if section.startswith('Base'):
+                            layer_type = 'A'
+                        elif section.startswith('Board'):
+                            layer_type = 'B'
+                        elif section.startswith('Software'):
+                            layer_type = 'S'
+                        elif section.startswith('Distribution'):
+                            layer_type = 'D'
+                        else:
+                            layer_type = 'M'
+                    elif not line.startswith('|-'):
+                        if line.startswith("|| ''"):
+                            continue
+                        fields = line.split('||')
+                        layer = LayerItem()
+                        layer.name = fields[1].strip()
+                        if ' ' in layer.name:
+                            logger.warn('Skipping layer %s - name invalid' % layer.name)
+                            continue
+                        logger.info('Adding layer %s' % layer.name)
+                        layer.status = 'P'
+                        layer.layer_type = layer_type
+                        layer.summary = fields[2].strip()
+                        layer.description = layer.summary
+                        if len(fields) > 6:
+                            res = link_re.match(fields[6].strip())
+                            if res:
+                                link = res.groups(1)[0].strip()
+                                if link.endswith('/README') or readme_re.search(link):
+                                    link = 'README'
+                                layer.usage_url = link
+
+                        repoval = nowiki_re.sub('', fields[4]).strip()
+                        layer.vcs_url = repoval
+                        if repoval.startswith('git://git.openembedded.org/'):
+                            reponame = re.sub('^.*/', '', repoval)
+                            layer.vcs_web_url = 'http://cgit.openembedded.org/cgit.cgi/' + reponame
+                            layer.vcs_web_tree_base_url = 'http://cgit.openembedded.org/cgit.cgi/' + reponame + '/tree/%path%?h=%branch%'
+                            layer.vcs_web_file_base_url = 'http://cgit.openembedded.org/cgit.cgi/' + reponame + '/tree/%path%?h=%branch%'
+                        elif 'git.yoctoproject.org/' in repoval:
+                            reponame = re.sub('^.*/', '', repoval)
+                            layer.vcs_web_url = 'http://git.yoctoproject.org/cgit/cgit.cgi/' + reponame
+                            layer.vcs_web_tree_base_url = 'http://git.yoctoproject.org/cgit/cgit.cgi/' + reponame + '/tree/%path%?h=%branch%'
+                            layer.vcs_web_file_base_url = 'http://git.yoctoproject.org/cgit/cgit.cgi/' + reponame + '/tree/%path%?h=%branch%'
+                        elif 'github.com/' in repoval:
+                            reponame = re.sub('^.*github.com/', '', repoval)
+                            reponame = re.sub('.git$', '', reponame)
+                            layer.vcs_web_url = 'http://github.com/' + reponame
+                            layer.vcs_web_tree_base_url = 'http://github.com/' + reponame + '/tree/%branch%/'
+                            layer.vcs_web_file_base_url = 'http://github.com/' + reponame + '/blob/%branch%/'
+                        elif 'gitorious.org/' in repoval:
+                            reponame = re.sub('^.*gitorious.org/', '', repoval)
+                            reponame = re.sub('.git$', '', reponame)
+                            layer.vcs_web_url = 'http://gitorious.org/' + reponame
+                            layer.vcs_web_tree_base_url = 'http://gitorious.org/' + reponame + '/trees/%branch%/'
+                            layer.vcs_web_file_base_url = 'http://gitorious.org/' + reponame + '/blobs/%branch%/'
+                        elif 'bitbucket.org/' in repoval:
+                            reponame = re.sub('^.*bitbucket.org/', '', repoval)
+                            reponame = re.sub('.git$', '', reponame)
+                            layer.vcs_web_url = 'http://bitbucket.org/' + reponame
+                            layer.vcs_web_tree_base_url = 'http://bitbucket.org/' + reponame + '/src/%branch%/%path%?at=%branch%'
+                            layer.vcs_web_file_base_url = 'http://bitbucket.org/' + reponame + '/src/%branch%/%path%?at=%branch%'
+                        elif '.git' in repoval:
+                            res = link_re.match(fields[5].strip())
+                            layer.vcs_web_url = res.groups(1)[0]
+                            layer.vcs_web_tree_base_url = re.sub(r'\.git.*', '.git;a=tree;f=%path%;hb=%branch%', layer.vcs_web_url)
+                            layer.vcs_web_file_base_url = re.sub(r'\.git.*', '.git;a=blob;f=%path%;hb=%branch%', layer.vcs_web_url)
+
+                        layer.save()
+                        layerbranch = LayerBranch()
+                        layerbranch.layer = layer
+                        layerbranch.branch = master_branch
+                        layerbranch.vcs_subdir = fields[3].strip()
+                        layerbranch.save()
+                        if layer.name != 'openembedded-core':
+                            if not core_layer:
+                                core_layer = get_layer('openembedded-core')
+                            if core_layer:
+                                layerdep = LayerDependency()
+                                layerdep.layerbranch = layerbranch
+                                layerdep.dependency = core_layer
+                                layerdep.save()
+            transaction.commit()
+        except:
+            transaction.rollback()
+            raise
+        finally:
+            transaction.leave_transaction_management()
+    else:
+        logger.error('Fetch failed: %d: %s' % (resp.status, resp.reason))
+
+    sys.exit(0)
+
+
+if __name__ == "__main__":
+    main()
