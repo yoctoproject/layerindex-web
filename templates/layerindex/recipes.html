@@ -50,7 +50,7 @@
 
                     <tbody>
                         {% for recipe in recipe_list %}
-                            <tr>
+                            <tr {% if recipe.preferred_count > 0 %}class="muted"{% endif %}>
                                 <td><a href="{% url recipe recipe.id %}">{{ recipe.name }}</a></td>
                                 <td>{{ recipe.pv }}</td>
                                 <td>{{ recipe.short_desc }}</td>
@@ -76,4 +76,15 @@
 
 {% endautoescape %}
 
+{% endblock %}
+
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        firstfield = $("#filter-form input:text").first()
+        if( ! firstfield.val() )
+            firstfield.focus()
+    });
+</script>
 {% endblock %}

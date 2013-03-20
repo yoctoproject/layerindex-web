@@ -247,9 +247,32 @@ class RecipeSearchView(ListView):
         init_qs = Recipe.objects.filter(layerbranch__branch__name=self.request.session.get('branch', 'master'))
         if query_string.strip():
             entry_query = simplesearch.get_query(query_string, ['pn', 'summary', 'description', 'filename'])
-            return init_qs.filter(entry_query).order_by('pn', 'layerbranch__layer')
+            qs = init_qs.filter(entry_query).order_by('pn', 'layerbranch__layer')
         else:
-            return init_qs.order_by('pn', 'layerbranch__layer')
+            if 'q' in self.request.GET:
+                qs = init_qs.order_by('pn', 'layerbranch__layer')
+            else:
+                # It's a bit too slow to return all records by default, and most people
+                # won't actually want that (if they do they can just hit the search button
+                # with no query string)
+                return Recipe.objects.none()
+
+        # Add extra column so we can show "duplicate" recipes from other layers de-emphasised
+        # (it's a bit crude having to do this using SQL but I couldn't find a better way...)
+        return qs.extra(
+            select={
+                'preferred_count': """SELECT COUNT(1)
+FROM layerindex_recipe AS recipe2
+, layerindex_layerbranch as branch2
+, layerindex_layeritem as layer2
+WHERE branch2.id = recipe2.layerbranch_id
+AND layer2.id = branch2.layer_id
+AND layer2.layer_type in ('S', 'A')
+AND recipe2.pn = layerindex_recipe.pn
+AND recipe2.layerbranch_id < layerindex_recipe.layerbranch_id
+"""
+            },
+        )
 
     def get_context_data(self, **kwargs):
         context = super(RecipeSearchView, self).get_context_data(**kwargs)

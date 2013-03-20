@@ -10,7 +10,6 @@ Later:
 * Add link to the all layers and all recipes tables from the layer details page?
 * Display no-results found message when search does not return any results (all tables)
 * Change behaviour of filter menus to stay open so that you can check / uncheck multiple items
-* Show recipes from non-software/base layers differently in recipes list
 * Show layer type in layer detail?
 * Usage links in list page?
 * Avoid page content changing size depending on whether scrollbar is there or not?
