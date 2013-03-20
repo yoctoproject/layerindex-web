@@ -293,6 +293,10 @@ def main():
     # why won't they just fix that?!)
     tinfoil.config_data.setVar('LICENSE', '')
 
+    # Ensure TMPDIR exists (or insane.bbclass will blow up trying to write to the QA log)
+    oe_tmpdir = tinfoil.config_data.getVar('TMPDIR', True)
+    os.makedirs(oe_tmpdir)
+
     # Process and extract data from each layer
     for layer in layerquery:
         transaction.enter_transaction_management()
