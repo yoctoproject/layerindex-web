@@ -362,6 +362,11 @@ def main():
                         transaction.rollback()
                         continue
 
+                if not os.path.exists(os.path.join(layerdir, 'conf/layer.conf')):
+                    logger.error("conf/layer.conf not found for layer %s - is subdirectory set correctly?" % layer.name)
+                    transaction.rollback()
+                    continue
+
                 logger.info("Collecting data for layer %s on branch %s" % (layer.name, options.branch))
 
                 # Parse layer.conf files for this layer and its dependencies
