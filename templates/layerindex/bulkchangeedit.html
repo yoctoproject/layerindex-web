@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% comment %}
+
+  layerindex-web - bulk change edit page template
+
+  Copyright (C) 2013 Intel Corporation
+  Licensed under the MIT license, see COPYING.MIT for details
+
+{% endcomment %}
+
+<!--
+{% block title_append %} - bulk change{% endblock %}
+-->
+
+{% block content %}
+{% autoescape on %}
+
+<h2>Edit recipe fields</h2>
+
+<form method="POST">
+    {{ formset.non_form_errors }}
+    {{ formset.management_form }}
+    {% csrf_token %}
+    {% for form in formset %}
+        {% for hidden in form.hidden_fields %}
+            {{ hidden }}
+        {% endfor %}
+        <h3>{{ form.instance.recipe.filename }}</h3>
+        {% for field in form.visible_fields %}
+            {% if field.errors %}
+            <div class="control-group alert alert-error">
+            {{ field.errors }}
+            {% endif %}
+            <div class="control-group formfields">
+                <div class="control-label">
+                    {{ field.label_tag }}
+                </div>
+                <div class="controls">
+                    {{ field }}
+                    <span class="help-inline custom-help">
+                        {{ field.help_text }}
+                    </span>
+                </div>
+            </div>
+        {% endfor %}
+    {% endfor %}
+    <input type="submit" class="btn" name="save" value="Save"></input>
+</form>
+
+{% endautoescape %}
+
+{% endblock %}

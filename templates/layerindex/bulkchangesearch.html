@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% comment %}
+
+  layerindex-web - bulk change search page template
+
+  Copyright (C) 2013 Intel Corporation
+  Licensed under the MIT license, see COPYING.MIT for details
+
+{% endcomment %}
+
+
+<!--
+{% block title_append %} - bulk change{% endblock %}
+-->
+
+{% block content %}
+{% autoescape on %}
+
+<h2>Add recipes to changeset</h2>
+
+        <div class="row-fluid">
+
+            <div class="span9">
+
+                <div class="row-fluid">
+                    <form id="search-form" class="form-inline" method="GET">
+                        <table class="search-form-table">
+                            <tbody>
+                                <tr>
+                                    <td></td>
+                                    <td>
+                                        {{ search_form.field.errors }}
+                                        {{ search_form.match_type.errors }}
+                                        {{ search_form.value.errors }}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Field:</td>
+                                    <td>
+                                        {{ search_form.field }}
+                                        {{ search_form.match_type }}
+                                        {{ search_form.value }}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td></td>
+                                    <td>
+                                        {{ search_form.layer.errors }}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Layer:</td>
+                                    <td>{{ search_form.layer }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <button class="btn" type="submit">Search</button>
+                    </form>
+                </div>
+
+{% if recipe_list %}
+                <form id="recipe-select-form" method="POST">
+                    {% csrf_token %}
+                    <table class="table table-striped table-bordered recipestable">
+                        <thead>
+                            <tr>
+                                <th></th>
+                                <th>Recipe name</th>
+                                <th>Version</th>
+                                <th class="span9">Description</th>
+                                <th>Layer</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            {% for recipe in recipe_list %}
+                                <tr>
+                                    <td><input type="checkbox" name="selecteditems" value="{{ recipe.id }}"></input></td>
+                                    <td><a href="{% url recipe recipe.id %}">{{ recipe.name }}</a></td>
+                                    <td>{{ recipe.pv }}</td>
+                                    <td>{{ recipe.short_desc }}</td>
+                                    <td><a href="{% url layer_item recipe.layerbranch.layer.name %}">{{ recipe.layerbranch.layer.name }}</a></td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    <input type="submit" class="btn" name="add_selected" value="Add selected"></input>
+                    <input type="submit" class="btn" name="add_all" value="Add all"></input>
+
+    {% if is_paginated %}
+        {% load pagination %}
+        {% pagination page_obj %}
+    {% endif %}
+{% else %}
+    {% if searched %}
+    <p>No matching recipes in database.</p>
+    {% endif %}
+{% endif %}
+            </div>
+
+            <div class="span3">
+                    {% if changeset %}
+                    <div class="well">
+                        <p>{{ changeset.name }}</p>
+                        {% if changeset.recipechange_set.all %}
+                        <small>
+                            {% regroup changeset.recipechange_set.all by recipe.layerbranch.layer as changeset_recipes %}
+                            <ul>
+                            {% for layer in changeset_recipes %}
+                                <li>{{ layer.grouper }}
+                                <ul>
+                                    {% for change in layer.list %}
+                                    <li>{{ change.recipe.filename }}</li>
+                                    {% endfor %}
+                                </ul>
+                                </li>
+                            {% endfor %}
+                            </ul>
+                        </small>
+                        <input type="submit" class="btn" name="remove_all" value="Remove all"></input>
+                        <a href="{% url bulk_change_edit changeset.id %}" class="btn">Edit</a>
+                        {% endif %}
+                        <a href="{% url bulk_change_delete changeset.id %}?cancel=bulk_change_search" class="btn">Delete</a>
+                    </div>
+                    {% endif %}
+                </form>
+
+
+            </div>
+
+        </div>
+
+{% endautoescape %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    enable_value_field = function() {
+        if($('#id_match_type').val() == 'B')
+            $('#id_value').prop('disabled', true);
+        else
+            $('#id_value').prop('disabled', false);
+    }
+
+    $(document).ready(function() {
+        $('#id_match_type').change(enable_value_field)
+        enable_value_field()
+    });
+</script>
+{% endblock %}

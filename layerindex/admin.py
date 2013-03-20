@@ -80,6 +80,15 @@ class BBClassAdmin(admin.ModelAdmin):
     def has_delete_permission(self, request, obj=None):
         return False
 
+class RecipeChangeInline(admin.StackedInline):
+    model = RecipeChange
+
+class RecipeChangesetAdmin(admin.ModelAdmin):
+    model = RecipeChangeset
+    inlines = [
+        RecipeChangeInline
+    ]
+
 admin.site.register(Branch, BranchAdmin)
 admin.site.register(LayerItem, LayerItemAdmin)
 admin.site.register(LayerBranch, LayerBranchAdmin)
@@ -91,3 +100,4 @@ admin.site.register(RecipeFileDependency)
 admin.site.register(Machine, MachineAdmin)
 admin.site.register(BBAppend, BBAppendAdmin)
 admin.site.register(BBClass, BBClassAdmin)
+admin.site.register(RecipeChangeset, RecipeChangesetAdmin)

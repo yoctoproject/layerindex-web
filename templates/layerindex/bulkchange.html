@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% comment %}
+
+  layerindex-web - bulk change page template
+
+  Copyright (C) 2013 Intel Corporation
+  Licensed under the MIT license, see COPYING.MIT for details
+
+{% endcomment %}
+
+<!--
+{% block title_append %} - bulk change{% endblock %}
+-->
+
+{% block content %}
+{% autoescape on %}
+
+<h2>Bulk change</h2>
+
+<p>This tool allows you to update the value of "meta" variables (such as
+DESCRIPTION and LICENSE) on more than one recipe at once, and then
+generate a patch for these changes which can be submitted for merging.</p>
+
+<p>To get started, your changes will need to be associated with a changeset.</p>
+
+{% if changesets %}
+    <h3>Select an existing changeset</h3>
+    <ul>
+    {% for changeset in changesets %}
+        <li><a href="{% url bulk_change_search changeset.id %}">{{ changeset.name }}</a></li>
+    {% endfor %}
+    </ul>
+{% endif %}
+
+<h3>Create a new changeset</h3>
+
+<form class="form-inline" method="POST">
+    {% csrf_token %}
+    {% for hidden in form.hidden_fields %}
+        {{ hidden }}
+    {% endfor %}
+    {% for field in form.visible_fields %}
+        {% if field.errors %}
+        <div class="control-group alert alert-error">
+        {{ field.errors }}
+        {% endif %}
+        <div class="control-group">
+            {{ field.label_tag }}
+            {{ field }}
+            <span class="help-inline custom-help">
+                {{ field.help_text }}
+            </span>
+        {% if field.errors %}
+        </div>
+        {% endif %}
+        </div>
+    {% endfor %}
+    <div class="control-group">
+        <div class="controls">
+            <button type="submit" class="btn">Create</button>
+        </div>
+    </div>
+</form>
+
+{% endautoescape %}
+
+{% endblock %}

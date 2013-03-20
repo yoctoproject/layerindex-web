@@ -164,3 +164,9 @@ padding: 8px;
 .muted a {
     color: #66B8E0;
 }
+
+.search-form-table {
+    border-spacing: 2px;
+    border-collapse: separate;
+    padding-bottom: 5px;
+}

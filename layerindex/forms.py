@@ -4,10 +4,10 @@
 #
 # Licensed under the MIT license, see COPYING.MIT for details
 
-from layerindex.models import LayerItem, LayerBranch, LayerMaintainer, LayerNote
+from layerindex.models import LayerItem, LayerBranch, LayerMaintainer, LayerNote, RecipeChangeset, RecipeChange
 from django import forms
 from django.core.validators import URLValidator, RegexValidator, email_re
-from django.forms.models import inlineformset_factory
+from django.forms.models import inlineformset_factory, modelformset_factory
 from captcha.fields import CaptchaField
 from django.contrib.auth.models import User
 import re
@@ -147,3 +147,58 @@ class EditProfileForm(forms.ModelForm):
     class Meta:
         model = User
         fields = ('first_name', 'last_name', 'email')
+
+
+class AdvancedRecipeSearchForm(forms.Form):
+    FIELD_CHOICES = (
+        ('pn',          'Name'),
+        ('summary',     'Summary'),
+        ('description', 'Description'),
+        ('homepage',    'Homepage'),
+        ('bugtracker',  'Bug tracker'),
+        ('section',     'Section'),
+        ('license',     'License'),
+    )
+    MATCH_TYPE_CHOICES = (
+        ('C', 'contains'),
+        ('N', 'does not contain'),
+        ('E', 'equals'),
+        ('B', 'is blank'),
+    )
+    field = forms.ChoiceField(choices=FIELD_CHOICES)
+    match_type = forms.ChoiceField(choices=MATCH_TYPE_CHOICES)
+    value = forms.CharField(max_length=255, required=False)
+    layer = forms.ModelChoiceField(queryset=LayerItem.objects.filter(status='P').order_by('name'), empty_label="(any)", required=False)
+
+
+class RecipeChangesetForm(forms.ModelForm):
+    class Meta:
+        model = RecipeChangeset
+        fields = ('name',)
+
+
+class BulkChangeEditForm(forms.ModelForm):
+    class Meta:
+        model = RecipeChange
+        fields = ('summary', 'description', 'homepage', 'bugtracker', 'section', 'license')
+
+    def __init__(self, *args, **kwargs):
+        instance = kwargs.get('instance', None)
+        initial = kwargs.get('initial', {})
+        if instance:
+            recipe = instance.recipe
+            if recipe:
+                for fieldname in self._meta.fields:
+                    if not getattr(instance, fieldname):
+                        initial[fieldname] = getattr(recipe, fieldname)
+        kwargs['initial'] = initial
+        super(BulkChangeEditForm, self).__init__(*args, **kwargs)
+
+    def clear_same_values(self):
+        for fieldname in self._meta.fields:
+            oldval = getattr(self.instance.recipe, fieldname)
+            newval = getattr(self.instance, fieldname)
+            if oldval == newval:
+                setattr(self.instance, fieldname, '')
+
+BulkChangeEditFormSet = modelformset_factory(RecipeChange, form=BulkChangeEditForm, extra=0)

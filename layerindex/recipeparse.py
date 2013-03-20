@@ -90,6 +90,14 @@ def init_parser(settings, branch, bitbakepath, enable_tracking=False, nocheckout
 
     return (tinfoil, tempdir)
 
+def checkout_layer_branch(layerbranch, repodir):
+    if layerbranch.actual_branch:
+        branchname = layerbranch.actual_branch
+    else:
+        branchname = layerbranch.branch.name
+    out = utils.runcmd("git checkout origin/%s" % branchname, repodir)
+    out = utils.runcmd("git clean -f -x", repodir)
+
 def setup_layer(config_data, fetchdir, layerdir, layer, layerbranch):
     # Parse layer.conf files for this layer and its dependencies
     # This is necessary not just because BBPATH needs to be set in order
@@ -109,3 +117,16 @@ def setup_layer(config_data, fetchdir, layerdir, layer, layerbranch):
     config_data_copy.delVar('LAYERDIR')
     return config_data_copy
 
+def get_var_files(fn, varlist, d):
+    import bb.cache
+    varfiles = {}
+    envdata = bb.cache.Cache.loadDataFull(fn, [], d)
+    for v in varlist:
+        history = envdata.varhistory.get_variable_files(v)
+        if history:
+            actualfile = history[-1]
+        else:
+            actualfile = None
+        varfiles[v] = actualfile
+
+    return varfiles

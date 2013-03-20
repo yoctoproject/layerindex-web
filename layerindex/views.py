@@ -6,14 +6,14 @@
 
 from django.shortcuts import get_object_or_404, render
 from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidden
-from django.core.urlresolvers import reverse
+from django.core.urlresolvers import reverse, reverse_lazy
 from django.core.exceptions import PermissionDenied
 from django.template import RequestContext
-from layerindex.models import Branch, LayerItem, LayerMaintainer, LayerBranch, LayerDependency, LayerNote, Recipe, Machine, BBClass
+from layerindex.models import Branch, LayerItem, LayerMaintainer, LayerBranch, LayerDependency, LayerNote, Recipe, Machine, BBClass, RecipeChange, RecipeChangeset
 from datetime import datetime
 from django.views.generic import TemplateView, DetailView, ListView
-from django.views.generic.edit import UpdateView
-from layerindex.forms import EditLayerForm, LayerMaintainerFormSet, EditNoteForm, EditProfileForm
+from django.views.generic.edit import CreateView, DeleteView, UpdateView
+from layerindex.forms import EditLayerForm, LayerMaintainerFormSet, EditNoteForm, EditProfileForm, RecipeChangesetForm, AdvancedRecipeSearchForm, BulkChangeEditFormSet
 from django.db import transaction
 from django.contrib.auth.models import User, Permission
 from django.db.models import Q, Count
@@ -65,7 +65,7 @@ def delete_layernote_view(request, template_name, slug, pk):
         return render(request, template_name, {
             'object': layernote,
             'object_type': layernote._meta.verbose_name,
-            'return_url': layeritem.get_absolute_url()
+            'cancel_url': layeritem.get_absolute_url()
         })
 
 def delete_layer_view(request, template_name, slug):
@@ -79,7 +79,7 @@ def delete_layer_view(request, template_name, slug):
         return render(request, template_name, {
             'object': layeritem,
             'object_type': layeritem._meta.verbose_name,
-            'return_url': layeritem.get_absolute_url()
+            'cancel_url': layeritem.get_absolute_url()
         })
 
 def edit_layer_view(request, template_name, slug=None):
@@ -173,6 +173,52 @@ def edit_layer_view(request, template_name, slug=None):
         'maintainerformset': maintainerformset,
         'deplistlayers': deplistlayers,
     })
+
+def bulk_change_edit_view(request, template_name, pk):
+    changeset = get_object_or_404(RecipeChangeset, pk=pk)
+
+    if request.method == 'POST':
+        formset = BulkChangeEditFormSet(request.POST, queryset=changeset.recipechange_set.all())
+        if formset.is_valid():
+            for form in formset:
+                form.clear_same_values()
+            formset.save()
+            return HttpResponseRedirect(reverse('bulk_change_review', args=(changeset.id,)))
+    else:
+        formset = BulkChangeEditFormSet(queryset=changeset.recipechange_set.all())
+
+    return render(request, template_name, {
+        'formset': formset,
+    })
+
+def bulk_change_patch_view(request, pk):
+    import os
+    import os.path
+    import utils
+    changeset = get_object_or_404(RecipeChangeset, pk=pk)
+    # FIXME this couples the web server and machine running the update script together,
+    # but given that it's a separate script the way is open to decouple them in future
+    try:
+        ret = utils.runcmd('python bulkchange.py %d %s' % (int(pk), settings.TEMP_BASE_DIR), os.path.dirname(__file__))
+        if ret:
+            fn = ret.splitlines()[-1]
+            if os.path.exists(fn):
+                if fn.endswith('.tar.gz'):
+                    mimetype = 'application/x-gzip'
+                else:
+                    mimetype = 'text/x-diff'
+                response = HttpResponse(mimetype=mimetype)
+                response['Content-Disposition'] = 'attachment; filename="%s"' % os.path.basename(fn)
+                with open(fn, "rb") as f:
+                    data = f.read()
+                    response.write(data)
+                os.remove(fn)
+                return response
+        return HttpResponse('No patch data generated', content_type='text/plain')
+    except Exception as e:
+        return HttpResponse('Failed to generate patches: %s' % e, content_type='text/plain')
+    # FIXME better error handling
+
 
 def _check_branch(request):
     branchname = request.GET.get('branch', '')
@@ -322,6 +368,137 @@ class DuplicatesView(TemplateView):
         context['recipes'] = self.get_recipes()
         context['classes'] = self.get_classes()
         return context
+
+class AdvancedRecipeSearchView(ListView):
+    context_object_name = 'recipe_list'
+    paginate_by = 50
+
+    def get_queryset(self):
+        field = self.request.GET.get('field', '')
+        if field:
+            search_form = AdvancedRecipeSearchForm(self.request.GET)
+            if not search_form.is_valid():
+                return Recipe.objects.none()
+        match_type = self.request.GET.get('match_type', '')
+        if match_type == 'B':
+            value = ''
+        else:
+            value = self.request.GET.get('value', '')
+        if value or match_type == 'B':
+            if match_type == 'C' or match_type == 'N':
+                query = Q(**{"%s__icontains" % field: value})
+            else:
+                query = Q(**{"%s" % field: value})
+            queryset = Recipe.objects.filter(layerbranch__branch__name=self.request.session.get('branch', 'master'))
+            layer = self.request.GET.get('layer', '')
+            if layer:
+                queryset = queryset.filter(layerbranch__layer=layer)
+            if match_type == 'N':
+                # Exclude blank as well
+                queryset = queryset.exclude(Q(**{"%s" % field: ''})).exclude(query)
+            else:
+                queryset = queryset.filter(query)
+            return queryset.order_by('pn', 'layerbranch__layer')
+        return Recipe.objects.none()
+
+    def get_context_data(self, **kwargs):
+        context = super(AdvancedRecipeSearchView, self).get_context_data(**kwargs)
+        if self.request.GET.get('field', ''):
+            searched = True
+            search_form = AdvancedRecipeSearchForm(self.request.GET)
+        else:
+            searched = False
+            search_form = AdvancedRecipeSearchForm()
+        context['search_form'] = search_form
+        context['searched'] = searched
+        return context
+
+
+class BulkChangeView(CreateView):
+    model = RecipeChangeset
+    form_class = RecipeChangesetForm
+
+    @method_decorator(login_required)
+    def dispatch(self, request, *args, **kwargs):
+        return super(BulkChangeView, self).dispatch(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        if not self.request.user.is_authenticated():
+            raise PermissionDenied
+        obj = form.save(commit=False)
+        obj.user = self.request.user
+        obj.save()
+        return HttpResponseRedirect(reverse('bulk_change_search', args=(obj.id,)))
+
+    def get_context_data(self, **kwargs):
+        context = super(BulkChangeView, self).get_context_data(**kwargs)
+        context['changesets'] = RecipeChangeset.objects.filter(user=self.request.user)
+        return context
+
+
+class BulkChangeSearchView(AdvancedRecipeSearchView):
+
+    def get(self, request, *args, **kwargs):
+        self.changeset = get_object_or_404(RecipeChangeset, pk=kwargs['pk'])
+        if self.changeset.user != request.user:
+            raise PermissionDenied
+        return super(BulkChangeSearchView, self).get(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        if not request.user.is_authenticated():
+            raise PermissionDenied
+
+        changeset = get_object_or_404(RecipeChangeset, pk=kwargs['pk'])
+        if changeset.user != request.user:
+            raise PermissionDenied
+
+        def add_recipes(recipes):
+            for recipe in recipes:
+                if not changeset.recipechange_set.filter(recipe=recipe):
+                    change = RecipeChange()
+                    change.changeset = changeset
+                    change.recipe = recipe
+                    change.save()
+
+        if 'add_selected' in request.POST:
+            id_list = request.POST.getlist('selecteditems')
+            id_list = [int(i) for i in id_list if i.isdigit()]
+            recipes = Recipe.objects.filter(id__in=id_list)
+            add_recipes(recipes)
+        elif 'add_all' in request.POST:
+            add_recipes(self.get_queryset())
+        elif 'remove_all' in request.POST:
+            changeset.recipechange_set.all().delete()
+
+        return self.get(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super(BulkChangeSearchView, self).get_context_data(**kwargs)
+        context['changeset'] = self.changeset
+        return context
+
+
+class BaseDeleteView(DeleteView):
+
+    def get_context_data(self, **kwargs):
+        context = super(BaseDeleteView, self).get_context_data(**kwargs)
+        obj = context.get('object', None)
+        if obj:
+            context['object_type'] = obj._meta.verbose_name
+            cancel = self.request.GET.get('cancel', '')
+            if cancel:
+                context['cancel_url'] = reverse_lazy(cancel, args=(obj.pk,))
+        return context
+
+
+class BulkChangeDeleteView(BaseDeleteView):
+    model = RecipeChangeset
+    success_url = reverse_lazy('bulk_change')
+
+    def get_queryset(self):
+        qs = super(BulkChangeDeleteView, self).get_queryset()
+        return qs.filter(user=self.request.user)
+
 
 class MachineSearchView(ListView):
     context_object_name = 'machine_list'

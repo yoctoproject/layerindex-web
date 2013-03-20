@@ -303,3 +303,43 @@ class BBClass(models.Model):
 
     def __unicode__(self):
         return '%s (%s)' % (self.name, self.layerbranch.layer.name)
+
+
+class RecipeChangeset(models.Model):
+    user = models.ForeignKey(User)
+    name = models.CharField(max_length=255)
+
+    def __unicode__(self):
+        return '%s' % (self.name)
+
+
+class RecipeChange(models.Model):
+    RECIPE_VARIABLE_MAP = {
+        'summary': 'SUMMARY',
+        'description': 'DESCRIPTION',
+        'section': 'SECTION',
+        'license': 'LICENSE',
+        'homepage': 'HOMEPAGE',
+        'bugtracker': 'BUGTRACKER',
+    }
+
+    changeset = models.ForeignKey(RecipeChangeset)
+    recipe = models.ForeignKey(Recipe, related_name='+')
+    summary = models.CharField(max_length=100, blank=True)
+    description = models.TextField(blank=True)
+    section = models.CharField(max_length=100, blank=True)
+    license = models.CharField(max_length=100, blank=True)
+    homepage = models.URLField("Homepage URL", blank=True)
+    bugtracker = models.URLField("Bug tracker URL", blank=True)
+
+    def changed_fields(self, mapped = False):
+        res = {}
+        for field in self._meta.fields:
+            if not field.name in ['id', 'changeset', 'recipe']:
+                value = getattr(self, field.name)
+                if value:
+                    if mapped:
+                        res[self.RECIPE_VARIABLE_MAP[field.name]] = value
+                    else:
+                        res[field.name] = value
+        return res

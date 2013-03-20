@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% comment %}
+
+  layerindex-web - bulk change result page template
+
+  Copyright (C) 2013 Intel Corporation
+  Licensed under the MIT license, see COPYING.MIT for details
+
+{% endcomment %}
+
+<!--
+{% block title_append %} - bulk change{% endblock %}
+-->
+
+{% block content %}
+{% autoescape on %}
+
+<h2>{{ changeset.name }}</h2>
+{% regroup changeset.recipechange_set.all by recipe.layerbranch.layer as changeset_recipes %}
+<ul>
+{% for layer in changeset_recipes %}
+    <li>{{ layer.grouper }}
+    <ul>
+        {% for change in layer.list %}
+        <li>
+            {{ change.recipe.filename }}
+            <ul>
+                {% for field in change.changed_fields %}
+                    <li>{{ field }}</li>
+                {% endfor %}
+            </ul>
+        </li>
+        {% endfor %}
+    </ul>
+    </li>
+{% endfor %}
+</ul>
+<a href="{% url bulk_change_search changeset.id %}" class="btn">Add recipes</a>
+<a href="{% url bulk_change_edit changeset.id %}" class="btn">Edit</a>
+<a href="{% url bulk_change_patches changeset.id %}" class="btn">Get patches</a>
+<a href="{% url bulk_change_delete changeset.id %}?cancel=bulk_change_review" class="btn">Delete</a>
+
+{% endautoescape %}
+
+{% endblock %}
