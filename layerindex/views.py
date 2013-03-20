@@ -179,7 +179,7 @@ class LayerListView(ListView):
     context_object_name = 'layerbranch_list'
 
     def get_queryset(self):
-        return LayerBranch.objects.filter(branch__name=self.request.session.get('branch', 'master')).filter(layer__status='P').order_by('layer__name')
+        return LayerBranch.objects.filter(branch__name=self.request.session.get('branch', 'master')).filter(layer__status='P').order_by('layer__layer_type', 'layer__name')
 
     def get_context_data(self, **kwargs):
         context = super(LayerListView, self).get_context_data(**kwargs)
