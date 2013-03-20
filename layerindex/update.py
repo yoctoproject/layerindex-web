@@ -69,8 +69,9 @@ def split_bb_file_path(recipe_path, subdir_start):
     return (None, None)
 
 conf_re = re.compile(r'conf/machine/([^/.]*).conf$')
-def check_machine_conf(path):
-    res = conf_re.search(path)
+def check_machine_conf(path, subdir_start):
+    subpath = path[len(subdir_start):]
+    res = conf_re.match(subpath)
     if res:
         return res.group(1)
     return None
@@ -423,7 +424,7 @@ def main():
                             if filename:
                                 layerrecipes.filter(filepath=filepath).filter(filename=filename).delete()
                             else:
-                                machinename = check_machine_conf(path)
+                                machinename = check_machine_conf(path, subdir_start)
                                 if machinename:
                                     layermachines.filter(name=machinename).delete()
 
@@ -440,7 +441,7 @@ def main():
                                 recipe.save()
                                 updatedrecipes.add(recipe)
                             else:
-                                machinename = check_machine_conf(path)
+                                machinename = check_machine_conf(path, subdir_start)
                                 if machinename:
                                     machine = Machine()
                                     machine.layerbranch = layerbranch
@@ -461,7 +462,7 @@ def main():
                                     recipe.save()
                                     updatedrecipes.add(recipe)
                             else:
-                                machinename = check_machine_conf(path)
+                                machinename = check_machine_conf(path, subdir_start)
                                 if machinename:
                                     results = layermachines.filter(name=machinename)
                                     if results:
@@ -480,6 +481,8 @@ def main():
                     layerrecipes.delete()
                     layermachines.delete()
                     for root, dirs, files in os.walk(layerdir):
+                        if '.git' in dirs:
+                            dirs.remove('.git')
                         for f in files:
                             if fnmatch.fnmatch(f, "*.bb"):
                                 recipe = Recipe()
@@ -490,7 +493,7 @@ def main():
                                 recipe.save()
                             else:
                                 fullpath = os.path.join(root, f)
-                                machinename = check_machine_conf(fullpath)
+                                machinename = check_machine_conf(fullpath, layerdir_start)
                                 if machinename:
                                     machine = Machine()
                                     machine.layerbranch = layerbranch
