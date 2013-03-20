@@ -110,7 +110,7 @@ def update_recipe_file(data, path, recipe, layerdir_start, repodir):
     except BaseException as e:
         if not recipe.pn:
             recipe.pn = recipe.filename[:-3].split('_')[0]
-        logger.info("Unable to read %s: %s", fn, str(e))
+        logger.error("Unable to read %s: %s", fn, str(e))
 
 def update_machine_conf_file(path, machine):
     logger.debug('Updating machine %s' % path)
