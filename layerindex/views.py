@@ -93,27 +93,42 @@ def edit_layer_view(request, template_name, slug=None):
         deplistlayers = LayerItem.objects.all().order_by('name')
 
     if request.method == 'POST':
+        last_vcs_url = layeritem.vcs_url
         form = EditLayerForm(request.user, layerbranch, request.POST, instance=layeritem)
         maintainerformset = LayerMaintainerFormSet(request.POST, instance=layerbranch)
         if form.is_valid() and maintainerformset.is_valid():
             with transaction.commit_on_success():
+                reset_last_rev = False
                 form.save()
                 layerbranch.layer = layeritem
-                layerbranch.vcs_subdir = form.cleaned_data['vcs_subdir']
+                new_subdir = form.cleaned_data['vcs_subdir']
+                if layerbranch.vcs_subdir != new_subdir:
+                    layerbranch.vcs_subdir = new_subdir
+                    reset_last_rev = True
                 layerbranch.save()
                 maintainerformset.save()
                 if slug:
                     new_deps = form.cleaned_data['deps']
                     existing_deps = [deprec.dependency for deprec in layerbranch.dependencies_set.all()]
+                    reset_last_rev = False
                     for dep in new_deps:
                         if dep not in existing_deps:
                             deprec = LayerDependency()
                             deprec.layerbranch = layerbranch
                             deprec.dependency = dep
                             deprec.save()
+                            reset_last_rev = True
                     for dep in existing_deps:
                         if dep not in new_deps:
                             layerbranch.dependencies_set.filter(dependency=dep).delete()
+                            reset_last_rev = True
+
+                    if layeritem.vcs_url != last_vcs_url:
+                        reset_last_rev = True
+
+                    if reset_last_rev:
+                        layerbranch.vcs_last_rev = ''
+                        layerbranch.save()
                 else:
                     # Save dependencies
                     for dep in form.cleaned_data['deps']:
