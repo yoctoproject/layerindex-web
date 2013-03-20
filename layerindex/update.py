@@ -189,6 +189,8 @@ def main():
 
     setup_environ(settings)
 
+    logger.setLevel(options.loglevel)
+
     branch = get_branch(options.branch)
     if not branch:
         logger.error("Specified branch %s is not valid" % options.branch)
@@ -282,8 +284,6 @@ def main():
     import bb.cooker
     tinfoil = bb.tinfoil.Tinfoil()
     tinfoil.prepare(config_only = True)
-
-    logger.setLevel(options.loglevel)
 
     # Clear the default value of SUMMARY so that we can use DESCRIPTION instead if it hasn't been set
     tinfoil.config_data.setVar('SUMMARY', '')
