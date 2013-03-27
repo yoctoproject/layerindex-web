@@ -14,7 +14,7 @@ admin.autodiscover()
 urlpatterns = patterns('',
     url(r'^layerindex/', include('layerindex.urls')),
     url(r'^admin/', include(admin.site.urls)),
-    url(r'^accounts/', include('registration.urls')),
+    url(r'^accounts/', include('registration.backends.default.urls')),
     url(r'^captcha/', include('captcha.urls')),
     url(r'.*', redirect_to, {'url' : '/layerindex/'})
 )
