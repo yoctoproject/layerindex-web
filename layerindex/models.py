@@ -136,7 +136,10 @@ class LayerBranch(models.Model):
     def _handle_url_path(self, base_url, path):
         if base_url:
             if self.vcs_subdir:
-                extra_path = self.vcs_subdir + '/' + path
+                if path:
+                    extra_path = self.vcs_subdir + '/' + path
+                else:
+                    extra_path = self.vcs_subdir
             else:
                 extra_path = path
             url = base_url.replace('%branch%', self.branch.name)
