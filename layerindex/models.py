@@ -10,6 +10,26 @@ from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
 import os.path
 import re
+import urlparse
+import posixpath
+
+# Borrowed from http://stackoverflow.com/questions/4317242/python-how-to-resolve-urls-containing
+def resolveComponents(url):
+    """
+    >>> resolveComponents('http://www.example.com/foo/bar/../../baz/bux/')
+    'http://www.example.com/baz/bux/'
+    >>> resolveComponents('http://www.example.com/some/path/../file.ext')
+    'http://www.example.com/some/file.ext'
+    """
+
+    parsed = urlparse.urlparse(url)
+    new_path = posixpath.normpath(parsed.path)
+    if parsed.path.endswith('/'):
+        # Compensate for issue1707768
+        new_path += '/'
+    cleaned = parsed._replace(path=new_path)
+    return cleaned.geturl()
+
 
 class Branch(models.Model):
     name = models.CharField(max_length=50)
@@ -148,7 +168,11 @@ class LayerBranch(models.Model):
         if usage_url.startswith('http'):
             return usage_url
         else:
-            return self.file_url(usage_url)
+            url = self.file_url(usage_url)
+            if url:
+                if '/../' in url:
+                    url = resolveComponents(url)
+            return url
 
     def __unicode__(self):
         return "%s: %s" % (self.layer.name, self.branch.name)
