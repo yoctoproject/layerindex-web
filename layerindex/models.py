@@ -10,25 +10,7 @@ from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
 import os.path
 import re
-import urlparse
 import posixpath
-
-# Borrowed from http://stackoverflow.com/questions/4317242/python-how-to-resolve-urls-containing
-def resolveComponents(url):
-    """
-    >>> resolveComponents('http://www.example.com/foo/bar/../../baz/bux/')
-    'http://www.example.com/baz/bux/'
-    >>> resolveComponents('http://www.example.com/some/path/../file.ext')
-    'http://www.example.com/some/file.ext'
-    """
-
-    parsed = urlparse.urlparse(url)
-    new_path = posixpath.normpath(parsed.path)
-    if parsed.path.endswith('/'):
-        # Compensate for issue1707768
-        new_path += '/'
-    cleaned = parsed._replace(path=new_path)
-    return cleaned.geturl()
 
 
 class Branch(models.Model):
@@ -138,6 +120,12 @@ class LayerBranch(models.Model):
             if self.vcs_subdir:
                 if path:
                     extra_path = self.vcs_subdir + '/' + path
+                    # Normalise out ../ in path for usage URL
+                    extra_path = posixpath.normpath(extra_path)
+                    # Minor workaround to handle case where subdirectory has been added between branches
+                    # (should probably support usage URL per branch to handle this... sigh...)
+                    if extra_path.startswith('../'):
+                        extra_path = extra_path[3:]
                 else:
                     extra_path = self.vcs_subdir
             else:
