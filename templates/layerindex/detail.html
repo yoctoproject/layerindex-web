@@ -32,7 +32,7 @@
                         {% endif %}
                         {% if user.is_authenticated %}
                             <span class="pull-right">
-                                {% if perms.layeritem.publish_layer or useredit %}
+                                {% if perms.layerindex.publish_layer or useredit %}
                                     <a href="{% url edit_layer layeritem.name %}" class="btn">Edit layer</a>
                                     {% if layeritem.layernote_set.count = 0 %}
                                         <a href="{% url add_layernote layeritem.name %}" class="btn">Add note</a>
@@ -57,7 +57,7 @@
                 {% for note in layeritem.layernote_set.all %}
                     <div class="alert">
                         <p>{{ note.text }}</p>
-                        {% if perms.layeritem.publish_layer or useredit %}
+                        {% if perms.layerindex.publish_layer or useredit %}
                             <p>
                                 <a href="{% url edit_layernote layeritem.name note.pk %}" class="btn">Edit note</a>
                                 <a href="{% url delete_layernote layeritem.name note.pk %}" class='btn'>Delete note</a>

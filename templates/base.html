@@ -55,7 +55,7 @@
                 <ul class="nav pull-right">
                     {% block submitlink %}<li><a href="{% url submit_layer %}">Submit layer</a></li>{% endblock %}
                     {% if user.is_authenticated %}
-                    {% if perms.layeritem.publish_layer %}
+                    {% if perms.layerindex.publish_layer %}
                         <li><a href="{% url layer_list_review %}?branch=master">
                             Review
                             {% if unpublished_count > 0 %}
