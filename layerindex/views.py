@@ -19,6 +19,8 @@ from django.db.models import Q
 from django.core.mail import EmailMessage
 from django.template.loader import get_template
 from django.template import Context
+from django.utils.decorators import method_decorator
+from django.contrib.auth.decorators import login_required
 import simplesearch
 import settings
 
@@ -202,7 +204,10 @@ class LayerListView(ListView):
         return context
 
 class LayerReviewListView(ListView):
+    @method_decorator(login_required)
     def dispatch(self, request, *args, **kwargs):
+        if not request.user.has_perm('layerindex.publish_layer'):
+            raise PermissionDenied
         _check_branch(request)
         return super(LayerReviewListView, self).dispatch(request, *args, **kwargs)
 
@@ -233,6 +238,7 @@ class LayerDetailView(DetailView):
         return context
 
 class LayerReviewDetailView(LayerDetailView):
+    @method_decorator(login_required)
     def dispatch(self, request, *args, **kwargs):
         if not request.user.has_perm('layerindex.publish_layer'):
             raise PermissionDenied
