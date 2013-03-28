@@ -171,7 +171,7 @@ LOGGING = {
 # Registration settings
 ACCOUNT_ACTIVATION_DAYS = 2
 EMAIL_HOST = 'smtp.example.com'
-DEFAULT_FROM_EMAIL = 'noreply@layers.openembedded.org'
+DEFAULT_FROM_EMAIL = 'noreply@example.com'
 LOGIN_REDIRECT_URL = '/layerindex'
 
 # Full path to directory where layers should be fetched into by the update script
