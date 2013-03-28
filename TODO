@@ -1,22 +1,27 @@
 TODO:
 
-* Breadcrumbs / fix tab navigation?
-* OE version of about page
-* Need an admin contact in footer
-* Prevent SMTP failures from breaking submission process
+* Try to re-use existing recipe record with same PN instead of deleting and re-creating (if within same layer)
+* Update script should error out with extra unused parameters - too easy to forget to use -l with layer list
 
 Later:
-* Rawrecipes branch support
+* Breadcrumbs / fix tab navigation?
 * Add link to the all layers and all recipes tables from the layer details page?
+* Prevent SMTP failures from breaking submission process
+* Update script still retries a fetch when repo has already failed
+* Rawrecipes branch support
 * Display no-results found message when search does not return any results (all tables)
 * Change behaviour of filter menus to stay open so that you can check / uncheck multiple items
 * Show layer type in layer detail?
 * Usage links in list page?
+* Subdirs in list page?
 * Avoid page content changing size depending on whether scrollbar is there or not?
 * Return to last page (review/detail) after editing (with success alert)?
 * Cancel button on edit form?
 * Query backend service? i.e. special URL to query information for external apps/scripts
 * Tool for finding/comparing duplicate recipes?
-* Tool for editing SUMMARY/DESCRIPTION?
+* Tool for editing SUMMARY/DESCRIPTION? [Paul working on this]
 * Dynamic loading/filtering for recipes list
 * Track PROVIDES and BBCLASSEXTENDS?
+* Some way to notify the user when they search for something that has been renamed / replaced / deprecated?
+* Create simple script to check for unlisted layer subdirectories in all repos
+* Move import script to utils/ subdir
