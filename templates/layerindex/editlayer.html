@@ -62,7 +62,7 @@
                                 {% for deplayer in deplistlayers %}
                                     {% if deplayer.id in form.checked_deps %}
                                         <tr>
-                                            <td><input type="checkbox" name="deps" value="{{ deplayer.id }}" id="id_deps_{{forloop.counter}}" checked="checked" /></td>
+                                            <td class="checkboxtd"><input type="checkbox" name="deps" value="{{ deplayer.id }}" id="id_deps_{{forloop.counter}}" checked="checked" /></td>
                                             {% if deplayer.status = 'N' %}
                                             <td><label class="muted" for="id_deps_{{forloop.counter}}">{{ deplayer.name }} (unpublished)</label></td>
                                             {% else %}
@@ -74,7 +74,7 @@
                                 {% for deplayer in deplistlayers %}
                                     {% if not deplayer.id in form.checked_deps %}
                                         <tr>
-                                            <td><input type="checkbox" name="deps" value="{{ deplayer.id }}" id="id_deps_{{forloop.counter}}" /></td>
+                                            <td class="checkboxtd"><input type="checkbox" name="deps" value="{{ deplayer.id }}" id="id_deps_{{forloop.counter}}" /></td>
                                             {% if deplayer.status = 'N' %}
                                             <td><label class="muted" for="id_deps_{{forloop.counter}}">{{ deplayer.name }} (unpublished)</label></td>
                                             {% else %}

@@ -68,7 +68,7 @@ padding: 8px;
     padding: 4px;
 }
 
-.scrolling checkbox, label {
+.scrolling label {
     margin: 0px;
 }
 
@@ -82,6 +82,10 @@ padding: 8px;
 
 .formfields textarea {
     width: 50%;
+}
+
+.checkboxtd input {
+    width: 25px;
 }
 
 #maintainers {
