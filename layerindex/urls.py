@@ -8,7 +8,7 @@ from django.conf.urls.defaults import *
 from django.views.generic import TemplateView, DetailView, ListView
 from django.views.defaults import page_not_found
 from layerindex.models import LayerItem, Recipe
-from layerindex.views import LayerListView, LayerReviewListView, LayerReviewDetailView, RecipeSearchView, MachineSearchView, PlainTextListView, LayerDetailView, edit_layer_view, delete_layer_view, edit_layernote_view, delete_layernote_view, switch_branch_view
+from layerindex.views import LayerListView, LayerReviewListView, LayerReviewDetailView, RecipeSearchView, MachineSearchView, PlainTextListView, LayerDetailView, edit_layer_view, delete_layer_view, edit_layernote_view, delete_layernote_view, switch_branch_view, HistoryListView
 
 urlpatterns = patterns('',
     url(r'^$',
@@ -67,6 +67,10 @@ urlpatterns = patterns('',
             context_object_name='recipe_list',
             template_name='layerindex/rawrecipes.txt'),
             name='recipe_list_raw'),
+    url(r'^history/$',
+        HistoryListView.as_view(
+            template_name='layerindex/history.html'),
+            name='history_list'),
     url(r'^about$',
         TemplateView.as_view(
             template_name='layerindex/about.html'),

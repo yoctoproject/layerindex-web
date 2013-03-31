@@ -21,6 +21,7 @@ from django.template.loader import get_template
 from django.template import Context
 from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import login_required
+from reversion.models import Revision
 import simplesearch
 import settings
 
@@ -310,3 +311,10 @@ class PlainTextListView(ListView):
         template = get_template(self.template_name)
         return HttpResponse(template.render(Context(context)),
                                  content_type='text/plain')
+
+class HistoryListView(ListView):
+    context_object_name = "revisions"
+    paginate_by = 50
+
+    def get_queryset(self):
+        return Revision.objects.all().order_by('-date_created')
