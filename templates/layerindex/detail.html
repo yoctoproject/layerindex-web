@@ -150,7 +150,7 @@
             </div>  <!-- end of row-fluid -->
         </div> <!-- end of container-fluid -->
 
-        {% if layerbranch.machine_set.count > 0 %}
+        {% if machines.count > 0 %}
         <div class="container-fluid" style="margin-bottom:1em;">
             <div class="row-fluid">
                 <div class="navbar">
@@ -161,7 +161,7 @@
 
                 <table class="table table-bordered">
                     <tbody>
-                        {% for machine in layerbranch.machine_set.all %}
+                        {% for machine in machines %}
                             <tr>
                                 <td><a href="{{ machine.vcs_web_url }}">{{ machine.name }}</a></td>
                                 <td>{{ machine.description }}</td>

@@ -235,7 +235,9 @@ class LayerDetailView(DetailView):
         context = super(LayerDetailView, self).get_context_data(**kwargs)
         layer = context['layeritem']
         context['useredit'] = layer.user_can_edit(self.user)
-        context['layerbranch'] = layer.get_layerbranch(self.request.session.get('branch', 'master'))
+        layerbranch = layer.get_layerbranch(self.request.session.get('branch', 'master'))
+        context['layerbranch'] = layerbranch
+        context['machines'] = layerbranch.machine_set.order_by('name')
         return context
 
 class LayerReviewDetailView(LayerDetailView):
