@@ -111,7 +111,7 @@ class LayerBranch(models.Model):
         verbose_name_plural = "Layer branches"
 
     def sorted_recipes(self):
-        return self.recipe_set.order_by('filename')
+        return self.recipe_set.order_by('pn', '-pv')
 
     def active_maintainers(self):
         return self.layermaintainer_set.filter(status='A')
