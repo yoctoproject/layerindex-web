@@ -63,7 +63,7 @@ urlpatterns = patterns('',
         switch_branch_view, name="switch_branch"),
     url(r'^raw/recipes.txt$',
         PlainTextListView.as_view(
-            queryset=Recipe.objects.order_by('pn', 'layer'),
+            queryset=Recipe.objects.order_by('pn', 'layerbranch__layer'),
             context_object_name='recipe_list',
             template_name='layerindex/rawrecipes.txt'),
             name='recipe_list_raw'),
