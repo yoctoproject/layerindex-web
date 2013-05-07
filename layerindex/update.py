@@ -12,23 +12,16 @@ import sys
 import os.path
 import optparse
 import logging
-import subprocess
 from datetime import datetime
 import fnmatch
 import re
 import tempfile
 import shutil
 from distutils.version import LooseVersion
+import utils
+import recipeparse
 
-def logger_create():
-    logger = logging.getLogger("LayerIndexUpdate")
-    loggerhandler = logging.StreamHandler()
-    loggerhandler.setFormatter(logging.Formatter("%(levelname)s: %(message)s"))
-    logger.addHandler(loggerhandler)
-    logger.setLevel(logging.INFO)
-    return logger
-
-logger = logger_create()
+logger = utils.logger_create('LayerIndexUpdate')
 
 # Ensure PythonGit is installed (buildhistory_analysis needs it)
 try:
@@ -36,27 +29,6 @@ try:
 except ImportError:
     logger.error("Please install PythonGit 0.3.1 or later in order to use this script")
     sys.exit(1)
-
-
-def runcmd(cmd,destdir=None,printerr=True):
-    """
-        execute command, raise CalledProcessError if fail
-        return output if succeed
-    """
-    logger.debug("run cmd '%s' in %s" % (cmd, os.getcwd() if destdir is None else destdir))
-    out = os.tmpfile()
-    try:
-        subprocess.check_call(cmd, stdout=out, stderr=out, cwd=destdir, shell=True)
-    except subprocess.CalledProcessError,e:
-        out.seek(0)
-        if printerr:
-            logger.error("%s" % out.read())
-        raise e
-
-    out.seek(0)
-    output = out.read()
-    logger.debug("output: %s" % output.rstrip() )
-    return output
 
 
 machine_conf_re = re.compile(r'conf/machine/([^/.]*).conf$')
@@ -150,30 +122,6 @@ def update_machine_conf_file(path, machine):
                 break
     machine.description = desc
 
-def parse_layer_conf(layerdir, data):
-    data.setVar('LAYERDIR', str(layerdir))
-    if hasattr(bb, "cookerdata"):
-        # Newer BitBake
-        data = bb.cookerdata.parse_config_file(os.path.join(layerdir, "conf", "layer.conf"), data)
-    else:
-        # Older BitBake (1.18 and below)
-        data = bb.cooker._parse(os.path.join(layerdir, "conf", "layer.conf"), data)
-    data.expandVarref('LAYERDIR')
-
-def get_branch(branchname):
-    from layerindex.models import Branch
-    res = list(Branch.objects.filter(name=branchname)[:1])
-    if res:
-        return res[0]
-    return None
-
-def get_layer(layername):
-    from layerindex.models import LayerItem
-    res = list(LayerItem.objects.filter(name=layername)[:1])
-    if res:
-        return res[0]
-    return None
-
 def main():
     if LooseVersion(git.__version__) < '0.3.1':
         logger.error("Version of GitPython is too old, please install GitPython (python-git) 0.3.1 or later in order to use this script")
@@ -216,22 +164,14 @@ def main():
         parser.print_help()
         sys.exit(1)
 
-    # Get access to our Django model
-    newpath = os.path.abspath(os.path.dirname(os.path.abspath(sys.argv[0])) + '/..')
-    sys.path.append(newpath)
-    os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
-
-    from django.core.management import setup_environ
-    from django.conf import settings
+    utils.setup_django()
+    import settings
     from layerindex.models import LayerItem, LayerBranch, Recipe, RecipeFileDependency, Machine, BBAppend, BBClass
     from django.db import transaction
-    import settings
-
-    setup_environ(settings)
 
     logger.setLevel(options.loglevel)
 
-    branch = get_branch(options.branch)
+    branch = utils.get_branch(options.branch)
     if not branch:
         logger.error("Specified branch %s is not valid" % options.branch)
         sys.exit(1)
@@ -270,9 +210,9 @@ def main():
                 out = None
                 try:
                     if not os.path.exists(repodir):
-                        out = runcmd("git clone %s %s" % (layer.vcs_url, urldir), fetchdir)
+                        out = utils.runcmd("git clone %s %s" % (layer.vcs_url, urldir), fetchdir)
                     else:
-                        out = runcmd("git fetch", repodir)
+                        out = utils.runcmd("git fetch", repodir)
                 except Exception as e:
                     logger.error("Fetch of layer %s failed: %s" % (layer.name, str(e)))
                     failedrepos.append(layer.vcs_url)
@@ -285,54 +225,15 @@ def main():
 
         logger.info("Fetching bitbake from remote repository %s" % settings.BITBAKE_REPO_URL)
         if not os.path.exists(bitbakepath):
-            out = runcmd("git clone %s %s" % (settings.BITBAKE_REPO_URL, 'bitbake'), fetchdir)
+            out = utils.runcmd("git clone %s %s" % (settings.BITBAKE_REPO_URL, 'bitbake'), fetchdir)
         else:
-            out = runcmd("git fetch", bitbakepath)
+            out = utils.runcmd("git fetch", bitbakepath)
 
-    if not options.nocheckout:
-        # Check out the branch of BitBake appropriate for this branch and clean out any stale files (e.g. *.pyc)
-        out = runcmd("git checkout origin/%s" % branch.bitbake_branch, bitbakepath)
-        out = runcmd("git clean -f -x", bitbakepath)
-
-    # Skip sanity checks
-    os.environ['BB_ENV_EXTRAWHITE'] = 'DISABLE_SANITY_CHECKS'
-    os.environ['DISABLE_SANITY_CHECKS'] = '1'
-
-    # Ensure we have OE-Core set up to get some base configuration
-    core_layer = get_layer(settings.CORE_LAYER_NAME)
-    if not core_layer:
-        logger.error("Unable to find core layer %s in database; check CORE_LAYER_NAME setting" % settings.CORE_LAYER_NAME)
+    try:
+        (tinfoil, tempdir) = recipeparse.init_parser(settings, branch, bitbakepath, nocheckout=options.nocheckout)
+    except recipeparse.RecipeParseError as e:
+        logger.error(str(e))
         sys.exit(1)
-    core_layerbranch = core_layer.get_layerbranch(options.branch)
-    core_branchname = options.branch
-    if core_layerbranch:
-        core_subdir = core_layerbranch.vcs_subdir
-        if core_layerbranch.actual_branch:
-            core_branchname = core_layerbranch.actual_branch
-    else:
-        core_subdir = 'meta'
-    core_urldir = core_layer.get_fetch_dir()
-    core_repodir = os.path.join(fetchdir, core_urldir)
-    core_layerdir = os.path.join(core_repodir, core_subdir)
-    if not options.nocheckout:
-        out = runcmd("git checkout origin/%s" % core_branchname, core_repodir)
-        out = runcmd("git clean -f -x", core_repodir)
-    # The directory above where this script exists should contain our conf/layer.conf,
-    # so add it to BBPATH along with the core layer directory
-    confparentdir = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
-    os.environ['BBPATH'] = str("%s:%s" % (confparentdir, core_layerdir))
-
-    # Change into a temporary directory so we don't write the cache and other files to the current dir
-    if not os.path.exists(settings.TEMP_BASE_DIR):
-        os.makedirs(settings.TEMP_BASE_DIR)
-    tempdir = tempfile.mkdtemp(dir=settings.TEMP_BASE_DIR)
-    os.chdir(tempdir)
-
-    sys.path.extend([bitbakepath + '/lib'])
-    import bb.tinfoil
-    import bb.cooker
-    tinfoil = bb.tinfoil.Tinfoil()
-    tinfoil.prepare(config_only = True)
 
     # Clear the default value of SUMMARY so that we can use DESCRIPTION instead if it hasn't been set
     tinfoil.config_data.setVar('SUMMARY', '')
@@ -343,10 +244,6 @@ def main():
     # Set a blank value for LICENSE so that it doesn't cause the parser to die (e.g. with meta-ti -
     # why won't they just fix that?!)
     tinfoil.config_data.setVar('LICENSE', '')
-
-    # Ensure TMPDIR exists (or insane.bbclass will blow up trying to write to the QA log)
-    oe_tmpdir = tinfoil.config_data.getVar('TMPDIR', True)
-    os.makedirs(oe_tmpdir)
 
     # Process and extract data from each layer
     for layer in layerquery:
@@ -419,8 +316,8 @@ def main():
             if layerbranch.vcs_last_rev != topcommit.hexsha or options.reload:
                 # Check out appropriate branch
                 if not options.nocheckout:
-                    out = runcmd("git checkout origin/%s" % branchname, repodir)
-                    out = runcmd("git clean -f -x", repodir)
+                    out = utils.runcmd("git checkout origin/%s" % branchname, repodir)
+                    out = utils.runcmd("git clean -f -x", repodir)
 
                 if not os.path.exists(layerdir):
                     if options.branch == 'master':
@@ -439,25 +336,12 @@ def main():
 
                 logger.info("Collecting data for layer %s on branch %s" % (layer.name, branchdesc))
 
-                # Parse layer.conf files for this layer and its dependencies
-                # This is necessary not just because BBPATH needs to be set in order
-                # for include/require/inherit to work outside of the current directory
-                # or across layers, but also because custom variable values might be
-                # set in layer.conf.
-
-                config_data_copy = bb.data.createCopy(tinfoil.config_data)
-                parse_layer_conf(layerdir, config_data_copy)
-                for dep in layerbranch.dependencies_set.all():
-                    depurldir = dep.dependency.get_fetch_dir()
-                    deprepodir = os.path.join(fetchdir, depurldir)
-                    deplayerbranch = dep.dependency.get_layerbranch(options.branch)
-                    if not deplayerbranch:
-                        logger.error('Dependency %s of layer %s does not have branch record for branch %s' % (dep.dependency.name, layer.name, options.branch))
-                        transaction.rollback()
-                        continue
-                    deplayerdir = os.path.join(deprepodir, deplayerbranch.vcs_subdir)
-                    parse_layer_conf(deplayerdir, config_data_copy)
-                config_data_copy.delVar('LAYERDIR')
+                try:
+                    config_data_copy = recipeparse.setup_layer(tinfoil.config_data, fetchdir, layerdir, layer, layerbranch)
+                except recipeparse.RecipeParseError as e:
+                    logger.error(str(e))
+                    transaction.rollback()
+                    continue
 
                 if layerbranch.vcs_last_rev and not options.reload:
                     try:

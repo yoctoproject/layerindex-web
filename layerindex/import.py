@@ -11,33 +11,10 @@
 import sys
 import os.path
 import optparse
-import logging
 import re
+import utils
 
-def logger_create():
-    logger = logging.getLogger("LayerIndexImport")
-    loggerhandler = logging.StreamHandler()
-    loggerhandler.setFormatter(logging.Formatter("%(levelname)s: %(message)s"))
-    logger.addHandler(loggerhandler)
-    logger.setLevel(logging.INFO)
-    return logger
-
-logger = logger_create()
-
-
-def get_branch(branchname):
-    from layerindex.models import Branch
-    res = list(Branch.objects.filter(name=branchname)[:1])
-    if res:
-        return res[0]
-    return None
-
-def get_layer(layername):
-    from layerindex.models import LayerItem
-    res = list(LayerItem.objects.filter(name=layername)[:1])
-    if res:
-        return res[0]
-    return None
+logger = utils.logger_create('LayerIndexImport')
 
 
 def main():
@@ -48,18 +25,9 @@ def main():
 
     options, args = parser.parse_args(sys.argv)
 
-    # Get access to our Django model
-    newpath = os.path.abspath(os.path.dirname(os.path.abspath(sys.argv[0])) + '/..')
-    sys.path.append(newpath)
-    os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
-
-    from django.core.management import setup_environ
-    from django.conf import settings
+    utils.setup_django()
     from layerindex.models import LayerItem, LayerBranch, LayerDependency
     from django.db import transaction
-    import settings
-
-    setup_environ(settings)
 
     import httplib
     conn = httplib.HTTPConnection("www.openembedded.org")
@@ -72,7 +40,7 @@ def main():
         nowiki_re = re.compile(r'</?nowiki>')
         link_re = re.compile(r'\[(http.*) +link\]')
         readme_re = re.compile(r';f=[a-zA-Z0-9/-]*README;')
-        master_branch = get_branch('master')
+        master_branch = utils.get_branch('master')
         core_layer = None
         transaction.enter_transaction_management()
         transaction.managed(True)
@@ -163,7 +131,7 @@ def main():
                         layerbranch.save()
                         if layer.name != 'openembedded-core':
                             if not core_layer:
-                                core_layer = get_layer('openembedded-core')
+                                core_layer = utils.get_layer('openembedded-core')
                             if core_layer:
                                 layerdep = LayerDependency()
                                 layerdep.layerbranch = layerbranch
