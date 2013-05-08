@@ -233,7 +233,7 @@ def main():
             # Handle multiple layers in a single repo
             urldir = layer.get_fetch_dir()
             repodir = os.path.join(fetchdir, urldir)
-            if not layer.vcs_url in fetchedrepos:
+            if not (layer.vcs_url in fetchedrepos or layer.vcs_url in failedrepos):
                 logger.info("Fetching remote repository %s" % layer.vcs_url)
                 out = None
                 try:
@@ -242,10 +242,14 @@ def main():
                     else:
                         out = runcmd("git fetch", repodir)
                 except Exception as e:
-                    logger.error("fetch failed: %s" % str(e))
+                    logger.error("Fetch of layer %s failed: %s" % (layer.name, str(e)))
                     failedrepos.append(layer.vcs_url)
                     continue
                 fetchedrepos.append(layer.vcs_url)
+
+        if not fetchedrepos:
+            logger.error("No repositories could be fetched, exiting")
+            sys.exit(1)
 
         logger.info("Fetching bitbake from remote repository %s" % settings.BITBAKE_REPO_URL)
         if not os.path.exists(bitbakepath):
