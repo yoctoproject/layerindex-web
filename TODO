@@ -1,13 +1,20 @@
 TODO:
 
+* Duplication of first maintainer when editing to add a second?
 * Try to re-use existing recipe record with same PN instead of deleting and re-creating (if within same layer)
 * Update script should error out with extra unused parameters - too easy to forget to use -l with layer list
+* meta-arago-extras is preferred over meta-networking e.g. for crda; probably need an explicit field for priority order
+* Update script does not report which layer failed with -q when fetch fails
+* Document macros for URL fields
 
 Later:
 * Breadcrumbs / fix tab navigation?
+* Detailed change history page [Paul working on this]
+* Ability for reviewers to comment before publishing a layer?
 * Add link to the all layers and all recipes tables from the layer details page?
 * Prevent SMTP failures from breaking submission process
 * Update script still retries a fetch when repo has already failed
+* All-branch search/results so you can see version availability of recipes in all branches at once?
 * Rawrecipes branch support
 * Display no-results found message when search does not return any results (all tables)
 * Change behaviour of filter menus to stay open so that you can check / uncheck multiple items
@@ -21,7 +28,12 @@ Later:
 * Tool for finding/comparing duplicate recipes?
 * Tool for editing SUMMARY/DESCRIPTION? [Paul working on this]
 * Dynamic loading/filtering for recipes list
+* Track BUGTRACKER
 * Track PROVIDES and BBCLASSEXTENDS?
 * Some way to notify the user when they search for something that has been renamed / replaced / deprecated?
 * Create simple script to check for unlisted layer subdirectories in all repos
 * Move import script to utils/ subdir
+* Are we going to need some way of indicating forks of another layer? (would rather avoid having forks altogether...)
+* Track bbappends in each layer
+* Auto-detect more values from github pages?
+* Ability for submitters to get email notification about publication?
