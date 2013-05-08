@@ -179,6 +179,10 @@ def main():
 
 
     options, args = parser.parse_args(sys.argv)
+    if len(args) > 1:
+        logger.error('unexpected argument "%s"' % args[1])
+        parser.print_help()
+        sys.exit(1)
 
     # Get access to our Django model
     newpath = os.path.abspath(os.path.dirname(os.path.abspath(sys.argv[0])) + '/..')

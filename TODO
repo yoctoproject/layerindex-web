@@ -2,7 +2,6 @@ TODO:
 
 * Duplication of first maintainer when editing to add a second?
 * Try to re-use existing recipe record with same PN instead of deleting and re-creating (if within same layer)
-* Update script should error out with extra unused parameters - too easy to forget to use -l with layer list
 * meta-arago-extras is preferred over meta-networking e.g. for crda; probably need an explicit field for priority order
 * Update script does not report which layer failed with -q when fetch fails
 * Document macros for URL fields
