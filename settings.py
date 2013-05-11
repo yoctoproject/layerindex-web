@@ -142,7 +142,8 @@ INSTALLED_APPS = (
     'registration',
     'reversion',
     'reversion_compare',
-    'captcha'
+    'captcha',
+    'south'
 )
 
 # A sample logging configuration. The only tangible logging

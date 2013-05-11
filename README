@@ -19,6 +19,7 @@ In order to make use of this application you will need:
   care of creating the database itself, you just need to ensure that the
   database server (if not using SQLite) is configured and running.
 * The following third-party Django modules (tested versions listed):
+  * django-south (0.7.5)
   * django-registration (0.8)
   * django-reversion (1.6.5)
   * django-reversion-compare (0.3.5)
