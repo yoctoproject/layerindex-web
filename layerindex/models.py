@@ -49,6 +49,7 @@ class LayerItem(models.Model):
     vcs_web_file_base_url = models.CharField('Repository web interface file base URL', max_length=255, blank=True, help_text='Base URL for the web interface for viewing files (blobs) within the repository, if any')
     usage_url = models.CharField('Usage web page URL', max_length=255, blank=True, help_text='URL of a web page with more information about the layer and how to use it, if any (or path to file within repository)')
     mailing_list_url = models.URLField('Mailing list URL', blank=True, help_text='URL of the info page for a mailing list for discussing the layer, if any')
+    index_preference = models.IntegerField('Preference', default=0, help_text='Number used to find preferred recipes in recipe search results (higher number is greater preference)')
 
     class Meta:
         verbose_name = "Layer"

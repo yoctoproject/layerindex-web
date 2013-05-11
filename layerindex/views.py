@@ -280,12 +280,16 @@ class RecipeSearchView(ListView):
                 'preferred_count': """SELECT COUNT(1)
 FROM layerindex_recipe AS recipe2
 , layerindex_layerbranch as branch2
+, layerindex_layeritem as layer1
 , layerindex_layeritem as layer2
 WHERE branch2.id = recipe2.layerbranch_id
 AND layer2.id = branch2.layer_id
 AND layer2.layer_type in ('S', 'A')
+AND branch2.branch_id = layerindex_layerbranch.branch_id
 AND recipe2.pn = layerindex_recipe.pn
-AND recipe2.layerbranch_id < layerindex_recipe.layerbranch_id
+AND recipe2.layerbranch_id <> layerindex_recipe.layerbranch_id
+AND layer1.id = layerindex_layerbranch.layer_id
+AND layer2.index_preference > layer1.index_preference
 """
             },
         )
