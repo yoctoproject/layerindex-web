@@ -270,3 +270,35 @@ class Machine(models.Model):
 
     def __unicode__(self):
         return '%s (%s)' % (self.name, self.layerbranch.layer.name)
+
+
+class BBAppend(models.Model):
+    layerbranch = models.ForeignKey(LayerBranch)
+    filename = models.CharField(max_length=255)
+    filepath = models.CharField(max_length=255, blank=True)
+
+    class Meta:
+        verbose_name = "Append"
+
+    def vcs_web_url(self):
+        url = self.layerbranch.file_url(os.path.join(self.filepath, self.filename))
+        return url or ''
+
+    def __unicode__(self):
+        return os.path.join(self.filepath, self.filename)
+
+
+class BBClass(models.Model):
+    layerbranch = models.ForeignKey(LayerBranch)
+    name = models.CharField(max_length=100)
+
+    class Meta:
+        verbose_name = "Class"
+        verbose_name_plural = "Classes"
+
+    def vcs_web_url(self):
+        url = self.layerbranch.file_url(os.path.join('classes', "%s.bbclass" % self.name))
+        return url or ''
+
+    def __unicode__(self):
+        return '%s (%s)' % (self.name, self.layerbranch.layer.name)

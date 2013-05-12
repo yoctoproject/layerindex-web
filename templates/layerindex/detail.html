@@ -214,6 +214,51 @@
         </div>
         {% endif %}
 
+        {% if appends.count > 0 %}
+        <div class="container-fluid" style="margin-bottom:1em;">
+            <div class="row-fluid">
+                <div class="navbar">
+                    <div class="navbar-inner">
+                            <a class="brand pull-left">{{ layeritem.name }} bbappends</a>
+                    </div>
+                </div>
+
+                <table class="table table-bordered">
+                    <tbody>
+                        {% for append in appends %}
+                            <tr>
+                                <td><a href="{{ append.vcs_web_url }}">{{ append.filename }}</a></td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+             </div>
+         </div>
+        {% endif %}
+
+        {% if classes.count > 0 %}
+        <div class="container-fluid" style="margin-bottom:1em;">
+            <div class="row-fluid">
+                <div class="navbar">
+                    <div class="navbar-inner">
+                            <a class="brand pull-left">{{ layeritem.name }} classes</a>
+                    </div>
+                </div>
+
+                <table class="table table-bordered">
+                    <tbody>
+                        {% for class in classes %}
+                            <tr>
+                                <td><a href="{{ class.vcs_web_url }}">{{ class.name }}</a></td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+             </div>
+         </div>
+        {% endif %}
+
+
 {% endautoescape %}
 
 {% endblock %}

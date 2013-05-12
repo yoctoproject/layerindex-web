@@ -62,6 +62,24 @@ class MachineAdmin(admin.ModelAdmin):
     def has_delete_permission(self, request, obj=None):
         return False
 
+class BBAppendAdmin(admin.ModelAdmin):
+    search_fields = ['filename']
+    list_filter = ['layerbranch__layer__name', 'layerbranch__branch__name']
+    readonly_fields = BBAppend._meta.get_all_field_names()
+    def has_add_permission(self, request, obj=None):
+        return False
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+class BBClassAdmin(admin.ModelAdmin):
+    search_fields = ['name']
+    list_filter = ['layerbranch__layer__name', 'layerbranch__branch__name']
+    readonly_fields = BBClass._meta.get_all_field_names()
+    def has_add_permission(self, request, obj=None):
+        return False
+    def has_delete_permission(self, request, obj=None):
+        return False
+
 admin.site.register(Branch, BranchAdmin)
 admin.site.register(LayerItem, LayerItemAdmin)
 admin.site.register(LayerBranch, LayerBranchAdmin)
@@ -71,3 +89,5 @@ admin.site.register(LayerNote, LayerNoteAdmin)
 admin.site.register(Recipe, RecipeAdmin)
 admin.site.register(RecipeFileDependency)
 admin.site.register(Machine, MachineAdmin)
+admin.site.register(BBAppend, BBAppendAdmin)
+admin.site.register(BBClass, BBClassAdmin)

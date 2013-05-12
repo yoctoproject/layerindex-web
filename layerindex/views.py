@@ -245,6 +245,8 @@ class LayerDetailView(DetailView):
         layerbranch = layer.get_layerbranch(self.request.session.get('branch', 'master'))
         context['layerbranch'] = layerbranch
         context['machines'] = layerbranch.machine_set.order_by('name')
+        context['appends'] = layerbranch.bbappend_set.order_by('filename')
+        context['classes'] = layerbranch.bbclass_set.order_by('name')
         return context
 
 class LayerReviewDetailView(LayerDetailView):

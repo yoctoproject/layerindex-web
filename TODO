@@ -27,6 +27,5 @@ Later:
 * Create simple script to check for unlisted layer subdirectories in all repos
 * Move import script to utils/ subdir
 * Are we going to need some way of indicating forks of another layer? (would rather avoid having forks altogether...)
-* Track bbappends in each layer
 * Auto-detect more values from github pages?
 * Ability for submitters to get email notification about publication?

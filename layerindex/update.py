@@ -59,16 +59,37 @@ def runcmd(cmd,destdir=None,printerr=True):
     return output
 
 
-def split_bb_file_path(recipe_path, subdir_start):
-    if fnmatch.fnmatch(recipe_path, "*.bb"):
-        if subdir_start:
-            filepath = os.path.relpath(os.path.dirname(recipe_path), subdir_start)
+machine_conf_re = re.compile(r'conf/machine/([^/.]*).conf$')
+bbclass_re = re.compile(r'classes/([^/.]*).bbclass$')
+def detect_file_type(path, subdir_start):
+    typename = None
+    if fnmatch.fnmatch(path, "*.bb"):
+        typename = 'recipe'
+    elif fnmatch.fnmatch(path, "*.bbappend"):
+        typename = 'bbappend'
+    else:
+        # Check if it's a machine conf file
+        subpath = path[len(subdir_start):]
+        res = machine_conf_re.match(subpath)
+        if res:
+            typename = 'machine'
+            return (typename, None, res.group(1))
         else:
-            filepath = os.path.dirname(recipe_path)
-        return (filepath, os.path.basename(recipe_path))
-    return (None, None)
+            res = bbclass_re.match(subpath)
+            if res:
+                typename = 'bbclass'
+                return (typename, None, res.group(1))
 
-conf_re = re.compile(r'conf/machine/([^/.]*).conf$')
+    if typename == 'recipe' or typename == 'bbappend':
+        if subdir_start:
+            filepath = os.path.relpath(os.path.dirname(path), subdir_start)
+        else:
+            filepath = os.path.dirname(path)
+        return (typename, filepath, os.path.basename(path))
+
+    return (None, None, None)
+
+
 def check_machine_conf(path, subdir_start):
     subpath = path[len(subdir_start):]
     res = conf_re.match(subpath)
@@ -202,7 +223,7 @@ def main():
 
     from django.core.management import setup_environ
     from django.conf import settings
-    from layerindex.models import LayerItem, LayerBranch, Recipe, RecipeFileDependency, Machine
+    from layerindex.models import LayerItem, LayerBranch, Recipe, RecipeFileDependency, Machine, BBAppend, BBClass
     from django.db import transaction
     import settings
 
@@ -379,6 +400,8 @@ def main():
             layerdir_start = os.path.normpath(layerdir) + os.sep
             layerrecipes = Recipe.objects.filter(layerbranch=layerbranch)
             layermachines = Machine.objects.filter(layerbranch=layerbranch)
+            layerappends = BBAppend.objects.filter(layerbranch=layerbranch)
+            layerclasses = BBClass.objects.filter(layerbranch=layerbranch)
             if layerbranch.vcs_last_rev != topcommit.hexsha or options.reload:
                 # Check out appropriate branch
                 if not options.nocheckout:
@@ -443,19 +466,21 @@ def main():
                     for d in diff.iter_change_type('D'):
                         path = d.a_blob.path
                         if path.startswith(subdir_start):
-                            (filepath, filename) = split_bb_file_path(path, subdir_start)
-                            if filename:
+                            (typename, filepath, filename) = detect_file_type(path, subdir_start)
+                            if typename == 'recipe':
                                 layerrecipes.filter(filepath=filepath).filter(filename=filename).delete()
-                            else:
-                                machinename = check_machine_conf(path, subdir_start)
-                                if machinename:
-                                    layermachines.filter(name=machinename).delete()
+                            elif typename == 'bbappend':
+                                layerappends.filter(filepath=filepath).filter(filename=filename).delete()
+                            elif typename == 'machine':
+                                layermachines.filter(name=filename).delete()
+                            elif typename == 'bbclass':
+                                layerclasses.filter(name=filename).delete()
 
                     for d in diff.iter_change_type('A'):
                         path = d.b_blob.path
                         if path.startswith(subdir_start):
-                            (filepath, filename) = split_bb_file_path(path, subdir_start)
-                            if filename:
+                            (typename, filepath, filename) = detect_file_type(path, subdir_start)
+                            if typename == 'recipe':
                                 recipe = Recipe()
                                 recipe.layerbranch = layerbranch
                                 recipe.filename = filename
@@ -463,35 +488,43 @@ def main():
                                 update_recipe_file(config_data_copy, os.path.join(layerdir, filepath), recipe, layerdir_start, repodir)
                                 recipe.save()
                                 updatedrecipes.add(recipe)
-                            else:
-                                machinename = check_machine_conf(path, subdir_start)
-                                if machinename:
-                                    machine = Machine()
-                                    machine.layerbranch = layerbranch
-                                    machine.name = machinename
-                                    update_machine_conf_file(os.path.join(repodir, path), machine)
-                                    machine.save()
+                            elif typename == 'bbappend':
+                                append = BBAppend()
+                                append.layerbranch = layerbranch
+                                append.filename = filename
+                                append.filepath = filepath
+                                append.save()
+                            elif typename == 'machine':
+                                machine = Machine()
+                                machine.layerbranch = layerbranch
+                                machine.name = filename
+                                update_machine_conf_file(os.path.join(repodir, path), machine)
+                                machine.save()
+                            elif typename == 'bbclass':
+                                bbclass = BBClass()
+                                bbclass.layerbranch = layerbranch
+                                bbclass.name = filename
+                                bbclass.save()
 
                     dirtyrecipes = set()
                     for d in diff.iter_change_type('M'):
                         path = d.a_blob.path
                         if path.startswith(subdir_start):
-                            (filepath, filename) = split_bb_file_path(path, subdir_start)
-                            if filename:
+                            (typename, filepath, filename) = detect_file_type(path, subdir_start)
+                            if typename == 'recipe':
                                 results = layerrecipes.filter(filepath=filepath).filter(filename=filename)[:1]
                                 if results:
                                     recipe = results[0]
                                     update_recipe_file(config_data_copy, os.path.join(layerdir, filepath), recipe, layerdir_start, repodir)
                                     recipe.save()
                                     updatedrecipes.add(recipe)
-                            else:
-                                machinename = check_machine_conf(path, subdir_start)
-                                if machinename:
-                                    results = layermachines.filter(name=machinename)
-                                    if results:
-                                        machine = results[0]
-                                        update_machine_conf_file(os.path.join(repodir, path), machine)
-                                        machine.save()
+                            elif typename == 'machine':
+                                results = layermachines.filter(name=filename)
+                                if results:
+                                    machine = results[0]
+                                    update_machine_conf_file(os.path.join(repodir, path), machine)
+                                    machine.save()
+
                             deps = RecipeFileDependency.objects.filter(layerbranch=layerbranch).filter(path=path)
                             for dep in deps:
                                 dirtyrecipes.add(dep.recipe)
@@ -503,26 +536,38 @@ def main():
                     # Collect recipe data from scratch
                     layerrecipes.delete()
                     layermachines.delete()
+                    layerappends.delete()
+                    layerclasses.delete()
                     for root, dirs, files in os.walk(layerdir):
                         if '.git' in dirs:
                             dirs.remove('.git')
                         for f in files:
-                            if fnmatch.fnmatch(f, "*.bb"):
+                            fullpath = os.path.join(root, f)
+                            (typename, _, filename) = detect_file_type(fullpath, layerdir_start)
+                            if typename == 'recipe':
                                 recipe = Recipe()
                                 recipe.layerbranch = layerbranch
                                 recipe.filename = f
                                 recipe.filepath = os.path.relpath(root, layerdir)
                                 update_recipe_file(config_data_copy, root, recipe, layerdir_start, repodir)
                                 recipe.save()
-                            else:
-                                fullpath = os.path.join(root, f)
-                                machinename = check_machine_conf(fullpath, layerdir_start)
-                                if machinename:
-                                    machine = Machine()
-                                    machine.layerbranch = layerbranch
-                                    machine.name = machinename
-                                    update_machine_conf_file(fullpath, machine)
-                                    machine.save()
+                            elif typename == 'bbappend':
+                                append = BBAppend()
+                                append.layerbranch = layerbranch
+                                append.filename = f
+                                append.filepath = os.path.relpath(root, layerdir)
+                                append.save()
+                            elif typename == 'machine':
+                                machine = Machine()
+                                machine.layerbranch = layerbranch
+                                machine.name = filename
+                                update_machine_conf_file(fullpath, machine)
+                                machine.save()
+                            elif typename == 'bbclass':
+                                bbclass = BBClass()
+                                bbclass.layerbranch = layerbranch
+                                bbclass.name = filename
+                                bbclass.save()
 
                 # Save repo info
                 layerbranch.vcs_last_rev = topcommit.hexsha
