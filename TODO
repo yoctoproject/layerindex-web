@@ -23,8 +23,6 @@ Later:
 * Tool for finding/comparing duplicate recipes?
 * Tool for editing SUMMARY/DESCRIPTION? [Paul working on this]
 * Dynamic loading/filtering for recipes list
-* Track BUGTRACKER
-* Track PROVIDES and BBCLASSEXTENDS?
 * Some way to notify the user when they search for something that has been renamed / replaced / deprecated?
 * Create simple script to check for unlisted layer subdirectories in all repos
 * Move import script to utils/ subdir

@@ -89,6 +89,9 @@ def update_recipe_file(data, path, recipe, layerdir_start, repodir):
         recipe.section = envdata.getVar("SECTION", True)
         recipe.license = envdata.getVar("LICENSE", True)
         recipe.homepage = envdata.getVar("HOMEPAGE", True)
+        recipe.bugtracker = envdata.getVar("BUGTRACKER", True) or ""
+        recipe.provides = envdata.getVar("PROVIDES", True) or ""
+        recipe.bbclassextend = envdata.getVar("BBCLASSEXTEND", True) or ""
         recipe.save()
 
         # Get file dependencies within this layer

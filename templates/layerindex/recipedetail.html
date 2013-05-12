@@ -68,6 +68,12 @@
                             <th>Homepage</th>
                             <td>{% if recipe.homepage %}<a href="{{ recipe.homepage }}">{{ recipe.homepage }}</a>{% endif %}</td>
                         </tr>
+                        {% if recipe.bugtracker %}
+                        <tr>
+                            <th>Bug tracker</th>
+                            <td><a href="{{ recipe.bugtracker }}">{{ recipe.bugtracker }}</a></td>
+                        </tr>
+                        {% endif %}
                         <tr>
                             <th>Recipe file</th>
                             <td>

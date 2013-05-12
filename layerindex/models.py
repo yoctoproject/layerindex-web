@@ -8,6 +8,7 @@ from django.db import models
 from datetime import datetime
 from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
+from django.core.validators import URLValidator
 import os.path
 import re
 import posixpath
@@ -219,6 +220,9 @@ class Recipe(models.Model):
     section = models.CharField(max_length=100, blank=True)
     license = models.CharField(max_length=100, blank=True)
     homepage = models.URLField(blank=True)
+    bugtracker = models.URLField(blank=True)
+    provides = models.CharField(max_length=255, blank=True)
+    bbclassextend = models.CharField(max_length=100, blank=True)
 
     def vcs_web_url(self):
         url = self.layerbranch.file_url(os.path.join(self.filepath, self.filename))
