@@ -12,7 +12,8 @@ from django.template import RequestContext
 from layerindex.models import Branch, LayerItem, LayerMaintainer, LayerBranch, LayerDependency, LayerNote, Recipe, Machine
 from datetime import datetime
 from django.views.generic import DetailView, ListView
-from layerindex.forms import EditLayerForm, LayerMaintainerFormSet, EditNoteForm
+from django.views.generic.edit import UpdateView
+from layerindex.forms import EditLayerForm, LayerMaintainerFormSet, EditNoteForm, EditProfileForm
 from django.db import transaction
 from django.contrib.auth.models import User, Permission
 from django.db.models import Q
@@ -320,3 +321,17 @@ class HistoryListView(ListView):
 
     def get_queryset(self):
         return Revision.objects.all().order_by('-date_created')
+
+
+class EditProfileFormView(UpdateView):
+    form_class = EditProfileForm
+
+    def dispatch(self, request, *args, **kwargs):
+        self.user = request.user
+        return super(EditProfileFormView, self).dispatch(request, *args, **kwargs)
+
+    def get_object(self, queryset=None):
+        return self.user
+
+    def get_success_url(self):
+        return reverse('frontpage')

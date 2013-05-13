@@ -9,6 +9,7 @@ from django import forms
 from django.core.validators import URLValidator, RegexValidator, email_re
 from django.forms.models import inlineformset_factory
 from captcha.fields import CaptchaField
+from django.contrib.auth.models import User
 import re
 
 
@@ -140,3 +141,9 @@ class EditNoteForm(forms.ModelForm):
     def clean_text(self):
         text = self.cleaned_data['text'].strip()
         return text
+
+
+class EditProfileForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = ('first_name', 'last_name', 'email')
