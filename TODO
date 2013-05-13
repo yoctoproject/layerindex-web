@@ -20,7 +20,7 @@ Later:
 * Return to last page (review/detail) after editing (with success alert)?
 * Cancel button on edit form?
 * Query backend service? i.e. special URL to query information for external apps/scripts
-* Tool for finding/comparing duplicate recipes?
+* Add comparison to duplicates page
 * Tool for editing SUMMARY/DESCRIPTION? [Paul working on this]
 * Dynamic loading/filtering for recipes list
 * Some way to notify the user when they search for something that has been renamed / replaced / deprecated?

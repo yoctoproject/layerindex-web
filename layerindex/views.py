@@ -9,14 +9,14 @@ from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidde
 from django.core.urlresolvers import reverse
 from django.core.exceptions import PermissionDenied
 from django.template import RequestContext
-from layerindex.models import Branch, LayerItem, LayerMaintainer, LayerBranch, LayerDependency, LayerNote, Recipe, Machine
+from layerindex.models import Branch, LayerItem, LayerMaintainer, LayerBranch, LayerDependency, LayerNote, Recipe, Machine, BBClass
 from datetime import datetime
-from django.views.generic import DetailView, ListView
+from django.views.generic import TemplateView, DetailView, ListView
 from django.views.generic.edit import UpdateView
 from layerindex.forms import EditLayerForm, LayerMaintainerFormSet, EditNoteForm, EditProfileForm
 from django.db import transaction
 from django.contrib.auth.models import User, Permission
-from django.db.models import Q
+from django.db.models import Q, Count
 from django.core.mail import EmailMessage
 from django.template.loader import get_template
 from django.template import Context
@@ -256,6 +256,28 @@ class LayerReviewDetailView(LayerDetailView):
             raise PermissionDenied
         return super(LayerReviewDetailView, self).dispatch(request, *args, **kwargs)
 
+def recipes_preferred_count(qs):
+    # Add extra column so we can show "duplicate" recipes from other layers de-emphasised
+    # (it's a bit crude having to do this using SQL but I couldn't find a better way...)
+    return qs.extra(
+        select={
+            'preferred_count': """SELECT COUNT(1)
+FROM layerindex_recipe AS recipe2
+, layerindex_layerbranch as branch2
+, layerindex_layeritem as layer1
+, layerindex_layeritem as layer2
+WHERE branch2.id = recipe2.layerbranch_id
+AND layer2.id = branch2.layer_id
+AND layer2.layer_type in ('S', 'A')
+AND branch2.branch_id = layerindex_layerbranch.branch_id
+AND recipe2.pn = layerindex_recipe.pn
+AND recipe2.layerbranch_id <> layerindex_recipe.layerbranch_id
+AND layer1.id = layerindex_layerbranch.layer_id
+AND layer2.index_preference > layer1.index_preference
+"""
+        },
+    )
+
 class RecipeSearchView(ListView):
     context_object_name = 'recipe_list'
     paginate_by = 50
@@ -275,30 +297,30 @@ class RecipeSearchView(ListView):
                 # with no query string)
                 return Recipe.objects.none()
 
-        # Add extra column so we can show "duplicate" recipes from other layers de-emphasised
-        # (it's a bit crude having to do this using SQL but I couldn't find a better way...)
-        return qs.extra(
-            select={
-                'preferred_count': """SELECT COUNT(1)
-FROM layerindex_recipe AS recipe2
-, layerindex_layerbranch as branch2
-, layerindex_layeritem as layer1
-, layerindex_layeritem as layer2
-WHERE branch2.id = recipe2.layerbranch_id
-AND layer2.id = branch2.layer_id
-AND layer2.layer_type in ('S', 'A')
-AND branch2.branch_id = layerindex_layerbranch.branch_id
-AND recipe2.pn = layerindex_recipe.pn
-AND recipe2.layerbranch_id <> layerindex_recipe.layerbranch_id
-AND layer1.id = layerindex_layerbranch.layer_id
-AND layer2.index_preference > layer1.index_preference
-"""
-            },
-        )
+        return recipes_preferred_count(qs)
 
     def get_context_data(self, **kwargs):
         context = super(RecipeSearchView, self).get_context_data(**kwargs)
         context['search_keyword'] = self.request.GET.get('q', '')
+        return context
+
+class DuplicatesView(TemplateView):
+    def get_recipes(self):
+        init_qs = Recipe.objects.filter(layerbranch__branch__name=self.request.session.get('branch', 'master'))
+        dupes = init_qs.values('pn').annotate(Count('layerbranch', distinct=True)).filter(layerbranch__count__gt=1)
+        qs = init_qs.all().filter(pn__in=[item['pn'] for item in dupes]).order_by('pn', 'layerbranch__layer')
+        return recipes_preferred_count(qs)
+
+    def get_classes(self):
+        init_qs = BBClass.objects.filter(layerbranch__branch__name=self.request.session.get('branch', 'master'))
+        dupes = init_qs.values('name').annotate(Count('layerbranch', distinct=True)).filter(layerbranch__count__gt=1)
+        qs = init_qs.all().filter(name__in=[item['name'] for item in dupes]).order_by('name', 'layerbranch__layer')
+        return qs
+
+    def get_context_data(self, **kwargs):
+        context = super(DuplicatesView, self).get_context_data(**kwargs)
+        context['recipes'] = self.get_recipes()
+        context['classes'] = self.get_classes()
         return context
 
 class MachineSearchView(ListView):
