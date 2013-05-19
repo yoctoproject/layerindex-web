@@ -108,6 +108,7 @@ class LayerBranch(models.Model):
     vcs_last_fetch = models.DateTimeField('Last successful fetch', blank=True, null=True)
     vcs_last_rev = models.CharField('Last revision fetched', max_length=80, blank=True)
     vcs_last_commit = models.DateTimeField('Last commit date', blank=True, null=True)
+    actual_branch = models.CharField('Actual Branch', max_length=80, blank=True, help_text='Name of the actual branch in the repository matching the core branch')
 
     class Meta:
         verbose_name_plural = "Layer branches"

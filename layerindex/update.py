@@ -304,15 +304,18 @@ def main():
         logger.error("Unable to find core layer %s in database; check CORE_LAYER_NAME setting" % settings.CORE_LAYER_NAME)
         sys.exit(1)
     core_layerbranch = core_layer.get_layerbranch(options.branch)
+    core_branchname = options.branch
     if core_layerbranch:
         core_subdir = core_layerbranch.vcs_subdir
+        if core_layerbranch.actual_branch:
+            core_branchname = core_layerbranch.actual_branch
     else:
         core_subdir = 'meta'
     core_urldir = core_layer.get_fetch_dir()
     core_repodir = os.path.join(fetchdir, core_urldir)
     core_layerdir = os.path.join(core_repodir, core_subdir)
     if not options.nocheckout:
-        out = runcmd("git checkout origin/%s" % options.branch, core_repodir)
+        out = runcmd("git checkout origin/%s" % core_branchname, core_repodir)
         out = runcmd("git clean -f -x", core_repodir)
     # The directory above where this script exists should contain our conf/layer.conf,
     # so add it to BBPATH along with the core layer directory
@@ -357,17 +360,28 @@ def main():
                 transaction.rollback()
                 continue
 
+            layerbranch = layer.get_layerbranch(options.branch)
+
+            branchname = options.branch
+            branchdesc = options.branch
+            if layerbranch:
+                if layerbranch.actual_branch:
+                    branchname = layerbranch.actual_branch
+                    branchdesc = "%s (%s)" % (options.branch, branchname)
+
             # Collect repo info
             repo = git.Repo(repodir)
             assert repo.bare == False
             try:
-                topcommit = repo.commit('origin/%s' % options.branch)
+                topcommit = repo.commit('origin/%s' % branchname)
             except:
-                logger.info("Skipping update of layer %s - branch %s doesn't exist" % (layer.name, options.branch))
+                if layerbranch:
+                    logger.error("Failed update of layer %s - branch %s no longer exists" % (layer.name, branchdesc))
+                else:
+                    logger.info("Skipping update of layer %s - branch %s doesn't exist" % (layer.name, branchdesc))
                 transaction.rollback()
                 continue
 
-            layerbranch = layer.get_layerbranch(options.branch)
             if not layerbranch:
                 # LayerBranch doesn't exist for this branch, create it
                 layerbranch = LayerBranch()
@@ -405,16 +419,16 @@ def main():
             if layerbranch.vcs_last_rev != topcommit.hexsha or options.reload:
                 # Check out appropriate branch
                 if not options.nocheckout:
-                    out = runcmd("git checkout origin/%s" % options.branch, repodir)
+                    out = runcmd("git checkout origin/%s" % branchname, repodir)
                     out = runcmd("git clean -f -x", repodir)
 
                 if not os.path.exists(layerdir):
                     if options.branch == 'master':
-                        logger.error("Subdirectory for layer %s does not exist on master branch!" % layer.name)
+                        logger.error("Subdirectory for layer %s does not exist on branch %s!" % branchdesc)
                         transaction.rollback()
                         continue
                     else:
-                        logger.info("Skipping update of layer %s for branch %s - subdirectory does not exist on this branch" % (layer.name, options.branch))
+                        logger.info("Skipping update of layer %s for branch %s - subdirectory does not exist on this branch" % (layer.name, branchdesc))
                         transaction.rollback()
                         continue
 
@@ -423,7 +437,7 @@ def main():
                     transaction.rollback()
                     continue
 
-                logger.info("Collecting data for layer %s on branch %s" % (layer.name, options.branch))
+                logger.info("Collecting data for layer %s on branch %s" % (layer.name, branchdesc))
 
                 # Parse layer.conf files for this layer and its dependencies
                 # This is necessary not just because BBPATH needs to be set in order
@@ -573,7 +587,7 @@ def main():
                 layerbranch.vcs_last_rev = topcommit.hexsha
                 layerbranch.vcs_last_commit = datetime.fromtimestamp(topcommit.committed_date)
             else:
-                logger.info("Layer %s is already up-to-date for branch %s" % (layer.name, options.branch))
+                logger.info("Layer %s is already up-to-date for branch %s" % (layer.name, branchdesc))
 
             layerbranch.vcs_last_fetch = datetime.now()
             layerbranch.save()
