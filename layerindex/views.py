@@ -145,8 +145,12 @@ def edit_layer_view(request, template_name, slug=None):
                     perm = Permission.objects.get(codename='publish_layer')
                     users = User.objects.filter(Q(groups__permissions=perm) | Q(user_permissions=perm) ).distinct()
                     for user in users:
+                        if user.first_name:
+                            user_name = user.first_name
+                        else:
+                            user_name = user.username
                         d = Context({
-                            'user_name': user.get_full_name(),
+                            'user_name': user_name,
                             'layer_name': layeritem.name,
                             'layer_url': request.build_absolute_uri(reverse('layer_review', args=(layeritem.name,))) + '?branch=master',
                         })
