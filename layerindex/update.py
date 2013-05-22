@@ -128,7 +128,12 @@ def update_machine_conf_file(path, machine):
 
 def parse_layer_conf(layerdir, data):
     data.setVar('LAYERDIR', str(layerdir))
-    data = bb.cooker._parse(os.path.join(layerdir, "conf", "layer.conf"), data)
+    if hasattr(bb, "cookerdata"):
+        # Newer BitBake
+        data = bb.cookerdata.parse_config_file(os.path.join(layerdir, "conf", "layer.conf"), data)
+    else:
+        # Older BitBake (1.18 and below)
+        data = bb.cooker._parse(os.path.join(layerdir, "conf", "layer.conf"), data)
     data.expandVarref('LAYERDIR')
 
 def get_branch(branchname):
