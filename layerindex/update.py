@@ -175,6 +175,9 @@ def main():
     parser.add_option("-x", "--nofetch",
             help = "Don't fetch repositories",
             action="store_true", dest="nofetch")
+    parser.add_option("", "--nocheckout",
+            help = "Don't check out branches",
+            action="store_true", dest="nocheckout")
     parser.add_option("-d", "--debug",
             help = "Enable debug output",
             action="store_const", const=logging.DEBUG, dest="loglevel", default=logging.INFO)
@@ -262,9 +265,10 @@ def main():
         else:
             out = runcmd("git fetch", bitbakepath)
 
-    # Check out the branch of BitBake appropriate for this branch and clean out any stale files (e.g. *.pyc)
-    out = runcmd("git checkout origin/%s" % branch.bitbake_branch, bitbakepath)
-    out = runcmd("git clean -f -x", bitbakepath)
+    if not options.nocheckout:
+        # Check out the branch of BitBake appropriate for this branch and clean out any stale files (e.g. *.pyc)
+        out = runcmd("git checkout origin/%s" % branch.bitbake_branch, bitbakepath)
+        out = runcmd("git clean -f -x", bitbakepath)
 
     # Skip sanity checks
     os.environ['BB_ENV_EXTRAWHITE'] = 'DISABLE_SANITY_CHECKS'
@@ -283,8 +287,9 @@ def main():
     core_urldir = core_layer.get_fetch_dir()
     core_repodir = os.path.join(fetchdir, core_urldir)
     core_layerdir = os.path.join(core_repodir, core_subdir)
-    out = runcmd("git checkout origin/%s" % options.branch, core_repodir)
-    out = runcmd("git clean -f -x", core_repodir)
+    if not options.nocheckout:
+        out = runcmd("git checkout origin/%s" % options.branch, core_repodir)
+        out = runcmd("git clean -f -x", core_repodir)
     # The directory above where this script exists should contain our conf/layer.conf,
     # so add it to BBPATH along with the core layer directory
     confparentdir = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
@@ -373,7 +378,9 @@ def main():
             layermachines = Machine.objects.filter(layerbranch=layerbranch)
             if layerbranch.vcs_last_rev != topcommit.hexsha or options.reload:
                 # Check out appropriate branch
-                out = runcmd("git checkout origin/%s" % options.branch, repodir)
+                if not options.nocheckout:
+                    out = runcmd("git checkout origin/%s" % options.branch, repodir)
+                    out = runcmd("git clean -f -x", repodir)
 
                 if not os.path.exists(layerdir):
                     if options.branch == 'master':
