@@ -25,6 +25,8 @@ from django.contrib.auth.decorators import login_required
 from reversion.models import Revision
 import simplesearch
 import settings
+from django.dispatch import receiver
+import reversion
 
 
 def edit_layernote_view(request, template_name, slug, pk=None):
@@ -339,3 +341,44 @@ class EditProfileFormView(UpdateView):
 
     def get_success_url(self):
         return reverse('frontpage')
+
+
+@receiver(reversion.pre_revision_commit)
+def annotate_revision(sender, **kwargs):
+    ignorefields = ['vcs_last_rev', 'vcs_last_fetch', 'vcs_last_commit']
+    versions = kwargs.pop('versions')
+    instances = kwargs.pop('instances')
+    changelist = []
+    for ver, inst in zip(versions, instances):
+        currentVersion = ver.field_dict
+        modelmeta = ver.content_type.model_class()._meta
+        if ver.type == reversion.models.VERSION_DELETE:
+            changelist.append("Deleted %s: %s" % (modelmeta.verbose_name.lower(), ver.object_repr))
+        else:
+            pastver = reversion.get_for_object(inst)
+            if pastver and ver.type != reversion.models.VERSION_ADD:
+                pastVersion = pastver[0].field_dict
+                changes = set(currentVersion.items()) - set(pastVersion.items())
+                changedVars = [var[0] for var in changes]
+                fieldchanges = []
+                for field in changedVars:
+                    if field not in ignorefields:
+                        modelfield = modelmeta.get_field(field)
+                        newvalue = currentVersion[field]
+                        if modelfield.choices:
+                            for v in modelfield.choices:
+                                if v[0] == newvalue:
+                                    newvalue = v[1]
+                                    break
+                        fieldchanges.append("%s to '%s'" % (modelfield.verbose_name.lower(), newvalue))
+                if fieldchanges:
+                    changelist.append("Changed %s %s %s" % (modelmeta.verbose_name.lower(), ver.object_repr, ", ".join(fieldchanges)))
+            else:
+                changelist.append("Added %s: %s" % (modelmeta.verbose_name.lower(), ver.object_repr))
+    comment = '\n'.join(changelist)
+    if not comment:
+        comment = 'No changes'
+    revision = kwargs.pop('revision')
+    revision.comment = comment
+    revision.save()
+    kwargs['revision'] = revision

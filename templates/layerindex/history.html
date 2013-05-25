@@ -32,23 +32,29 @@
 
     <tbody>
     {% for revision in revisions %}
-        <tr>
-            <td>{{ revision.date_created|timesince }} ago</td>
-            <td>{{ revision.user }}</td>
-            <td>
-                {% for version in revision.version_set.all %}
-                    {% if version.type = 0 %}
-                        Added
-                    {% elif version.type = 1 %}
-                        Changed
-                    {% elif version.type = 2 %}
-                        Deleted
+        {% if revision.comment != 'No changes' %}
+            <tr>
+                <td>{{ revision.date_created|timesince }} ago</td>
+                <td>{{ revision.user }}</td>
+                <td>
+                    {% if revision.comment %}
+                        {{ revision.comment|linebreaksbr }}
+                    {% else %}
+                        {% for version in revision.version_set.all %}
+                            {% if version.type = 0 %}
+                                Added
+                            {% elif version.type = 1 %}
+                                Changed
+                            {% elif version.type = 2 %}
+                                Deleted
+                            {% endif %}
+                            {{ version.content_type.name.lower }}: {{ version.object_repr }}
+                            <br>
+                        {% endfor %}
                     {% endif %}
-                    {{ version.content_type.name.lower }}: {{ version.object_repr }}
-                    <br>
-                {% endfor %}
-            </td>
-        </tr>
+                </td>
+            </tr>
+        {% endif %}
     {% endfor %}
     </tbody>
 </table>

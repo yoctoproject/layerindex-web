@@ -7,7 +7,6 @@ TODO:
 
 Later:
 * Breadcrumbs / fix tab navigation?
-* Detailed change history page [Paul working on this]
 * Ability for reviewers to comment before publishing a layer?
 * Add link to the all layers and all recipes tables from the layer details page?
 * Prevent SMTP failures from breaking submission process
