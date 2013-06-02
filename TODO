@@ -17,7 +17,6 @@ Later:
 * Usage links in list page?
 * Subdirs in list page?
 * Avoid page content changing size depending on whether scrollbar is there or not?
-* Return to last page (review/detail) after editing (with success alert)?
 * Cancel button on edit form?
 * Query backend service? i.e. special URL to query information for external apps/scripts
 * Add comparison to duplicates page

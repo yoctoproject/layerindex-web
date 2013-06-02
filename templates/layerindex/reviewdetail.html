@@ -35,7 +35,7 @@
                         {% if user.is_authenticated %}
                             <span class="pull-right">
                                 {% if perms.layerindex.publish_layer or useredit %}
-                                    <a href="{% url edit_layer layeritem.name %}" class="btn">Edit layer</a>
+                                    <a href="{% url edit_layer layeritem.name %}?returnto=layer_review" class="btn">Edit layer</a>
                                     {% if layeritem.layernote_set.count = 0 %}
                                         <a href="{% url add_layernote layeritem.name %}" class="btn">Add note</a>
                                     {% endif %}

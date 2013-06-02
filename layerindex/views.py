@@ -165,6 +165,9 @@ def edit_layer_view(request, template_name, slug=None):
                         msg.send()
                     return HttpResponseRedirect(reverse('submit_layer_thanks'))
             messages.success(request, 'Layer %s saved successfully.' % layeritem.name)
+            returnto = request.GET.get('returnto', 'layer_item')
+            if returnto:
+                return HttpResponseRedirect(reverse_lazy(returnto, args=(layeritem.name,)))
     else:
         form = EditLayerForm(request.user, layerbranch, instance=layeritem)
         maintainerformset = LayerMaintainerFormSet(instance=layerbranch)
