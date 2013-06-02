@@ -135,6 +135,10 @@ padding: 8px;
     border-top: 1px solid rgb(238, 238, 238);
 }
 
+.submitbutton {
+    margin-right: 5px;
+}
+
 .hero-evenlyspaced {
     padding: 35px;
 }

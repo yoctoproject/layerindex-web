@@ -84,6 +84,7 @@ def delete_layer_view(request, template_name, slug):
         })
 
 def edit_layer_view(request, template_name, slug=None):
+    return_url = None
     if slug:
         # Edit mode
         branch = Branch.objects.filter(name=request.session.get('branch', 'master'))[:1].get()
@@ -92,6 +93,9 @@ def edit_layer_view(request, template_name, slug=None):
             raise PermissionDenied
         layerbranch = get_object_or_404(LayerBranch, layer=layeritem, branch=branch)
         deplistlayers = LayerItem.objects.exclude(id=layeritem.id).order_by('name')
+        returnto = request.GET.get('returnto', 'layer_item')
+        if returnto:
+            return_url = reverse_lazy(returnto, args=(layeritem.name,))
     else:
         # Submit mode
         branch = Branch.objects.filter(name='master')[:1].get()
@@ -165,9 +169,8 @@ def edit_layer_view(request, template_name, slug=None):
                         msg.send()
                     return HttpResponseRedirect(reverse('submit_layer_thanks'))
             messages.success(request, 'Layer %s saved successfully.' % layeritem.name)
-            returnto = request.GET.get('returnto', 'layer_item')
-            if returnto:
-                return HttpResponseRedirect(reverse_lazy(returnto, args=(layeritem.name,)))
+            if return_url:
+                return HttpResponseRedirect(return_url)
     else:
         form = EditLayerForm(request.user, layerbranch, instance=layeritem)
         maintainerformset = LayerMaintainerFormSet(instance=layerbranch)
@@ -176,6 +179,7 @@ def edit_layer_view(request, template_name, slug=None):
         'form': form,
         'maintainerformset': maintainerformset,
         'deplistlayers': deplistlayers,
+        'return_url': return_url,
     })
 
 def bulk_change_edit_view(request, template_name, pk):
