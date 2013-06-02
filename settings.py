@@ -169,6 +169,14 @@ LOGGING = {
     }
 }
 
+from django.contrib.messages import constants as messages
+MESSAGE_TAGS = {
+    messages.SUCCESS: 'alert-success',
+    messages.INFO: 'alert-info',
+    messages.WARNING: '',
+    messages.ERROR: 'alert-error',
+}
+
 # Registration settings
 ACCOUNT_ACTIVATION_DAYS = 2
 EMAIL_HOST = 'smtp.example.com'

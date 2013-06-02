@@ -31,11 +31,6 @@
         {% endblock %}
 
 {% block formtop %}
-{% if form.was_saved %}
-    <div class="alert alert-success">
-        Changes saved successfully.
-    </div>
-{% endif %}
 {% endblock %}
 <form id="edit_layer_form" method="post">
 {% csrf_token %}

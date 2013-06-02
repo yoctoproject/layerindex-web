@@ -98,6 +98,11 @@
     {% endblock %}
 
     <div id="content" class="container top-padded">
+        {% if messages %}
+            {% for message in messages %}
+            <div{% if message.tags %} class="alert {{ message.tags }}"{% endif %}>{{ message }}</div>
+            {% endfor %}
+        {% endif %}
         {% block content %}{% endblock %}
     </div>
 

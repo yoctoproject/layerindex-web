@@ -22,6 +22,7 @@ from django.template.loader import get_template
 from django.template import Context
 from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 from reversion.models import Revision
 import simplesearch
 import settings
@@ -163,7 +164,7 @@ def edit_layer_view(request, template_name, slug=None):
                         msg = EmailMessage(subject, text_content, from_email, [to_email])
                         msg.send()
                     return HttpResponseRedirect(reverse('submit_layer_thanks'))
-            form.was_saved = True
+            messages.success(request, 'Layer %s saved successfully.' % layeritem.name)
     else:
         form = EditLayerForm(request.user, layerbranch, instance=layeritem)
         maintainerformset = LayerMaintainerFormSet(instance=layerbranch)
