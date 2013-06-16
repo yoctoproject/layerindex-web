@@ -69,6 +69,15 @@ def check_machine_conf(path, subdir_start):
         return res.group(1)
     return None
 
+def split_recipe_fn(path):
+    splitfn = os.path.basename(path).split('.bb')[0].split('_', 2)
+    pn = splitfn[0]
+    if len(splitfn) > 1:
+        pv = splitfn[1]
+    else:
+        pv = "1.0"
+    return (pn, pv)
+
 def update_recipe_file(data, path, recipe, layerdir_start, repodir):
     fn = str(os.path.join(path, recipe.filename))
     try:
@@ -352,6 +361,12 @@ def main():
                 else:
                     diff = None
 
+                # We handle recipes specially to try to preserve the same id
+                # when recipe upgrades happen (so that if a user bookmarks a
+                # recipe page it remains valid)
+                layerrecipes_delete = []
+                layerrecipes_add = []
+
                 if diff:
                     # Apply git changes to existing recipe list
 
@@ -366,7 +381,10 @@ def main():
                         if path.startswith(subdir_start):
                             (typename, filepath, filename) = detect_file_type(path, subdir_start)
                             if typename == 'recipe':
-                                layerrecipes.filter(filepath=filepath).filter(filename=filename).delete()
+                                values = layerrecipes.filter(filepath=filepath).filter(filename=filename).values('id', 'filepath', 'filename', 'pn')
+                                layerrecipes_delete.append(values[0])
+                                logger.debug("Mark %s for deletion" % values[0])
+                                updatedrecipes.add(os.path.join(values[0]['filepath'], values[0]['filename']))
                             elif typename == 'bbappend':
                                 layerappends.filter(filepath=filepath).filter(filename=filename).delete()
                             elif typename == 'machine':
@@ -379,13 +397,9 @@ def main():
                         if path.startswith(subdir_start):
                             (typename, filepath, filename) = detect_file_type(path, subdir_start)
                             if typename == 'recipe':
-                                recipe = Recipe()
-                                recipe.layerbranch = layerbranch
-                                recipe.filename = filename
-                                recipe.filepath = filepath
-                                update_recipe_file(config_data_copy, os.path.join(layerdir, filepath), recipe, layerdir_start, repodir)
-                                recipe.save()
-                                updatedrecipes.add(recipe)
+                                layerrecipes_add.append(os.path.join(repodir, path))
+                                logger.debug("Mark %s for addition" % path)
+                                updatedrecipes.add(os.path.join(filepath, filename))
                             elif typename == 'bbappend':
                                 append = BBAppend()
                                 append.layerbranch = layerbranch
@@ -410,12 +424,13 @@ def main():
                         if path.startswith(subdir_start):
                             (typename, filepath, filename) = detect_file_type(path, subdir_start)
                             if typename == 'recipe':
+                                logger.debug("Mark %s for update" % path)
                                 results = layerrecipes.filter(filepath=filepath).filter(filename=filename)[:1]
                                 if results:
                                     recipe = results[0]
                                     update_recipe_file(config_data_copy, os.path.join(layerdir, filepath), recipe, layerdir_start, repodir)
                                     recipe.save()
-                                    updatedrecipes.add(recipe)
+                                    updatedrecipes.add(recipe.full_path())
                             elif typename == 'machine':
                                 results = layermachines.filter(name=filename)
                                 if results:
@@ -427,12 +442,28 @@ def main():
                             for dep in deps:
                                 dirtyrecipes.add(dep.recipe)
 
-                    dirtyrecipes -= updatedrecipes
                     for recipe in dirtyrecipes:
-                        update_recipe_file(config_data_copy, os.path.join(layerdir, recipe.filepath), recipe, layerdir_start, repodir)
+                        if not recipe.full_path() in updatedrecipes:
+                            update_recipe_file(config_data_copy, os.path.join(layerdir, recipe.filepath), recipe, layerdir_start, repodir)
                 else:
                     # Collect recipe data from scratch
-                    layerrecipes.delete()
+
+                    # First, check which recipes still exist
+                    layerrecipe_values = layerrecipes.values('id', 'filepath', 'filename', 'pn')
+                    layerrecipe_fns = []
+                    for v in layerrecipe_values:
+                        root = os.path.join(layerdir, v['filepath'])
+                        fullpath = os.path.join(root, v['filename'])
+                        if os.path.exists(fullpath):
+                            # Recipe still exists, update it
+                            results = layerrecipes.filter(id=v['id'])[:1]
+                            recipe = results[0]
+                            update_recipe_file(config_data_copy, root, recipe, layerdir_start, repodir)
+                        else:
+                            # Recipe no longer exists, mark it for later on
+                            layerrecipes_delete.append(v)
+                        layerrecipe_fns.append(fullpath)
+
                     layermachines.delete()
                     layerappends.delete()
                     layerclasses.delete()
@@ -443,12 +474,8 @@ def main():
                             fullpath = os.path.join(root, f)
                             (typename, _, filename) = detect_file_type(fullpath, layerdir_start)
                             if typename == 'recipe':
-                                recipe = Recipe()
-                                recipe.layerbranch = layerbranch
-                                recipe.filename = f
-                                recipe.filepath = os.path.relpath(root, layerdir)
-                                update_recipe_file(config_data_copy, root, recipe, layerdir_start, repodir)
-                                recipe.save()
+                                if fullpath not in layerrecipe_fns:
+                                    layerrecipes_add.append(fullpath)
                             elif typename == 'bbappend':
                                 append = BBAppend()
                                 append.layerbranch = layerbranch
@@ -466,6 +493,37 @@ def main():
                                 bbclass.layerbranch = layerbranch
                                 bbclass.name = filename
                                 bbclass.save()
+
+                for added in layerrecipes_add:
+                    # This is good enough without actually parsing the file
+                    (pn, pv) = split_recipe_fn(added)
+                    oldid = -1
+                    for deleted in layerrecipes_delete:
+                        if deleted['pn'] == pn:
+                            oldid = deleted['id']
+                            layerrecipes_delete.remove(deleted)
+                            break
+                    if oldid > -1:
+                        # Reclaim a record we would have deleted
+                        results = Recipe.objects.filter(id=oldid)[:1]
+                        recipe = results[0]
+                        logger.debug("Reclaim %s for %s %s" % (recipe, pn, pv))
+                    else:
+                        # Create new record
+                        logger.debug("Add new recipe %s" % added)
+                        recipe = Recipe()
+                    recipe.layerbranch = layerbranch
+                    recipe.filename = os.path.basename(added)
+                    root = os.path.dirname(added)
+                    recipe.filepath = os.path.relpath(root, layerdir)
+                    update_recipe_file(config_data_copy, root, recipe, layerdir_start, repodir)
+                    recipe.save()
+
+                for deleted in layerrecipes_delete:
+                    logger.debug("Delete %s" % deleted)
+                    results = Recipe.objects.filter(id=deleted['id'])[:1]
+                    recipe = results[0]
+                    recipe.delete()
 
                 # Save repo info
                 layerbranch.vcs_last_rev = topcommit.hexsha
