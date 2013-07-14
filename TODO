@@ -11,7 +11,6 @@ Later:
 * All-branch search/results so you can see version availability of recipes in all branches at once?
 * Rawrecipes branch support
 * Display no-results found message when search does not return any results (all tables)
-* Change behaviour of filter menus to stay open so that you can check / uncheck multiple items
 * Show layer type in layer detail?
 * Usage links in list page?
 * Subdirs in list page?

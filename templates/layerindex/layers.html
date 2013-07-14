@@ -136,6 +136,10 @@
             $.uiTableFilter( theTable, this.value );
             })
 
+            $('.dropdown-menu input, .dropdown-menu label').click(function(e) {
+            e.stopPropagation();
+            })
+
             $('#filter-form').submit(function(){
             theTable.find("tbody > tr:visible > td:eq(1)").mousedown();
             return false;
