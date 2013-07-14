@@ -7,7 +7,7 @@
 from django.conf.urls.defaults import *
 from django.views.generic import TemplateView, DetailView, ListView
 from django.views.defaults import page_not_found
-from layerindex.views import LayerListView, LayerReviewListView, LayerReviewDetailView, RecipeSearchView, MachineSearchView, PlainTextListView, LayerDetailView, edit_layer_view, delete_layer_view, edit_layernote_view, delete_layernote_view, switch_branch_view, HistoryListView, EditProfileFormView, DuplicatesView, AdvancedRecipeSearchView, BulkChangeView, BulkChangeSearchView, bulk_change_edit_view, bulk_change_patch_view, BulkChangeDeleteView
+from layerindex.views import LayerListView, LayerReviewListView, LayerReviewDetailView, RecipeSearchView, MachineSearchView, PlainTextListView, LayerDetailView, edit_layer_view, delete_layer_view, edit_layernote_view, delete_layernote_view, switch_branch_view, HistoryListView, EditProfileFormView, DuplicatesView, AdvancedRecipeSearchView, BulkChangeView, BulkChangeSearchView, bulk_change_edit_view, bulk_change_patch_view, BulkChangeDeleteView, RecipeDetailView
 from layerindex.models import LayerItem, Recipe, RecipeChangeset
 
 urlpatterns = patterns('',
@@ -54,8 +54,7 @@ urlpatterns = patterns('',
     url(r'^layer/(?P<slug>[-\w]+)/delete/$',
         delete_layer_view, {'template_name': 'layerindex/deleteconfirm.html'}, name="delete_layer"),
     url(r'^recipe/(?P<pk>[-\w]+)/$',
-        DetailView.as_view(
-            model=Recipe,
+        RecipeDetailView.as_view(
             template_name='layerindex/recipedetail.html'),
             name='recipe'),
     url(r'^layer/(?P<name>[-\w]+)/publish/$', 'layerindex.views.publish', name="publish"),

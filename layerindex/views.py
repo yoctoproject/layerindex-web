@@ -9,7 +9,7 @@ from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidde
 from django.core.urlresolvers import reverse, reverse_lazy
 from django.core.exceptions import PermissionDenied
 from django.template import RequestContext
-from layerindex.models import Branch, LayerItem, LayerMaintainer, LayerBranch, LayerDependency, LayerNote, Recipe, Machine, BBClass, RecipeChange, RecipeChangeset
+from layerindex.models import Branch, LayerItem, LayerMaintainer, LayerBranch, LayerDependency, LayerNote, Recipe, Machine, BBClass, BBAppend, RecipeChange, RecipeChangeset
 from datetime import datetime
 from django.views.generic import TemplateView, DetailView, ListView
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
@@ -595,3 +595,15 @@ def annotate_revision(sender, **kwargs):
     revision.comment = comment
     revision.save()
     kwargs['revision'] = revision
+
+
+class RecipeDetailView(DetailView):
+    model = Recipe
+
+    def get_context_data(self, **kwargs):
+        context = super(RecipeDetailView, self).get_context_data(**kwargs)
+        recipe = self.get_object()
+        if recipe:
+            appendprefix = "%s_" % recipe.pn
+            context['appends'] = BBAppend.objects.filter(layerbranch__branch__name=self.request.session.get('branch', 'master')).filter(filename__startswith=appendprefix)
+        return context

@@ -90,6 +90,23 @@
                         </tr>
                     </tbody>
                 </table>
+
+                {% if appends %}
+                <h2>bbappends</h2>
+                <p>This recipe is appended by:</p>
+                <table class="table table-bordered">
+                {% for append in appends %}
+                    <tr>
+                        <td>
+                            <a href="{% url layer_item append.layerbranch.layer.name %}">{{ append.layerbranch.layer.name }}</a>
+                        </td>
+                        <td>
+                            <a href="{{ append.vcs_web_url }}">{{ append.filename }}</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </table>
+                {% endif %}
             </div>
         </div>
 
