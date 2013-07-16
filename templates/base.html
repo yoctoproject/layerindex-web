@@ -27,7 +27,7 @@
     {% autoescape on %}
     <div class="navbar navbar-fixed-top">
         <div class="navbar-inner">
-            <div class="container">
+            <div class="container-fluid">
                 <a class="brand" href="{% url frontpage %}">OpenEmbedded metadata index</a>
 
                 <ul class="nav">
@@ -52,17 +52,34 @@
                     </li>
                     {% endblock %}
                 </ul>
+                {% if user.is_authenticated %}
+                    <div class="btn-group pull-right">
+                        {% if perms.layerindex.publish_layer %}
+                        {% if unpublished_count > 0 %}
+                        <a class="btn" href="{% url layer_list_review %}?branch=master">
+                            <span class="badge badge-warning review-notification">{{ unpublished_count }}</span>
+                        </a>
+                        {% endif %}
+                        {% endif %}
+                        <button class="btn dropdown-toggle" data-toggle="dropdown"">
+                            <i class="icon-user"></i>
+                            {{ user.username }}
+                            <b class="caret"></b>
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a href="{% url auth_logout %}">{% trans "Log out" %}</a></li>
+                            <li><a href="{% url auth_password_change %}">{% trans "Change password" %}</a></li>
+                            <li><a href="{% url profile %}">{% trans "Edit profile" %}</a></li>
+                        </ul>
+                    </div>
+                {% else %}
+                    <div class="pull-right">
+                        <a class="btn" href="{% url auth_login %}">{% trans "Log in" %}</a>
+                    </div>
+                {% endif %}
                 <ul class="nav pull-right">
                     {% block submitlink %}<li><a href="{% url submit_layer %}">Submit layer</a></li>{% endblock %}
                     {% if user.is_authenticated %}
-                    {% if perms.layerindex.publish_layer %}
-                        <li><a href="{% url layer_list_review %}?branch=master">
-                            Review
-                            {% if unpublished_count > 0 %}
-                            <span class="badge badge-warning">{{ unpublished_count }}</span>
-                            {% endif %}
-                        </a></li>
-                    {% endif %}
                     <li class="dropdown">
                         <a href="#" class="dropdown-toggle" data-toggle="dropdown">
                         Tools
@@ -74,21 +91,6 @@
                         </ul>
                     </li>
                     <li class="divider-vertical"></li>
-                    <li class="dropdown">
-                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                        {{ user.username }}
-                        <b class="caret"></b>
-                        </a>
-                        <ul class="dropdown-menu">
-                            <li><a href="{% url auth_logout %}">{% trans "Log out" %}</a></li>
-                            <li><a href="{% url auth_password_change %}">{% trans "Change password" %}</a></li>
-                            <li><a href="{% url profile %}">{% trans "Edit profile" %}</a></li>
-                        </ul>
-                    </li>
-                    {% else %}
-                    <li>
-                    <a href="{% url auth_login %}">{% trans "log in" %}</a>
-                    </li>
                     {% endif %}
                 </ul>
             </div> <!-- end of "container" -->
