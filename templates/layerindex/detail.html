@@ -150,34 +150,27 @@
             </div>  <!-- end of row-fluid -->
         </div> <!-- end of container-fluid -->
 
-        {% if machines.count > 0 %}
-        <div class="container-fluid" style="margin-bottom:1em;">
-            <div class="row-fluid">
-                <div class="navbar">
-                    <div class="navbar-inner">
-                            <a class="brand pull-left">{{ layeritem.name }} machines</a>
-                    </div>
-                </div>
 
-                <table class="table table-bordered">
-                    <tbody>
-                        {% for machine in machines %}
-                            <tr>
-                                <td><a href="{{ machine.vcs_web_url }}">{{ machine.name }}</a></td>
-                                <td>{{ machine.description }}</td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-             </div>
-         </div>
-        {% endif %}
+        <ul class="nav nav-tabs" id="layertabbar">
+            {% if layerbranch.recipe_set.count > 0 %}
+                <li><a href="#recipes" data-toggle="tab">Recipes</a></li>
+            {% endif %}
+            {% if machines.count > 0 %}
+                <li><a href="#machines" data-toggle="tab">Machines</a></li>
+            {% endif %}
+            {% if appends.count > 0 %}
+                <li><a href="#appends" data-toggle="tab">Appends</a></li>
+            {% endif %}
+            {% if classes.count > 0 %}
+                <li><a href="#classes" data-toggle="tab">Classes</a></li>
+            {% endif %}
+        </ul>
 
-        {% if layerbranch.recipe_set.count > 0 %}
-        <div class="container-fluid" style="margin-bottom:1em;">
-            <div class="row-fluid">
-                <div class="navbar">
-                    <div class="navbar-inner">
+        <div class="tab-content">
+            {% if layerbranch.recipe_set.count > 0 %}
+                <div class="tab-pane" id="recipes">
+                    <div class="navbar">
+                        <div class="navbar-inner">
                             <a class="brand pull-left">{{ layeritem.name }} recipes</a>
 
                             <ul class="nav pull-right">
@@ -187,12 +180,10 @@
                                     </form>
                                 </li>
                             </ul>
-
                         </div>
-
                     </div>
 
-                     <table class="table table-bordered recipestable">
+                    <table class="table table-bordered recipestable">
                         <thead>
                             <tr>
                                 <th>Recipe name</th>
@@ -211,53 +202,67 @@
                         </tbody>
                     </table>
                 </div>
+            {% endif %}
+            {% if machines.count > 0 %}
+                <div class="tab-pane" id="machines">
+                    <div class="navbar">
+                        <div class="navbar-inner">
+                                <a class="brand pull-left">{{ layeritem.name }} machines</a>
+                        </div>
+                    </div>
+
+                    <table class="table table-bordered">
+                        <tbody>
+                            {% for machine in machines %}
+                                <tr>
+                                    <td><a href="{{ machine.vcs_web_url }}">{{ machine.name }}</a></td>
+                                    <td>{{ machine.description }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endif %}
+            {% if appends.count > 0 %}
+                <div class="tab-pane" id="appends">
+                    <div class="navbar">
+                        <div class="navbar-inner">
+                                <a class="brand pull-left">{{ layeritem.name }} bbappends</a>
+                        </div>
+                    </div>
+
+                    <table class="table table-bordered">
+                        <tbody>
+                            {% for append in appends %}
+                                <tr>
+                                    <td><a href="{{ append.vcs_web_url }}">{{ append.filename }}</a></td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endif %}
+            {% if classes.count > 0 %}
+                <div class="tab-pane" id="classes">
+                    <div class="navbar">
+                        <div class="navbar-inner">
+                                <a class="brand pull-left">{{ layeritem.name }} classes</a>
+                        </div>
+                    </div>
+
+                    <table class="table table-bordered">
+                        <tbody>
+                            {% for class in classes %}
+                                <tr>
+                                    <td><a href="{{ class.vcs_web_url }}">{{ class.name }}</a></td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endif %}
         </div>
-        {% endif %}
-
-        {% if appends.count > 0 %}
-        <div class="container-fluid" style="margin-bottom:1em;">
-            <div class="row-fluid">
-                <div class="navbar">
-                    <div class="navbar-inner">
-                            <a class="brand pull-left">{{ layeritem.name }} bbappends</a>
-                    </div>
-                </div>
-
-                <table class="table table-bordered">
-                    <tbody>
-                        {% for append in appends %}
-                            <tr>
-                                <td><a href="{{ append.vcs_web_url }}">{{ append.filename }}</a></td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-             </div>
-         </div>
-        {% endif %}
-
-        {% if classes.count > 0 %}
-        <div class="container-fluid" style="margin-bottom:1em;">
-            <div class="row-fluid">
-                <div class="navbar">
-                    <div class="navbar-inner">
-                            <a class="brand pull-left">{{ layeritem.name }} classes</a>
-                    </div>
-                </div>
-
-                <table class="table table-bordered">
-                    <tbody>
-                        {% for class in classes %}
-                            <tr>
-                                <td><a href="{{ class.vcs_web_url }}">{{ class.name }}</a></td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-             </div>
-         </div>
-        {% endif %}
-
+ 
 
 {% endautoescape %}
 
@@ -306,6 +311,12 @@
                 $('.selectallicon').mouseup(function() {
                     $('#' + $(this).attr('for')).selectText();
                 });
+
+                $('#layertabbar a:first').tab('show');
+                $('#layertabbar a').click(function (e) {
+                    e.preventDefault();
+                    $(this).tab('show');
+                })
             });
         });
     </script>
