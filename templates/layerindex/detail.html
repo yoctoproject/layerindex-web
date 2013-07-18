@@ -21,7 +21,10 @@
 {% block content %}
 
 {% autoescape on %}
-
+        <ul class="breadcrumb">
+            <li><a href="{% url layer_list url_branch %}">Layers</a> <span class="divider">&rarr;</span></li>
+            <li class="active">{{ layeritem.name }}</li>
+        </ul>
 
         <div class="container-fluid">
             <div class="row-fluid">
@@ -33,7 +36,7 @@
                         {% if user.is_authenticated %}
                             <span class="pull-right">
                                 {% if perms.layerindex.publish_layer or useredit %}
-                                    <a href="{% url edit_layer layeritem.name %}" class="btn">Edit layer</a>
+                                    <a href="{% url edit_layer url_branch layeritem.name %}" class="btn">Edit layer</a>
                                     {% if layeritem.layernote_set.count = 0 %}
                                         <a href="{% url add_layernote layeritem.name %}" class="btn">Add note</a>
                                     {% endif %}
@@ -49,7 +52,7 @@
             {% if not layerbranch %}
             <div class="row-fluid">
                 <div class="alert alert-error">
-                    This layer does not exist for branch {{ current_branch }}.
+                    This layer does not exist for branch {{ url_branch }}.
                 </div>
             </div>
             {% endif %}
@@ -141,7 +144,7 @@
                             <p>The {{ layeritem.name }} layer depends upon:</p>
                             <ul>
                                 {% for dep in layerbranch.dependencies_set.all %}
-                                    <li><a href="{% url layer_item dep.dependency.name %}">{{ dep.dependency.name }}</a></li>
+                                    <li><a href="{% url layer_item url_branch dep.dependency.name %}">{{ dep.dependency.name }}</a></li>
                                 {% endfor %}
                             </ul>
                          </div> <!-- end of well -->

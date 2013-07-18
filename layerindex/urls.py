@@ -6,33 +6,30 @@
 
 from django.conf.urls.defaults import *
 from django.views.generic import TemplateView, DetailView, ListView
+from django.views.generic.simple import redirect_to
 from django.views.defaults import page_not_found
-from layerindex.views import LayerListView, LayerReviewListView, LayerReviewDetailView, RecipeSearchView, MachineSearchView, PlainTextListView, LayerDetailView, edit_layer_view, delete_layer_view, edit_layernote_view, delete_layernote_view, switch_branch_view, HistoryListView, EditProfileFormView, DuplicatesView, AdvancedRecipeSearchView, BulkChangeView, BulkChangeSearchView, bulk_change_edit_view, bulk_change_patch_view, BulkChangeDeleteView, RecipeDetailView, ClassicRecipeSearchView, ClassicRecipeDetailView, ClassicRecipeStatsView
+from django.core.urlresolvers import reverse_lazy
+from layerindex.views import LayerListView, LayerReviewListView, LayerReviewDetailView, RecipeSearchView, MachineSearchView, PlainTextListView, LayerDetailView, edit_layer_view, delete_layer_view, edit_layernote_view, delete_layernote_view, HistoryListView, EditProfileFormView, AdvancedRecipeSearchView, BulkChangeView, BulkChangeSearchView, bulk_change_edit_view, bulk_change_patch_view, BulkChangeDeleteView, RecipeDetailView, RedirectParamsView, ClassicRecipeSearchView, ClassicRecipeDetailView, ClassicRecipeStatsView
 from layerindex.models import LayerItem, Recipe, RecipeChangeset
 
 urlpatterns = patterns('',
-    url(r'^$',
-        TemplateView.as_view(
-            template_name='layerindex/frontpage.html'),
-            name='frontpage'),
+    url(r'^$', redirect_to, {'url' : reverse_lazy('layer_list', args=('master',))},
+        name='frontpage'),
+
     url(r'^layers/$',
-        LayerListView.as_view(
-            template_name='layerindex/layers.html'),
-            name='layer_list'),
+        redirect_to, {'url' : reverse_lazy('layer_list', args=('master',))}),
+    url(r'^layer/(?P<slug>[-\w]+)/$',
+        RedirectParamsView.as_view(), {'redirect_name': 'layer_item', 'branch':'master'}),
+    url(r'^recipes/$',
+        redirect_to, {'url' : reverse_lazy('recipe_search', args=('master',))}),
+    url(r'^machines/$',
+        redirect_to, {'url' : reverse_lazy('machine_search', args=('master',))}),
+ 
     url(r'^submit/$', edit_layer_view, {'template_name': 'layerindex/submitlayer.html'}, name="submit_layer"),
-    url(r'^edit/(?P<slug>[-\w]+)/$', edit_layer_view, {'template_name': 'layerindex/editlayer.html'}, name="edit_layer"),
     url(r'^submit/thanks$',
         TemplateView.as_view(
             template_name='layerindex/submitthanks.html'),
             name="submit_layer_thanks"),
-    url(r'^recipes/$',
-        RecipeSearchView.as_view(
-            template_name='layerindex/recipes.html'),
-            name='recipe_search'),
-    url(r'^machines/$',
-        MachineSearchView.as_view(
-            template_name='layerindex/machines.html'),
-            name='machine_search'),
     url(r'^review/$',
         LayerReviewListView.as_view(
             template_name='layerindex/reviewlist.html'),
@@ -41,10 +38,6 @@ urlpatterns = patterns('',
         LayerReviewDetailView.as_view(
             template_name='layerindex/reviewdetail.html'),
             name='layer_review'),
-    url(r'^layer/(?P<slug>[-\w]+)/$',
-        LayerDetailView.as_view(
-            template_name='layerindex/detail.html'),
-            name='layer_item'),
     url(r'^layer/(?P<slug>[-\w]+)/addnote/$',
         edit_layernote_view, {'template_name': 'layerindex/editlayernote.html'}, name="add_layernote"),
     url(r'^layer/(?P<slug>[-\w]+)/editnote/(?P<pk>[-\w]+)/$',
@@ -80,8 +73,8 @@ urlpatterns = patterns('',
         BulkChangeDeleteView.as_view(
             template_name='layerindex/deleteconfirm.html'),
             name="bulk_change_delete"),
-    url(r'^branch/(?P<slug>[-\w]+)/$',
-        switch_branch_view, name="switch_branch"),
+    url(r'^branch/(?P<branch>[-\w]+)/',
+        include('layerindex.urls_branch')),
     url(r'^raw/recipes.txt$',
         PlainTextListView.as_view(
             queryset=Recipe.objects.order_by('pn', 'layerbranch__layer'),
@@ -92,10 +85,6 @@ urlpatterns = patterns('',
         HistoryListView.as_view(
             template_name='layerindex/history.html'),
             name='history_list'),
-    url(r'^duplicates/$',
-        DuplicatesView.as_view(
-            template_name='layerindex/duplicates.html'),
-            name='duplicates'),
     url(r'^profile/$',
         EditProfileFormView.as_view(
             template_name='layerindex/profile.html'),

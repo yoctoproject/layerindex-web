@@ -4,9 +4,7 @@ TODO:
 * Document macros for URL fields
 
 Later:
-* Breadcrumbs / fix tab navigation?
 * Ability for reviewers to comment before publishing a layer?
-* Add link to the all layers and all recipes tables from the layer details page?
 * Prevent SMTP failures from breaking submission process
 * All-branch search/results so you can see version availability of recipes in all branches at once?
 * Rawrecipes branch support

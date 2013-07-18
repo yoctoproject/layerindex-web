@@ -6,13 +6,14 @@
 
 from django.shortcuts import get_object_or_404, render
 from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidden, Http404
-from django.core.urlresolvers import reverse, reverse_lazy
+from django.core.urlresolvers import reverse, reverse_lazy, resolve
 from django.core.exceptions import PermissionDenied
 from django.template import RequestContext
 from layerindex.models import Branch, LayerItem, LayerMaintainer, LayerBranch, LayerDependency, LayerNote, Recipe, Machine, BBClass, BBAppend, RecipeChange, RecipeChangeset, ClassicRecipe
 from datetime import datetime
 from django.views.generic import TemplateView, DetailView, ListView
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
+from django.views.generic.base import RedirectView
 from layerindex.forms import EditLayerForm, LayerMaintainerFormSet, EditNoteForm, EditProfileForm, RecipeChangesetForm, AdvancedRecipeSearchForm, BulkChangeEditFormSet, ClassicRecipeForm, ClassicRecipeSearchForm
 from django.db import transaction
 from django.contrib.auth.models import User, Permission
@@ -81,7 +82,7 @@ def delete_layer_view(request, template_name, slug):
         raise PermissionDenied
     if request.method == 'POST':
         layeritem.delete()
-        return HttpResponseRedirect(reverse('layer_list'))
+        return HttpResponseRedirect(reverse('layer_list', args=('master',)))
     else:
         return render(request, template_name, {
             'object': layeritem,
@@ -89,26 +90,25 @@ def delete_layer_view(request, template_name, slug):
             'cancel_url': layeritem.get_absolute_url()
         })
 
-def edit_layer_view(request, template_name, slug=None):
+def edit_layer_view(request, template_name, branch='master', slug=None):
     return_url = None
+    branchobj = Branch.objects.filter(name=branch)[:1].get()
     if slug:
         # Edit mode
-        branch = Branch.objects.filter(name=request.session.get('branch', 'master'))[:1].get()
         layeritem = get_object_or_404(LayerItem, name=slug)
         if layeritem.classic:
             raise Http404
         if not (request.user.is_authenticated() and (request.user.has_perm('layerindex.publish_layer') or layeritem.user_can_edit(request.user))):
             raise PermissionDenied
-        layerbranch = get_object_or_404(LayerBranch, layer=layeritem, branch=branch)
+        layerbranch = get_object_or_404(LayerBranch, layer=layeritem, branch=branchobj)
         deplistlayers = LayerItem.objects.exclude(id=layeritem.id).order_by('name')
         returnto = request.GET.get('returnto', 'layer_item')
         if returnto:
-            return_url = reverse_lazy(returnto, args=(layeritem.name,))
+            return_url = reverse_lazy(returnto, args=(branch, layeritem.name))
     else:
         # Submit mode
-        branch = Branch.objects.filter(name='master')[:1].get()
         layeritem = LayerItem()
-        layerbranch = LayerBranch(layer=layeritem, branch=branch)
+        layerbranch = LayerBranch(layer=layeritem, branch=branchobj)
         deplistlayers = LayerItem.objects.filter(classic=False).order_by('name')
 
     if request.method == 'POST':
@@ -167,7 +167,7 @@ def edit_layer_view(request, template_name, slug=None):
                         d = Context({
                             'user_name': user_name,
                             'layer_name': layeritem.name,
-                            'layer_url': request.build_absolute_uri(reverse('layer_review', args=(layeritem.name,))) + '?branch=master',
+                            'layer_url': request.build_absolute_uri(reverse('layer_review', args=(layeritem.name,))),
                         })
                         subject = '%s - %s' % (settings.SUBMIT_EMAIL_SUBJECT, layeritem.name)
                         from_email = settings.SUBMIT_EMAIL_FROM
@@ -236,19 +236,12 @@ def bulk_change_patch_view(request, pk):
     # FIXME better error handling
 
 
-def _check_branch(request):
-    branchname = request.GET.get('branch', '')
+def _check_url_branch(kwargs):
+    branchname = kwargs['branch']
     if branchname:
+        if branchname == 'oe-classic':
+            raise Http404
         branch = get_object_or_404(Branch, name=branchname)
-        request.session['branch'] = branch.name
-
-def switch_branch_view(request, slug):
-    branch = get_object_or_404(Branch, name=slug)
-    request.session['branch'] = branch.name
-    return_url = request.META.get('HTTP_REFERER')
-    if not return_url:
-        return_url = reverse('layer_list')
-    return HttpResponseRedirect(return_url)
 
 def publish(request, name):
     if not (request.user.is_authenticated() and request.user.has_perm('layerindex.publish_layer')):
@@ -264,27 +257,38 @@ def _statuschange(request, name, newstatus):
         w.save()
     return HttpResponseRedirect(w.get_absolute_url())
 
+
+class RedirectParamsView(RedirectView):
+    def get_redirect_url(self, *args, **kwargs):
+        redirect_name = kwargs.pop('redirect_name')
+        return reverse_lazy(redirect_name, args=args, kwargs=kwargs)
+
+
+
 class LayerListView(ListView):
     context_object_name = 'layerbranch_list'
 
     def get_queryset(self):
-        return LayerBranch.objects.filter(branch__name=self.request.session.get('branch', 'master')).filter(layer__status='P').order_by('layer__layer_type', 'layer__name')
+        _check_url_branch(self.kwargs)
+        return LayerBranch.objects.filter(branch__name=self.kwargs['branch']).filter(layer__status='P').order_by('layer__layer_type', 'layer__name')
 
     def get_context_data(self, **kwargs):
         context = super(LayerListView, self).get_context_data(**kwargs)
+        context['url_branch'] = self.kwargs['branch']
+        context['this_url_name'] = resolve(self.request.path_info).url_name
         context['layer_type_choices'] = LayerItem.LAYER_TYPE_CHOICES
         return context
+
 
 class LayerReviewListView(ListView):
     @method_decorator(login_required)
     def dispatch(self, request, *args, **kwargs):
         if not request.user.has_perm('layerindex.publish_layer'):
             raise PermissionDenied
-        _check_branch(request)
         return super(LayerReviewListView, self).dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
-        return LayerBranch.objects.filter(branch__name=self.request.session.get('branch', 'master')).filter(layer__status='N').order_by('layer__name')
+        return LayerBranch.objects.filter(branch__name='master').filter(layer__status='N').order_by('layer__name')
 
 class LayerDetailView(DetailView):
     model = LayerItem
@@ -292,7 +296,6 @@ class LayerDetailView(DetailView):
 
     # This is a bit of a mess. Surely there has to be a better way to handle this...
     def dispatch(self, request, *args, **kwargs):
-        _check_branch(request)
         self.user = request.user
         res = super(LayerDetailView, self).dispatch(request, *args, **kwargs)
         l = self.get_object()
@@ -305,15 +308,18 @@ class LayerDetailView(DetailView):
         return res
 
     def get_context_data(self, **kwargs):
+        _check_url_branch(self.kwargs)
         context = super(LayerDetailView, self).get_context_data(**kwargs)
         layer = context['layeritem']
         context['useredit'] = layer.user_can_edit(self.user)
-        layerbranch = layer.get_layerbranch(self.request.session.get('branch', 'master'))
+        layerbranch = layer.get_layerbranch(self.kwargs['branch'])
         if layerbranch:
             context['layerbranch'] = layerbranch
             context['machines'] = layerbranch.machine_set.order_by('name')
             context['appends'] = layerbranch.bbappend_set.order_by('filename')
             context['classes'] = layerbranch.bbclass_set.order_by('name')
+        context['url_branch'] = self.kwargs['branch']
+        context['this_url_name'] = resolve(self.request.path_info).url_name
         return context
 
 class LayerReviewDetailView(LayerDetailView):
@@ -322,6 +328,12 @@ class LayerReviewDetailView(LayerDetailView):
         if not request.user.has_perm('layerindex.publish_layer'):
             raise PermissionDenied
         return super(LayerReviewDetailView, self).dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        self.kwargs['branch'] = 'master'
+        context = super(LayerReviewDetailView, self).get_context_data(**kwargs)
+        return context
+
 
 def recipes_preferred_count(qs):
     # Add extra column so we can show "duplicate" recipes from other layers de-emphasised
@@ -350,9 +362,9 @@ class RecipeSearchView(ListView):
     paginate_by = 50
 
     def get_queryset(self):
-        _check_branch(self.request)
+        _check_url_branch(self.kwargs)
         query_string = self.request.GET.get('q', '')
-        init_qs = Recipe.objects.filter(layerbranch__branch__name=self.request.session.get('branch', 'master'))
+        init_qs = Recipe.objects.filter(layerbranch__branch__name=self.kwargs['branch'])
         if query_string.strip():
             entry_query = simplesearch.get_query(query_string, ['pn', 'summary', 'description', 'filename'])
             qs = init_qs.filter(entry_query).order_by('pn', 'layerbranch__layer')
@@ -370,17 +382,19 @@ class RecipeSearchView(ListView):
     def get_context_data(self, **kwargs):
         context = super(RecipeSearchView, self).get_context_data(**kwargs)
         context['search_keyword'] = self.request.GET.get('q', '')
+        context['url_branch'] = self.kwargs['branch']
+        context['this_url_name'] = resolve(self.request.path_info).url_name
         return context
 
 class DuplicatesView(TemplateView):
     def get_recipes(self):
-        init_qs = Recipe.objects.filter(layerbranch__branch__name=self.request.session.get('branch', 'master'))
+        init_qs = Recipe.objects.filter(layerbranch__branch__name=self.kwargs['branch'])
         dupes = init_qs.values('pn').annotate(Count('layerbranch', distinct=True)).filter(layerbranch__count__gt=1)
         qs = init_qs.all().filter(pn__in=[item['pn'] for item in dupes]).order_by('pn', 'layerbranch__layer')
         return recipes_preferred_count(qs)
 
     def get_classes(self):
-        init_qs = BBClass.objects.filter(layerbranch__branch__name=self.request.session.get('branch', 'master'))
+        init_qs = BBClass.objects.filter(layerbranch__branch__name=self.kwargs['branch'])
         dupes = init_qs.values('name').annotate(Count('layerbranch', distinct=True)).filter(layerbranch__count__gt=1)
         qs = init_qs.all().filter(name__in=[item['name'] for item in dupes]).order_by('name', 'layerbranch__layer')
         return qs
@@ -389,6 +403,8 @@ class DuplicatesView(TemplateView):
         context = super(DuplicatesView, self).get_context_data(**kwargs)
         context['recipes'] = self.get_recipes()
         context['classes'] = self.get_classes()
+        context['url_branch'] = self.kwargs['branch']
+        context['this_url_name'] = resolve(self.request.path_info).url_name
         return context
 
 class AdvancedRecipeSearchView(ListView):
@@ -411,7 +427,7 @@ class AdvancedRecipeSearchView(ListView):
                 query = Q(**{"%s__icontains" % field: value})
             else:
                 query = Q(**{"%s" % field: value})
-            queryset = Recipe.objects.filter(layerbranch__branch__name=self.request.session.get('branch', 'master'))
+            queryset = Recipe.objects.filter(layerbranch__branch__name='master')
             layer = self.request.GET.get('layer', '')
             if layer:
                 queryset = queryset.filter(layerbranch__layer=layer)
@@ -497,6 +513,7 @@ class BulkChangeSearchView(AdvancedRecipeSearchView):
     def get_context_data(self, **kwargs):
         context = super(BulkChangeSearchView, self).get_context_data(**kwargs)
         context['changeset'] = self.changeset
+        context['current_branch'] = 'master'
         return context
 
 
@@ -527,8 +544,9 @@ class MachineSearchView(ListView):
     paginate_by = 50
 
     def get_queryset(self):
+        _check_url_branch(self.kwargs)
         query_string = self.request.GET.get('q', '')
-        init_qs = Machine.objects.filter(layerbranch__branch__name=self.request.session.get('branch', 'master'))
+        init_qs = Machine.objects.filter(layerbranch__branch__name=self.kwargs['branch'])
         if query_string.strip():
             entry_query = simplesearch.get_query(query_string, ['name', 'description'])
             return init_qs.filter(entry_query).order_by('name', 'layerbranch__layer')
@@ -542,6 +560,8 @@ class MachineSearchView(ListView):
     def get_context_data(self, **kwargs):
         context = super(MachineSearchView, self).get_context_data(**kwargs)
         context['search_keyword'] = self.request.GET.get('q', '')
+        context['url_branch'] = self.kwargs['branch']
+        context['this_url_name'] = resolve(self.request.path_info).url_name
         return context
 
 
@@ -623,7 +643,7 @@ class RecipeDetailView(DetailView):
         recipe = self.get_object()
         if recipe:
             appendprefix = "%s_" % recipe.pn
-            context['appends'] = BBAppend.objects.filter(layerbranch__branch__name=self.request.session.get('branch', 'master')).filter(filename__startswith=appendprefix)
+            context['appends'] = BBAppend.objects.filter(layerbranch__branch=recipe.layerbranch.branch).filter(filename__startswith=appendprefix)
         return context
 
 

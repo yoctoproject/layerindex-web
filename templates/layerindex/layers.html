@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "base_toplevel.html" %}
 {% load i18n %}
 {% load static %}
 
@@ -16,23 +16,24 @@
 {% block title_append %} - layers{% endblock %}
 -->
 
-{% block content %}
+{% block navs %}
+{% autoescape on %}
+                            <li class="active"><a href="{% url layer_list url_branch %}">Layers</a></li>
+                            <li><a href="{% url recipe_search url_branch %}">Recipes</a></li>
+                            <li><a href="{% url machine_search url_branch %}">Machines</a></li>
+{% endautoescape %}
+{% endblock %}
+
+
+{% block content_inner %}
 {% autoescape on %}
 
 {% if layerbranch_list %}
-    <div class="row-fluid">
-        <div class="span9 offset1">
-
-            <ul class="nav nav-tabs">
-                <li class="active"><a href="{% url layer_list %}">Layers</a></li>
-                <li><a href="{% url recipe_search %}">Recipes</a></li>
-                <li><a href="{% url machine_search %}">Machines</a></li>
-            </ul>
 
             <div class="row-fluid">
                 <div class="span5">
                     <form id="filter-form">
-                        <input type="text" class="input-xxlarge" id="filter" placeholder="Search layers">
+                        <input type="text" class="input-xxlarge search-query" id="filter" placeholder="Search layers">
                     </form>
                 </div>
 
@@ -70,7 +71,7 @@
                 <tbody>
                     {% for layerbranch in layerbranch_list %}
                     <tr class="layertype_{{ layerbranch.layer.layer_type }}">
-                        <td><a href="{% url layer_item layerbranch.layer.name %}">{{ layerbranch.layer.name }}</a></td>
+                        <td><a href="{% url layer_item url_branch layerbranch.layer.name %}">{{ layerbranch.layer.name }}</a></td>
                         <td>{{ layerbranch.layer.summary }}</td>
                         <td>{{ layerbranch.layer.get_layer_type_display }}</td>
                         <td class="showRollie">
@@ -95,8 +96,6 @@
 
                 </tbody>
             </table>
-        </div>
-    </div>
 
     {% if is_paginated %}
         {% load pagination %}

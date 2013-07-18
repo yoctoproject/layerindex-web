@@ -96,7 +96,7 @@ class LayerItem(models.Model):
         return fetch_dir
 
     def get_absolute_url(self):
-        return reverse('layer_item', args=(self.name,));
+        return reverse('layer_item', args=('master',self.name));
 
     def __unicode__(self):
         return self.name

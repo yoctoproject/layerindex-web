@@ -30,31 +30,6 @@
             <div class="container-fluid">
                 <a class="brand" href="{% url frontpage %}">OpenEmbedded metadata index</a>
 
-                <ul class="nav">
-                    {% block branch_selector %}
-                    <li class="dropdown">
-                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                        Branch: <b>{{ current_branch }}</b>
-                        <b class="caret"></b>
-                        </a>
-                        <ul class="dropdown-menu">
-                            {% for branch in all_branches %}
-                                <li><a href="{% url switch_branch branch.name %}">
-                                    {% if branch.name = current_branch %}<b>{% endif %}
-                                    {{ branch.name }}
-                                    {% if branch.short_description %}
-                                    ({{ branch.short_description }})
-                                    {% endif %}
-                                    {% if branch.name = current_branch %}</b>{% endif %}
-                                </a></li>
-                            {% endfor %}
-                            {% if oe_classic %}
-                                <li><a href="{% url classic %}">OE-Classic</a></li>
-                            {% endif %}
-                        </ul>
-                    </li>
-                    {% endblock %}
-                </ul>
                 {% if user.is_authenticated %}
                     <div class="btn-group pull-right">
                         {% if perms.layerindex.publish_layer %}
@@ -90,7 +65,7 @@
                         </a>
                         <ul class="dropdown-menu">
                             <li><a href="{% url bulk_change %}">Bulk Change</a></li>
-                            <li><a href="{% url duplicates %}">Duplicates</a></li>
+                            <li><a href="{% url duplicates 'master' %}">Duplicates</a></li>
                         </ul>
                     </li>
                     <li class="divider-vertical"></li>
@@ -117,6 +92,7 @@
         <div class="footer">
             <a href="{% url history_list %}">change history</a>
             &bull; <a href="{% url about %}">about this site</a>
+            &bull; <a href="http://www.openembedded.org/Layers_FAQ">FAQ</a>
         </div>
 
         {% endblock %}

@@ -1,5 +1,6 @@
-{% extends "base.html" %}
+{% extends "base_toplevel.html" %}
 {% load i18n %}
+{% load url from future %}
 
 {% comment %}
 
@@ -19,7 +20,27 @@
 {% autoescape on %}
 
         <div class="row-fluid">
-            <div class="span9 offset1">
+            <div class="span12">
+
+    <div class="btn-group pull-right">
+        <a href="#" class="btn dropdown-toggle" data-toggle="dropdown">
+        Branch: <b>{{ url_branch }}</b>
+        <b class="caret"></b>
+        </a>
+        <ul class="dropdown-menu">
+            {% for branch in all_branches %}
+                <li><a href="{% url this_url_name branch.name %}">
+                    {% if branch.name = url_branch %}<b>{% endif %}
+                    {{ branch.name }}
+                    {% if branch.short_description %}
+                    ({{ branch.short_description }})
+                    {% endif %}
+                    {% if branch.name = url_branch %}</b>{% endif %}
+                </a></li>
+            {% endfor %}
+        </ul>
+    </div>
+
                 <h2>Duplicate recipes</h2>
 {% if recipes %}
                 <p>Recipes with the same name in different layers:</p>
@@ -36,10 +57,10 @@
                     <tbody>
                         {% for recipe in recipes %}
                             <tr {% if recipe.preferred_count > 0 %}class="muted"{% endif %}>
-                                <td><a href="{% url recipe recipe.id %}">{{ recipe.name }}</a></td>
+                                <td><a href="{% url 'recipe' recipe.id %}">{{ recipe.name }}</a></td>
                                 <td>{{ recipe.pv }}</td>
                                 <td>{{ recipe.short_desc }}</td>
-                                <td><a href="{% url layer_item recipe.layerbranch.layer.name %}">{{ recipe.layerbranch.layer.name }}</a></td>
+                                <td><a href="{% url 'layer_item' url_branch recipe.layerbranch.layer.name %}">{{ recipe.layerbranch.layer.name }}</a></td>
                             </tr>
                         {% endfor %}
                     </tbody>
@@ -52,7 +73,7 @@
 
 
         <div class="row-fluid">
-            <div class="span9 offset1">
+            <div class="span12">
                 <h2>Duplicate classes</h2>
 {% if classes %}
                 <p>Classes with the same name in different layers:</p>
@@ -67,8 +88,8 @@
                     <tbody>
                         {% for class in classes %}
                             <tr>
-                                <td><a href="{% url class.vcs_web_url %}">{{ class.name }}</a></td>
-                                <td><a href="{% url layer_item class.layerbranch.layer.name %}">{{ class.layerbranch.layer.name }}</a></td>
+                                <td><a href="{{ class.vcs_web_url }}">{{ class.name }}</a></td>
+                                <td><a href="{% url 'layer_item' 'master' class.layerbranch.layer.name %}">{{ class.layerbranch.layer.name }}</a></td>
                             </tr>
                         {% endfor %}
                     </tbody>

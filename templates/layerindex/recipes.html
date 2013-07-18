@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "base_toplevel.html" %}
 {% load i18n %}
 
 {% comment %}
@@ -15,22 +15,23 @@
 {% block title_append %} - recipes{% endblock %}
 -->
 
-{% block content %}
+{% block navs %}
+{% autoescape on %}
+                            <li><a href="{% url layer_list url_branch %}">Layers</a></li>
+                            <li class="active"><a href="{% url recipe_search url_branch %}">Recipes</a></li>
+                            <li><a href="{% url machine_search url_branch %}">Machines</a></li>
+{% endautoescape %}
+{% endblock %}
+
+
+{% block content_inner %}
 {% autoescape on %}
 
-        <div class="row-fluid">
 
-            <div class="span9 offset1">
-
-                <ul class="nav nav-tabs">
-                    <li><a href="{% url layer_list %}">Layers</a></li>
-                    <li  class="active"><a href="{% url recipe_search %}">Recipes</a></li>
-                    <li><a href="{% url machine_search %}">Machines</a></li>
-                </ul>
 
                 <div class="row-fluid">
                     <div class="input-append">
-                        <form id="filter-form" action="{% url recipe_search %}" method="get">
+                        <form id="filter-form" action="{% url recipe_search url_branch %}" method="get">
                             <input type="text" class="input-xxlarge" id="appendedInputButtons" placeholder="Search recipes" name="q" value="{{ search_keyword }}" />
                             <button class="btn" type="submit">search</button>
                         </form>
@@ -54,7 +55,7 @@
                                 <td><a href="{% url recipe recipe.id %}">{{ recipe.name }}</a></td>
                                 <td>{{ recipe.pv }}</td>
                                 <td>{{ recipe.short_desc }}</td>
-                                <td><a href="{% url layer_item recipe.layerbranch.layer.name %}">{{ recipe.layerbranch.layer.name }}</a></td>
+                                <td><a href="{% url layer_item url_branch recipe.layerbranch.layer.name %}">{{ recipe.layerbranch.layer.name }}</a></td>
                             </tr>
                         {% endfor %}
                     </tbody>
@@ -69,10 +70,6 @@
     <p>No matching recipes in database.</p>
     {% endif %}
 {% endif %}
-
-            </div>
-
-        </div>
 
 {% endautoescape %}
 

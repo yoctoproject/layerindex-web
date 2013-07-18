@@ -25,7 +25,7 @@
     {% csrf_token %}
     {{ form.as_p }}
 <input type="submit" value="Save" class='btn' />
-<a href="{% url layer_item form.instance.layer.name %}" class='btn'>Cancel</a>
+<a href="{% url layer_item 'master' form.instance.layer.name %}" class='btn'>Cancel</a>
 </form>
 
 {% endautoescape %}
