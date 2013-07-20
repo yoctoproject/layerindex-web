@@ -14,7 +14,6 @@ Later:
 * Show layer type in layer detail?
 * Usage links in list page?
 * Subdirs in list page?
-* Avoid page content changing size depending on whether scrollbar is there or not?
 * Query backend service? i.e. special URL to query information for external apps/scripts
 * Add comparison to duplicates page
 * Dynamic loading/filtering for recipes list

@@ -1,3 +1,7 @@
+html {
+    overflow-y: scroll;
+}
+
 .top-padded { 
     padding-top: 65px; 
 }
@@ -179,3 +183,6 @@ padding: 8px;
     margin-top: 2px;
 }
 
+.breadcrumb {
+    background-color: transparent;
+}
