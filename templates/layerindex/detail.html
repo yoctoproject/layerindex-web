@@ -56,8 +56,9 @@
             <div class="row-fluid">
                 {% for note in layeritem.layernote_set.all %}
                     <div class="alert">
-                        <p>{{ note.text }}</p>
+                        {{ note.text }}
                         {% if perms.layerindex.publish_layer or useredit %}
+                            <br><br>
                             <p>
                                 <a href="{% url edit_layernote layeritem.name note.pk %}" class="btn">Edit note</a>
                                 <a href="{% url delete_layernote layeritem.name note.pk %}" class='btn'>Delete note</a>
