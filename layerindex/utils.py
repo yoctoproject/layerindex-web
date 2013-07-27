@@ -9,6 +9,8 @@ import sys
 import os.path
 import subprocess
 import logging
+import time
+import fcntl
 
 def get_branch(branchname):
     from layerindex.models import Branch
@@ -63,3 +65,18 @@ def logger_create(name):
     logger.addHandler(loggerhandler)
     logger.setLevel(logging.INFO)
     return logger
+
+def lock_file(fn):
+    starttime = time.time()
+    while True:
+        lock = open(fn, 'w')
+        try:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            return lock
+        except IOError:
+            lock.close()
+            if time.time() - starttime > 30:
+                return None
+
+def unlock_file(lock):
+    fcntl.flock(lock, fcntl.LOCK_UN)

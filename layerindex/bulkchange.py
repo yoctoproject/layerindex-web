@@ -215,14 +215,23 @@ def main():
     fetchdir = settings.LAYER_FETCH_DIR
     bitbakepath = os.path.join(fetchdir, 'bitbake')
 
-    (tinfoil, tempdir) = recipeparse.init_parser(settings, branch, bitbakepath, True)
-
-    changeset = get_changeset(sys.argv[1])
-    if not changeset:
-        sys.stderr.write("Unable to find changeset with id %s\n" % sys.argv[1])
+    lockfn = os.path.join(fetchdir, "layerindex.lock")
+    lockfile = utils.lock_file(lockfn)
+    if not lockfile:
+        sys.stderr.write("Layer index lock timeout expired\n")
         sys.exit(1)
+    try:
+        (tinfoil, tempdir) = recipeparse.init_parser(settings, branch, bitbakepath, True)
 
-    outp = generate_patches(tinfoil, fetchdir, changeset, sys.argv[2])
+        changeset = get_changeset(sys.argv[1])
+        if not changeset:
+            sys.stderr.write("Unable to find changeset with id %s\n" % sys.argv[1])
+            sys.exit(1)
+
+        outp = generate_patches(tinfoil, fetchdir, changeset, sys.argv[2])
+    finally:
+        utils.unlock_file(lockfile)
+
     if outp:
         print outp
     else:
