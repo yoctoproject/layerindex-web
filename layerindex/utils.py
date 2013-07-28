@@ -26,7 +26,7 @@ def get_layer(layername):
         return res[0]
     return None
 
-def runcmd(cmd, destdir=None, printerr=True):
+def runcmd(cmd, destdir=None, printerr=True, logger=None):
     """
         execute command, raise CalledProcessError if fail
         return output if succeed
@@ -38,7 +38,12 @@ def runcmd(cmd, destdir=None, printerr=True):
     except subprocess.CalledProcessError,e:
         out.seek(0)
         if printerr:
-            logger.error("%s" % out.read())
+            output = out.read()
+            if logger:
+                logger.error("%s" % output)
+            else:
+                sys.stderr.write("%s\n" % output)
+        e.output = output
         raise e
 
     out.seek(0)

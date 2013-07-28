@@ -43,11 +43,11 @@ def _parse_layer_conf(layerdir, data):
     data.expandVarref('LAYERDIR')
 
 
-def init_parser(settings, branch, bitbakepath, enable_tracking=False, nocheckout=False, classic=False):
+def init_parser(settings, branch, bitbakepath, enable_tracking=False, nocheckout=False, classic=False, logger=None):
     if not (nocheckout or classic):
         # Check out the branch of BitBake appropriate for this branch and clean out any stale files (e.g. *.pyc)
-        out = utils.runcmd("git checkout origin/%s" % branch.bitbake_branch, bitbakepath)
-        out = utils.runcmd("git clean -f -x", bitbakepath)
+        out = utils.runcmd("git checkout origin/%s" % branch.bitbake_branch, bitbakepath, logger=logger)
+        out = utils.runcmd("git clean -f -x", bitbakepath, logger=logger)
 
     # Skip sanity checks
     os.environ['BB_ENV_EXTRAWHITE'] = 'DISABLE_SANITY_CHECKS'
@@ -72,8 +72,8 @@ def init_parser(settings, branch, bitbakepath, enable_tracking=False, nocheckout
         core_repodir = os.path.join(fetchdir, core_urldir)
         core_layerdir = os.path.join(core_repodir, core_subdir)
         if not nocheckout:
-            out = utils.runcmd("git checkout origin/%s" % core_branchname, core_repodir)
-            out = utils.runcmd("git clean -f -x", core_repodir)
+            out = utils.runcmd("git checkout origin/%s" % core_branchname, core_repodir, logger=logger)
+            out = utils.runcmd("git clean -f -x", core_repodir, logger=logger)
         # The directory above where this script exists should contain our conf/layer.conf,
         # so add it to BBPATH along with the core layer directory
         confparentdir = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
@@ -94,13 +94,13 @@ def init_parser(settings, branch, bitbakepath, enable_tracking=False, nocheckout
 
     return (tinfoil, tempdir)
 
-def checkout_layer_branch(layerbranch, repodir):
+def checkout_layer_branch(layerbranch, repodir, logger=None):
     if layerbranch.actual_branch:
         branchname = layerbranch.actual_branch
     else:
         branchname = layerbranch.branch.name
-    out = utils.runcmd("git checkout origin/%s" % branchname, repodir)
-    out = utils.runcmd("git clean -f -x", repodir)
+    out = utils.runcmd("git checkout origin/%s" % branchname, repodir, logger=logger)
+    out = utils.runcmd("git clean -f -x", repodir, logger=logger)
 
 def setup_layer(config_data, fetchdir, layerdir, layer, layerbranch):
     # Parse layer.conf files for this layer and its dependencies

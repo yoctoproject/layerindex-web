@@ -139,7 +139,7 @@ def main():
     confparentdir = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../oe-classic'))
     os.environ['BBPATH'] = str("%s:%s" % (confparentdir, oeclassicpath))
     try:
-        (tinfoil, tempdir) = recipeparse.init_parser(settings, branch, bitbakepath, nocheckout=True, classic=True)
+        (tinfoil, tempdir) = recipeparse.init_parser(settings, branch, bitbakepath, nocheckout=True, classic=True, logger=logger)
     except recipeparse.RecipeParseError as e:
         logger.error(str(e))
         sys.exit(1)

@@ -193,9 +193,9 @@ def main():
                     out = None
                     try:
                         if not os.path.exists(repodir):
-                            out = utils.runcmd("git clone %s %s" % (layer.vcs_url, urldir), fetchdir)
+                            out = utils.runcmd("git clone %s %s" % (layer.vcs_url, urldir), fetchdir, logger=logger)
                         else:
-                            out = utils.runcmd("git fetch", repodir)
+                            out = utils.runcmd("git fetch", repodir, logger=logger)
                     except Exception as e:
                         logger.error("Fetch of layer %s failed: %s" % (layer.name, str(e)))
                         failedrepos.append(layer.vcs_url)
@@ -208,12 +208,12 @@ def main():
 
             logger.info("Fetching bitbake from remote repository %s" % settings.BITBAKE_REPO_URL)
             if not os.path.exists(bitbakepath):
-                out = utils.runcmd("git clone %s %s" % (settings.BITBAKE_REPO_URL, 'bitbake'), fetchdir)
+                out = utils.runcmd("git clone %s %s" % (settings.BITBAKE_REPO_URL, 'bitbake'), fetchdir, logger=logger)
             else:
-                out = utils.runcmd("git fetch", bitbakepath)
+                out = utils.runcmd("git fetch", bitbakepath, logger=logger)
 
         try:
-            (tinfoil, tempdir) = recipeparse.init_parser(settings, branch, bitbakepath, nocheckout=options.nocheckout)
+            (tinfoil, tempdir) = recipeparse.init_parser(settings, branch, bitbakepath, nocheckout=options.nocheckout, logger=logger)
         except recipeparse.RecipeParseError as e:
             logger.error(str(e))
             sys.exit(1)
@@ -299,8 +299,8 @@ def main():
                 if layerbranch.vcs_last_rev != topcommit.hexsha or options.reload:
                     # Check out appropriate branch
                     if not options.nocheckout:
-                        out = utils.runcmd("git checkout origin/%s" % branchname, repodir)
-                        out = utils.runcmd("git clean -f -x", repodir)
+                        out = utils.runcmd("git checkout origin/%s" % branchname, repodir, logger=logger)
+                        out = utils.runcmd("git clean -f -x", repodir, logger=logger)
 
                     if not os.path.exists(layerdir):
                         if options.branch == 'master':
