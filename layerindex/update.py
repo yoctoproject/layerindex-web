@@ -13,7 +13,6 @@ import os.path
 import optparse
 import logging
 from datetime import datetime
-import fnmatch
 import re
 import tempfile
 import shutil
@@ -29,37 +28,6 @@ try:
 except ImportError:
     logger.error("Please install PythonGit 0.3.1 or later in order to use this script")
     sys.exit(1)
-
-
-machine_conf_re = re.compile(r'conf/machine/([^/.]*).conf$')
-bbclass_re = re.compile(r'classes/([^/.]*).bbclass$')
-def detect_file_type(path, subdir_start):
-    typename = None
-    if fnmatch.fnmatch(path, "*.bb"):
-        typename = 'recipe'
-    elif fnmatch.fnmatch(path, "*.bbappend"):
-        typename = 'bbappend'
-    else:
-        # Check if it's a machine conf file
-        subpath = path[len(subdir_start):]
-        res = machine_conf_re.match(subpath)
-        if res:
-            typename = 'machine'
-            return (typename, None, res.group(1))
-        else:
-            res = bbclass_re.match(subpath)
-            if res:
-                typename = 'bbclass'
-                return (typename, None, res.group(1))
-
-    if typename == 'recipe' or typename == 'bbappend':
-        if subdir_start:
-            filepath = os.path.relpath(os.path.dirname(path), subdir_start)
-        else:
-            filepath = os.path.dirname(path)
-        return (typename, filepath, os.path.basename(path))
-
-    return (None, None, None)
 
 
 def check_machine_conf(path, subdir_start):
@@ -191,12 +159,12 @@ def main():
         sys.exit(1)
 
     if options.layers:
-        layerquery = LayerItem.objects.filter(name__in=options.layers.split(','))
+        layerquery = LayerItem.objects.filter(classic=False).filter(name__in=options.layers.split(','))
         if layerquery.count() == 0:
             logger.error('No layers matching specified query "%s"' % options.layers)
             sys.exit(1)
     else:
-        layerquery = LayerItem.objects.filter(status='P')
+        layerquery = LayerItem.objects.filter(classic=False).filter(status='P')
         if layerquery.count() == 0:
             logger.info("No published layers to update")
             sys.exit(1)
@@ -379,7 +347,7 @@ def main():
                     for d in diff.iter_change_type('D'):
                         path = d.a_blob.path
                         if path.startswith(subdir_start):
-                            (typename, filepath, filename) = detect_file_type(path, subdir_start)
+                            (typename, filepath, filename) = recipeparse.detect_file_type(path, subdir_start)
                             if typename == 'recipe':
                                 values = layerrecipes.filter(filepath=filepath).filter(filename=filename).values('id', 'filepath', 'filename', 'pn')
                                 layerrecipes_delete.append(values[0])
@@ -395,7 +363,7 @@ def main():
                     for d in diff.iter_change_type('A'):
                         path = d.b_blob.path
                         if path.startswith(subdir_start):
-                            (typename, filepath, filename) = detect_file_type(path, subdir_start)
+                            (typename, filepath, filename) = recipeparse.detect_file_type(path, subdir_start)
                             if typename == 'recipe':
                                 layerrecipes_add.append(os.path.join(repodir, path))
                                 logger.debug("Mark %s for addition" % path)
@@ -422,7 +390,7 @@ def main():
                     for d in diff.iter_change_type('M'):
                         path = d.a_blob.path
                         if path.startswith(subdir_start):
-                            (typename, filepath, filename) = detect_file_type(path, subdir_start)
+                            (typename, filepath, filename) = recipeparse.detect_file_type(path, subdir_start)
                             if typename == 'recipe':
                                 logger.debug("Mark %s for update" % path)
                                 results = layerrecipes.filter(filepath=filepath).filter(filename=filename)[:1]
@@ -472,7 +440,7 @@ def main():
                             dirs.remove('.git')
                         for f in files:
                             fullpath = os.path.join(root, f)
-                            (typename, _, filename) = detect_file_type(fullpath, layerdir_start)
+                            (typename, _, filename) = recipeparse.detect_file_type(fullpath, layerdir_start)
                             if typename == 'recipe':
                                 if fullpath not in layerrecipe_fns:
                                     layerrecipes_add.append(fullpath)

@@ -51,6 +51,7 @@ class LayerItem(models.Model):
     usage_url = models.CharField('Usage web page URL', max_length=255, blank=True, help_text='URL of a web page with more information about the layer and how to use it, if any (or path to file within repository)')
     mailing_list_url = models.URLField('Mailing list URL', blank=True, help_text='URL of the info page for a mailing list for discussing the layer, if any')
     index_preference = models.IntegerField('Preference', default=0, help_text='Number used to find preferred recipes in recipe search results (higher number is greater preference)')
+    classic = models.BooleanField('Classic', default=False, help_text='Is this OE-Classic?')
 
     class Meta:
         verbose_name = "Layer"
@@ -258,6 +259,54 @@ class RecipeFileDependency(models.Model):
 
     def __unicode__(self):
         return '%s' % self.path
+
+
+class ClassicRecipe(Recipe):
+    COVER_STATUS_CHOICES = [
+        ('U', 'Unknown'),
+        ('N', 'Not available'),
+        ('R', 'Replaced'),
+        ('P', 'Provided (BBCLASSEXTEND)'),
+        ('C', 'Provided (PACKAGECONFIG)'),
+        ('O', 'Obsolete'),
+        ('E', 'Equivalent functionality'),
+        ('D', 'Direct match'),
+    ]
+    cover_layerbranch = models.ForeignKey(LayerBranch, verbose_name='Covering layer', blank=True, null=True, limit_choices_to = {'branch__name': 'master'}, on_delete=models.SET_NULL)
+    cover_pn = models.CharField('Covering recipe', max_length=100, blank=True)
+    cover_status = models.CharField(max_length=1, choices=COVER_STATUS_CHOICES, default='U')
+    cover_verified = models.BooleanField(default=False)
+    cover_comment = models.TextField(blank=True)
+    classic_category = models.CharField('OE-Classic Category', max_length=100, blank=True)
+
+    class Meta:
+        permissions = (
+            ("edit_classic", "Can edit OE-Classic recipes"),
+        )
+
+    def get_cover_desc(self):
+        desc = self.get_cover_status_display()
+        if self.cover_layerbranch:
+            cover_layer = self.cover_layerbranch.layer.name
+        else:
+            cover_layer = '(unknown layer)'
+        if self.cover_status == 'D':
+            desc = 'Direct match exists in %s' % cover_layer
+        elif self.cover_pn:
+            if self.cover_status == 'R':
+                desc = 'Replaced by %s in %s' % (self.cover_pn, cover_layer)
+            elif self.cover_status == 'P':
+                desc = 'Provided by %s in %s (BBCLASSEXTEND)' % (self.cover_pn, cover_layer)
+            elif self.cover_status == 'C':
+                desc = 'Provided by %s in %s (as a PACKAGECONFIG option)' % (self.cover_pn, cover_layer)
+            elif self.cover_status == 'E':
+                desc = 'Equivalent functionality provided by %s in %s' % (self.cover_pn, cover_layer)
+        if self.cover_comment:
+            if self.cover_comment[0] == '(':
+                desc = "%s %s" % (desc, self.cover_comment)
+            else:
+                desc = "%s - %s" % (desc, self.cover_comment)
+        return desc
 
 
 class Machine(models.Model):

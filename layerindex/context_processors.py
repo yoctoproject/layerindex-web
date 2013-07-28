@@ -11,7 +11,8 @@ def layerindex_context(request):
     if not current_branch:
         current_branch = 'master'
     return {
-        'all_branches': Branch.objects.all().order_by('sort_priority'),
+        'all_branches': Branch.objects.exclude(name='oe-classic').order_by('sort_priority'),
         'current_branch': current_branch,
         'unpublished_count': LayerItem.objects.filter(status='N').count(),
+        'oe_classic': Branch.objects.filter(name='oe-classic')
     }

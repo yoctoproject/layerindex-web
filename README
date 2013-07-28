@@ -24,6 +24,7 @@ In order to make use of this application you will need:
   * django-reversion (1.6.5)
   * django-reversion-compare (0.3.5)
   * django-simple-captcha (0.3.6)
+  * django-nvd3 (0.1.11)
 * On the machine that will run the backend update script (which does not
   have to be the same machine as the web server, however it does still
   have to have Django installed, have the same or similar configuration
@@ -114,6 +115,10 @@ the Apache License 2.0.
 Bundled jQuery is redistributed under the MIT license.
 
 Bundled uitablefilter.js is redistributed under the MIT license.
+
+Bundled nv.d3.js is redistributed under the Apache License 2.0.
+
+Bundled d3.v2.js is redistributed under the BSD License.
 
 All other content is copyright (C) 2013 Intel Corporation and licensed
 under the MIT license (unless otherwise noted) - see COPYING.MIT for

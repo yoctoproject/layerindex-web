@@ -4,7 +4,7 @@
 #
 # Licensed under the MIT license, see COPYING.MIT for details
 
-from layerindex.models import LayerItem, LayerBranch, LayerMaintainer, LayerNote, RecipeChangeset, RecipeChange
+from layerindex.models import LayerItem, LayerBranch, LayerMaintainer, LayerNote, RecipeChangeset, RecipeChange, ClassicRecipe
 from django import forms
 from django.core.validators import URLValidator, RegexValidator, email_re
 from django.forms.models import inlineformset_factory, modelformset_factory
@@ -48,7 +48,7 @@ LayerMaintainerFormSet = inlineformset_factory(LayerBranch, LayerMaintainer, for
 class EditLayerForm(forms.ModelForm):
     # Additional form fields
     vcs_subdir = forms.CharField(label='Repository subdirectory', max_length=40, required=False, help_text='Subdirectory within the repository where the layer is located, if not in the root (usually only used if the repository contains more than one layer)')
-    deps = forms.ModelMultipleChoiceField(label='Other layers this layer depends upon', queryset=LayerItem.objects.all(), required=False)
+    deps = forms.ModelMultipleChoiceField(label='Other layers this layer depends upon', queryset=LayerItem.objects.filter(classic=False), required=False)
     captcha = CaptchaField(label='Verification', help_text='Please enter the letters displayed for verification purposes', error_messages={'invalid':'Incorrect entry, please try again'})
 
     class Meta:
@@ -149,6 +149,12 @@ class EditProfileForm(forms.ModelForm):
         fields = ('first_name', 'last_name', 'email')
 
 
+class ClassicRecipeForm(forms.ModelForm):
+    class Meta:
+        model = ClassicRecipe
+        fields = ('cover_layerbranch', 'cover_pn', 'cover_status', 'cover_verified', 'cover_comment', 'classic_category')
+
+
 class AdvancedRecipeSearchForm(forms.Form):
     FIELD_CHOICES = (
         ('pn',          'Name'),
@@ -168,7 +174,7 @@ class AdvancedRecipeSearchForm(forms.Form):
     field = forms.ChoiceField(choices=FIELD_CHOICES)
     match_type = forms.ChoiceField(choices=MATCH_TYPE_CHOICES)
     value = forms.CharField(max_length=255, required=False)
-    layer = forms.ModelChoiceField(queryset=LayerItem.objects.filter(status='P').order_by('name'), empty_label="(any)", required=False)
+    layer = forms.ModelChoiceField(queryset=LayerItem.objects.filter(classic=False).filter(status='P').order_by('name'), empty_label="(any)", required=False)
 
 
 class RecipeChangesetForm(forms.ModelForm):
@@ -202,3 +208,18 @@ class BulkChangeEditForm(forms.ModelForm):
                 setattr(self.instance, fieldname, '')
 
 BulkChangeEditFormSet = modelformset_factory(RecipeChange, form=BulkChangeEditForm, extra=0)
+
+
+class ClassicRecipeSearchForm(forms.Form):
+    COVER_STATUS_CHOICES = [('','(any)'), ('!','(not migrated)')] + ClassicRecipe.COVER_STATUS_CHOICES
+    VERIFIED_CHOICES = [
+        ('', '(any)'),
+        ('1', 'Verified'),
+        ('0', 'Unverified'),
+        ]
+
+    q = forms.CharField(label='Keyword', max_length=255, required=False)
+    category = forms.CharField(max_length=255, required=False)
+    cover_status = forms.ChoiceField(label='Status', choices=COVER_STATUS_CHOICES, required=False)
+    cover_verified = forms.ChoiceField(label='Verified', choices=VERIFIED_CHOICES, required=False)
+

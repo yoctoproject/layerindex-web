@@ -143,7 +143,8 @@ INSTALLED_APPS = (
     'reversion',
     'reversion_compare',
     'captcha',
-    'south'
+    'south',
+    'django_nvd3'
 )
 
 # A sample logging configuration. The only tangible logging

@@ -48,6 +48,9 @@
                                     {% if branch.name = current_branch %}</b>{% endif %}
                                 </a></li>
                             {% endfor %}
+                            {% if oe_classic %}
+                                <li><a href="{% url classic %}">OE-Classic</a></li>
+                            {% endif %}
                         </ul>
                     </li>
                     {% endblock %}

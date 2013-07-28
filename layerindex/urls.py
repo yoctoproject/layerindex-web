@@ -7,7 +7,7 @@
 from django.conf.urls.defaults import *
 from django.views.generic import TemplateView, DetailView, ListView
 from django.views.defaults import page_not_found
-from layerindex.views import LayerListView, LayerReviewListView, LayerReviewDetailView, RecipeSearchView, MachineSearchView, PlainTextListView, LayerDetailView, edit_layer_view, delete_layer_view, edit_layernote_view, delete_layernote_view, switch_branch_view, HistoryListView, EditProfileFormView, DuplicatesView, AdvancedRecipeSearchView, BulkChangeView, BulkChangeSearchView, bulk_change_edit_view, bulk_change_patch_view, BulkChangeDeleteView, RecipeDetailView
+from layerindex.views import LayerListView, LayerReviewListView, LayerReviewDetailView, RecipeSearchView, MachineSearchView, PlainTextListView, LayerDetailView, edit_layer_view, delete_layer_view, edit_layernote_view, delete_layernote_view, switch_branch_view, HistoryListView, EditProfileFormView, DuplicatesView, AdvancedRecipeSearchView, BulkChangeView, BulkChangeSearchView, bulk_change_edit_view, bulk_change_patch_view, BulkChangeDeleteView, RecipeDetailView, ClassicRecipeSearchView, ClassicRecipeDetailView, ClassicRecipeStatsView
 from layerindex.models import LayerItem, Recipe, RecipeChangeset
 
 urlpatterns = patterns('',
@@ -104,5 +104,20 @@ urlpatterns = patterns('',
         TemplateView.as_view(
             template_name='layerindex/about.html'),
             name="about"),
+    url(r'^oe-classic/$',
+        redirect_to, {'url' : reverse_lazy('classic_recipe_search')},
+            name='classic'),
+    url(r'^oe-classic/recipes/$',
+        ClassicRecipeSearchView.as_view(
+            template_name='layerindex/classicrecipes.html'),
+            name='classic_recipe_search'),
+    url(r'^oe-classic/stats/$',
+        ClassicRecipeStatsView.as_view(
+            template_name='layerindex/classicstats.html'),
+            name='classic_recipe_stats'),
+    url(r'^oe-classic/recipe/(?P<pk>[-\w]+)/$',
+        ClassicRecipeDetailView.as_view(
+            template_name='layerindex/classicrecipedetail.html'),
+            name='classic_recipe'),
     url(r'.*', page_not_found)
 )

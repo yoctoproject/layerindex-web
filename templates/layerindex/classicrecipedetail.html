@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% comment %}
+
+  layerindex-web - recipe detail page template
+
+  Copyright (C) 2013 Intel Corporation
+  Licensed under the MIT license, see COPYING.MIT for details
+
+{% endcomment %}
+
+
+<!--
+{% autoescape on %}
+{% block title_append %} - OE-Classic - {{ recipe.pn }}{% endblock %}
+{% endautoescape %}
+-->
+
+{% block content %}
+{% autoescape on %}
+
+        <ul class="breadcrumb">
+            <li><a href="{% url classic_recipe_search %}">OE-Classic</a> <span class="divider">&rarr;</span></li>
+            <li class="active">{{ recipe.name }}</li>
+        </ul>
+
+        <div class="container-fluid">
+
+            <div class="row-fluid">
+
+                <div class="page-header">
+                    <h1>{{ recipe.name }} {{ recipe.pv }}</h1>
+                </div>
+
+                <div class="alert alert-warning">
+                    <b>NOTE:</b> This recipe is for OE-Classic, the older monolithic version of OpenEmbedded which is no longer actively developed. See below for migration information. If no replacement is available in current OpenEmbedded layers, you may be able to <a href="http://www.openembedded.org/wiki/Migrating_metadata_to_OE-Core">migrate the recipe</a> yourself.
+                </div>
+
+                <table class="table table-striped table-bordered">
+                    <tbody>
+                        <tr>
+                            <th>Name</th>
+                            <td>{{ recipe.name }}</td>
+                        </tr>
+                        <tr>
+                            <th>Version</th>
+                            <td>{{ recipe.pv }}</td>
+                        </tr>
+                        <tr>
+                            <th>Summary</th>
+                            <td>{{ recipe.summary }}</td>
+                        </tr>
+                        <tr>
+                            <th>Description</th>
+                            <td>{{ recipe.description }}</td>
+                        </tr>
+                        <tr>
+                            <th>Section</th>
+                            <td>{{ recipe.section }}</td>
+                        </tr>
+                        <tr>
+                            <th>License</th>
+                            <td>{{ recipe.license }}*</td>
+                        </tr>
+                        <tr>
+                            <th>Homepage</th>
+                            <td>{% if recipe.homepage %}<a href="{{ recipe.homepage }}">{{ recipe.homepage }}</a>{% endif %}</td>
+                        </tr>
+                        {% if recipe.bugtracker %}
+                        <tr>
+                            <th>Bug tracker</th>
+                            <td><a href="{{ recipe.bugtracker }}">{{ recipe.bugtracker }}</a></td>
+                        </tr>
+                        {% endif %}
+                        <tr>
+                            <th>Recipe file</th>
+                            <td>
+                                {% if recipe.vcs_web_url %}
+                                    <a href="{{ recipe.vcs_web_url }}">{{ recipe.full_path }}</a>
+                                {% else %}
+                                    {{ recipe.full_path }}
+                                {% endif %}
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <p>* - in OE-Classic, some of the license values were not accurate. Please refer to current recipes (if available) for this information.</p>
+
+                <h2>Migration information</h2>
+
+                {% if can_edit %}
+                <form id="migration_form" class="form-inline" method="post">
+                    {% csrf_token %}
+                    {% for hidden in form.hidden_fields %}
+                        {{ hidden }}
+                    {% endfor %}
+
+                    Coverage {{ form.cover_status }} <span id="id_span_cover_opts">by {{ form.cover_pn }} in {{ form.cover_layerbranch }}</span>
+                    <label class="checkbox" id="id_label_cover_verified">
+                    {{ form.cover_verified }} verified
+                    </label>
+                    <p>
+                    <label>
+                    Comment
+                    {{ form.cover_comment }} 
+                    </label>
+                    </p>
+                    <p>
+                    <label>
+                    Category
+                    {{ form.classic_category }}
+                    </p>
+                    </label>
+                <input type="submit" value="Save" class='btn' />
+                </form>
+                {% else %}
+                    <table class="table table-striped table-bordered">
+                        <tbody>
+                            <tr>
+                                <th class="span2">Coverage</th>
+                                <td>{{ recipe.get_cover_desc }}</td>
+                            </tr>
+                            <tr>
+                                <th>Categories</th>
+                                <td>{{ recipe.classic_category }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                {% endif %}
+
+            </div>
+        </div>
+
+{% endautoescape %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    enable_value_field = function() {
+        cover_status = $('#id_cover_status').val()
+        if( cover_status == 'U' || cover_status == 'N' ) {
+            $('#id_cover_pn').prop('disabled', true);
+            $('#id_cover_layerbranch').prop('disabled', true);
+            $('#id_cover_verified').prop('disabled', true);
+            $('#id_label_cover_verified').addClass('muted');
+            $('#id_span_cover_opts').addClass('muted');
+        }
+        else {
+            $('#id_cover_pn').prop('disabled', false);
+            $('#id_cover_layerbranch').prop('disabled', false);
+            $('#id_cover_verified').prop('disabled', false);
+            $('#id_label_cover_verified').removeClass('muted');
+            $('#id_span_cover_opts').removeClass('muted');
+        }
+    }
+
+    $(document).ready(function() {
+        $('#id_cover_status').change(enable_value_field)
+        enable_value_field()
+    });
+</script>
+{% endblock %}

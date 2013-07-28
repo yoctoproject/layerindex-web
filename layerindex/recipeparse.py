@@ -10,6 +10,8 @@ import os
 import os.path
 import utils
 import tempfile
+import re
+import fnmatch
 
 class RecipeParseError(Exception):
     def __init__(self, msg):
@@ -41,8 +43,8 @@ def _parse_layer_conf(layerdir, data):
     data.expandVarref('LAYERDIR')
 
 
-def init_parser(settings, branch, bitbakepath, enable_tracking=False, nocheckout=False):
-    if not nocheckout:
+def init_parser(settings, branch, bitbakepath, enable_tracking=False, nocheckout=False, classic=False):
+    if not (nocheckout or classic):
         # Check out the branch of BitBake appropriate for this branch and clean out any stale files (e.g. *.pyc)
         out = utils.runcmd("git checkout origin/%s" % branch.bitbake_branch, bitbakepath)
         out = utils.runcmd("git clean -f -x", bitbakepath)
@@ -53,28 +55,29 @@ def init_parser(settings, branch, bitbakepath, enable_tracking=False, nocheckout
 
     fetchdir = settings.LAYER_FETCH_DIR
 
-    # Ensure we have OE-Core set up to get some base configuration
-    core_layer = utils.get_layer(settings.CORE_LAYER_NAME)
-    if not core_layer:
-        raise RecipeParseError("Unable to find core layer %s in database; check CORE_LAYER_NAME setting" % settings.CORE_LAYER_NAME)
-    core_layerbranch = core_layer.get_layerbranch(branch.name)
-    core_branchname = branch.name
-    if core_layerbranch:
-        core_subdir = core_layerbranch.vcs_subdir
-        if core_layerbranch.actual_branch:
-            core_branchname = core_layerbranch.actual_branch
-    else:
-        core_subdir = 'meta'
-    core_urldir = core_layer.get_fetch_dir()
-    core_repodir = os.path.join(fetchdir, core_urldir)
-    core_layerdir = os.path.join(core_repodir, core_subdir)
-    if not nocheckout:
-        out = utils.runcmd("git checkout origin/%s" % core_branchname, core_repodir)
-        out = utils.runcmd("git clean -f -x", core_repodir)
-    # The directory above where this script exists should contain our conf/layer.conf,
-    # so add it to BBPATH along with the core layer directory
-    confparentdir = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
-    os.environ['BBPATH'] = str("%s:%s" % (confparentdir, core_layerdir))
+    if not classic:
+        # Ensure we have OE-Core set up to get some base configuration
+        core_layer = utils.get_layer(settings.CORE_LAYER_NAME)
+        if not core_layer:
+            raise RecipeParseError("Unable to find core layer %s in database; check CORE_LAYER_NAME setting" % settings.CORE_LAYER_NAME)
+        core_layerbranch = core_layer.get_layerbranch(branch.name)
+        core_branchname = branch.name
+        if core_layerbranch:
+            core_subdir = core_layerbranch.vcs_subdir
+            if core_layerbranch.actual_branch:
+                core_branchname = core_layerbranch.actual_branch
+        else:
+            core_subdir = 'meta'
+        core_urldir = core_layer.get_fetch_dir()
+        core_repodir = os.path.join(fetchdir, core_urldir)
+        core_layerdir = os.path.join(core_repodir, core_subdir)
+        if not nocheckout:
+            out = utils.runcmd("git checkout origin/%s" % core_branchname, core_repodir)
+            out = utils.runcmd("git clean -f -x", core_repodir)
+        # The directory above where this script exists should contain our conf/layer.conf,
+        # so add it to BBPATH along with the core layer directory
+        confparentdir = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
+        os.environ['BBPATH'] = str("%s:%s" % (confparentdir, core_layerdir))
 
     # Change into a temporary directory so we don't write the cache and other files to the current dir
     if not os.path.exists(settings.TEMP_BASE_DIR):
@@ -86,7 +89,8 @@ def init_parser(settings, branch, bitbakepath, enable_tracking=False, nocheckout
 
     # Ensure TMPDIR exists (or insane.bbclass will blow up trying to write to the QA log)
     oe_tmpdir = tinfoil.config_data.getVar('TMPDIR', True)
-    os.makedirs(oe_tmpdir)
+    if not os.path.exists(oe_tmpdir):
+        os.makedirs(oe_tmpdir)
 
     return (tinfoil, tempdir)
 
@@ -130,3 +134,34 @@ def get_var_files(fn, varlist, d):
         varfiles[v] = actualfile
 
     return varfiles
+
+machine_conf_re = re.compile(r'conf/machine/([^/.]*).conf$')
+bbclass_re = re.compile(r'classes/([^/.]*).bbclass$')
+def detect_file_type(path, subdir_start):
+    typename = None
+    if fnmatch.fnmatch(path, "*.bb"):
+        typename = 'recipe'
+    elif fnmatch.fnmatch(path, "*.bbappend"):
+        typename = 'bbappend'
+    else:
+        # Check if it's a machine conf file
+        subpath = path[len(subdir_start):]
+        res = machine_conf_re.match(subpath)
+        if res:
+            typename = 'machine'
+            return (typename, None, res.group(1))
+        else:
+            res = bbclass_re.match(subpath)
+            if res:
+                typename = 'bbclass'
+                return (typename, None, res.group(1))
+
+    if typename == 'recipe' or typename == 'bbappend':
+        if subdir_start:
+            filepath = os.path.relpath(os.path.dirname(path), subdir_start)
+        else:
+            filepath = os.path.dirname(path)
+        return (typename, filepath, os.path.basename(path))
+
+    return (None, None, None)
+

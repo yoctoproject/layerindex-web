@@ -1,0 +1,56 @@
+{% extends "layerindex/classic_base.html" %}
+{% load i18n %}
+{% load nvd3_tags %}
+{% load staticfiles %}
+
+{% comment %}
+
+  layerindex-web - OE-Classic recipe migration stats template
+
+  Copyright (C) 2013 Intel Corporation
+  Licensed under the MIT license, see COPYING.MIT for details
+
+{% endcomment %}
+
+
+<!--
+{% block title_append %} - OE-Classic recipe statistics{% endblock %}
+-->
+
+{% block navs %}
+{% autoescape on %}
+                            <li><a href="{% url classic_recipe_search %}">Recipes</a></li>
+                            <li class="active"><a href="{% url classic_recipe_stats %}">Stats</a></li>
+{% endautoescape %}
+{% endblock %}
+
+
+
+{% block content_inner %}
+{% autoescape on %}
+
+        <div class="row-fluid">
+
+            <h2>OE-Classic statistics</h2>
+
+            <h3>Migration status</h3>
+            {% include_container "chart_status" 400 600 %}
+
+            <h3>Unmigrated recipes by category</h3>
+            {% include_container "chart_category" 400 600 %}
+
+        </div>
+
+{% endautoescape %}
+
+{% endblock %}
+
+{% block scripts %}
+
+    <link media="all" href="{% static "css/nv.d3.css" %}" type="text/css" rel="stylesheet" />
+    <script src="{% static "js/d3.v2.js" %}" type="text/javascript"></script>
+    <script src="{% static "js/nv.d3.js" %}" type="text/javascript"></script>
+
+{% load_chart charttype_status chartdata_status "chart_status" %}
+{% load_chart charttype_category chartdata_category "chart_category" %}
+{% endblock %}

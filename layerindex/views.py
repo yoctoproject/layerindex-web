@@ -5,15 +5,15 @@
 # Licensed under the MIT license, see COPYING.MIT for details
 
 from django.shortcuts import get_object_or_404, render
-from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidden
+from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidden, Http404
 from django.core.urlresolvers import reverse, reverse_lazy
 from django.core.exceptions import PermissionDenied
 from django.template import RequestContext
-from layerindex.models import Branch, LayerItem, LayerMaintainer, LayerBranch, LayerDependency, LayerNote, Recipe, Machine, BBClass, BBAppend, RecipeChange, RecipeChangeset
+from layerindex.models import Branch, LayerItem, LayerMaintainer, LayerBranch, LayerDependency, LayerNote, Recipe, Machine, BBClass, BBAppend, RecipeChange, RecipeChangeset, ClassicRecipe
 from datetime import datetime
 from django.views.generic import TemplateView, DetailView, ListView
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
-from layerindex.forms import EditLayerForm, LayerMaintainerFormSet, EditNoteForm, EditProfileForm, RecipeChangesetForm, AdvancedRecipeSearchForm, BulkChangeEditFormSet
+from layerindex.forms import EditLayerForm, LayerMaintainerFormSet, EditNoteForm, EditProfileForm, RecipeChangesetForm, AdvancedRecipeSearchForm, BulkChangeEditFormSet, ClassicRecipeForm, ClassicRecipeSearchForm
 from django.db import transaction
 from django.contrib.auth.models import User, Permission
 from django.db.models import Q, Count
@@ -32,6 +32,8 @@ import reversion
 
 def edit_layernote_view(request, template_name, slug, pk=None):
     layeritem = get_object_or_404(LayerItem, name=slug)
+    if layeritem.classic:
+        raise Http404
     if not (request.user.is_authenticated() and (request.user.has_perm('layerindex.publish_layer') or layeritem.user_can_edit(request.user))):
         raise PermissionDenied
     if pk:
@@ -56,6 +58,8 @@ def edit_layernote_view(request, template_name, slug, pk=None):
 
 def delete_layernote_view(request, template_name, slug, pk):
     layeritem = get_object_or_404(LayerItem, name=slug)
+    if layeritem.classic:
+        raise Http404
     if not (request.user.is_authenticated() and (request.user.has_perm('layerindex.publish_layer') or layeritem.user_can_edit(request.user))):
         raise PermissionDenied
     layernote = get_object_or_404(LayerNote, pk=pk)
@@ -71,6 +75,8 @@ def delete_layernote_view(request, template_name, slug, pk):
 
 def delete_layer_view(request, template_name, slug):
     layeritem = get_object_or_404(LayerItem, name=slug)
+    if layeritem.classic:
+        raise Http404
     if not (request.user.is_authenticated() and request.user.has_perm('layerindex.publish_layer') and layeritem.status == 'N'):
         raise PermissionDenied
     if request.method == 'POST':
@@ -89,6 +95,8 @@ def edit_layer_view(request, template_name, slug=None):
         # Edit mode
         branch = Branch.objects.filter(name=request.session.get('branch', 'master'))[:1].get()
         layeritem = get_object_or_404(LayerItem, name=slug)
+        if layeritem.classic:
+            raise Http404
         if not (request.user.is_authenticated() and (request.user.has_perm('layerindex.publish_layer') or layeritem.user_can_edit(request.user))):
             raise PermissionDenied
         layerbranch = get_object_or_404(LayerBranch, layer=layeritem, branch=branch)
@@ -101,7 +109,7 @@ def edit_layer_view(request, template_name, slug=None):
         branch = Branch.objects.filter(name='master')[:1].get()
         layeritem = LayerItem()
         layerbranch = LayerBranch(layer=layeritem, branch=branch)
-        deplistlayers = LayerItem.objects.all().order_by('name')
+        deplistlayers = LayerItem.objects.filter(classic=False).order_by('name')
 
     if request.method == 'POST':
         last_vcs_url = layeritem.vcs_url
@@ -249,6 +257,8 @@ def publish(request, name):
 
 def _statuschange(request, name, newstatus):
     w = get_object_or_404(LayerItem, name=name)
+    if w.classic:
+        raise Http404
     if w.status != newstatus:
         w.change_status(newstatus, request.user.username)
         w.save()
@@ -287,6 +297,8 @@ class LayerDetailView(DetailView):
         res = super(LayerDetailView, self).dispatch(request, *args, **kwargs)
         l = self.get_object()
         if l:
+            if l.classic:
+                raise Http404
             if l.status == 'N':
                 if not (request.user.is_authenticated() and request.user.has_perm('layerindex.publish_layer')):
                     raise PermissionDenied
@@ -297,10 +309,11 @@ class LayerDetailView(DetailView):
         layer = context['layeritem']
         context['useredit'] = layer.user_can_edit(self.user)
         layerbranch = layer.get_layerbranch(self.request.session.get('branch', 'master'))
-        context['layerbranch'] = layerbranch
-        context['machines'] = layerbranch.machine_set.order_by('name')
-        context['appends'] = layerbranch.bbappend_set.order_by('filename')
-        context['classes'] = layerbranch.bbclass_set.order_by('name')
+        if layerbranch:
+            context['layerbranch'] = layerbranch
+            context['machines'] = layerbranch.machine_set.order_by('name')
+            context['appends'] = layerbranch.bbappend_set.order_by('filename')
+            context['classes'] = layerbranch.bbclass_set.order_by('name')
         return context
 
 class LayerReviewDetailView(LayerDetailView):
@@ -337,6 +350,7 @@ class RecipeSearchView(ListView):
     paginate_by = 50
 
     def get_queryset(self):
+        _check_branch(self.request)
         query_string = self.request.GET.get('q', '')
         init_qs = Recipe.objects.filter(layerbranch__branch__name=self.request.session.get('branch', 'master'))
         if query_string.strip():
@@ -606,4 +620,124 @@ class RecipeDetailView(DetailView):
         if recipe:
             appendprefix = "%s_" % recipe.pn
             context['appends'] = BBAppend.objects.filter(layerbranch__branch__name=self.request.session.get('branch', 'master')).filter(filename__startswith=appendprefix)
+        return context
+
+
+class ClassicRecipeSearchView(RecipeSearchView):
+    def get_queryset(self):
+        self.kwargs['branch'] = 'oe-classic'
+        query_string = self.request.GET.get('q', '')
+        cover_status = self.request.GET.get('cover_status', None)
+        cover_verified = self.request.GET.get('cover_verified', None)
+        category = self.request.GET.get('category', None)
+        init_qs = ClassicRecipe.objects.filter(layerbranch__branch__name='oe-classic')
+        if cover_status:
+            if cover_status == '!':
+                init_qs = init_qs.filter(cover_status__in=['U', 'N'])
+            else:
+                init_qs = init_qs.filter(cover_status=cover_status)
+        if cover_verified:
+            init_qs = init_qs.filter(cover_verified=(cover_verified=='1'))
+        if category:
+            init_qs = init_qs.filter(classic_category__icontains=category)
+        if query_string.strip():
+            entry_query = simplesearch.get_query(query_string, ['pn', 'summary', 'description', 'filename'])
+            qs = init_qs.filter(entry_query).order_by('pn', 'layerbranch__layer')
+        else:
+            if 'q' in self.request.GET:
+                qs = init_qs.order_by('pn', 'layerbranch__layer')
+            else:
+                # It's a bit too slow to return all records by default, and most people
+                # won't actually want that (if they do they can just hit the search button
+                # with no query string)
+                return Recipe.objects.none()
+        return qs
+
+    def get_context_data(self, **kwargs):
+        context = super(ClassicRecipeSearchView, self).get_context_data(**kwargs)
+        context['multi_classic_layers'] = LayerItem.objects.filter(classic=True).count() > 1
+        if 'q' in self.request.GET:
+            searched = True
+            search_form = ClassicRecipeSearchForm(self.request.GET)
+        else:
+            searched = False
+            search_form = ClassicRecipeSearchForm()
+        context['search_form'] = search_form
+        context['searched'] = searched
+        return context
+
+
+
+class ClassicRecipeDetailView(UpdateView):
+    model = ClassicRecipe
+    form_class = ClassicRecipeForm
+    context_object_name = 'recipe'
+
+    def _can_edit(self):
+        if self.request.user.is_authenticated():
+            if not self.request.user.has_perm('layerindex.edit_classic'):
+                user_email = self.request.user.email.strip().lower()
+                if not LayerMaintainer.objects.filter(email__iexact=user_email):
+                    return False
+        else:
+            return False
+        return True
+
+    def post(self, request, *args, **kwargs):
+        if not self._can_edit():
+            raise PermissionDenied
+
+        return super(ClassicRecipeDetailView, self).post(request, *args, **kwargs)
+
+    def get_success_url(self):
+        return reverse_lazy('classic_recipe_search')
+
+    def get_context_data(self, **kwargs):
+        context = super(ClassicRecipeDetailView, self).get_context_data(**kwargs)
+        context['can_edit'] = self._can_edit()
+        return context
+
+
+class ClassicRecipeStatsView(TemplateView):
+    def get_context_data(self, **kwargs):
+        context = super(ClassicRecipeStatsView, self).get_context_data(**kwargs)
+        # *** Cover status chart ***
+        statuses = []
+        status_counts = {}
+        for choice, desc in ClassicRecipe.COVER_STATUS_CHOICES:
+            statuses.append(desc)
+            status_counts[desc] = ClassicRecipe.objects.filter(cover_status=choice).count()
+        statuses = sorted(statuses, key=lambda status: status_counts[status], reverse=True)
+        chartdata = {'x': statuses, 'y': [status_counts[k] for k in statuses]}
+        context['charttype_status'] = 'pieChart'
+        context['chartdata_status'] = chartdata
+        # *** Categories chart ***
+        categories = ['obsoletedir', 'nonworkingdir']
+        uniquevals = ClassicRecipe.objects.exclude(classic_category='').values_list('classic_category', flat=True).distinct()
+        for value in uniquevals:
+            cats = value.split()
+            for cat in cats:
+                if not cat in categories:
+                    categories.append(cat)
+        categories.append('none')
+        catcounts = dict.fromkeys(categories, 0)
+        unmigrated = ClassicRecipe.objects.filter(cover_status='U')
+        catcounts['none'] = unmigrated.filter(classic_category='').count()
+        values = unmigrated.exclude(classic_category='').values_list('classic_category', flat=True)
+        # We gather data this way because an item might be in more than one category, thus
+        # the categories list must be in priority order
+        for value in values:
+            recipecats = value.split()
+            foundcat = 'none'
+            for cat in categories:
+                if cat in recipecats:
+                    foundcat = cat
+                    break
+            catcounts[foundcat] += 1
+        # Eliminate categories with zero count
+        categories = [cat for cat in categories if catcounts[cat] > 0]
+        categories = sorted(categories, key=lambda cat: catcounts[cat], reverse=True)
+        chartdata_category = {'x': categories, 'y': [catcounts[k] for k in categories]}
+        context['charttype_category'] = 'pieChart'
+        context['chartdata_category'] = chartdata_category
         return context
