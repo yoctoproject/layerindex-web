@@ -533,7 +533,11 @@ class MachineSearchView(ListView):
             entry_query = simplesearch.get_query(query_string, ['name', 'description'])
             return init_qs.filter(entry_query).order_by('name', 'layerbranch__layer')
         else:
-            return init_qs.order_by('name', 'layerbranch__layer')
+            if 'q' in self.request.GET:
+                return init_qs.order_by('name', 'layerbranch__layer')
+            else:
+                # Be consistent with RecipeSearchView
+                return Machine.objects.none()
 
     def get_context_data(self, **kwargs):
         context = super(MachineSearchView, self).get_context_data(**kwargs)
