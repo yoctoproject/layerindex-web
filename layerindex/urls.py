@@ -75,12 +75,12 @@ urlpatterns = patterns('',
             name="bulk_change_delete"),
     url(r'^branch/(?P<branch>[-\w]+)/',
         include('layerindex.urls_branch')),
-    url(r'^raw/recipes.txt$',
-        PlainTextListView.as_view(
-            queryset=Recipe.objects.order_by('pn', 'layerbranch__layer'),
-            context_object_name='recipe_list',
-            template_name='layerindex/rawrecipes.txt'),
-            name='recipe_list_raw'),
+    #url(r'^raw/recipes.txt$',
+    #    PlainTextListView.as_view(
+    #        queryset=Recipe.objects.order_by('pn', 'layerbranch__layer'),
+    #        context_object_name='recipe_list',
+    #        template_name='layerindex/rawrecipes.txt'),
+    #        name='recipe_list_raw'),
     url(r'^history/$',
         HistoryListView.as_view(
             template_name='layerindex/history.html'),
