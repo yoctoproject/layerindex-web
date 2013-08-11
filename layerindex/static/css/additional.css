@@ -186,3 +186,7 @@ padding: 8px;
 .breadcrumb {
     background-color: transparent;
 }
+
+.nav-spacer {
+    margin-left: 10px;
+}
