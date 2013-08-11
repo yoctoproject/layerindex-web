@@ -356,9 +356,12 @@ def main():
                                 (typename, filepath, filename) = recipeparse.detect_file_type(path, subdir_start)
                                 if typename == 'recipe':
                                     values = layerrecipes.filter(filepath=filepath).filter(filename=filename).values('id', 'filepath', 'filename', 'pn')
-                                    layerrecipes_delete.append(values[0])
-                                    logger.debug("Mark %s for deletion" % values[0])
-                                    updatedrecipes.add(os.path.join(values[0]['filepath'], values[0]['filename']))
+                                    if len(values):
+                                        layerrecipes_delete.append(values[0])
+                                        logger.debug("Mark %s for deletion" % values[0])
+                                        updatedrecipes.add(os.path.join(values[0]['filepath'], values[0]['filename']))
+                                    else:
+                                        logger.warn("Deleted recipe %s could not be found" % path)
                                 elif typename == 'bbappend':
                                     layerappends.filter(filepath=filepath).filter(filename=filename).delete()
                                 elif typename == 'machine':
