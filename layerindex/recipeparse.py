@@ -46,7 +46,13 @@ def _parse_layer_conf(layerdir, data):
 def init_parser(settings, branch, bitbakepath, enable_tracking=False, nocheckout=False, classic=False, logger=None):
     if not (nocheckout or classic):
         # Check out the branch of BitBake appropriate for this branch and clean out any stale files (e.g. *.pyc)
-        out = utils.runcmd("git checkout origin/%s" % branch.bitbake_branch, bitbakepath, logger=logger)
+        if re.match('[0-9a-f]{40}', branch.bitbake_branch):
+            # SHA1 hash
+            bitbake_ref = branch.bitbake_branch
+        else:
+            # Branch name
+            bitbake_ref = 'origin/%s' % branch.bitbake_branch
+        out = utils.runcmd("git checkout %s" % bitbake_ref, bitbakepath, logger=logger)
         out = utils.runcmd("git clean -f -x", bitbakepath, logger=logger)
 
     # Skip sanity checks
