@@ -20,6 +20,9 @@ from distutils.version import LooseVersion
 import utils
 import recipeparse
 
+import warnings
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+
 logger = utils.logger_create('LayerIndexUpdate')
 
 # Ensure PythonGit is installed (buildhistory_analysis needs it)
