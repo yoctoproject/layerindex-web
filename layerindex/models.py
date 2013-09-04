@@ -135,7 +135,11 @@ class LayerBranch(models.Model):
                     extra_path = self.vcs_subdir
             else:
                 extra_path = path
-            url = base_url.replace('%branch%', self.branch.name)
+            if self.actual_branch:
+                branchname = self.actual_branch
+            else:
+                branchname = self.branch.name
+            url = base_url.replace('%branch%', branchname)
             if '%path%' in base_url:
                 if extra_path:
                     url = re.sub(r'\[([^\]]*%path%[^\]]*)\]', '\\1', url)
