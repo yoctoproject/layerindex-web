@@ -7,6 +7,8 @@
 # Copyright (c) Django Software Foundation and individual contributors.
 # All rights reserved.
 
+import os
+
 from django.core.management import execute_manager
 import imp
 try:
@@ -19,4 +21,5 @@ except ImportError:
 import settings
 
 if __name__ == "__main__":
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "settings")
     execute_manager(settings)
