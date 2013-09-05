@@ -22,7 +22,7 @@
 
 {% autoescape on %}
         <ul class="breadcrumb">
-            <li><a href="{% url layer_list url_branch %}">Layers</a> <span class="divider">&rarr;</span></li>
+            <li><a href="{% url layer_list url_branch %}">{{ layerbranch.branch.name }}</a> <span class="divider">&rarr;</span></li>
             <li class="active">{{ layeritem.name }}</li>
         </ul>
 

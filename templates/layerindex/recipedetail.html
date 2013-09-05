@@ -21,7 +21,7 @@
 {% autoescape on %}
 
         <ul class="breadcrumb">
-            <li><a href="{% url layer_list recipe.layerbranch.branch.name %}">Layers</a> <span class="divider">&rarr;</span></li>
+            <li><a href="{% url layer_list recipe.layerbranch.branch.name %}">{{ recipe.layerbranch.branch.name }}</a> <span class="divider">&rarr;</span></li>
             <li><a href="{% url layer_item recipe.layerbranch.branch.name recipe.layerbranch.layer.name %}">{{ recipe.layerbranch.layer.name }}</a> <span class="divider">&rarr;</span></li>
             <li class="active">{{ recipe.name }}</li>
         </ul>
