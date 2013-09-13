@@ -221,14 +221,14 @@
                 $('#id_vcs_web_tree_base_url').val(awf.vcs_web_tree_base_url)
                 $('#id_vcs_web_file_base_url').val(awf.vcs_web_file_base_url)
             }
-            $('#id_vcs_web_url').prop('disabled', true);
-            $('#id_vcs_web_tree_base_url').prop('disabled', true);
-            $('#id_vcs_web_file_base_url').prop('disabled', true);
+            $('#id_vcs_web_url').prop('readonly', true);
+            $('#id_vcs_web_tree_base_url').prop('readonly', true);
+            $('#id_vcs_web_file_base_url').prop('readonly', true);
         }
         else {
-            $('#id_vcs_web_url').prop('disabled', false);
-            $('#id_vcs_web_tree_base_url').prop('disabled', false);
-            $('#id_vcs_web_file_base_url').prop('disabled', false);
+            $('#id_vcs_web_url').prop('readonly', false);
+            $('#id_vcs_web_tree_base_url').prop('readonly', false);
+            $('#id_vcs_web_file_base_url').prop('readonly', false);
         }
     };
 

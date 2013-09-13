@@ -142,16 +142,16 @@
     enable_value_field = function() {
         cover_status = $('#id_cover_status').val()
         if( cover_status == 'U' || cover_status == 'N' ) {
-            $('#id_cover_pn').prop('disabled', true);
-            $('#id_cover_layerbranch').prop('disabled', true);
-            $('#id_cover_verified').prop('disabled', true);
+            $('#id_cover_pn').prop('readonly', true);
+            $('#id_cover_layerbranch').prop('readonly', true);
+            $('#id_cover_verified').prop('readonly', true);
             $('#id_label_cover_verified').addClass('muted');
             $('#id_span_cover_opts').addClass('muted');
         }
         else {
-            $('#id_cover_pn').prop('disabled', false);
-            $('#id_cover_layerbranch').prop('disabled', false);
-            $('#id_cover_verified').prop('disabled', false);
+            $('#id_cover_pn').prop('readonly', false);
+            $('#id_cover_layerbranch').prop('readonly', false);
+            $('#id_cover_verified').prop('readonly', false);
             $('#id_label_cover_verified').removeClass('muted');
             $('#id_span_cover_opts').removeClass('muted');
         }
