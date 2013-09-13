@@ -143,10 +143,9 @@ class LayerBranch(models.Model):
             if '%path%' in base_url:
                 if extra_path:
                     url = re.sub(r'\[([^\]]*%path%[^\]]*)\]', '\\1', url)
-                    return url.replace('%path%', extra_path)
                 else:
                     url = re.sub(r'\[([^\]]*%path%[^\]]*)\]', '', url)
-                    return url
+                return url.replace('%path%', extra_path)
             else:
                 return url + extra_path
         return None
