@@ -104,7 +104,10 @@ def edit_layer_view(request, template_name, branch='master', slug=None):
         deplistlayers = LayerItem.objects.exclude(id=layeritem.id).order_by('name')
         returnto = request.GET.get('returnto', 'layer_item')
         if returnto:
-            return_url = reverse_lazy(returnto, args=(branch, layeritem.name))
+            if returnto == 'layer_review':
+                return_url = reverse_lazy(returnto, args=(layeritem.name,))
+            else:
+                return_url = reverse_lazy(returnto, args=(branch, layeritem.name))
     else:
         # Submit mode
         layeritem = LayerItem()
