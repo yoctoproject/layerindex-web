@@ -137,7 +137,6 @@ def main():
             help = "Hide all output except error messages",
             action="store_const", const=logging.ERROR, dest="loglevel")
 
-
     options, args = parser.parse_args(sys.argv)
     if len(args) > 1:
         logger.error('unexpected argument "%s"' % args[1])
@@ -256,7 +255,10 @@ def main():
                 repo = git.Repo(repodir)
                 assert repo.bare == False
                 try:
-                    topcommit = repo.commit('origin/%s' % branchname)
+                    if options.nocheckout:
+                        topcommit = repo.commit('HEAD')
+                    else:
+                        topcommit = repo.commit('origin/%s' % branchname)
                 except:
                     if layerbranch:
                         logger.error("Failed update of layer %s - branch %s no longer exists" % (layer.name, branchdesc))
@@ -286,7 +288,7 @@ def main():
                             dep.layerbranch = layerbranch
                             dep.save()
 
-                if layerbranch.vcs_subdir:
+                if layerbranch.vcs_subdir and not options.nocheckout:
                     # Find latest commit in subdirectory
                     # A bit odd to do it this way but apparently there's no other way in the GitPython API
                     for commit in repo.iter_commits('origin/%s' % options.branch, paths=layerbranch.vcs_subdir):
