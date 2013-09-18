@@ -364,6 +364,13 @@ def main():
                     layerrecipes_delete = []
                     layerrecipes_add = []
 
+                    # Check if any paths should be ignored because there are layers within this layer
+                    removedirs = []
+                    for root, dirs, files in os.walk(layerdir):
+                        for d in dirs:
+                            if os.path.exists(os.path.join(root, d, 'conf', 'layer.conf')):
+                                removedirs.append(os.path.join(root, d) + os.sep)
+
                     if diff:
                         # Apply git changes to existing recipe list
 
@@ -376,6 +383,13 @@ def main():
                         for d in diff.iter_change_type('D'):
                             path = d.a_blob.path
                             if path.startswith(subdir_start):
+                                skip = False
+                                for d in removedirs:
+                                    if path.startswith(d):
+                                        skip = True
+                                        break
+                                if skip:
+                                    continue
                                 (typename, filepath, filename) = recipeparse.detect_file_type(path, subdir_start)
                                 if typename == 'recipe':
                                     values = layerrecipes.filter(filepath=filepath).filter(filename=filename).values('id', 'filepath', 'filename', 'pn')
@@ -395,6 +409,13 @@ def main():
                         for d in diff.iter_change_type('A'):
                             path = d.b_blob.path
                             if path.startswith(subdir_start):
+                                skip = False
+                                for d in removedirs:
+                                    if path.startswith(d):
+                                        skip = True
+                                        break
+                                if skip:
+                                    continue
                                 (typename, filepath, filename) = recipeparse.detect_file_type(path, subdir_start)
                                 if typename == 'recipe':
                                     layerrecipes_add.append(os.path.join(repodir, path))
@@ -422,6 +443,13 @@ def main():
                         for d in diff.iter_change_type('M'):
                             path = d.a_blob.path
                             if path.startswith(subdir_start):
+                                skip = False
+                                for d in removedirs:
+                                    if path.startswith(d):
+                                        skip = True
+                                        break
+                                if skip:
+                                    continue
                                 (typename, filepath, filename) = recipeparse.detect_file_type(path, subdir_start)
                                 if typename == 'recipe':
                                     logger.debug("Mark %s for update" % path)
@@ -457,7 +485,16 @@ def main():
                             for v in layerrecipe_values:
                                 root = os.path.join(layerdir, v['filepath'])
                                 fullpath = os.path.join(root, v['filename'])
+                                preserve = True
                                 if os.path.exists(fullpath):
+                                    for d in removedirs:
+                                        if fullpath.startswith(d):
+                                            preserve = False
+                                            break
+                                else:
+                                    preserve = False
+
+                                if preserve:
                                     # Recipe still exists, update it
                                     results = layerrecipes.filter(id=v['id'])[:1]
                                     recipe = results[0]
@@ -473,6 +510,10 @@ def main():
                         for root, dirs, files in os.walk(layerdir):
                             if '.git' in dirs:
                                 dirs.remove('.git')
+                            for d in dirs[:]:
+                                fullpath = os.path.join(root, d) + os.sep
+                                if fullpath in removedirs:
+                                    dirs.remove(d)
                             for f in files:
                                 fullpath = os.path.join(root, f)
                                 (typename, _, filename) = recipeparse.detect_file_type(fullpath, layerdir_start)
