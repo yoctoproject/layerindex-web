@@ -518,6 +518,10 @@ def main():
                     transaction.rollback()
                 else:
                     transaction.commit()
+            except KeyboardInterrupt:
+                transaction.rollback()
+                logger.warn("Update interrupted, changes to %s rolled back" % layer.name)
+                break
             except:
                 import traceback
                 traceback.print_exc()
