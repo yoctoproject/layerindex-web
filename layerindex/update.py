@@ -119,8 +119,11 @@ def main():
             help = "Specify layers to update (use commas to separate multiple). Default is all published layers.",
             action="store", dest="layers")
     parser.add_option("-r", "--reload",
-            help = "Discard existing recipe data and fetch it from scratch",
+            help = "Reload recipe data instead of updating since last update",
             action="store_true", dest="reload")
+    parser.add_option("", "--fullreload",
+            help = "Discard existing recipe data and fetch it from scratch",
+            action="store_true", dest="fullreload")
     parser.add_option("-n", "--dry-run",
             help = "Don't write any data back to the database",
             action="store_true", dest="dryrun")
@@ -142,6 +145,9 @@ def main():
         logger.error('unexpected argument "%s"' % args[1])
         parser.print_help()
         sys.exit(1)
+
+    if options.fullreload:
+        options.reload = True
 
     utils.setup_django()
     import settings
@@ -430,21 +436,24 @@ def main():
                     else:
                         # Collect recipe data from scratch
 
-                        # First, check which recipes still exist
-                        layerrecipe_values = layerrecipes.values('id', 'filepath', 'filename', 'pn')
-                        layerrecipe_fns = []
-                        for v in layerrecipe_values:
-                            root = os.path.join(layerdir, v['filepath'])
-                            fullpath = os.path.join(root, v['filename'])
-                            if os.path.exists(fullpath):
-                                # Recipe still exists, update it
-                                results = layerrecipes.filter(id=v['id'])[:1]
-                                recipe = results[0]
-                                update_recipe_file(config_data_copy, root, recipe, layerdir_start, repodir)
-                            else:
-                                # Recipe no longer exists, mark it for later on
-                                layerrecipes_delete.append(v)
-                            layerrecipe_fns.append(fullpath)
+                        if options.fullreload:
+                            layerrecipes.delete()
+                        else:
+                            # First, check which recipes still exist
+                            layerrecipe_values = layerrecipes.values('id', 'filepath', 'filename', 'pn')
+                            layerrecipe_fns = []
+                            for v in layerrecipe_values:
+                                root = os.path.join(layerdir, v['filepath'])
+                                fullpath = os.path.join(root, v['filename'])
+                                if os.path.exists(fullpath):
+                                    # Recipe still exists, update it
+                                    results = layerrecipes.filter(id=v['id'])[:1]
+                                    recipe = results[0]
+                                    update_recipe_file(config_data_copy, root, recipe, layerdir_start, repodir)
+                                else:
+                                    # Recipe no longer exists, mark it for later on
+                                    layerrecipes_delete.append(v)
+                                layerrecipe_fns.append(fullpath)
 
                         layermachines.delete()
                         layerappends.delete()
