@@ -1,22 +1,27 @@
 TODO:
 
+Bugs
 * Duplication of first maintainer when editing to add a second?
-* Document macros for URL fields
+* PROVIDES column appears to be too short for some recipes
 
-Later:
-* Ability for reviewers to comment before publishing a layer?
-* Prevent SMTP failures from breaking submission process
+Other
+* Search for bbclasses?
 * All-branch search/results so you can see version availability of recipes in all branches at once?
-* Rawrecipes branch support
-* Display no-results found message when search does not return any results (all tables)
+* Show OE-Classic search results in OE-Core search? (with appropriate disclaimers)
+* Display no-results found message when search does not return any results in layer search
+* Way to notify in search results when user searches for something that has been renamed / replaced / deprecated?
+* Show an alert on recipe page when recipe is outside of layer's BBFILES
+* Document macros for URL fields
 * Show layer type in layer detail?
 * Usage links in list page?
 * Subdirs in list page?
-* Query backend service? i.e. special URL to query information for external apps/scripts
+* Prevent SMTP failures from breaking submission process
+* Query backend service i.e. special URL to query information for external apps/scripts
 * Add comparison to duplicates page
-* Dynamic loading/filtering for recipes list
-* Some way to notify the user when they search for something that has been renamed / replaced / deprecated?
 * Create simple script to check for unlisted layer subdirectories in all repos
-* Are we going to need some way of indicating forks of another layer? (would rather avoid having forks altogether...)
 * Auto-detect more values from github pages?
 * Ability for submitters to get email notification about publication?
+* Update script still seems not to be always printing layer name on parsing warnings/errors
+* Update script could send warnings when parsing layers to maintainers? (optional)
+* Click on OE-Classic graph element to go to query?
+* Ability for reviewers to comment before publishing a layer?
