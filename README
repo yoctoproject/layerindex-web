@@ -30,7 +30,7 @@ In order to make use of this application you will need:
   have to have Django installed, have the same or similar configuration
   in settings.py and have access to the database used by the web
   application):
-  * Python 2.6 or Python 2.7
+  * Python 2.7.3
   * GitPython (python-git) version 0.3.1 or later
 
 Setup instructions:
@@ -70,7 +70,6 @@ Setup instructions:
 5. You may wish to customise some of the page templates to suit your
    installation, in particular:
    * templates/base.html
-   * templates/layerindex/frontpage.html
    * templates/layerindex/about.html
 
 
