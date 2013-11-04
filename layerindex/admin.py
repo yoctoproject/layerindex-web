@@ -29,11 +29,15 @@ class LayerItemAdmin(CompareVersionAdmin):
 
 class LayerBranchAdmin(CompareVersionAdmin):
     list_filter = ['layer__name']
-    readonly_fields = ['layer', 'branch', 'vcs_last_fetch', 'vcs_last_rev', 'vcs_last_commit']
+    readonly_fields = ('vcs_last_fetch', 'vcs_last_rev', 'vcs_last_commit')
     inlines = [
         LayerDependencyInline,
         LayerMaintainerInline,
     ]
+    def get_readonly_fields(self, request, obj=None):
+        if obj:
+            return self.readonly_fields + ('layer', 'branch')
+        return self.readonly_fields
 
 class LayerMaintainerAdmin(CompareVersionAdmin):
     list_filter = ['status', 'layerbranch__layer__name']
