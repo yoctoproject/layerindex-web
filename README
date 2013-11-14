@@ -37,8 +37,8 @@ Setup instructions:
 
 1. Edit settings.py to specify a database, EMAIL_HOST, SECRET_KEY and
    other settings specific to your installation. Ensure you set
-   LAYER_FETCH_DIR to a location with sufficient space for fetching
-   layer repositories.
+   LAYER_FETCH_DIR to an absolute path to a location with sufficient
+   space for fetching layer repositories.
 
 2. Run the following commands within the layerindex-web directory to
    initialise the database:
