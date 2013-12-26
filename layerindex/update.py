@@ -315,7 +315,7 @@ def main():
 
                     if not os.path.exists(layerdir):
                         if options.branch == 'master':
-                            logger.error("Subdirectory for layer %s does not exist on branch %s!" % branchdesc)
+                            logger.error("Subdirectory for layer %s does not exist on branch %s!" % (layer.name, branchdesc))
                             transaction.rollback()
                             continue
                         else:
