@@ -65,7 +65,7 @@ def init_parser(settings, branch, bitbakepath, enable_tracking=False, nocheckout
         # Ensure we have OE-Core set up to get some base configuration
         core_layer = utils.get_layer(settings.CORE_LAYER_NAME)
         if not core_layer:
-            raise RecipeParseError("Unable to find core layer %s in database; check CORE_LAYER_NAME setting" % settings.CORE_LAYER_NAME)
+            raise RecipeParseError("Unable to find core layer %s in database; create this layer or set the CORE_LAYER_NAME setting to point to the core layer" % settings.CORE_LAYER_NAME)
         core_layerbranch = core_layer.get_layerbranch(branch.name)
         core_branchname = branch.name
         if core_layerbranch:
@@ -80,6 +80,8 @@ def init_parser(settings, branch, bitbakepath, enable_tracking=False, nocheckout
         if not nocheckout:
             out = utils.runcmd("git checkout origin/%s" % core_branchname, core_repodir, logger=logger)
             out = utils.runcmd("git clean -f -x", core_repodir, logger=logger)
+        if not os.path.exists(os.path.join(core_layerdir, 'conf/bitbake.conf')):
+            raise RecipeParseError("conf/bitbake.conf not found in core layer %s - is subdirectory set correctly?" % core_layer.name)
         # The directory above where this script exists should contain our conf/layer.conf,
         # so add it to BBPATH along with the core layer directory
         confparentdir = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
