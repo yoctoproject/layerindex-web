@@ -19,7 +19,7 @@
     <link rel="stylesheet" href="{% static "css/bootstrap-responsive.css" %}" />
     <link rel="stylesheet" href="{% static "css/additional.css" %}" />
     <link rel="icon" type="image/vnd.microsoft.icon" href="{% static "img/favicon.ico" %}" />
-    <title>OpenEmbedded metadata index{% block title_append %} - {% endblock %}</title>
+    <title>{{ site_name }}{% block title_append %} - {% endblock %}</title>
 </head>
 
 <body>
@@ -28,7 +28,7 @@
     <div class="navbar navbar-fixed-top">
         <div class="navbar-inner">
             <div class="container-fluid">
-                <a class="brand" href="{% url frontpage %}">OpenEmbedded metadata index</a>
+                <a class="brand" href="{% url frontpage %}">{{ site_name }}</a>
 
                 {% if user.is_authenticated %}
                     <div class="btn-group pull-right">

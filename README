@@ -95,7 +95,12 @@ Setup instructions:
         next to your login name at the top right, click on the
         newly added layer entry, and then click on "Publish Layer".
 
-5. You may wish to customise some of the page templates to suit your
+5. Set the site name (as displayed in the top bar and page titles) by
+   going into the admin interface (http://127.0.0.1:8000/admin/),
+   clicking on "Sites" at the bottom, and editing the first entry,
+   setting "Display name" to the desired name.
+
+6. You may wish to customise some of the page templates to suit your
    installation, in particular:
    * templates/base.html
    * templates/layerindex/about.html
