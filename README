@@ -55,18 +55,45 @@ Setup instructions:
 
    Then visit http://127.0.0.1:8000/layerindex/ with your browser. As
    with all Django applications there is an admin interface available
-   at http://127.0.0.1:8000/admin/ also.
+   at http://127.0.0.1:8000/admin/ also. The initial login and password
+   will be those you entered in the step above when creating an admin
+   account.
 
    NOTE: This local server should only be used for testing - for
    production you need to use a proper web server and have DEBUG set
    to False.
 
 4. You'll need to add at least the openembedded-core layer to the
-   database (or some equivalent for use in basic BitBake configuration;
-   if it's not called "openembedded-core" then you'll need to set
-   CORE_LAYER_NAME in settings.py to match.) You can use the 
-   "Submit Layer" feature within the interface itself (easiest) or the
-   admin interface to do this.
+   database, or some equivalent that contains conf/bitbake.conf for
+   the base system configuration. To add this, follow these steps:
+
+   4.1. With the server running, go to the main page (see above) and
+        click on the "Log in" button on the top right. Use the
+        login/password you added in step 2 above.
+
+   4.2. Click on the "Submit Layer" button in the top right and
+        enter the details for the core layer. To use the real
+        openembedded-core layer, use these values:
+
+        Layer name:               openembedded-core
+        Layer type:               Base
+        Summary:                  Core metadata
+        Description:              Core metadata
+        Repository URL:           git://git.openembedded.org/openembedded-core
+        Repository subdirectory:  meta
+
+        Once you have filled in the required values, click on the
+        "Submit Layer" button.
+
+        NOTE: The name of the layer must be "openembedded-core",
+        unless you change CORE_LAYER_NAME in settings.py to match
+        whatever alternative name you use here.
+
+   4.3. The layer has been added but is not yet published. (For the
+        public index this provides some protection against spam and
+        malformed entries.) To publish it, click on the orange number
+        next to your login name at the top right, click on the
+        newly added layer entry, and then click on "Publish Layer".
 
 5. You may wish to customise some of the page templates to suit your
    installation, in particular:
