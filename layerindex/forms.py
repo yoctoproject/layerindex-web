@@ -11,6 +11,7 @@ from django.forms.models import inlineformset_factory, modelformset_factory
 from captcha.fields import CaptchaField
 from django.contrib.auth.models import User
 import re
+import settings
 
 
 class LayerMaintainerForm(forms.ModelForm):
@@ -62,7 +63,7 @@ class EditLayerForm(forms.ModelForm):
             self.fields['deps'].initial = [d.dependency.pk for d in self.layerbranch.dependencies_set.all()]
             del self.fields['captcha']
         else:
-            self.fields['deps'].initial = [l.pk for l in LayerItem.objects.filter(name='openembedded-core')]
+            self.fields['deps'].initial = [l.pk for l in LayerItem.objects.filter(name=settings.CORE_LAYER_NAME)]
             if user.is_authenticated():
                 del self.fields['captcha']
         # Ensure repo subdir appears after repo URL
