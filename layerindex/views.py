@@ -742,6 +742,12 @@ class ClassicRecipeStatsView(TemplateView):
         chartdata = {'x': statuses, 'y': [status_counts[k] for k in statuses]}
         context['charttype_status'] = 'pieChart'
         context['chartdata_status'] = chartdata
+        context['extra_status'] = {
+            'x_is_date': False,
+            'x_axis_format': '',
+            'tag_script_js': True,
+            'jquery_on_ready': False,
+        }
         # *** Categories chart ***
         categories = ['obsoletedir', 'nonworkingdir']
         uniquevals = ClassicRecipe.objects.exclude(classic_category='').values_list('classic_category', flat=True).distinct()
@@ -771,4 +777,10 @@ class ClassicRecipeStatsView(TemplateView):
         chartdata_category = {'x': categories, 'y': [catcounts[k] for k in categories]}
         context['charttype_category'] = 'pieChart'
         context['chartdata_category'] = chartdata_category
+        context['extra_category'] = {
+            'x_is_date': False,
+            'x_axis_format': '',
+            'tag_script_js': True,
+            'jquery_on_ready': False,
+        }
         return context
