@@ -337,6 +337,16 @@ class BBAppend(models.Model):
         url = self.layerbranch.file_url(os.path.join(self.filepath, self.filename))
         return url or ''
 
+    def matches_recipe(self, recipe):
+        recipename = recipe.filename[:-3]
+        appendname = self.filename[:-9]
+        if recipename == appendname:
+            return True
+        elif '%' in appendname:
+            import fnmatch
+            return fnmatch.fnmatch(recipename, appendname.replace('%', '*'))
+        return False
+
     def __unicode__(self):
         return os.path.join(self.filepath, self.filename)
 

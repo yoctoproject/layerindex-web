@@ -90,7 +90,7 @@
                 <h2>bbappends</h2>
                 <p>This recipe is appended by:</p>
                 <table class="table table-bordered">
-                {% for append in appends %}
+                {% for append in verappends %}
                     <tr>
                         <td>
                             <a href="{% url layer_item append.layerbranch.branch.name append.layerbranch.layer.name %}">{{ append.layerbranch.layer.name }}</a>
@@ -99,6 +99,18 @@
                             <a href="{{ append.vcs_web_url }}">{{ append.filename }}</a>
                         </td>
                     </tr>
+                {% endfor %}
+                {% for append in appends %}
+                    {% if not append in verappends %}
+                    <tr>
+                        <td>
+                            <a href="{% url layer_item append.layerbranch.branch.name append.layerbranch.layer.name %}" class="muted">{{ append.layerbranch.layer.name }}</a>
+                        </td>
+                        <td>
+                            <a href="{{ append.vcs_web_url }}" class="muted">{{ append.filename }}</a>
+                        </td>
+                    </tr>
+                    {% endif %}
                 {% endfor %}
                 </table>
                 {% endif %}
