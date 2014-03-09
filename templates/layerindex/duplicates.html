@@ -6,7 +6,7 @@
 
   layerindex-web - duplicates page template
 
-  Copyright (C) 2013 Intel Corporation
+  Copyright (C) 2013-2014 Intel Corporation
   Licensed under the MIT license, see COPYING.MIT for details
 
 {% endcomment %}
@@ -39,6 +39,47 @@
                 </a></li>
             {% endfor %}
         </ul>
+
+        <div id="layerDialog" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="layerDialogLabel" aria-hidden="true">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+                <h3 id="layerDialogLabel">Select layers to include</h3>
+            </div>
+            <form action="" method="get">
+                <div class="modal-body">
+                    <div class="scrolling">
+                        <table><tbody>
+                            {% for layerbranch in layers %}
+                                <tr>
+                                    <td class="checkboxtd"><input
+                                        type="checkbox"
+                                        class="filterlayercheckbox"
+                                        name="l"
+                                        value="{{ layerbranch.layer.id }}" id="id_layer_{{layerbranch.layer.id}}"
+                                        {% if showlayers and layerbranch.layer.id in showlayers %}
+                                            checked
+                                        {% endif %}
+                                        />
+                                    </td>
+                                    <td><label for="id_layer_{{layerbranch.layer.id}}">{{ layerbranch.layer.name }}</label></td>
+                                </tr>
+                            {% endfor %}
+                        </tbody></table>
+                    </div>
+                    <div class="buttonblock">
+                    <button type="button" class="btn" id="id_select_all">Select all</button>
+                    <button type="button" class="btn buttonblock-btn" id="id_select_none">Select none</button>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <input type="submit" value="Filter" class='btn btn-primary' />
+                    <button class="btn" id="id_cancel" data-dismiss="modal" aria-hidden="true">Cancel</button>
+                </div>
+            </form>
+        </div>
+
+        <a href="#layerDialog" role="button" class="btn nav-spacer" data-toggle="modal">Filter layers {% if showlayers %}<span class="badge badge-success">{{ showlayers|length }}</span>{% endif %}</a>
+
     </div>
 
                 <h2>Duplicate recipes</h2>
@@ -112,6 +153,19 @@
         firstfield = $("#filter-form input:text").first()
         if( ! firstfield.val() )
             firstfield.focus()
+    });
+    $('#id_select_all').click(function (e) {
+        $('.filterlayercheckbox').attr('checked', true);
+    });
+    $('#id_select_none').click(function (e) {
+        $('.filterlayercheckbox').attr('checked', false);
+    });
+    $('#id_cancel').click(function (e) {
+        $('.filterlayercheckbox').attr('checked', false);
+        showlayers = {{ showlayers }}
+        for(i in showlayers) {
+            $('#id_layer_' + showlayers[i]).attr('checked', true);
+        }
     });
 </script>
 {% endblock %}

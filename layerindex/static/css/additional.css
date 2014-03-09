@@ -190,3 +190,12 @@ padding: 8px;
 .nav-spacer {
     margin-left: 10px;
 }
+
+.buttonblock {
+    margin-top: 10px;
+    margin-right: 10px;
+}
+
+.buttonblock-btn {
+    margin-left: 8px;
+}

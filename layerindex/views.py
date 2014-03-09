@@ -394,24 +394,31 @@ class RecipeSearchView(ListView):
         return context
 
 class DuplicatesView(TemplateView):
-    def get_recipes(self):
+    def get_recipes(self, layer_ids):
         init_qs = Recipe.objects.filter(layerbranch__branch__name=self.kwargs['branch'])
+        if layer_ids:
+            init_qs = init_qs.filter(layerbranch__layer__in=layer_ids)
         dupes = init_qs.values('pn').annotate(Count('layerbranch', distinct=True)).filter(layerbranch__count__gt=1)
         qs = init_qs.all().filter(pn__in=[item['pn'] for item in dupes]).order_by('pn', 'layerbranch__layer')
         return recipes_preferred_count(qs)
 
-    def get_classes(self):
+    def get_classes(self, layer_ids):
         init_qs = BBClass.objects.filter(layerbranch__branch__name=self.kwargs['branch'])
+        if layer_ids:
+            init_qs = init_qs.filter(layerbranch__layer__in=layer_ids)
         dupes = init_qs.values('name').annotate(Count('layerbranch', distinct=True)).filter(layerbranch__count__gt=1)
         qs = init_qs.all().filter(name__in=[item['name'] for item in dupes]).order_by('name', 'layerbranch__layer')
         return qs
 
     def get_context_data(self, **kwargs):
+        layer_ids = [int(i) for i in self.request.GET.getlist('l')]
         context = super(DuplicatesView, self).get_context_data(**kwargs)
-        context['recipes'] = self.get_recipes()
-        context['classes'] = self.get_classes()
+        context['recipes'] = self.get_recipes(layer_ids)
+        context['classes'] = self.get_classes(layer_ids)
         context['url_branch'] = self.kwargs['branch']
         context['this_url_name'] = resolve(self.request.path_info).url_name
+        context['layers'] = LayerBranch.objects.filter(branch__name=self.kwargs['branch']).filter(layer__status='P').order_by( 'layer__name')
+        context['showlayers'] = layer_ids
         return context
 
 class AdvancedRecipeSearchView(ListView):
