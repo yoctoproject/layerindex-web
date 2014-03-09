@@ -399,7 +399,7 @@ class DuplicatesView(TemplateView):
         if layer_ids:
             init_qs = init_qs.filter(layerbranch__layer__in=layer_ids)
         dupes = init_qs.values('pn').annotate(Count('layerbranch', distinct=True)).filter(layerbranch__count__gt=1)
-        qs = init_qs.all().filter(pn__in=[item['pn'] for item in dupes]).order_by('pn', 'layerbranch__layer')
+        qs = init_qs.all().filter(pn__in=[item['pn'] for item in dupes]).order_by('pn', 'layerbranch__layer', '-pv')
         return recipes_preferred_count(qs)
 
     def get_classes(self, layer_ids):
