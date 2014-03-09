@@ -112,7 +112,7 @@
 
                     {% if layerbranch.vcs_last_commit %}
                     <p>
-                    <span class="muted"><small>Last commit: {{ layerbranch.vcs_last_commit|timesince }} ago</small></span>
+                    <span class="muted"><small>Last commit: {{ layerbranch.vcs_last_commit|timesince }} ago ({{ layerbranch.branch.name }} branch)</small></span>
                     </p>
                     {% endif %}
 
