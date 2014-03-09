@@ -1,6 +1,6 @@
 # layerindex-web - view definitions
 #
-# Copyright (C) 2013 Intel Corporation
+# Copyright (C) 2013-2014 Intel Corporation
 #
 # Licensed under the MIT license, see COPYING.MIT for details
 
@@ -388,9 +388,12 @@ class RecipeSearchView(ListView):
 
     def get_context_data(self, **kwargs):
         context = super(RecipeSearchView, self).get_context_data(**kwargs)
-        context['search_keyword'] = self.request.GET.get('q', '')
+        searchval = self.request.GET.get('q', '')
+        context['search_keyword'] = searchval
         context['url_branch'] = self.kwargs['branch']
         context['this_url_name'] = resolve(self.request.path_info).url_name
+        if searchval:
+            context['extra_url_param'] = '?q=%s' % searchval
         return context
 
 class DuplicatesView(TemplateView):
