@@ -63,7 +63,10 @@ class LayerItem(models.Model):
         self.status = newstatus
 
     def get_layerbranch(self, branchname):
-        res = list(self.layerbranch_set.filter(branch__name=branchname)[:1])
+        if branchname:
+            res = list(self.layerbranch_set.filter(branch__name=branchname)[:1])
+        else:
+            res = list(self.layerbranch_set.all()[:1])
         if res:
             return res[0]
         return None

@@ -278,17 +278,25 @@ def main():
                     layerbranch = LayerBranch()
                     layerbranch.layer = layer
                     layerbranch.branch = branch
-                    layerbranch_master = layer.get_layerbranch('master')
-                    if layerbranch_master:
-                        layerbranch.vcs_subdir = layerbranch_master.vcs_subdir
+                    layerbranch_source = layer.get_layerbranch('master')
+                    if not layerbranch_source:
+                        layerbranch_source = layer.get_layerbranch(None)
+                    if layerbranch_source:
+                        layerbranch.vcs_subdir = layerbranch_source.vcs_subdir
+                        if layerbranch.vcs_subdir:
+                            checksubdir = os.path.join(repodir, layerbranch.vcs_subdir)
+                            if not os.path.exists(checksubdir):
+                                logger.info("Skipping update of layer %s for branch %s - subdirectory %s does not exist on this branch" % (layer.name, branchdesc, layerbranch.vcs_subdir))
+                                transaction.rollback()
+                                continue
                     layerbranch.save()
-                    if layerbranch_master:
-                        for maintainer in layerbranch_master.layermaintainer_set.all():
+                    if layerbranch_source:
+                        for maintainer in layerbranch_source.layermaintainer_set.all():
                             maintainer.pk = None
                             maintainer.id = None
                             maintainer.layerbranch = layerbranch
                             maintainer.save()
-                        for dep in layerbranch_master.dependencies_set.all():
+                        for dep in layerbranch_source.dependencies_set.all():
                             dep.pk = None
                             dep.id = None
                             dep.layerbranch = layerbranch
@@ -315,11 +323,7 @@ def main():
 
                     if not os.path.exists(layerdir):
                         if options.branch == 'master':
-                            logger.error("Subdirectory for layer %s does not exist on branch %s!" % (layer.name, branchdesc))
-                            transaction.rollback()
-                            continue
-                        else:
-                            logger.info("Skipping update of layer %s for branch %s - subdirectory does not exist on this branch" % (layer.name, branchdesc))
+                            logger.error("Subdirectory for layer %s does not exist on branch %s - if this is legitimate, the layer branch record should be deleted" % (layer.name, branchdesc))
                             transaction.rollback()
                             continue
 
