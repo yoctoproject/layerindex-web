@@ -143,6 +143,11 @@ class LayerBranch(models.Model):
             else:
                 branchname = self.branch.name
             url = base_url.replace('%branch%', branchname)
+
+            # If there's a % in the path (e.g. a wildcard bbappend) we need to encode it
+            if extra_path:
+                extra_path = extra_path.replace('%', '%25')
+
             if '%path%' in base_url:
                 if extra_path:
                     url = re.sub(r'\[([^\]]*%path%[^\]]*)\]', '\\1', url)
