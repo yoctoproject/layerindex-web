@@ -273,8 +273,10 @@ def main():
                     transaction.rollback()
                     continue
 
+                newbranch = False
                 if not layerbranch:
                     # LayerBranch doesn't exist for this branch, create it
+                    newbranch = True
                     layerbranch = LayerBranch()
                     layerbranch.layer = layer
                     layerbranch.branch = branch
@@ -283,12 +285,6 @@ def main():
                         layerbranch_source = layer.get_layerbranch(None)
                     if layerbranch_source:
                         layerbranch.vcs_subdir = layerbranch_source.vcs_subdir
-                        if layerbranch.vcs_subdir:
-                            checksubdir = os.path.join(repodir, layerbranch.vcs_subdir)
-                            if not os.path.exists(checksubdir):
-                                logger.info("Skipping update of layer %s for branch %s - subdirectory %s does not exist on this branch" % (layer.name, branchdesc, layerbranch.vcs_subdir))
-                                transaction.rollback()
-                                continue
                     layerbranch.save()
                     if layerbranch_source:
                         for maintainer in layerbranch_source.layermaintainer_set.all():
@@ -305,9 +301,19 @@ def main():
                 if layerbranch.vcs_subdir and not options.nocheckout:
                     # Find latest commit in subdirectory
                     # A bit odd to do it this way but apparently there's no other way in the GitPython API
-                    for commit in repo.iter_commits('origin/%s' % branchname, paths=layerbranch.vcs_subdir):
-                        topcommit = commit
-                        break
+                    topcommit = next(repo.iter_commits('origin/%s' % branchname, paths=layerbranch.vcs_subdir), None)
+                    if not topcommit:
+                        # This will error out if the directory is completely invalid or had never existed at this point
+                        # If it previously existed but has since been deleted, you will get the revision where it was
+                        # deleted - so we need to handle that case separately later
+                        if newbranch:
+                            logger.info("Skipping update of layer %s for branch %s - subdirectory %s does not exist on this branch" % (layer.name, branchdesc, layerbranch.vcs_subdir))
+                        elif layerbranch.vcs_subdir:
+                            logger.error("Subdirectory for layer %s does not exist on branch %s - if this is legitimate, the layer branch record should be deleted" % (layer.name, branchdesc))
+                        else:
+                            logger.error("Failed to get last revision for layer %s on branch %s" % (layer.name, branchdesc))
+                        transaction.rollback()
+                        continue
 
                 layerdir = os.path.join(repodir, layerbranch.vcs_subdir)
                 layerdir_start = os.path.normpath(layerdir) + os.sep
@@ -321,11 +327,13 @@ def main():
                         out = utils.runcmd("git checkout origin/%s" % branchname, repodir, logger=logger)
                         out = utils.runcmd("git clean -f -x", repodir, logger=logger)
 
-                    if not os.path.exists(layerdir):
-                        if options.branch == 'master':
+                    if layerbranch.vcs_subdir and not os.path.exists(layerdir):
+                        if newbranch:
+                            logger.info("Skipping update of layer %s for branch %s - subdirectory %s does not exist on this branch" % (layer.name, branchdesc, layerbranch.vcs_subdir))
+                        else:
                             logger.error("Subdirectory for layer %s does not exist on branch %s - if this is legitimate, the layer branch record should be deleted" % (layer.name, branchdesc))
-                            transaction.rollback()
-                            continue
+                        transaction.rollback()
+                        continue
 
                     if not os.path.exists(os.path.join(layerdir, 'conf/layer.conf')):
                         logger.error("conf/layer.conf not found for layer %s - is subdirectory set correctly?" % layer.name)
