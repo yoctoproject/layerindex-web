@@ -305,7 +305,7 @@ def main():
                 if layerbranch.vcs_subdir and not options.nocheckout:
                     # Find latest commit in subdirectory
                     # A bit odd to do it this way but apparently there's no other way in the GitPython API
-                    for commit in repo.iter_commits('origin/%s' % options.branch, paths=layerbranch.vcs_subdir):
+                    for commit in repo.iter_commits('origin/%s' % branchname, paths=layerbranch.vcs_subdir):
                         topcommit = commit
                         break
 
