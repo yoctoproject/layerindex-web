@@ -476,12 +476,12 @@ def main():
                     else:
                         # Collect recipe data from scratch
 
+                        layerrecipe_fns = []
                         if options.fullreload:
                             layerrecipes.delete()
                         else:
                             # First, check which recipes still exist
                             layerrecipe_values = layerrecipes.values('id', 'filepath', 'filename', 'pn')
-                            layerrecipe_fns = []
                             for v in layerrecipe_values:
                                 root = os.path.join(layerdir, v['filepath'])
                                 fullpath = os.path.join(root, v['filename'])
