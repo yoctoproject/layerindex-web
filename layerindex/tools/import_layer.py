@@ -383,7 +383,7 @@ def main():
                 layer.layer_type = 'A'
 
             if maintainers:
-                maint_re = re.compile(r'^"?([^"@$<>]+)"? *<([^<> ]+)>[ -]*(.*)?$')
+                maint_re = re.compile(r'^"?([^"@$<>]+)"? *<([^<> ]+)>[ -]*(.+)?$')
                 for maintentry in maintainers:
                     res = maint_re.match(maintentry)
                     if res:
@@ -391,7 +391,8 @@ def main():
                         maintainer.layerbranch = layerbranch
                         maintainer.name = res.group(1).strip()
                         maintainer.email = res.group(2)
-                        maintainer.responsibility = res.group(3).strip()
+                        if res.group(3):
+                            maintainer.responsibility = res.group(3).strip()
                         maintainer.save()
 
             layer.save()
