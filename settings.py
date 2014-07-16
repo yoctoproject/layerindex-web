@@ -100,6 +100,7 @@ TEMPLATE_LOADERS = (
 )
 
 MIDDLEWARE_CLASSES = (
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -108,6 +109,12 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'reversion.middleware.RevisionMiddleware',
 )
+
+# We allow CORS calls from everybody
+CORS_ORIGIN_ALLOW_ALL = True
+# for the API pages
+CORS_URLS_REGEX = r'.*/api/.*';
+
 
 # Clickjacking protection
 X_FRAME_OPTIONS = 'DENY'
@@ -145,6 +152,7 @@ INSTALLED_APPS = (
     'captcha',
     'south',
     'rest_framework',
+    'corsheaders',
     'django_nvd3'
 )
 
