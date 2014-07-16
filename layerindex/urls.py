@@ -11,10 +11,23 @@ from django.views.defaults import page_not_found
 from django.core.urlresolvers import reverse_lazy
 from layerindex.views import LayerListView, LayerReviewListView, LayerReviewDetailView, RecipeSearchView, MachineSearchView, PlainTextListView, LayerDetailView, edit_layer_view, delete_layer_view, edit_layernote_view, delete_layernote_view, HistoryListView, EditProfileFormView, AdvancedRecipeSearchView, BulkChangeView, BulkChangeSearchView, bulk_change_edit_view, bulk_change_patch_view, BulkChangeDeleteView, RecipeDetailView, RedirectParamsView, ClassicRecipeSearchView, ClassicRecipeDetailView, ClassicRecipeStatsView
 from layerindex.models import LayerItem, Recipe, RecipeChangeset
+from rest_framework import routers
+import restviews
+from django.conf.urls import include
+
+router = routers.DefaultRouter()
+router.register(r'branches', restviews.BranchViewSet)
+router.register(r'layerItems', restviews.LayerItemViewSet)
+router.register(r'layerBranches', restviews.LayerBranchViewSet)
+router.register(r'layerDependencies', restviews.LayerDependencyViewSet)
+router.register(r'recipes', restviews.RecipeViewSet)
+router.register(r'machines', restviews.MachineViewSet)
 
 urlpatterns = patterns('',
     url(r'^$', redirect_to, {'url' : reverse_lazy('layer_list', args=('master',))},
         name='frontpage'),
+
+    url(r'^api/', include(router.urls)),
 
     url(r'^layers/$',
         redirect_to, {'url' : reverse_lazy('layer_list', args=('master',))}),

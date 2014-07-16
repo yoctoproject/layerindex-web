@@ -25,6 +25,7 @@ In order to make use of this application you will need:
   * django-reversion-compare (0.3.5)
   * django-simple-captcha (0.4.1)
   * django-nvd3 (0.6.0)
+  * djangorestframework (2.3.14)
 * On the machine that will run the backend update script (which does not
   have to be the same machine as the web server, however it does still
   have to have Django installed, have the same or similar configuration
