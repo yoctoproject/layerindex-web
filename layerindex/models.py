@@ -20,6 +20,8 @@ class Branch(models.Model):
     short_description = models.CharField(max_length=50, blank=True)
     sort_priority = models.IntegerField(blank=True, null=True)
 
+    updated = models.DateTimeField(auto_now = True)
+
     class Meta:
         verbose_name_plural = "Branches"
 
@@ -52,6 +54,8 @@ class LayerItem(models.Model):
     mailing_list_url = models.URLField('Mailing list URL', blank=True, help_text='URL of the info page for a mailing list for discussing the layer, if any')
     index_preference = models.IntegerField('Preference', default=0, help_text='Number used to find preferred recipes in recipe search results (higher number is greater preference)')
     classic = models.BooleanField('Classic', default=False, help_text='Is this OE-Classic?')
+
+    updated = models.DateTimeField(auto_now = True)
 
     class Meta:
         verbose_name = "Layer"
@@ -113,6 +117,8 @@ class LayerBranch(models.Model):
     vcs_last_rev = models.CharField('Last revision fetched', max_length=80, blank=True)
     vcs_last_commit = models.DateTimeField('Last commit date', blank=True, null=True)
     actual_branch = models.CharField('Actual Branch', max_length=80, blank=True, help_text='Name of the actual branch in the repository matching the core branch')
+
+    updated = models.DateTimeField(auto_now = True)
 
     class Meta:
         verbose_name_plural = "Layer branches"
@@ -237,6 +243,8 @@ class Recipe(models.Model):
     provides = models.CharField(max_length=255, blank=True)
     bbclassextend = models.CharField(max_length=100, blank=True)
 
+    updated = models.DateTimeField(auto_now = True)
+
     def vcs_web_url(self):
         url = self.layerbranch.file_url(os.path.join(self.filepath, self.filename))
         return url or ''
@@ -324,6 +332,8 @@ class Machine(models.Model):
     layerbranch = models.ForeignKey(LayerBranch)
     name = models.CharField(max_length=255)
     description = models.CharField(max_length=255)
+
+    updated = models.DateTimeField(auto_now = True)
 
     def vcs_web_url(self):
         url = self.layerbranch.file_url(os.path.join('conf/machine/%s.conf' % self.name))
