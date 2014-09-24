@@ -25,9 +25,13 @@ def _setup_tinfoil(bitbakepath, enable_tracking):
     import bb.tinfoil
     import bb.cooker
     import bb.data
-    tinfoil = bb.tinfoil.Tinfoil()
-    if enable_tracking:
-        tinfoil.cooker.enableDataTracking()
+    try:
+        tinfoil = bb.tinfoil.Tinfoil(tracking=enable_tracking)
+    except TypeError:
+        # old API
+        tinfoil = bb.tinfoil.Tinfoil()
+        if enable_tracking:
+            tinfoil.cooker.enableDataTracking()
     tinfoil.prepare(config_only = True)
 
     return tinfoil
