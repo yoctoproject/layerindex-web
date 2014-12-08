@@ -20,7 +20,7 @@ class Branch(models.Model):
     short_description = models.CharField(max_length=50, blank=True)
     sort_priority = models.IntegerField(blank=True, null=True)
 
-    updated = models.DateTimeField(auto_now = True)
+    updated = models.DateTimeField(auto_now = True, default = datetime.now)
 
     class Meta:
         verbose_name_plural = "Branches"
