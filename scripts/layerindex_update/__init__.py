@@ -1,241 +1,55 @@
-#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 # Fetch layer repositories and update layer index database
 #
-# Copyright (C) 2013 Intel Corporation
+# Copyright (C) 2013 - 2015 Intel Corporation
 # Author: Paul Eggleton <paul.eggleton@linux.intel.com>
+# Contributor: Aníbal Limón <anibal.limon@linux.intel.com>
 #
 # Licensed under the MIT license, see COPYING.MIT for details
 
-
-import sys
-import os.path
-import optparse
-import logging
-from datetime import datetime
 import re
-import tempfile
-import shutil
+from datetime import datetime
+
 from distutils.version import LooseVersion
+
+import settings
+from django.db import transaction
+
 import utils
 import recipeparse
-
-import warnings
-warnings.filterwarnings("ignore", category=DeprecationWarning)
-
-logger = utils.logger_create('LayerIndexUpdate')
+from layerindex.models import LayerItem, LayerBranch, Recipe, \
+                RecipeFileDependency, Machine, BBAppend, BBClass
 
 # Ensure PythonGit is installed (buildhistory_analysis needs it)
 try:
     import git
+    if LooseVersion(git.__version__) < '0.3.1':
+        logger.error("Version of GitPython is too old, please install" \
+                    " GitPython (python-git) 0.3.1 or later in order to use this script")
+        sys.exit(1)
 except ImportError:
     logger.error("Please install PythonGit 0.3.1 or later in order to use this script")
     sys.exit(1)
 
+class LayerindexUpdater:
+    def __init__(self, _options, _fetchdir, _layerquery, _fetchedrepos,
+            _failedrepos, _logger):
+        global options
+        global fetchdir
+        global layerquery 
+        global fetchedrepos
+        global failedrepos
+        global logger
 
-def check_machine_conf(path, subdir_start):
-    subpath = path[len(subdir_start):]
-    res = conf_re.match(subpath)
-    if res:
-        return res.group(1)
-    return None
+        options = _options
+        fetchdir = _fetchdir
+        layerquery = _layerquery
+        fetchedrepos = _fetchedrepos
+        failedrepos = _failedrepos
+        logger = _logger
 
-def split_recipe_fn(path):
-    splitfn = os.path.basename(path).split('.bb')[0].split('_', 2)
-    pn = splitfn[0]
-    if len(splitfn) > 1:
-        pv = splitfn[1]
-    else:
-        pv = "1.0"
-    return (pn, pv)
-
-def update_recipe_file(data, path, recipe, layerdir_start, repodir):
-    fn = str(os.path.join(path, recipe.filename))
-    try:
-        logger.debug('Updating recipe %s' % fn)
-        envdata = bb.cache.Cache.loadDataFull(fn, [], data)
-        envdata.setVar('SRCPV', 'X')
-        recipe.pn = envdata.getVar("PN", True)
-        recipe.pv = envdata.getVar("PV", True)
-        recipe.summary = envdata.getVar("SUMMARY", True)
-        recipe.description = envdata.getVar("DESCRIPTION", True)
-        recipe.section = envdata.getVar("SECTION", True)
-        recipe.license = envdata.getVar("LICENSE", True)
-        recipe.homepage = envdata.getVar("HOMEPAGE", True)
-        recipe.bugtracker = envdata.getVar("BUGTRACKER", True) or ""
-        recipe.provides = envdata.getVar("PROVIDES", True) or ""
-        recipe.bbclassextend = envdata.getVar("BBCLASSEXTEND", True) or ""
-        recipe.save()
-
-        # Get file dependencies within this layer
-        deps = envdata.getVar('__depends', True)
-        filedeps = []
-        for depstr, date in deps:
-            found = False
-            if depstr.startswith(layerdir_start) and not depstr.endswith('/conf/layer.conf'):
-                filedeps.append(os.path.relpath(depstr, repodir))
-        from layerindex.models import RecipeFileDependency
-        RecipeFileDependency.objects.filter(recipe=recipe).delete()
-        for filedep in filedeps:
-            recipedep = RecipeFileDependency()
-            recipedep.layerbranch = recipe.layerbranch
-            recipedep.recipe = recipe
-            recipedep.path = filedep
-            recipedep.save()
-    except KeyboardInterrupt:
-        raise
-    except BaseException as e:
-        if not recipe.pn:
-            recipe.pn = recipe.filename[:-3].split('_')[0]
-        logger.error("Unable to read %s: %s", fn, str(e))
-
-def update_machine_conf_file(path, machine):
-    logger.debug('Updating machine %s' % path)
-    desc = ""
-    with open(path, 'r') as f:
-        for line in f:
-            if line.startswith('#@NAME:'):
-                desc = line[7:].strip()
-            if line.startswith('#@DESCRIPTION:'):
-                desc = line[14:].strip()
-                desc = re.sub(r'Machine configuration for( running)*( an)*( the)*', '', desc)
-                break
-    machine.description = desc
-
-def main():
-    if LooseVersion(git.__version__) < '0.3.1':
-        logger.error("Version of GitPython is too old, please install GitPython (python-git) 0.3.1 or later in order to use this script")
-        sys.exit(1)
-
-
-    parser = optparse.OptionParser(
-        usage = """
-    %prog [options]""")
-
-    parser.add_option("-b", "--branch",
-            help = "Specify branch to update",
-            action="store", dest="branch", default='master')
-    parser.add_option("-l", "--layer",
-            help = "Specify layers to update (use commas to separate multiple). Default is all published layers.",
-            action="store", dest="layers")
-    parser.add_option("-r", "--reload",
-            help = "Reload recipe data instead of updating since last update",
-            action="store_true", dest="reload")
-    parser.add_option("", "--fullreload",
-            help = "Discard existing recipe data and fetch it from scratch",
-            action="store_true", dest="fullreload")
-    parser.add_option("-n", "--dry-run",
-            help = "Don't write any data back to the database",
-            action="store_true", dest="dryrun")
-    parser.add_option("-x", "--nofetch",
-            help = "Don't fetch repositories",
-            action="store_true", dest="nofetch")
-    parser.add_option("", "--nocheckout",
-            help = "Don't check out branches",
-            action="store_true", dest="nocheckout")
-    parser.add_option("-d", "--debug",
-            help = "Enable debug output",
-            action="store_const", const=logging.DEBUG, dest="loglevel", default=logging.INFO)
-    parser.add_option("-q", "--quiet",
-            help = "Hide all output except error messages",
-            action="store_const", const=logging.ERROR, dest="loglevel")
-
-    options, args = parser.parse_args(sys.argv)
-    if len(args) > 1:
-        logger.error('unexpected argument "%s"' % args[1])
-        parser.print_help()
-        sys.exit(1)
-
-    if options.fullreload:
-        options.reload = True
-
-    utils.setup_django()
-    import settings
-    from layerindex.models import LayerItem, LayerBranch, Recipe, RecipeFileDependency, Machine, BBAppend, BBClass
-    from django.db import transaction
-
-    logger.setLevel(options.loglevel)
-
-    branch = utils.get_branch(options.branch)
-    if not branch:
-        logger.error("Specified branch %s is not valid" % options.branch)
-        sys.exit(1)
-
-    fetchdir = settings.LAYER_FETCH_DIR
-    if not fetchdir:
-        logger.error("Please set LAYER_FETCH_DIR in settings.py")
-        sys.exit(1)
-
-    if options.layers:
-        layerquery = LayerItem.objects.filter(classic=False).filter(name__in=options.layers.split(','))
-        if layerquery.count() == 0:
-            logger.error('No layers matching specified query "%s"' % options.layers)
-            sys.exit(1)
-    else:
-        layerquery = LayerItem.objects.filter(classic=False).filter(status='P')
-        if layerquery.count() == 0:
-            logger.info("No published layers to update")
-            sys.exit(1)
-
-    if not os.path.exists(fetchdir):
-        os.makedirs(fetchdir)
-    fetchedrepos = []
-    failedrepos = []
-
-    lockfn = os.path.join(fetchdir, "layerindex.lock")
-    lockfile = utils.lock_file(lockfn)
-    if not lockfile:
-        logger.error("Layer index lock timeout expired")
-        sys.exit(1)
-    try:
-        bitbakepath = os.path.join(fetchdir, 'bitbake')
-
-        if not options.nofetch:
-            # Fetch latest metadata from repositories
-            for layer in layerquery:
-                # Handle multiple layers in a single repo
-                urldir = layer.get_fetch_dir()
-                repodir = os.path.join(fetchdir, urldir)
-                if not (layer.vcs_url in fetchedrepos or layer.vcs_url in failedrepos):
-                    logger.info("Fetching remote repository %s" % layer.vcs_url)
-                    out = None
-                    try:
-                        if not os.path.exists(repodir):
-                            out = utils.runcmd("git clone %s %s" % (layer.vcs_url, urldir), fetchdir, logger=logger)
-                        else:
-                            out = utils.runcmd("git fetch", repodir, logger=logger)
-                    except Exception as e:
-                        logger.error("Fetch of layer %s failed: %s" % (layer.name, str(e)))
-                        failedrepos.append(layer.vcs_url)
-                        continue
-                    fetchedrepos.append(layer.vcs_url)
-
-            if not fetchedrepos:
-                logger.error("No repositories could be fetched, exiting")
-                sys.exit(1)
-
-            logger.info("Fetching bitbake from remote repository %s" % settings.BITBAKE_REPO_URL)
-            if not os.path.exists(bitbakepath):
-                out = utils.runcmd("git clone %s %s" % (settings.BITBAKE_REPO_URL, 'bitbake'), fetchdir, logger=logger)
-            else:
-                out = utils.runcmd("git fetch", bitbakepath, logger=logger)
-
-        try:
-            (tinfoil, tempdir) = recipeparse.init_parser(settings, branch, bitbakepath, nocheckout=options.nocheckout, logger=logger)
-        except recipeparse.RecipeParseError as e:
-            logger.error(str(e))
-            sys.exit(1)
-
-        # Clear the default value of SUMMARY so that we can use DESCRIPTION instead if it hasn't been set
-        tinfoil.config_data.setVar('SUMMARY', '')
-        # Clear the default value of DESCRIPTION so that we can see where it's not set
-        tinfoil.config_data.setVar('DESCRIPTION', '')
-        # Clear the default value of HOMEPAGE ('unknown')
-        tinfoil.config_data.setVar('HOMEPAGE', '')
-        # Set a blank value for LICENSE so that it doesn't cause the parser to die (e.g. with meta-ti -
-        # why won't they just fix that?!)
-        tinfoil.config_data.setVar('LICENSE', '')
-
+    def run(self, tinfoil):
         # Process and extract data from each layer
         for layer in layerquery:
             transaction.enter_transaction_management()
@@ -540,7 +354,7 @@ def main():
 
                     for added in layerrecipes_add:
                         # This is good enough without actually parsing the file
-                        (pn, pv) = split_recipe_fn(added)
+                        (pn, pv) = recipeparse.split_recipe_fn(added)
                         oldid = -1
                         for deleted in layerrecipes_delete:
                             if deleted['pn'] == pn:
@@ -593,12 +407,62 @@ def main():
             finally:
                 transaction.leave_transaction_management()
 
-    finally:
-        utils.unlock_file(lockfile)
+def check_machine_conf(path, subdir_start):
+    subpath = path[len(subdir_start):]
+    res = conf_re.match(subpath)
+    if res:
+        return res.group(1)
+    return None
 
-    shutil.rmtree(tempdir)
-    sys.exit(0)
+def update_recipe_file(data, path, recipe, layerdir_start, repodir):
+    fn = str(os.path.join(path, recipe.filename))
+    try:
+        logger.debug('Updating recipe %s' % fn)
+        envdata = bb.cache.Cache.loadDataFull(fn, [], data)
+        envdata.setVar('SRCPV', 'X')
+        recipe.pn = envdata.getVar("PN", True)
+        recipe.pv = envdata.getVar("PV", True)
+        recipe.summary = envdata.getVar("SUMMARY", True)
+        recipe.description = envdata.getVar("DESCRIPTION", True)
+        recipe.section = envdata.getVar("SECTION", True)
+        recipe.license = envdata.getVar("LICENSE", True)
+        recipe.homepage = envdata.getVar("HOMEPAGE", True)
+        recipe.bugtracker = envdata.getVar("BUGTRACKER", True) or ""
+        recipe.provides = envdata.getVar("PROVIDES", True) or ""
+        recipe.bbclassextend = envdata.getVar("BBCLASSEXTEND", True) or ""
+        recipe.save()
 
+        # Get file dependencies within this layer
+        deps = envdata.getVar('__depends', True)
+        filedeps = []
+        for depstr, date in deps:
+            found = False
+            if depstr.startswith(layerdir_start) and not depstr.endswith('/conf/layer.conf'):
+                filedeps.append(os.path.relpath(depstr, repodir))
+        from layerindex.models import RecipeFileDependency
+        RecipeFileDependency.objects.filter(recipe=recipe).delete()
+        for filedep in filedeps:
+            recipedep = RecipeFileDependency()
+            recipedep.layerbranch = recipe.layerbranch
+            recipedep.recipe = recipe
+            recipedep.path = filedep
+            recipedep.save()
+    except KeyboardInterrupt:
+        raise
+    except BaseException as e:
+        if not recipe.pn:
+            recipe.pn = recipe.filename[:-3].split('_')[0]
+        logger.error("Unable to read %s: %s", fn, str(e))
 
-if __name__ == "__main__":
-    main()
+def update_machine_conf_file(path, machine):
+    logger.debug('Updating machine %s' % path)
+    desc = ""
+    with open(path, 'r') as f:
+        for line in f:
+            if line.startswith('#@NAME:'):
+                desc = line[7:].strip()
+            if line.startswith('#@DESCRIPTION:'):
+                desc = line[14:].strip()
+                desc = re.sub(r'Machine configuration for( running)*( an)*( the)*', '', desc)
+                break
+    machine.description = desc

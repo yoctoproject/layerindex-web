@@ -177,3 +177,11 @@ def detect_file_type(path, subdir_start):
 
     return (None, None, None)
 
+def split_recipe_fn(path):
+    splitfn = os.path.basename(path).split('.bb')[0].split('_', 2)
+    pn = splitfn[0]
+    if len(splitfn) > 1:
+        pv = splitfn[1]
+    else:
+        pv = "1.0"
+    return (pn, pv)

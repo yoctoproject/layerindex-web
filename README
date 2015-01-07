@@ -113,7 +113,7 @@ Usage
 
 On a regular basis you need to run the update script:
 
-path/to/layerindex/update.py
+path/to/scripts/update.py
 
 This will fetch all of the layer repositories, analyse their contents
 and update the database with the results. Note that if you set up more

@@ -4,6 +4,10 @@
 #
 # Licensed under the MIT license, see COPYING.MIT for details
 
+import sys
+import os
+sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__), '../lib')))
+
 from django.shortcuts import get_object_or_404, render
 from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidden, Http404
 from django.core.urlresolvers import reverse, reverse_lazy, resolve
@@ -218,7 +222,8 @@ def bulk_change_patch_view(request, pk):
     # FIXME this couples the web server and machine running the update script together,
     # but given that it's a separate script the way is open to decouple them in future
     try:
-        ret = utils.runcmd('python bulkchange.py %d %s' % (int(pk), settings.TEMP_BASE_DIR), os.path.dirname(__file__))
+        bulkchange = os.path.join(BASE_DIR, 'scripts', 'bulkchange.py')
+        ret = utils.runcmd('python %s %d %s' % (bulkchange, int(pk), settings.TEMP_BASE_DIR), os.path.dirname(__file__))
         if ret:
             fn = ret.splitlines()[-1]
             if os.path.exists(fn):
