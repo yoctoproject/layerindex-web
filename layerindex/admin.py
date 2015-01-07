@@ -51,7 +51,7 @@ class LayerNoteAdmin(CompareVersionAdmin):
 class RecipeAdmin(admin.ModelAdmin):
     search_fields = ['filename', 'pn']
     list_filter = ['layerbranch__layer__name', 'layerbranch__branch__name']
-    readonly_fields = [fieldname for fieldname in Recipe._meta.get_all_field_names() if fieldname not in  ['recipefiledependency', 'classicrecipe']]
+    readonly_fields = ['bbclassextend', 'bugtracker', 'depends', 'description', 'filename', 'filepath', 'homepage', 'id', 'layerbranch', 'license', 'pn', 'provides', 'pv',  'section', 'src_uri', 'summary', 'updated']
     def has_add_permission(self, request, obj=None):
         return False
     def has_delete_permission(self, request, obj=None):
@@ -60,7 +60,7 @@ class RecipeAdmin(admin.ModelAdmin):
 class ClassicRecipeAdmin(admin.ModelAdmin):
     search_fields = ['filename', 'pn']
     list_filter = ['layerbranch__layer__name', 'layerbranch__branch__name']
-    readonly_fields = [fieldname for fieldname in Recipe._meta.get_all_field_names() if fieldname != 'recipefiledependency']
+    readonly_fields = ['bbclassextend', 'bugtracker', 'classic_category', 'cover_comment', 'cover_layerbranch', 'cover_pn', 'cover_status', 'cover_verified', 'depends', 'description', 'filename', 'filepath', 'homepage', 'id', 'layerbranch', 'license', 'pn', 'provides', 'pv', 'recipe_ptr', 'section', 'src_uri', 'summary', 'updated']
     def has_add_permission(self, request, obj=None):
         return False
     def has_delete_permission(self, request, obj=None):
