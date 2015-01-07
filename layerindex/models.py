@@ -242,6 +242,8 @@ class Recipe(models.Model):
     bugtracker = models.URLField(blank=True)
     provides = models.CharField(max_length=255, blank=True)
     bbclassextend = models.CharField(max_length=100, blank=True)
+    src_uri = models.CharField(max_length=255, blank=True)
+    depends = models.TextField(blank=True)
 
     updated = models.DateTimeField(auto_now = True)
 
