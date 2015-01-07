@@ -89,7 +89,11 @@ def init_parser(settings, branch, bitbakepath, enable_tracking=False, nocheckout
         # The directory above where this script exists should contain our conf/layer.conf,
         # so add it to BBPATH along with the core layer directory
         confparentdir = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
-        os.environ['BBPATH'] = str("%s:%s" % (confparentdir, core_layerdir))
+        if not 'BBPATH' in os.environ.keys():
+            os.environ['BBPATH'] = str("%s:%s" % (confparentdir, core_layerdir))
+        else:
+            os.environ['BBPATH'] = str("%s:%s:%s" % (confparentdir,
+                core_layerdir, os.environ['BBPATH']))
 
     # Change into a temporary directory so we don't write the cache and other files to the current dir
     if not os.path.exists(settings.TEMP_BASE_DIR):
