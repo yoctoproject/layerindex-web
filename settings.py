@@ -6,6 +6,8 @@
 DEBUG = False
 TEMPLATE_DEBUG = DEBUG
 
+APPLICATION = 'layerindex' # rrs or layerindex
+
 ADMINS = (
     # ('Your Name', 'your_email@example.com'),
 )
@@ -120,10 +122,18 @@ CORS_URLS_REGEX = r'.*/api/.*';
 X_FRAME_OPTIONS = 'DENY'
 
 from django.conf.global_settings import TEMPLATE_CONTEXT_PROCESSORS as TCP
-TEMPLATE_CONTEXT_PROCESSORS = TCP + (
-    'django.core.context_processors.request',
-    'layerindex.context_processors.layerindex_context',
-)
+if APPLICATION == 'layerindex':
+    TEMPLATE_CONTEXT_PROCESSORS = TCP + (
+        'django.core.context_processors.request',
+        'layerindex.context_processors.layerindex_context',
+    )
+elif APPLICATION == 'rrs':
+    TEMPLATE_CONTEXT_PROCESSORS = TCP + (
+        'django.core.context_processors.request',
+        'rrs.context_processors.rrs_context',
+    )
+else:
+    raise ValueError('Unknown APPLICATION should be layerindex or rrs')
 
 ROOT_URLCONF = 'urls'
 
@@ -146,6 +156,8 @@ INSTALLED_APPS = (
     # Uncomment the next line to enable admin documentation:
     # 'django.contrib.admindocs',
     'layerindex',
+    # Uncomment when APPLICATION is RRS
+    #'rrs',
     'registration',
     'reversion',
     'reversion_compare',
@@ -215,3 +227,10 @@ CORE_LAYER_NAME = "openembedded-core"
 # Settings for layer submission feature
 SUBMIT_EMAIL_FROM = 'noreply@example.com'
 SUBMIT_EMAIL_SUBJECT = 'OE Layerindex layer submission'
+
+# Settings for Recipe reporting system
+POKY_REPO_URL = "git://git.yoctoproject.org/poky"
+
+RRS_EMAIL_SUBJECT = '[Recipe reporting system] Upgradable recipe name list'
+RRS_EMAIL_FROM = 'recipe-report@yoctoproject.org'
+RRS_EMAIL_TO = 'list@example.com'
