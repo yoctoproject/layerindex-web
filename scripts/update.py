@@ -61,6 +61,25 @@ def main():
     parser.add_option("-q", "--quiet",
             help = "Hide all output except error messages",
             action="store_const", const=logging.ERROR, dest="loglevel")
+    if settings.APPLICATION == 'rrs':
+        parser.add_option("", "--only-layerindex",
+                help = "Only run layerindex update",
+                action="store_true", dest="only_layerindex")
+        parser.add_option("", "--recipe",
+                help = "Specify recipe to update",
+                action="store", dest="recipe")
+        parser.add_option("", "--recipe-maintainers",
+                help = "Only update recipe maintainers",
+                action="store_true", dest="recipe_maintainers")
+        parser.add_option("", "--recipe-distros",
+                help = "Only update recipe distros",
+                action="store_true", dest="recipe_distros")
+        parser.add_option("", "--recipe-upgrades",
+                help = "Only update recipe upgrades",
+                action="store_true", dest="recipe_upgrades")
+        parser.add_option("", "--recipe-upstream",
+                help = "Only update recipe upstream",
+                action="store_true", dest="recipe_upstream")
 
     options, args = parser.parse_args(sys.argv)
     if len(args) > 1:
@@ -92,12 +111,26 @@ def main():
         sys.exit(1)
 
     bitbakepath = update_repo(fetchdir, 'bitbake', settings.BITBAKE_REPO_URL, logger)
+    if settings.APPLICATION == 'rrs':
+       pokypath = update_repo(fetchdir, 'poky', settings.POKY_REPO_URL, logger)
+       # add path for use oe-core libraries
+       sys.path.insert(0, os.path.realpath(os.path.join(pokypath, 'meta', 'lib')))
+       # add support for load distro include files
+       os.environ['BBPATH'] = os.path.join(pokypath, 'meta-yocto')
+
     (layerquery, fetchedrepos, failedrepos) = update_layers(options, fetchdir, logger)
     (tinfoil, tempdir) = get_tinfoil(branch, bitbakepath, options, logger)
 
     layerindex_updater = LayerindexUpdater(options, fetchdir, layerquery, fetchedrepos,
             failedrepos, logger)
     layerindex_updater.run(tinfoil)
+
+    if settings.APPLICATION == 'rrs':
+        from rrs_update import RrsUpdater
+        rrs_updater = RrsUpdater(fetchdir, options, layerquery,
+                                    fetchedrepos, failedrepos, logger)
+        if not options.only_layerindex:
+            rrs_updater.run(tinfoil)
 
     shutil.rmtree(tempdir)
     utils.unlock_file(lockfile)
