@@ -1,0 +1,31 @@
+Recipe reporting system WEB interface
+=====================================
+
+Recipe reporting system is a small applcation that provides information
+about Recipes in Openembedded-core layer.
+
+Setup
+-----
+
+You need to follow the instructions in README with the following changes in
+Setup instructions,
+
+1. Edit settings.py,
+
+Set:
+
+	APPLICATION = 'rrs'
+	LOGIN_REDIRECT_URL = '/rrs'
+
+Configure RRS_EMAIL_TO used for sending Recipe upgrade name list report.
+
+4. To add openembedded-core layer you need to run:
+
+$ ./scripts/tools/import_layer.py  -s meta git://git.openembedded.org/openembedded-core openembedded-core
+
+7. Uncomment include files in conf/local.conf.
+
+8. In the first run should regenerate Recipe upgrade information,
+
+$ ./scripts/update.py --only-layerindex
+$ ./scripts/tools/rrs_upgrade_history.py # This can take a lot of time
