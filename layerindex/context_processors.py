@@ -4,6 +4,7 @@
 #
 # Licensed under the MIT license, see COPYING.MIT for details
 
+import settings
 from layerindex.models import Branch, LayerItem
 from django.contrib.sites.models import Site
 
@@ -17,5 +18,6 @@ def layerindex_context(request):
         'all_branches': Branch.objects.exclude(name='oe-classic').order_by('sort_priority'),
         'unpublished_count': LayerItem.objects.filter(status='N').count(),
         'oe_classic': Branch.objects.filter(name='oe-classic'),
-        'site_name': site_name
+        'site_name': site_name,
+        'application' : settings.APPLICATION
     }
