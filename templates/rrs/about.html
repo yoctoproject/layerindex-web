@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block content %}
+{% autoescape on %}
+<h2>About</h2>
+
+<p>The Recipe Reporting System is the main tool for tracking the recipe versions 
+available for 
+<a href="https://www.yoctoproject.org">Yocto Project</a>. Its main 
+purpose is to help developers manage the recipes they maintain and to 
+offer a dynamic overview of the project. It is build on top the
+of <a href="http://layers.openembedded.org">OpenEmbedded Metadata Index</a>, 
+a website that indexes layers for the <a href="http://openembedded.org">
+OpenEmbedded</a> build system.</p> 	
+
+<h3>Technologies</h3>
+<p>The Recipe Reporting System uses the following technologies and components:</p>
+<ul>
+	<li><a href="http://www.python.org/">Python</a></li>
+	<li><a href="http://www.djangoproject.com/">Django</a> as well as the following Django modules:
+		<ul>
+			<li><a href="http://bitbucket.org/ubernostrum/django-registration/">django-registration</a></li>
+			<li><a href="http://github.com/etianen/django-reversion">django-reversion</a></li>
+			<li><a href="http://pypi.python.org/pypi/django-reversion-compare/">django-reversion-compare</a></li>
+			<li><a href="http://github.com/mbi/django-simple-captcha">django-simple-captcha</a></li>
+			<li><a href="http://github.com/areski/django-nvd3">django-nvd3</a></li>
+		</ul>
+	</li>
+	<li><a href="http://twitter.github.com/bootstrap/">Twitter Bootstrap</a></li>
+	<li><a href="http://glyphicons.com/">Glyphicons</a> (via Bootstrap)</li>
+	<li><a href="http://jquery.com/">jQuery</a> (via Bootstrap)</li>
+	<li><a href="http://nvd3.org/">NVD3</a></li>
+	<li><a href="http://www.openembedded.org/wiki/BitBake_%28user%29">BitBake</a></li>
+</ul>
+
+<h3>Credits</h3>
+
+<p>The Recipe Reporting System is maintained by the <a href="http://www.yoctoproject.org">Yocto Project</a>.</p>
+<p>Some of the contributors are:</p>
+<ul>
+	<li>Marius Avram</li>
+	<li>Saul Wold</li>
+	<li>Aníbal Limón</li>
+	<li>Belen Barros Pena</li>
+	<li>Michael Halstead</li>
+</ul>
+
+<p>Special mention is due to Paul Eggleton, who is the author of the 
+<a href="http://layers.openembedded.org">OpenEmbedded Metadata Index</a>,
+on which the Recipe Reporting System is based.</p> 		
+
+<p>The code is Open Source and can be found on <a href="http://git.yoctoproject.org/cgit/cgit.cgi/layerindex-web/">git.yoctoproject.org</a>. Patches welcome!</p>
+
+{% endautoescape %}
+{% endblock %}
+
+{% block footer %}
+{% endblock %}

@@ -59,6 +59,7 @@
                     <li class="divider-vertical"></li>
                 </ul>
                 {% block topfunctions %}
+                {% if application == 'layerindex' %}
                 <div class="pull-right nav-spacer">
                     <a class="btn btn-info" href="{% url submit_layer %}">Submit layer</a>
                 </div>
@@ -76,6 +77,7 @@
                     </li>
                     {% endif %}
                 </ul>
+                {% endif %}
                 {% endblock %}
             </div> <!-- end of "container" -->
         </div> <!--  "end of "navbar-inner" -->
@@ -96,11 +98,14 @@
         {% block footer %}
         <hr />
         <div class="footer">
+            {% if application == 'layerindex' %}
             <a href="{% url history_list %}">change history</a>
             &bull; <a href="{% url about %}">about this site</a>
             &bull; <a href="http://www.openembedded.org/Layers_FAQ">FAQ</a>
+            {% else %}
+            <a href="{% url about %}">about this site</a>
+            {% endif %}
         </div>
-
         {% endblock %}
     </div>
 
