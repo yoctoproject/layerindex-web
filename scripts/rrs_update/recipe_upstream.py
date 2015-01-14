@@ -34,6 +34,8 @@ def create_recipe_upstream(recipe, recipe_result, logger):
             create = True
         elif recipe_result['status'] != recipe_upstream_db.status:
             create = True
+        elif recipe_result['no_update_reason'] != recipe_upstream_db.no_update_reason:
+            create = True
     except Exception as e:
         create = True
 
