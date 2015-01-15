@@ -112,17 +112,23 @@ class RrsUpdater:
                     recipe.delete()
                     self._logger.debug('_remove_native_recipes: %s delete' % (recipe.pn))
     
-    def _remove_older_recipes(self, cmp_recipe):
-        pname = cmp_recipe.pn
-        pversion = cmp_recipe.pv
-        recipes = Recipe.objects.filter(pn__iexact = pname).filter(pv__lt = pversion)
-        if recipes.count():
-            # Remove git recipes with no versioning if tarballs exist
-            if pversion == 'git':
-                Recipe.objects.filter(pn__exact = pname).filter(pv__exact =
-                        pversion).delete()
-            else:
-                recipes.delete()
+    def _remove_older_recipes(self, recipe):
+        # get recipes with the same pn
+        recipes = Recipe.objects.filter(pn__iexact = recipe.pn)
+
+        if recipes.count() == 1:
+            return
+
+        if 'git' in recipe.pv:
+            recipe.delete()
+        else:
+            # remove recipes that have minor version
+            for r in recipes:
+                if r.id == recipe.id:
+                    continue
+
+                if bb.utils.vercmp_string(r.pv, recipe.pv) == -1:
+                    r.delete()
 
     """
         Get configuration data required by tinfoil for poky layer.
