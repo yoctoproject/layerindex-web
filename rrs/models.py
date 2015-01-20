@@ -68,6 +68,32 @@ class RecipeMaintainer(models.Model):
         return "%s: %s <%s>" % (self.recipe.pn, self.maintainer.name,
                                 self.maintainer.email)
 
+class RecipeUpstreamHistory(models.Model):
+    start_date = models.DateTimeField()
+    end_date = models.DateTimeField()
+
+    @staticmethod
+    def get_last_by_date_range(start, end):
+        history = RecipeUpstreamHistory.objects.filter(start_date__gte = start, 
+                start_date__lte = end).order_by('-id')
+
+        if history:
+            return history[0]
+        else:
+            return None
+
+    @staticmethod
+    def get_last():
+        history = RecipeUpstreamHistory.objects.filter().order_by('-id')
+
+        if history:
+            return history[0]
+        else:
+            return None
+
+    def __unicode__(self):
+        return '%s: %s' % (self.id, self.start_date)
+
 class RecipeUpstream(models.Model):
     RECIPE_UPSTREAM_STATUS_CHOICES = (
         ('N', 'Not updated'),
@@ -82,6 +108,7 @@ class RecipeUpstream(models.Model):
     )
 
     recipe = models.ForeignKey(Recipe)
+    history = models.ForeignKey(RecipeUpstreamHistory, null=True)
     version = models.CharField(max_length=100, blank=True)
     type = models.CharField(max_length=1, choices=RECIPE_UPSTREAM_TYPE_CHOICES, blank=True)
     status =  models.CharField(max_length=1, choices=RECIPE_UPSTREAM_STATUS_CHOICES, blank=True)

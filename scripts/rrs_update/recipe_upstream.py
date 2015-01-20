@@ -2,9 +2,10 @@
 import re
 import threading
 from multiprocessing import cpu_count
+from datetime import datetime
 
 from django.db import transaction
-from rrs.models import RecipeUpstream
+from rrs.models import RecipeUpstream, RecipeUpstreamHistory
 
 git_regex = re.compile("(?P<gprefix>(v|))(?P<gver>((\d+[\.\-_]*)+))(?P<gmiddle>(\+|)(git|)(r|)(AUTOINC|)(\+|))(?P<ghash>.*)")
 
@@ -13,42 +14,32 @@ git_regex = re.compile("(?P<gprefix>(v|))(?P<gver>((\d+[\.\-_]*)+))(?P<gmiddle>(
     Adds information only when the version changes.
 """
 def update_recipe_upstream(envdata, logger):
+    history = RecipeUpstreamHistory(start_date = datetime.now())
+
     result = get_upstream_info(envdata, logger)
+
+    history.end_date = datetime.now()
+    history.save()
 
     transaction.enter_transaction_management()
     transaction.managed(True)
 
     for recipe, recipe_result in result.iteritems():
-        create_recipe_upstream(recipe, recipe_result, logger)
+        create_recipe_upstream(recipe, recipe_result, history, logger)
 
     transaction.commit()
     transaction.leave_transaction_management()
 
-def create_recipe_upstream(recipe, recipe_result, logger):
-    create = False
-
-    try:
-        recipe_upstream_db = RecipeUpstream.objects.filter(recipe = recipe).order_by("-date")[0]
-
-        if recipe_result['version'] != recipe_upstream_db.version:
-            create = True
-        elif recipe_result['status'] != recipe_upstream_db.status:
-            create = True
-        elif recipe_result['no_update_reason'] != recipe_upstream_db.no_update_reason:
-            create = True
-    except Exception as e:
-        create = True
-
-    if create:
-        recipe_upstream = RecipeUpstream()
-        recipe_upstream.recipe = recipe
-        recipe_upstream.version = recipe_result['version']
-        recipe_upstream.type = recipe_result['type']
-        recipe_upstream.status = recipe_result['status']
-        recipe_upstream.no_update_reason = recipe_result['no_update_reason']
-        recipe_upstream.date = recipe_result['date']
-        recipe_upstream.save()
-        logger.debug("Add report for recipe %s" % recipe.pn)
+def create_recipe_upstream(recipe, recipe_result, history, logger):
+    recipe_upstream = RecipeUpstream()
+    recipe_upstream.recipe = recipe
+    recipe_upstream.history = history
+    recipe_upstream.version = recipe_result['version']
+    recipe_upstream.type = recipe_result['type']
+    recipe_upstream.status = recipe_result['status']
+    recipe_upstream.no_update_reason = recipe_result['no_update_reason']
+    recipe_upstream.date = recipe_result['date']
+    recipe_upstream.save()
 
 """
     Get upstream info for all Recipes.
