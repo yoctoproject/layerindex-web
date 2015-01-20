@@ -8,7 +8,7 @@ from django.contrib import admin
 from django.contrib.admin import DateFieldListFilter
 
 from rrs.models import Milestone, Maintainer, RecipeMaintainer, RecipeDistro, \
-        RecipeUpgrade, RecipeUpstream
+        RecipeUpgrade, RecipeUpstream, RecipeUpstreamHistory
 
 class MilestoneAdmin(admin.ModelAdmin):
     search_fields = ['name']
@@ -34,10 +34,17 @@ class RecipeUpgradeAdmin(admin.ModelAdmin):
             ('commit_date', DateFieldListFilter), 'maintainer__name']
     model = RecipeUpgrade
 
+class RecipeUpstreamHistoryAdmin(admin.ModelAdmin):
+    list_filter = [
+            ('start_date', DateFieldListFilter),
+            ('end_date', DateFieldListFilter)
+    ]
+    model = RecipeUpstreamHistory
+
 class RecipeUpstreamAdmin(admin.ModelAdmin):
     search_fields = ['recipe__pn']
     list_filter = ['recipe__layerbranch__layer__name', 'status',
-            'type', ('date', DateFieldListFilter)]
+            'type', ('date', DateFieldListFilter), 'history']
     model = RecipeUpstream
 
 admin.site.register(Milestone, MilestoneAdmin)
@@ -45,4 +52,5 @@ admin.site.register(Maintainer, MaintainerAdmin)
 admin.site.register(RecipeMaintainer, RecipeMaintainerAdmin)
 admin.site.register(RecipeDistro, RecipeDistroAdmin)
 admin.site.register(RecipeUpgrade, RecipeUpgradeAdmin)
+admin.site.register(RecipeUpstreamHistory, RecipeUpstreamHistoryAdmin)
 admin.site.register(RecipeUpstream, RecipeUpstreamAdmin)
