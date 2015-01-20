@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% load url from future %}
+
+{% comment %}
+
+  rrs-web - top level page template
+
+  Copyright (C) 2015 Intel Corporation
+  Licensed under the MIT license, see COPYING.MIT for details
+
+{% endcomment %}
+
+{% block content %}
+
+    <div class="container-fluid">
+        <div class="row-fluid">
+
+            <div class="navbar">
+                <div class="navbar-inner">
+                    <ul class="nav">
+                        {% block milestone_selector %}
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                            Milestone: <b>{{ milestone_name }}</b>
+                            <b class="caret"></b>
+                            </a>
+                            <ul class="dropdown-menu">
+                                {% for m in all_milestones %}
+                                    <li><a href="{% url this_url_name m.name %}{{ extra_url_param }}">
+                                        {% if m.name = milestone_name %}<b>{% endif %}
+                                        {{ m.name }}
+                                        {% if m.name = milestone_name %}</b>{% endif %}
+                                    </a></li>
+                                {% endfor %}
+                            </ul>
+                        </li>
+                        {% endblock %}
+                    </ul>
+
+                    <ul class="nav">
+                        {% block navs %}{% endblock %}
+                    </ul>
+                </div>
+            </div>
+
+            {% block content_inner %}{% endblock %}
+
+        </div>
+    </div>
+
+{% endblock %}
