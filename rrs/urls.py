@@ -6,9 +6,16 @@ from django.conf.urls import patterns, url
 
 from layerindex.views import EditProfileFormView
 
+from rrs.models import Milestone
+from rrs.views import RecipeListView
+
 urlpatterns = patterns('',
-    url(r'^$', redirect_to, {'url' : reverse_lazy('about', args=())},
+    url(r'^$', redirect_to, {'url' : reverse_lazy('recipes', args=(Milestone.get_current().name,))},
         name='frontpage'),
+    url(r'^recipes/(?P<milestone_name>.*)/$',
+        RecipeListView.as_view(
+            template_name='rrs/recipes.html'),
+        name='recipes'),
     url(r'^profile/$',
         EditProfileFormView.as_view(
         template_name='layerindex/profile.html'),
