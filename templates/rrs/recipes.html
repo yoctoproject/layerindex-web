@@ -1,5 +1,6 @@
 {% extends "rrs/base_toplevel.html" %}
 {% load i18n %}
+{% load staticfiles %}
 
 {% load url from future %}
 
@@ -16,4 +17,88 @@
 {% endblock %}
 
 {% block content_inner %}
+<div class="navbar navbar-table-controls">
+    <div class="navbar-inner table-controls">
+        <ul class="nav">
+            <li class="dropdown">
+                <span class="badge">{{ recipe_list_count }} recipes</span>
+            </li>
+            <li class="dropdown">
+                <a data-toggle="dropdown" href="#" class="dropdown-toggle" id="selected-status">
+                    Upstream status: <strong>{{ upstream_status }}</strong>
+                    <b class="caret"></b>
+                </a>
+                <ul class="dropdown-menu" id="select-status">
+                    {% for us in all_upstream_status %}
+                    {% if us = upstream_status %}
+                    <li class="active">
+                    <a href="#">
+                    {% else %}
+                    <li>
+                    <a href="{% url this_url_name milestone_name %}?upstream_status={{ us|urlencode }}&maintainer_name={{ maintainer_name|urlencode }}">
+                    {% endif %}
+
+                    {{ us }}
+                    </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </li>
+            <li><p>and</p></li>
+            <li class="dropdown">
+                <a data-toggle="dropdown" href="#" class="dropdown-toggle" id="select-maintainer">
+                    Maintainer: <strong>{{ maintainer_name }}</strong>
+                    <b class="caret"></b>
+                </a>
+                <ul class="dropdown-menu" id="selected-maintainer">
+                    {% for m in all_maintainers %}
+                    {% if m = maintainer_name %}
+                    <li class="active">
+                    <a href="#">
+                    {% else %}
+                    <li>
+                    <a href="{% url this_url_name milestone_name %}?upstream_status={{ upstream_status|urlencode }}&maintainer_name={{ m|urlencode }}">
+                    {% endif %}
+
+                    {{ m }}</a>
+
+                    </li>
+                    {% endfor %}
+                </ul>
+            </li>
+        </ul>
+
+        <form class="navbar-form pull-right">
+            <input type="text" class="input-xxlarge" placeholder="Search all recipes" id="filter"/>                
+        </form>
+    </div>
+</div>
+
+<table class="table table-bordered statustable tablesorter table-hover">
+<thead>
+    <tr>
+        <th class="recipe_column"><a href="#">Recipe</a></th>
+        <th class="version_column muted">Version</th>
+        <th class="upstream_status_column"><b class="caret"></b>Upstream status</th>
+        <th class="upstream_version_column muted">Upstream version</th>
+        <th class="maintainer_column"><b class="caret"></b>Maintainer</th>
+        <th class="summary_column muted span5">Summary</th>
+    </tr>
+    </thead>
+<tbody>
+{% for r in recipe_list %}
+<tr>
+    <td>{{ r.name }}</td>
+    <td>{{ r.version }}</td>
+    <td>{{ r.upstream_status }}</td>
+    <td>{{ r.upstream_version }}</td>
+    <td>{{ r.maintainer_name }}</td>
+    <td>{{ r.summary }}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+
+<script src="{% static "js/uitablefilter.js" %}"></script>
+<script src="{% static "js/jquery.tablesorter.js" %}"></script>
 {% endblock %}
