@@ -1,12 +1,25 @@
 import urllib
 
+from django.http import Http404
 from django.shortcuts import get_object_or_404
-from django.views.generic import ListView
+from django.views.generic import ListView, DetailView
 from django.core.urlresolvers import resolve
 
 from layerindex.models import Recipe
 from rrs.models import Milestone, Maintainer, RecipeMaintainer, RecipeUpstream, \
         RecipeUpstreamHistory
+
+def _check_url_params(upstream_status, maintainer_name):
+    get_object_or_404(Maintainer, name=maintainer_name)
+
+    found = 0
+    for us in RecipeUpstream.RECIPE_UPSTREAM_STATUS_CHOICES_DICT.keys():
+        if RecipeUpstream.RECIPE_UPSTREAM_STATUS_CHOICES_DICT[us] == upstream_status:
+            found = 1
+            break
+
+    if found == 0:
+        raise Http404
 
 class RecipeList():
     name = None
@@ -41,6 +54,8 @@ class RecipeListView(ListView):
             self.maintainer_name = self.request.GET['maintainer_name']
         else:
             self.maintainer_name = 'All'
+
+        _check_url_params(self.upstream_status, self.maintainer_name)
 
         recipe_upstream_history = RecipeUpstreamHistory.get_last_by_date_range(
             milestone.start_date,
@@ -107,7 +122,7 @@ class RecipeListView(ListView):
         context['recipe_list_count'] = self.recipe_list_count
 
         context['upstream_status'] = self.upstream_status
-        all_upstream_status = ['All']
+        all_upstream_status = []
         for us in RecipeUpstream.RECIPE_UPSTREAM_STATUS_CHOICES:
             all_upstream_status.append(us[1])
         context['all_upstream_status'] = all_upstream_status

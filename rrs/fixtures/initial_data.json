@@ -9,6 +9,15 @@
     },
 
     {
+        "pk": 1,
+        "model": "rrs.maintainer",
+        "fields": {
+            "name": "All",
+            "email": ""
+        }
+    },
+
+    {
         "pk": 1, 
         "model": "rrs.milestone", 
         "fields": {

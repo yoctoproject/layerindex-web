@@ -101,6 +101,7 @@ class RecipeUpstreamHistory(models.Model):
 
 class RecipeUpstream(models.Model):
     RECIPE_UPSTREAM_STATUS_CHOICES = (
+        ('A', 'All'),
         ('N', 'Not updated'),
         ('Y', 'Up-to-date'),
         ('D', 'Downgrade'),
