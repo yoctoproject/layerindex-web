@@ -64,6 +64,11 @@ class RecipeMaintainer(models.Model):
     recipe = models.ForeignKey(Recipe)
     maintainer =  models.ForeignKey(Maintainer)
 
+    @staticmethod
+    def get_maintainer_by_recipe(recipe):
+        recipe_maintainer = RecipeMaintainer.objects.filter(recipe = recipe)[0]
+        return recipe_maintainer.maintainer
+
     def __unicode__(self):
         return "%s: %s <%s>" % (self.recipe.pn, self.maintainer.name,
                                 self.maintainer.email)
@@ -101,11 +106,13 @@ class RecipeUpstream(models.Model):
         ('D', 'Downgrade'),
         ('U', 'Unknown'),
     )
+    RECIPE_UPSTREAM_STATUS_CHOICES_DICT = dict(RECIPE_UPSTREAM_STATUS_CHOICES)
 
     RECIPE_UPSTREAM_TYPE_CHOICES = (
         ('A', 'Automatic'),
         ('M', 'Manual'),
     )
+    RECIPE_UPSTREAM_TYPE_CHOICES_DICT = dict(RECIPE_UPSTREAM_TYPE_CHOICES)
 
     recipe = models.ForeignKey(Recipe)
     history = models.ForeignKey(RecipeUpstreamHistory, null=True)
@@ -114,6 +121,12 @@ class RecipeUpstream(models.Model):
     status =  models.CharField(max_length=1, choices=RECIPE_UPSTREAM_STATUS_CHOICES, blank=True)
     no_update_reason = models.CharField(max_length=255, blank=True)
     date = models.DateTimeField()
+
+
+    @staticmethod
+    def get_by_recipe_and_history(recipe, history):
+        ru = RecipeUpstream.objects.filter(recipe = recipe, history = history)
+        return ru[0] if ru else None
 
     def needs_upgrade(self):
         if self.status == 'N':

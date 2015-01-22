@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load i18n %}
+{% load staticfiles %}
 
 {% load url from future %}
 
@@ -13,9 +14,7 @@
 {% endcomment %}
 
 {% block content %}
-
-    <div class="container-fluid">
-        <div class="row-fluid">
+<link rel="stylesheet" href="{% static "css/rrs-additional.css" %}" />
 
             <div class="navbar">
                 <div class="navbar-inner">
@@ -37,6 +36,14 @@
                             </ul>
                         </li>
                         {% endblock %}
+                        <li class="divider-vertical"></li>
+                        <li class="lead" id="percentage"><strong>{{ recipes_percentage }}%</strong> done</li>
+                        <li class="divider-vertical"></li>
+                        <li class="lead" id="up-to-date-recipes">Recipes up-to-date: <strong class="text-success">{{ recipes_up_to_date }}</strong></li>
+                        <li class="divider-vertical"></li>
+                        <li class="lead" id="not-updated-recipes">Recipes not updated: <strong class="text-error">{{ recipes_not_updated }}</strong></li>
+                        <li class="divider-vertical"></li>
+                        <li class="lead" id="unknown-recipes">Unknown: <strong class="text-warning">{{ recipes_unknown }}</strong></li>
                     </ul>
 
                     <ul class="nav">
@@ -45,9 +52,25 @@
                 </div>
             </div>
 
+            {% block content_top %}
+            <ul class="nav nav-pills">
+                {% if this_url_name == 'recipes' %}
+                <li class="active">
+		{% else %}
+                <li>
+		{% endif %}
+                <a href="{% url this_url_name milestone_name %}{{ extra_url_param }}">Recipes status</a>
+                </li>
+
+                {% if this_url_name == 'maintainers' %}
+                <li class="active">
+		{% else %}
+                <li>
+		{% endif %}
+                <a href="#">Maintainer statistics</a>
+                </li>
+            </ul>
+            {% endblock %}
+
             {% block content_inner %}{% endblock %}
-
-        </div>
-    </div>
-
 {% endblock %}
