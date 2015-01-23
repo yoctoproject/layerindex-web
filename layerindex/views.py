@@ -613,7 +613,7 @@ class EditProfileFormView(UpdateView):
 
 @receiver(reversion.pre_revision_commit)
 def annotate_revision(sender, **kwargs):
-    ignorefields = ['vcs_last_rev', 'vcs_last_fetch', 'vcs_last_commit']
+    ignorefields = ['vcs_last_rev', 'vcs_last_fetch', 'vcs_last_commit', 'updated']
     versions = kwargs.pop('versions')
     instances = kwargs.pop('instances')
     changelist = []
