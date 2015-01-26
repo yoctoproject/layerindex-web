@@ -110,9 +110,11 @@ def main():
         logger.error("Layer index lock timeout expired")
         sys.exit(1)
 
-    bitbakepath = update_repo(fetchdir, 'bitbake', settings.BITBAKE_REPO_URL, logger)
+    bitbakepath = update_repo(fetchdir, 'bitbake', settings.BITBAKE_REPO_URL,
+            False, logger)
     if settings.APPLICATION == 'rrs':
-       pokypath = update_repo(fetchdir, 'poky', settings.POKY_REPO_URL, logger)
+       pokypath = update_repo(fetchdir, 'poky', settings.POKY_REPO_URL,
+               True, logger)
        # add path for use oe-core libraries
        sys.path.insert(0, os.path.realpath(os.path.join(pokypath, 'meta', 'lib')))
        # add support for load distro include files
@@ -135,7 +137,7 @@ def main():
     shutil.rmtree(tempdir)
     utils.unlock_file(lockfile)
 
-def update_repo(fetchdir, repo_name, repo_url, logger):
+def update_repo(fetchdir, repo_name, repo_url, pull, logger):
     path = os.path.join(fetchdir, repo_name)
 
     logger.info("Fetching %s from remote repository %s"
@@ -145,7 +147,10 @@ def update_repo(fetchdir, repo_name, repo_url, logger):
                 (repo_url, repo_name), fetchdir,
                 logger = logger)
     else:
-        out = utils.runcmd("git fetch", path, logger = logger)
+        if pull == True:
+            out = utils.runcmd("git pull", path, logger = logger)
+        else:
+            out = utils.runcmd("git fetch", path, logger = logger)
 
     return path
 
