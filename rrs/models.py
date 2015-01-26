@@ -23,14 +23,19 @@ class Milestone(models.Model):
     @staticmethod
     def get_current():
         current = date.today()
+        current_milestone = Milestone.get_by_date(current)
+        return current_milestone or Milestone.objects.filter().order_by('-id')[0]
 
-        milestone_set = Milestone.objects.filter(start_date__lte = current, 
-                end_date__gte = current).order_by('-id')
+    """ Get milestone by date """
+    @staticmethod
+    def get_by_date(date):
+        milestone_set = Milestone.objects.filter(start_date__lte = date, 
+                end_date__gte = date).order_by('-id')
 
         if milestone_set:
             return milestone_set[0]
         else:
-            return Milestone.objects.filter().order_by('-id')[0]
+            return None
 
     """ Get month intervals between the start and the end of the milestone """ 
     def get_intervals(self):
@@ -146,6 +151,17 @@ class RecipeDistro(models.Model):
 
     def __unicode__(self):
         return '%s: %s' % (self.recipe.pn, self.distro)
+
+    @staticmethod
+    def get_distros_by_recipe(recipe):
+        recipe_distros = []
+
+        query = RecipeDistro.objects.filter(recipe = recipe).order_by('distro')
+        for q in query:
+            recipe_distros.append(q.distro)
+
+        return recipe_distros
+
 
 class RecipeUpgrade(models.Model):
     recipe = models.ForeignKey(Recipe)
