@@ -7,7 +7,7 @@ from django.core.urlresolvers import resolve
 
 from layerindex.models import Recipe
 from rrs.models import Milestone, Maintainer, RecipeMaintainer, RecipeUpstream, \
-        RecipeUpstreamHistory
+        RecipeUpstreamHistory, RecipeDistro, RecipeUpgrade
 
 def _check_url_params(upstream_status, maintainer_name):
     get_object_or_404(Maintainer, name=maintainer_name)
@@ -21,7 +21,12 @@ def _check_url_params(upstream_status, maintainer_name):
     if found == 0:
         raise Http404
 
+def _get_layer_branch_url(branch, layer_name):
+    return ("http://layers.openembedded.org/layerindex/branch/%s/layer/%s/"\
+                % (branch, layer_name))
+
 class RecipeList():
+    pk = None
     name = None
     version = None
     summary = None
@@ -29,8 +34,9 @@ class RecipeList():
     upstream_version = None
     maintainer_name = None
 
-    def __init__(self, name, version, summary, upstream_status,
+    def __init__(self, pk, name, version, summary, upstream_status,
             upstream_version, maintainer_name):
+        self.pk = pk
         self.name = name
         self.version = version
         self.summary = summary
@@ -98,7 +104,7 @@ class RecipeListView(ListView):
                 if self.maintainer_name != 'All' and self.maintainer_name != maintainer.name:
                     continue
 
-                recipe_list_item = RecipeList(recipe.pn, recipe.pv, recipe.summary,
+                recipe_list_item = RecipeList(recipe.id, recipe.pn, recipe.pv, recipe.summary,
                         recipe_upstream_status, recipe_upstream.version, maintainer.name)
                 recipe_list.append(recipe_list_item)
 
@@ -139,5 +145,96 @@ class RecipeListView(ListView):
             'maintainer_name': self.maintainer_name.encode('utf8')
         })
         context['extra_url_param'] = extra_url_param
+
+        return context
+
+class RecipeUpgradeDetail():
+    title = None
+    version = None
+    milestone_name = None
+    date = None
+    maintainer_name = None
+    is_recipe_maintainer = None
+    commit = None
+    commit_url = None
+
+    def __init__(self, title, version, milestone_name, date, 
+            maintainer_name, is_recipe_maintainer, commit, commit_url):
+        self.title = title
+        self.version = version
+        self.milestone_name = milestone_name
+        self.date = date
+        self.maintainer_name = maintainer_name
+        self.is_recipe_maintainer = is_recipe_maintainer
+        self.commit = commit
+        self.commit_url = commit_url
+
+def _get_recipe_upgrade_detail(recipe_upgrade):
+    milestone_name = Milestone.get_by_date(recipe_upgrade.commit_date)
+    if milestone_name is None:
+        milestone_name = ''
+
+    is_recipe_maintainer = False
+    maintainer_name = ''
+    if not recipe_upgrade.maintainer is None:
+        maintainer_name = recipe_upgrade.maintainer.name
+        if RecipeMaintainer.objects.filter(maintainer__name
+                = maintainer_name).count() > 0:
+            is_recipe_maintainer = True
+
+    commit = recipe_upgrade.sha1[:10]
+    commit_url = recipe_upgrade.recipe.layerbranch.layer.vcs_web_url + \
+        '/commit/?id=' + recipe_upgrade.sha1
+
+    rud = RecipeUpgradeDetail(recipe_upgrade.title, recipe_upgrade.version, \
+            milestone_name, recipe_upgrade.commit_date, maintainer_name, \
+            is_recipe_maintainer, commit, commit_url)
+
+    return rud
+
+class RecipeDetailView(DetailView):
+    model = Recipe
+
+    def get_context_data(self, **kwargs):
+        context = super(RecipeDetailView, self).get_context_data(**kwargs)
+        recipe = self.get_object()
+
+        milestone = Milestone.get_current()
+        context['milestone_name'] = milestone.name
+
+        recipe_upstream_history = RecipeUpstreamHistory.get_last_by_date_range(
+            milestone.start_date,
+            milestone.end_date
+        )
+        recipe_upstream = RecipeUpstream.get_by_recipe_and_history(
+            recipe, recipe_upstream_history)
+        context['upstream_status'] = \
+            RecipeUpstream.RECIPE_UPSTREAM_STATUS_CHOICES_DICT[recipe_upstream.status]
+        context['upstream_version'] = recipe_upstream.version
+        context['upstream_no_update_reason'] = recipe_upstream.no_update_reason
+
+        recipe_maintainer = RecipeMaintainer.objects.filter(recipe = recipe)[0]
+        maintainer = recipe_maintainer.maintainer
+
+        context['maintainer_name'] = maintainer.name
+
+        context['recipe_upgrade_details'] = []
+        for ru in RecipeUpgrade.objects.filter(recipe =
+                recipe).order_by('-commit_date'): 
+            context['recipe_upgrade_details'].append(_get_recipe_upgrade_detail(ru))
+        context['recipe_upgrade_detail_count'] = len(context['recipe_upgrade_details'])
+
+        context['recipe_layer_branch_url'] = _get_layer_branch_url(
+                recipe.layerbranch.branch.name, recipe.layerbranch.layer.name)
+
+        context['recipe_provides'] = []
+        for p in recipe.provides.split():
+            context['recipe_provides'].append(p)
+
+        context['recipe_depends'] = []
+        for d in recipe.depends.split():
+            context['recipe_depends'].append(d)
+
+        context['recipe_distros'] = RecipeDistro.get_distros_by_recipe(recipe)
 
         return context

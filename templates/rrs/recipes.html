@@ -77,7 +77,7 @@
 <table class="table table-bordered statustable tablesorter table-hover">
 <thead>
     <tr>
-        <th class="recipe_column"><a href="#">Recipe</a></th>
+        <th class="recipe_column">Recipe</th>
         <th class="version_column muted">Version</th>
         <th class="upstream_status_column"><b class="caret"></b>Upstream status</th>
         <th class="upstream_version_column muted">Upstream version</th>
@@ -88,7 +88,7 @@
 <tbody>
 {% for r in recipe_list %}
 <tr>
-    <td>{{ r.name }}</td>
+    <td><a href="{% url "recipedetail" r.pk %}">{{ r.name }}</a></td>
     <td>{{ r.version }}</td>
     <td>{{ r.upstream_status }}</td>
     <td>{{ r.upstream_version }}</td>
