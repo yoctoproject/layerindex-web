@@ -1,10 +1,16 @@
+.recipe_column {
+    max-width: 150px;
+    word-wrap: break-word;
+}
+
 .version_column {
     max-width: 150px;
     word-wrap: break-word;
 }
 
 .upstream_version_column {
-    min-width: 130px;
+    max-width: 150px;
+    word-wrap: break-word;
 }
 
 .upstream_status_column {
