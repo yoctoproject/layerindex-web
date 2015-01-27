@@ -74,7 +74,7 @@
     </div>
 </div>
 
-<table class="table table-bordered statustable tablesorter table-hover">
+<table class="table table-bordered tablesorter table-hover recipestable">
 <thead>
     <tr>
         <th class="recipe_column">Recipe</th>
@@ -106,7 +106,16 @@
 {% endfor %}
 </tbody>
 </table>
+{% endblock %}
 
+{% block scripts %}
 <script src="{% static "js/uitablefilter.js" %}"></script>
-<script src="{% static "js/jquery.tablesorter.js" %}"></script>
+<script>
+$(document).ready(function() {
+    $("#filter").keyup(function() { 
+        var recipestable = $('.recipestable');
+        $.uiTableFilter(recipestable, this.value);
+    });
+});
+</script>
 {% endblock %}
