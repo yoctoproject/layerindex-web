@@ -79,21 +79,29 @@
     <tr>
         <th class="recipe_column">Recipe</th>
         <th class="version_column muted">Version</th>
-        <th class="upstream_status_column"><b class="caret"></b>Upstream status</th>
+        <th class="upstream_status_column"><b>Upstream status</b></th>
         <th class="upstream_version_column muted">Upstream version</th>
-        <th class="maintainer_column"><b class="caret"></b>Maintainer</th>
+        <th class="maintainer_column"><b>Maintainer</b></th>
         <th class="summary_column muted span5">Summary</th>
     </tr>
     </thead>
 <tbody>
 {% for r in recipe_list %}
 <tr>
-    <td><a href="{% url "recipedetail" r.pk %}">{{ r.name }}</a></td>
-    <td>{{ r.version }}</td>
-    <td>{{ r.upstream_status }}</td>
-    <td>{{ r.upstream_version }}</td>
-    <td>{{ r.maintainer_name }}</td>
-    <td>{{ r.summary }}</td>
+    <td class="recipe_column"><a href="{% url "recipedetail" r.pk %}">{{ r.name }}</a></td>
+    <td class="version_column">{{ r.version }}</td>
+    {% if r.upstream_status == "Up-to-date" %}
+    <td class="text-success">
+    {% elif r.upstream_status == "Not updated" %}
+    <td class="text-error">
+    {% else %}
+    <td class="text-warning">
+    {% endif %}
+        {{ r.upstream_status }}
+    </td>
+    <td class="upstream_version_column">{{ r.upstream_version }}</td>
+    <td class="maintainer_column">{{ r.maintainer_name }}</td>
+    <td class="summary_column">{{ r.summary }}</td>
 </tr>
 {% endfor %}
 </tbody>
