@@ -6,8 +6,9 @@ from django.views.generic import ListView, DetailView
 from django.core.urlresolvers import resolve
 
 from layerindex.models import Recipe
-from rrs.models import Milestone, Maintainer, RecipeMaintainer, RecipeUpstream, \
-        RecipeUpstreamHistory, RecipeDistro, RecipeUpgrade
+from rrs.models import Milestone, Maintainer, RecipeMaintainerHistory, \
+        RecipeMaintainer, RecipeUpstreamHistory, RecipeUpstream, \
+        RecipeDistro, RecipeUpgrade
 
 def _check_url_params(upstream_status, maintainer_name):
     get_object_or_404(Maintainer, name=maintainer_name)
@@ -68,6 +69,9 @@ class RecipeListView(ListView):
             milestone.end_date
         )
 
+        self.recipe_maintainer_history = RecipeMaintainerHistory.get_by_end_date(
+            milestone.end_date)
+
         recipe_list = []
         self.recipe_list_count = 0
 
@@ -100,7 +104,8 @@ class RecipeListView(ListView):
                 if self.upstream_status != 'All' and self.upstream_status != recipe_upstream_status:
                     continue
 
-                maintainer = RecipeMaintainer.get_maintainer_by_recipe(recipe)
+                maintainer = RecipeMaintainer.get_maintainer_by_recipe_and_history(
+                        recipe, self.recipe_maintainer_history)
                 if self.maintainer_name != 'All' and self.maintainer_name != maintainer.name:
                     continue
 
@@ -135,7 +140,8 @@ class RecipeListView(ListView):
 
         context['maintainer_name'] = self.maintainer_name
         all_maintainers = ['All']
-        for rm in RecipeMaintainer.objects.filter().values(
+        for rm in RecipeMaintainer.objects.filter(history =
+                self.recipe_maintainer_history).values(
                 'maintainer__name').distinct().order_by('maintainer__name'):
             all_maintainers.append(rm['maintainer__name'])
         context['all_maintainers'] = all_maintainers
@@ -170,16 +176,21 @@ class RecipeUpgradeDetail():
         self.commit_url = commit_url
 
 def _get_recipe_upgrade_detail(recipe_upgrade):
-    milestone_name = Milestone.get_by_date(recipe_upgrade.commit_date)
+    milestone = Milestone.get_by_date(recipe_upgrade.commit_date)
+    milestone_name = milestone.name
     if milestone_name is None:
         milestone_name = ''
+
+    recipe_maintainer_history = RecipeMaintainerHistory.get_by_end_date(
+            milestone.end_date)
 
     is_recipe_maintainer = False
     maintainer_name = ''
     if not recipe_upgrade.maintainer is None:
         maintainer_name = recipe_upgrade.maintainer.name
         if RecipeMaintainer.objects.filter(maintainer__name
-                = maintainer_name).count() > 0:
+                = maintainer_name, history = recipe_maintainer_history
+                ).count() > 0:
             is_recipe_maintainer = True
 
     commit = recipe_upgrade.sha1[:10]
@@ -213,7 +224,9 @@ class RecipeDetailView(DetailView):
         context['upstream_version'] = recipe_upstream.version
         context['upstream_no_update_reason'] = recipe_upstream.no_update_reason
 
-        recipe_maintainer = RecipeMaintainer.objects.filter(recipe = recipe)[0]
+        self.recipe_maintainer_history = RecipeMaintainerHistory.get_last()
+        recipe_maintainer = RecipeMaintainer.objects.filter(recipe = recipe,
+                history = self.recipe_maintainer_history)[0]
         maintainer = recipe_maintainer.maintainer
 
         context['maintainer_name'] = maintainer.name

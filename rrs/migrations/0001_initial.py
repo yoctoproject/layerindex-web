@@ -25,18 +25,38 @@ class Migration(SchemaMigration):
         ))
         db.send_create_signal('rrs', ['Maintainer'])
 
+        # Adding model 'RecipeMaintainerHistory'
+        db.create_table('rrs_recipemaintainerhistory', (
+            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('title', self.gf('django.db.models.fields.CharField')(max_length=255, blank=True)),
+            ('date', self.gf('django.db.models.fields.DateTimeField')()),
+            ('author', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['rrs.Maintainer'])),
+            ('sha1', self.gf('django.db.models.fields.CharField')(unique=True, max_length=64)),
+        ))
+        db.send_create_signal('rrs', ['RecipeMaintainerHistory'])
+
         # Adding model 'RecipeMaintainer'
         db.create_table('rrs_recipemaintainer', (
             ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
             ('recipe', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['layerindex.Recipe'])),
             ('maintainer', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['rrs.Maintainer'])),
+            ('history', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['rrs.RecipeMaintainerHistory'])),
         ))
         db.send_create_signal('rrs', ['RecipeMaintainer'])
+
+        # Adding model 'RecipeUpstreamHistory'
+        db.create_table('rrs_recipeupstreamhistory', (
+            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('start_date', self.gf('django.db.models.fields.DateTimeField')()),
+            ('end_date', self.gf('django.db.models.fields.DateTimeField')()),
+        ))
+        db.send_create_signal('rrs', ['RecipeUpstreamHistory'])
 
         # Adding model 'RecipeUpstream'
         db.create_table('rrs_recipeupstream', (
             ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
             ('recipe', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['layerindex.Recipe'])),
+            ('history', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['rrs.RecipeUpstreamHistory'])),
             ('version', self.gf('django.db.models.fields.CharField')(max_length=100, blank=True)),
             ('type', self.gf('django.db.models.fields.CharField')(max_length=1, blank=True)),
             ('status', self.gf('django.db.models.fields.CharField')(max_length=1, blank=True)),
@@ -58,7 +78,7 @@ class Migration(SchemaMigration):
         db.create_table('rrs_recipeupgrade', (
             ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
             ('recipe', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['layerindex.Recipe'])),
-            ('maintainer', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['rrs.Maintainer'], null=True, blank=True)),
+            ('maintainer', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['rrs.Maintainer'], blank=True)),
             ('sha1', self.gf('django.db.models.fields.CharField')(max_length=40, blank=True)),
             ('title', self.gf('django.db.models.fields.CharField')(max_length=1024, blank=True)),
             ('version', self.gf('django.db.models.fields.CharField')(max_length=100, blank=True)),
@@ -75,8 +95,14 @@ class Migration(SchemaMigration):
         # Deleting model 'Maintainer'
         db.delete_table('rrs_maintainer')
 
+        # Deleting model 'RecipeMaintainerHistory'
+        db.delete_table('rrs_recipemaintainerhistory')
+
         # Deleting model 'RecipeMaintainer'
         db.delete_table('rrs_recipemaintainer')
+
+        # Deleting model 'RecipeUpstreamHistory'
+        db.delete_table('rrs_recipeupstreamhistory')
 
         # Deleting model 'RecipeUpstream'
         db.delete_table('rrs_recipeupstream')
@@ -170,16 +196,25 @@ class Migration(SchemaMigration):
         },
         'rrs.recipemaintainer': {
             'Meta': {'object_name': 'RecipeMaintainer'},
+            'history': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['rrs.RecipeMaintainerHistory']"}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'maintainer': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['rrs.Maintainer']"}),
             'recipe': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['layerindex.Recipe']"})
+        },
+        'rrs.recipemaintainerhistory': {
+            'Meta': {'object_name': 'RecipeMaintainerHistory'},
+            'author': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['rrs.Maintainer']"}),
+            'date': ('django.db.models.fields.DateTimeField', [], {}),
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'sha1': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '64'}),
+            'title': ('django.db.models.fields.CharField', [], {'max_length': '255', 'blank': 'True'})
         },
         'rrs.recipeupgrade': {
             'Meta': {'object_name': 'RecipeUpgrade'},
             'author_date': ('django.db.models.fields.DateTimeField', [], {}),
             'commit_date': ('django.db.models.fields.DateTimeField', [], {}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'maintainer': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['rrs.Maintainer']", 'null': 'True', 'blank': 'True'}),
+            'maintainer': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['rrs.Maintainer']", 'blank': 'True'}),
             'recipe': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['layerindex.Recipe']"}),
             'sha1': ('django.db.models.fields.CharField', [], {'max_length': '40', 'blank': 'True'}),
             'title': ('django.db.models.fields.CharField', [], {'max_length': '1024', 'blank': 'True'}),
@@ -188,12 +223,19 @@ class Migration(SchemaMigration):
         'rrs.recipeupstream': {
             'Meta': {'object_name': 'RecipeUpstream'},
             'date': ('django.db.models.fields.DateTimeField', [], {}),
+            'history': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['rrs.RecipeUpstreamHistory']"}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'no_update_reason': ('django.db.models.fields.CharField', [], {'max_length': '255', 'blank': 'True'}),
             'recipe': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['layerindex.Recipe']"}),
             'status': ('django.db.models.fields.CharField', [], {'max_length': '1', 'blank': 'True'}),
             'type': ('django.db.models.fields.CharField', [], {'max_length': '1', 'blank': 'True'}),
             'version': ('django.db.models.fields.CharField', [], {'max_length': '100', 'blank': 'True'})
+        },
+        'rrs.recipeupstreamhistory': {
+            'Meta': {'object_name': 'RecipeUpstreamHistory'},
+            'end_date': ('django.db.models.fields.DateTimeField', [], {}),
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'start_date': ('django.db.models.fields.DateTimeField', [], {})
         }
     }
 
