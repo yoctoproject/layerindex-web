@@ -22,8 +22,8 @@ utils.setup_django()
 from django.core.mail import EmailMessage
 import settings
 from layerindex.models import LayerItem, LayerBranch, Recipe
-from rrs.models import Maintainer, RecipeMaintainer, RecipeUpstream, \
-        RecipeUpstreamHistory
+from rrs.models import Maintainer, RecipeMaintainerHistory, RecipeMaintainer, \
+    RecipeUpstream, RecipeUpstreamHistory
 
 logger = utils.logger_create('RrsUpstreamEmail')
 
@@ -145,6 +145,12 @@ def main():
         logger.warn('I don\'t have Upstream information yet, run update.py script')
         sys.exit(1)
 
+    recipe_maintainer_history = RecipeMaintainerHistory.get_last()
+    if recipe_maintainer_history is None:
+        logger.warn('I don\'t have Maintainership information yet,' +
+                ' run rrs_maintainer_history.py script')
+        sys.exit(1)
+
     for recipe in Recipe.objects.filter(layerbranch = layerbranch):
         recipe_upstream_query = RecipeUpstream.objects.filter(recipe =
                 recipe, history = recipe_upstream_history)
@@ -152,7 +158,7 @@ def main():
             recipes[recipe] = {}
 
             recipe_maintainer = RecipeMaintainer.objects.filter(recipe =
-                    recipe)[0]
+                    recipe, history = recipe_maintainer_history)[0]
             recipes[recipe]['maintainer'] = recipe_maintainer
             recipes[recipe]['upstream'] = recipe_upstream_query[0]
 

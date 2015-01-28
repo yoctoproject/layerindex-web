@@ -17,21 +17,20 @@ import settings
 
 from layerindex.models import LayerItem, Branch, LayerBranch, Recipe
 
-from recipe_maintainer import update_recipe_maintainers
 from recipe_distro import update_recipe_distros
 from recipe_upgrade import update_recipe_upgrades
 from recipe_upstream import update_recipe_upstream
 
 class RrsUpdater:
     def __init__(self, fetchdir, options, layerquery, fetchedrepos,
-            failedrepos, logger):
+            failedrepos, pokypath, logger):
         self._fetchdir = fetchdir
         self._options = options
         self._logger = logger 
         self._layerquery = layerquery
+        self._pokypath = pokypath
 
-        self._run_all = (not options.recipe_maintainers and
-                        not options.recipe_distros and
+        self._run_all = (not options.recipe_distros and
                         not options.recipe_upgrades and
                         not options.recipe_upstream)
 
@@ -55,8 +54,6 @@ class RrsUpdater:
                     config_data, self._options)
 
             if self._run_all:
-                self._logger.info("Updating recipe maintainers")
-                update_recipe_maintainers(envdata, self._logger)
                 self._logger.info("Updating recipe distros")
                 update_recipe_distros(envdata, layerbranch, pkglst_dir,
                                         self._logger)
@@ -66,13 +63,6 @@ class RrsUpdater:
                 self._logger.info("Updating recipe upstream")
                 update_recipe_upstream(envdata, self._logger)
             else:
-                run_maintainer = False
-
-                if self._options.recipe_maintainers:
-                    self._logger.info("Updating recipe maintainers")
-                    update_recipe_maintainers(envdata, self._logger)
-                    run_maintainer = True
-
                 if self._options.recipe_distros:
                     self._logger.info("Updating recipe distros")
                     update_recipe_distros(envdata, layerbranch, pkglst_dir,
@@ -84,11 +74,6 @@ class RrsUpdater:
                             config_data, self._logger) 
 
                 if self._options.recipe_upstream:
-                    # recipe upstream depends on recipe maintainers
-                    if not run_maintainer:
-                        self._logger.info("Updating recipe maintainers")
-                        update_recipe_maintainers(envdata, self._logger)
-
                     self._logger.info("Updating recipe upstream")
                     update_recipe_upstream(envdata, self._logger)
     

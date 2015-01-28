@@ -118,7 +118,7 @@ def create_upgrade(commit, repodir, recipe, pv, logger):
     author_date = info.split(';')[2]
     commit_date = info.split(';')[3]
 
-    maintainer = get_maintainer(maintainer_name, maintainer_email, logger)
+    maintainer = Maintainer.create_or_update(maintainer_name, maintainer_email)
    
     title = utils.runcmd("git log --format='%s' -n 1 " + commit,
                             repodir, logger=logger)
@@ -134,21 +134,3 @@ def create_upgrade(commit, repodir, recipe, pv, logger):
     upgrade.sha1 = commit
     upgrade.title = title.strip()
     upgrade.save()
-
-""" 
-    Gets maintainer with the given details from the database. 
-    If the maintainer doesn't exist it will be created. 
-"""
-def get_maintainer(name, email, logger):
-    try:
-        maintainer = Maintainer.objects.get(name = name)
-    except Maintainer.DoesNotExist:
-        maintainer = Maintainer()
-        maintainer.name = name
-        maintainer.email = email
-        maintainer.save()
-
-        logger.debug("Create new maintainer %s: %s" %
-                        (maintainer.name, maintainer.email))
-
-    return maintainer

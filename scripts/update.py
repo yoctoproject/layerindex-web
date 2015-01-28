@@ -68,9 +68,6 @@ def main():
         parser.add_option("", "--recipe",
                 help = "Specify recipe to update",
                 action="store", dest="recipe")
-        parser.add_option("", "--recipe-maintainers",
-                help = "Only update recipe maintainers",
-                action="store_true", dest="recipe_maintainers")
         parser.add_option("", "--recipe-distros",
                 help = "Only update recipe distros",
                 action="store_true", dest="recipe_distros")
@@ -130,7 +127,8 @@ def main():
     if settings.APPLICATION == 'rrs':
         from rrs_update import RrsUpdater
         rrs_updater = RrsUpdater(fetchdir, options, layerquery,
-                                    fetchedrepos, failedrepos, logger)
+                                    fetchedrepos, failedrepos,
+                                    pokypath, logger)
         if not options.only_layerindex:
             rrs_updater.run(tinfoil)
 
