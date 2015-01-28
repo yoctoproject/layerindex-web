@@ -21,6 +21,9 @@ Uncomment the 'rrs' line in INSTALLED_APPS.
 
 Configure RRS_EMAIL_TO used for sending Recipe upgrade name list report.
 
+If you are running in development mode you need to set DEBUG=True in settings.py
+in order to serve static content using django.
+
 4. To add openembedded-core layer you need to run:
 
 $ ./scripts/tools/import_layer.py  -s meta git://git.openembedded.org/openembedded-core openembedded-core
