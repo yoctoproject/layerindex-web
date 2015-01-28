@@ -17,6 +17,8 @@ Set:
 	APPLICATION = 'rrs'
 	LOGIN_REDIRECT_URL = '/rrs'
 
+Uncomment the 'rrs' line in INSTALLED_APPS.
+
 Configure RRS_EMAIL_TO used for sending Recipe upgrade name list report.
 
 4. To add openembedded-core layer you need to run:
