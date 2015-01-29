@@ -106,7 +106,7 @@ class RecipeMaintainerHistory(models.Model):
         if rmh_qry:
             return rmh_qry[0]
         else:
-            return RecipeMaintainerHistory.objects.filter().order_by('date')[0]
+            return None
 
     def __unicode__(self):
         return "%s: %s, %s" % (self.date, self.author.name, self.sha1[:10])
