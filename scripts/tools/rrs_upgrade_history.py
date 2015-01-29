@@ -92,6 +92,7 @@ def initial_recipes(layerdir, date, logger):
 
     # Insert initial version of every recipe in the database.
     # Leave the maintainer field blank to know this are not actually upgrades.
+    maintainer = Maintainer.objects.get(id = 0) # No maintainer
     for pn, pv in recipes.iteritems():
         try:
             recipe = Recipe.objects.get(pn=pn)
@@ -99,6 +100,7 @@ def initial_recipes(layerdir, date, logger):
             continue
         upgrade = RecipeUpgrade()
         upgrade.recipe = recipe
+        upgrade.maintainer = maintainer
         upgrade.author_date = date
         upgrade.commit_date = date
         upgrade.version = pv
