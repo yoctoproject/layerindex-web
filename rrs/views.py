@@ -177,20 +177,23 @@ class RecipeUpgradeDetail():
 
 def _get_recipe_upgrade_detail(recipe_upgrade):
     milestone = Milestone.get_by_date(recipe_upgrade.commit_date)
-    milestone_name = milestone.name
-    if milestone_name is None:
+    if milestone is None:
         milestone_name = ''
-
-    recipe_maintainer_history = RecipeMaintainerHistory.get_by_end_date(
+        recipe_maintainer_history = None
+    else:
+        milestone_name = milestone.name
+        recipe_maintainer_history = RecipeMaintainerHistory.get_by_end_date(
             milestone.end_date)
 
     is_recipe_maintainer = False
     maintainer_name = ''
     if not recipe_upgrade.maintainer is None:
         maintainer_name = recipe_upgrade.maintainer.name
-        if RecipeMaintainer.objects.filter(maintainer__name
-                = maintainer_name, history = recipe_maintainer_history
-                ).count() > 0:
+
+        if not recipe_maintainer_history is None and \
+            RecipeMaintainer.objects.filter(maintainer__name
+            = maintainer_name, history = recipe_maintainer_history) \
+            .count() > 0:
             is_recipe_maintainer = True
 
     commit = recipe_upgrade.sha1[:10]
