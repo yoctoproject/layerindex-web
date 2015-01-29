@@ -26,6 +26,34 @@ def _get_layer_branch_url(branch, layer_name):
     return ("http://layers.openembedded.org/layerindex/branch/%s/layer/%s/"\
                 % (branch, layer_name))
 
+def _get_milestone_statistics(milestone):
+    milestone_statistics = {}
+
+    recipe_upstream_history = RecipeUpstreamHistory.get_last_by_date_range(
+        milestone.start_date,
+        milestone.end_date
+    )
+
+    if recipe_upstream_history is None:
+        milestone_statistics['up_to_date'] = '0'
+        milestone_statistics['not_updated'] = '0'
+        milestone_statistics['unknown'] = '0'
+        milestone_statistics['percentage'] = '0.0'
+    else:
+        recipes_all = RecipeUpstream.objects.filter(history =
+                recipe_upstream_history).count()
+
+        milestone_statistics['up_to_date'] = RecipeUpstream.objects.filter(
+                history = recipe_upstream_history, status = 'Y').count()
+        milestone_statistics['not_updated'] = RecipeUpstream.objects.filter(
+                history = recipe_upstream_history, status = 'N').count()
+        milestone_statistics['unknown'] = recipes_all - \
+                (milestone_statistics['up_to_date'] + milestone_statistics['not_updated'])
+        milestone_statistics['percentage'] = "%.2f" % \
+            ((float(milestone_statistics['up_to_date']) / float(recipes_all)) * 100)
+
+    return milestone_statistics
+
 class RecipeList():
     pk = None
     name = None
@@ -64,35 +92,19 @@ class RecipeListView(ListView):
 
         _check_url_params(self.upstream_status, self.maintainer_name)
 
+        self.milestone_statistics = _get_milestone_statistics(milestone)
+
         recipe_upstream_history = RecipeUpstreamHistory.get_last_by_date_range(
             milestone.start_date,
             milestone.end_date
         )
-
         self.recipe_maintainer_history = RecipeMaintainerHistory.get_by_end_date(
             milestone.end_date)
 
         recipe_list = []
         self.recipe_list_count = 0
-
-        self.recipes_up_to_date = 0
-        self.recipes_not_updated = 0
-        self.recipes_unknown = 0
-        self.recipes_percentage = '0.00'
         if not recipe_upstream_history is None:
             recipe_qry = Recipe.objects.filter().order_by('pn')
-
-            # get statistics by milestone
-            recipes_all = RecipeUpstream.objects.filter(history =
-                    recipe_upstream_history).count()
-            self.recipes_up_to_date = RecipeUpstream.objects.filter(history =
-                    recipe_upstream_history, status = 'Y').count()
-            self.recipes_not_updated = RecipeUpstream.objects.filter(history =
-                    recipe_upstream_history, status = 'N').count()
-            self.recipes_unknown = recipes_all - (self.recipes_up_to_date +
-                    self.recipes_not_updated)
-            self.recipes_percentage = "%.2f" % \
-                ((float(self.recipes_up_to_date) / float(recipes_all)) * 100)
 
             for recipe in recipe_qry:
                 recipe_upstream = RecipeUpstream.get_by_recipe_and_history(
@@ -123,12 +135,12 @@ class RecipeListView(ListView):
         context['this_url_name'] = resolve(self.request.path_info).url_name
 
         context['milestone_name'] = self.milestone_name
-        context['all_milestones'] = Milestone.objects.filter().order_by('-id')
+        context['all_milestones'] = Milestone.objects.filter().order_by('-end_date')
 
-        context['recipes_percentage'] = self.recipes_percentage
-        context['recipes_up_to_date'] = self.recipes_up_to_date
-        context['recipes_not_updated'] = self.recipes_not_updated
-        context['recipes_unknown'] = self.recipes_unknown
+        context['recipes_percentage'] = self.milestone_statistics['percentage']
+        context['recipes_up_to_date'] = self.milestone_statistics['up_to_date']
+        context['recipes_not_updated'] = self.milestone_statistics['not_updated']
+        context['recipes_unknown'] = self.milestone_statistics['unknown']
 
         context['recipe_list_count'] = self.recipe_list_count
 
