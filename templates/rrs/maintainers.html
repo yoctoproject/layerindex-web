@@ -52,11 +52,13 @@
 {% for ml in maintainer_list %}
     <tr>
         <td>
-            <a href="{% url 'recipes' milestone_name %}?maintainer_name={{ ml.name|urlencode }}">
             {{ ml.name }}
+        </td>
+        <td>
+            <a href="{% url 'recipes' milestone_name %}?maintainer_name={{ ml.name|urlencode }}">
+                {{ ml.recipes_all }}
             </a>
         </td>
-        <td>{{ ml.recipes_all }}</td>
         <td>
             <a href="{% url 'recipes' milestone_name %}?upstream_status={{ "Up-to-date"|urlencode }}&maintainer_name={{ ml.name|urlencode }}">
                 {{ ml.recipes_up_to_date }}
