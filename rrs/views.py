@@ -26,7 +26,7 @@ def _get_layer_branch_url(branch, layer_name):
     return ("http://layers.openembedded.org/layerindex/branch/%s/layer/%s/"\
                 % (branch, layer_name))
 
-def _get_milestone_statistics(milestone):
+def _get_milestone_statistics(milestone, maintainer_name=None):
     milestone_statistics = {}
 
     recipe_upstream_history = RecipeUpstreamHistory.get_last_by_date_range(
@@ -35,22 +35,51 @@ def _get_milestone_statistics(milestone):
     )
 
     if recipe_upstream_history is None:
+        milestone_statistics['all'] = '0'
         milestone_statistics['up_to_date'] = '0'
         milestone_statistics['not_updated'] = '0'
         milestone_statistics['unknown'] = '0'
         milestone_statistics['percentage'] = '0.0'
-    else:
-        recipes_all = RecipeUpstream.objects.filter(history =
+    elif maintainer_name is None:
+        recipe_count = RecipeUpstream.objects.filter(history =
                 recipe_upstream_history).count()
 
+        milestone_statistics['all'] = recipe_count
         milestone_statistics['up_to_date'] = RecipeUpstream.objects.filter(
                 history = recipe_upstream_history, status = 'Y').count()
         milestone_statistics['not_updated'] = RecipeUpstream.objects.filter(
                 history = recipe_upstream_history, status = 'N').count()
-        milestone_statistics['unknown'] = recipes_all - \
+        milestone_statistics['unknown'] = milestone_statistics['all'] - \
                 (milestone_statistics['up_to_date'] + milestone_statistics['not_updated'])
         milestone_statistics['percentage'] = "%.2f" % \
-            ((float(milestone_statistics['up_to_date']) / float(recipes_all)) * 100)
+            ((float(milestone_statistics['up_to_date']) /
+                float(milestone_statistics['all'])) * 100)
+    else:
+        recipe_maintainer_history = RecipeMaintainerHistory.get_by_end_date(
+            milestone.end_date)
+
+        recipes_all = []
+        for rm in RecipeMaintainer.objects.filter(history = recipe_maintainer_history,
+            maintainer__name = maintainer_name):
+            ru = RecipeUpstream.objects.filter(recipe = rm.recipe, history =
+                        recipe_upstream_history)[0]
+            recipes_all.append(ru)
+
+        milestone_statistics['all'] = len(recipes_all)
+        milestone_statistics['up_to_date'] = 0
+        milestone_statistics['not_updated'] = 0
+        milestone_statistics['unknown'] = 0
+        for ru in recipes_all:
+            if ru.status == 'Y':
+                milestone_statistics['up_to_date'] += 1
+            elif ru.status == 'N':
+                milestone_statistics['not_updated'] += 1
+            else:
+                milestone_statistics['unknown'] += 1
+
+        milestone_statistics['percentage'] = "%.2f" % \
+            ((float(milestone_statistics['up_to_date']) /
+                float(milestone_statistics['all'])) * 100)
 
     return milestone_statistics
 
@@ -264,5 +293,66 @@ class RecipeDetailView(DetailView):
             context['recipe_depends'].append(d)
 
         context['recipe_distros'] = RecipeDistro.get_distros_by_recipe(recipe)
+
+        return context
+
+class MaintainerList():
+    name = None
+    recipes_all = 0
+    recipes_up_to_date = '0'
+    recipes_not_updated = '0'
+    recipes_unknown = '0'
+    percentage_done = '0.00'
+
+    def __init__(self, name):
+        self.name = name
+
+class MaintainerListView(ListView):
+    context_object_name = 'maintainer_list'
+
+    def get_queryset(self):
+        maintainer_list = []
+        self.maintainer_count = 0
+
+        self.milestone_name = self.kwargs['milestone_name']
+        milestone = get_object_or_404(Milestone, name=self.milestone_name)
+
+        self.milestone_statistics = _get_milestone_statistics(milestone)
+
+        recipe_maintainer_history = RecipeMaintainerHistory.get_by_end_date(
+            milestone.end_date)
+
+        if recipe_maintainer_history:
+            for rm in RecipeMaintainer.objects.filter(history =
+                recipe_maintainer_history).values(
+                'maintainer__name').distinct().order_by('maintainer__name'):
+                maintainer_list.append(MaintainerList(rm['maintainer__name']))
+
+            self.maintainer_count = len(maintainer_list)
+
+        for ml in maintainer_list:
+            milestone_statistics = _get_milestone_statistics(milestone, ml.name)
+            ml.recipes_all = milestone_statistics['all']
+            ml.recipes_up_to_date = milestone_statistics['up_to_date']
+            ml.recipes_not_updated = milestone_statistics['not_updated']
+            ml.recipes_unknown = milestone_statistics['unknown']
+            ml.percentage_done = milestone_statistics['percentage']
+
+        return maintainer_list
+
+    def get_context_data(self, **kwargs):
+        context = super(MaintainerListView, self).get_context_data(**kwargs)
+
+        context['this_url_name'] = resolve(self.request.path_info).url_name
+
+        context['milestone_name'] = self.milestone_name
+        context['all_milestones'] = Milestone.objects.filter().order_by('-id')
+
+        context['recipes_percentage'] = self.milestone_statistics['percentage']
+        context['recipes_up_to_date'] = self.milestone_statistics['up_to_date']
+        context['recipes_not_updated'] = self.milestone_statistics['not_updated']
+        context['recipes_unknown'] = self.milestone_statistics['unknown']
+
+        context['maintainer_count'] = self.maintainer_count
 
         return context
