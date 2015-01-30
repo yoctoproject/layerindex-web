@@ -56,18 +56,22 @@
             <ul class="nav nav-pills">
                 {% if this_url_name == 'recipes' %}
                 <li class="active">
+                <a href="#">
 		{% else %}
                 <li>
+                <a href="{% url 'recipes' milestone_name %}{{ extra_url_param }}">
 		{% endif %}
-                <a href="{% url this_url_name milestone_name %}{{ extra_url_param }}">Recipes status</a>
+                Recipes status</a>
                 </li>
 
                 {% if this_url_name == 'maintainers' %}
                 <li class="active">
+                <a href="#">
 		{% else %}
                 <li>
+                <a href="{% url 'maintainers' milestone_name %}">
 		{% endif %}
-                <a href="#">Maintainer statistics</a>
+                Maintainer statistics</a>
                 </li>
             </ul>
             {% endblock %}
