@@ -15,6 +15,9 @@ def _check_url_params(upstream_status, maintainer_name):
 
     found = 0
     for us in RecipeUpstream.RECIPE_UPSTREAM_STATUS_CHOICES_DICT.keys():
+        if us == 'D': # Downgrade is displayed as Unknown
+            continue
+
         if RecipeUpstream.RECIPE_UPSTREAM_STATUS_CHOICES_DICT[us] == upstream_status:
             found = 1
             break
@@ -142,6 +145,8 @@ class RecipeListView(ListView):
                 recipe_upstream_status = \
                         RecipeUpstream.RECIPE_UPSTREAM_STATUS_CHOICES_DICT[
                                 recipe_upstream.status]
+                if recipe_upstream_status == 'Downgrade':
+                    recipe_upstream_status = 'Unknown' # Downgrade is displayed as Unknown
                 if self.upstream_status != 'All' and self.upstream_status != recipe_upstream_status:
                     continue
 
@@ -176,7 +181,8 @@ class RecipeListView(ListView):
         context['upstream_status'] = self.upstream_status
         all_upstream_status = []
         for us in RecipeUpstream.RECIPE_UPSTREAM_STATUS_CHOICES:
-            all_upstream_status.append(us[1])
+            if us[0] != 'D': # Downgrade is displayed as Unknown
+                all_upstream_status.append(us[1])
         context['all_upstream_status'] = all_upstream_status
 
         context['maintainer_name'] = self.maintainer_name
