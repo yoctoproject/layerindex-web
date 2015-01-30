@@ -37,20 +37,26 @@ class Milestone(models.Model):
         else:
             return None
 
-    """ Get month intervals between the start and the end of the milestone """ 
-    def get_intervals(self):
-        intervals = []
-        previous_date = self.start_date
+    """ Get week intervals from start and end of Milestone """ 
+    def get_week_intervals(self):
+        from datetime import timedelta
+
+        weeks = {}
+
+        week_delta = timedelta(weeks=1)
+        week_no = 1
         current_date = self.start_date
-        while current_date < self.end_date+timedelta(days=28):
-            current_date += timedelta(days=1)
-            if current_date.month != previous_date.month:
-                interval_start = previous_date.replace(day=1)
-                interval_end = current_date.replace(day=1)
-                interval_end -= timedelta(days=1)
-                intervals.append((interval_start, interval_end))
-                previous_date = current_date
-        return intervals
+        while True:
+            if current_date >= self.end_date:
+                break;
+
+            weeks[week_no] = {}
+            weeks[week_no]['start_date'] = current_date
+            weeks[week_no]['end_date'] = current_date + week_delta
+            current_date += week_delta
+            week_no += 1
+
+        return weeks
 
     def __unicode__(self):
         return '%s' % (self.name)
