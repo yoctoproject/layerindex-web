@@ -310,6 +310,8 @@ class MaintainerList():
     recipes_unknown = '0'
     percentage_done = '0.00'
 
+    week_statistics = None
+
     def __init__(self, name):
         self.name = name
 
@@ -317,11 +319,14 @@ class MaintainerListView(ListView):
     context_object_name = 'maintainer_list'
 
     def get_queryset(self):
+        from datetime import date
+
         maintainer_list = []
         self.maintainer_count = 0
 
         self.milestone_name = self.kwargs['milestone_name']
         milestone = get_object_or_404(Milestone, name=self.milestone_name)
+        milestone_week_intervals = milestone.get_week_intervals()
 
         self.milestone_statistics = _get_milestone_statistics(milestone)
 
@@ -336,6 +341,9 @@ class MaintainerListView(ListView):
 
             self.maintainer_count = len(maintainer_list)
 
+        self.milestone_weeks = sorted(milestone_week_intervals.keys())
+        self.current_week = -1
+        current_date = date.today()
         for ml in maintainer_list:
             milestone_statistics = _get_milestone_statistics(milestone, ml.name)
             ml.recipes_all = milestone_statistics['all']
@@ -343,6 +351,19 @@ class MaintainerListView(ListView):
             ml.recipes_not_updated = milestone_statistics['not_updated']
             ml.recipes_unknown = milestone_statistics['unknown']
             ml.percentage_done = milestone_statistics['percentage']
+
+            ml.week_statistics = []
+            for week_no in milestone_week_intervals.keys():
+                start_date = milestone_week_intervals[week_no]['start_date']
+                end_date = milestone_week_intervals[week_no]['end_date']
+
+                if current_date >= start_date and current_date <= end_date:
+                    self.current_week = week_no - 1 # used in template for loop
+
+                number = RecipeUpgrade.objects.filter(maintainer__name = ml.name,
+                        commit_date__gte = start_date,
+                        commit_date__lte = end_date).count()
+                ml.week_statistics.append(number)
 
         return maintainer_list
 
@@ -360,5 +381,7 @@ class MaintainerListView(ListView):
         context['recipes_unknown'] = self.milestone_statistics['unknown']
 
         context['maintainer_count'] = self.maintainer_count
+        context['milestone_weeks'] = self.milestone_weeks
+        context['current_week'] = self.current_week
 
         return context
