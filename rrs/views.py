@@ -1,5 +1,6 @@
 import urllib
 
+from datetime import date
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.views.generic import ListView, DetailView
@@ -37,17 +38,9 @@ def _get_milestone_statistics(milestone, maintainer_name=None):
         milestone.end_date
     )
 
-    if recipe_upstream_history is None:
-        milestone_statistics['all'] = '0'
-        milestone_statistics['up_to_date'] = '0'
-        milestone_statistics['not_updated'] = '0'
-        milestone_statistics['unknown'] = '0'
-        milestone_statistics['percentage'] = '0.0'
-    elif maintainer_name is None:
-        recipe_count = RecipeUpstream.objects.filter(history =
-                recipe_upstream_history).count()
+    if maintainer_name is None:
+        milestone_statistics['all'] = Recipe.objects.all().count()
 
-        milestone_statistics['all'] = recipe_count
         milestone_statistics['up_to_date'] = RecipeUpstream.objects.filter(
                 history = recipe_upstream_history, status = 'Y').count()
         milestone_statistics['not_updated'] = RecipeUpstream.objects.filter(
@@ -60,19 +53,21 @@ def _get_milestone_statistics(milestone, maintainer_name=None):
     else:
         recipe_maintainer_history = RecipeMaintainerHistory.get_by_end_date(
             milestone.end_date)
+        recipe_maintainer_all = RecipeMaintainer.objects.filter(history = recipe_maintainer_history,
+            maintainer__name = maintainer_name)
+        milestone_statistics['all'] = len(recipe_maintainer_all)
 
-        recipes_all = []
-        for rm in RecipeMaintainer.objects.filter(history = recipe_maintainer_history,
-            maintainer__name = maintainer_name):
-            ru = RecipeUpstream.objects.filter(recipe = rm.recipe, history =
-                        recipe_upstream_history)[0]
-            recipes_all.append(ru)
+        recipe_upstream_all = []
+        for rm in recipe_maintainer_all:
+            ru_qry = RecipeUpstream.objects.filter(recipe = rm.recipe, history =
+                        recipe_upstream_history)
+            if ru_qry:
+                recipe_upstream_all.append(ru_qry[0])
 
-        milestone_statistics['all'] = len(recipes_all)
         milestone_statistics['up_to_date'] = 0
         milestone_statistics['not_updated'] = 0
         milestone_statistics['unknown'] = 0
-        for ru in recipes_all:
+        for ru in recipe_upstream_all:
             if ru.status == 'Y':
                 milestone_statistics['up_to_date'] += 1
             elif ru.status == 'N':
@@ -95,15 +90,10 @@ class RecipeList():
     upstream_version = None
     maintainer_name = None
 
-    def __init__(self, pk, name, version, summary, upstream_status,
-            upstream_version, maintainer_name):
+    def __init__(self, pk, name, summary):
         self.pk = pk
         self.name = name
-        self.version = version
         self.summary = summary
-        self.upstream_status = upstream_status
-        self.upstream_version = upstream_version
-        self.maintainer_name = maintainer_name
 
 class RecipeListView(ListView):
     context_object_name = 'recipe_list'
@@ -126,38 +116,64 @@ class RecipeListView(ListView):
 
         self.milestone_statistics = _get_milestone_statistics(milestone)
 
+        self.recipe_maintainer_history = RecipeMaintainerHistory.get_by_end_date(
+            milestone.end_date)
         recipe_upstream_history = RecipeUpstreamHistory.get_last_by_date_range(
             milestone.start_date,
             milestone.end_date
         )
-        self.recipe_maintainer_history = RecipeMaintainerHistory.get_by_end_date(
-            milestone.end_date)
 
         recipe_list = []
         self.recipe_list_count = 0
-        if not recipe_upstream_history is None:
-            recipe_qry = Recipe.objects.filter().order_by('pn')
+        current_date = date.today()
+        for recipe in Recipe.objects.filter().order_by('pn'):
+            if current_date >= milestone.start_date and \
+                current_date <= milestone.end_date:
+                version = recipe.pv
+            else:
+                version = '' # Implement recipe version history
 
-            for recipe in recipe_qry:
-                recipe_upstream = RecipeUpstream.get_by_recipe_and_history(
-                        recipe, recipe_upstream_history)
+            recipe_upstream = RecipeUpstream.get_by_recipe_and_history(
+                    recipe, recipe_upstream_history)
 
-                recipe_upstream_status = \
-                        RecipeUpstream.RECIPE_UPSTREAM_STATUS_CHOICES_DICT[
-                                recipe_upstream.status]
-                if recipe_upstream_status == 'Downgrade':
-                    recipe_upstream_status = 'Unknown' # Downgrade is displayed as Unknown
-                if self.upstream_status != 'All' and self.upstream_status != recipe_upstream_status:
+            if recipe_upstream is None:
+                if self.upstream_status != 'All':
                     continue
 
-                maintainer = RecipeMaintainer.get_maintainer_by_recipe_and_history(
-                        recipe, self.recipe_maintainer_history)
+                upstream_status = ''
+                upstream_version = ''
+            else:
+                upstream_status = \
+                        RecipeUpstream.RECIPE_UPSTREAM_STATUS_CHOICES_DICT[
+                                recipe_upstream.status]
+                if upstream_status == 'Downgrade':
+                    upstream_status = 'Unknown' # Downgrade is displayed as Unknown
+ 
+                if self.upstream_status != 'All' and \
+                    self.upstream_status != upstream_status:
+                    continue
+
+                upstream_version = recipe_upstream.version
+
+            maintainer = RecipeMaintainer.get_maintainer_by_recipe_and_history(
+                    recipe, self.recipe_maintainer_history)
+            if maintainer is None:
+                if self.maintainer_name != 'All':
+                    continue
+
+                maintainer_name = ''
+            else:
                 if self.maintainer_name != 'All' and self.maintainer_name != maintainer.name:
                     continue
 
-                recipe_list_item = RecipeList(recipe.id, recipe.pn, recipe.pv, recipe.summary,
-                        recipe_upstream_status, recipe_upstream.version, maintainer.name)
-                recipe_list.append(recipe_list_item)
+                maintainer_name = maintainer.name
+
+            recipe_list_item = RecipeList(recipe.id, recipe.pn, recipe.summary)
+            recipe_list_item.version = version
+            recipe_list_item.upstream_status = upstream_status
+            recipe_list_item.upstream_version = upstream_version
+            recipe_list_item.maintainer_name = maintainer_name
+            recipe_list.append(recipe_list_item)
 
             self.recipe_list_count = len(recipe_list)
 
@@ -319,8 +335,6 @@ class MaintainerListView(ListView):
     context_object_name = 'maintainer_list'
 
     def get_queryset(self):
-        from datetime import date
-
         maintainer_list = []
         self.maintainer_count = 0
 
