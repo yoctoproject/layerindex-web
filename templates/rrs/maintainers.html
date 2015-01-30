@@ -1,0 +1,99 @@
+{% extends "rrs/base_toplevel.html" %}
+{% load i18n %}
+{% load staticfiles %}
+
+{% load url from future %}
+
+{% comment %}
+
+  rrs-web - maintainers page template
+
+  Copyright (C) 2015 Intel Corporation
+  Licensed under the MIT license, see COPYING.MIT for details
+
+{% endcomment %}
+
+{% block navs %}
+{% endblock %}
+
+{% block content_inner %}
+<div class="navbar navbar-table-controls">
+    <div class="navbar-inner table-controls">
+        <ul class="nav">
+            <li class="dropdown">
+            <span class="badge" style="margin-top:11px;">{{ maintainer_count }} maintainers</span>
+            </li>
+        </ul>    		
+        <form class="navbar-form pull-right">
+            <input type="text" class="input-xxlarge pull-right" placeholder="Search maintainers" id="filter">				
+        </form>
+    </div>
+</div>
+
+{% if maintainer_count == 0 %}
+<div class="alert"> No maintainers found</div>
+{% else %}
+<table class="table table-bordered table-hover statisticstable">
+    <thead>
+        <tr>
+            <th>Maintainer</th>
+            <th class="muted">Assigned recipes</th>
+            <th class="muted">Up-to-date</th>
+            <th>Not updated</th>
+            <th class="muted">Unknown</th>
+            <th>% done</th>
+            <th class="current-wk">wk1</th>
+            <th class="muted">wk2</th>
+            <th class="muted">wk3</th>
+            <th class="muted">wk4</th>
+        </tr>
+</thead>
+<tbody>
+{% for ml in maintainer_list %}
+    <tr>
+        <td>
+            <a href="{% url 'recipes' milestone_name %}?maintainer_name={{ ml.name|urlencode }}">
+            {{ ml.name }}
+            </a>
+        </td>
+        <td>{{ ml.recipes_all }}</td>
+        <td>
+            <a href="{% url 'recipes' milestone_name %}?upstream_status={{ "Up-to-date"|urlencode }}&maintainer_name={{ ml.name|urlencode }}">
+                {{ ml.recipes_up_to_date }}
+            </a>
+        </td>
+        <td>
+            <a href="{% url 'recipes' milestone_name %}?upstream_status={{ "Not updated"|urlencode }}&maintainer_name={{ ml.name|urlencode }}">
+                {{ ml.recipes_not_updated }}
+            </a>
+        </td>
+        <td>
+            <a href="{% url 'recipes' milestone_name %}?upstream_status={{ "Unknown"|urlencode }}&maintainer_name={{ ml.name|urlencode }}">
+                {{ ml.recipes_unknown }}
+            </a>
+        </td>
+        <td>{{ ml.percentage_done }}</td>
+        <td class="current-wk"></td>
+        <td></td>
+        <td></td>
+        <td></td>
+    </tr>
+{% endfor %}
+</tbody>
+</table>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% if maintainer_count > 0 %}
+<script src="{% static "js/uitablefilter.js" %}"></script>
+<script>
+$(document).ready(function() {
+    $("#filter").keyup(function() { 
+        var table = $('.statisticstable');
+        $.uiTableFilter(table, this.value);
+    });
+});
+</script>
+{% endif %}
+{% endblock %}
