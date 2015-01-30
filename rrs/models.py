@@ -124,9 +124,13 @@ class RecipeMaintainer(models.Model):
 
     @staticmethod
     def get_maintainer_by_recipe_and_history(recipe, history):
-        recipe_maintainer = RecipeMaintainer.objects.filter(recipe = recipe,
-                history = history)[0]
-        return recipe_maintainer.maintainer
+        qry = RecipeMaintainer.objects.filter(recipe = recipe,
+                history = history)
+
+        if qry:
+            return qry[0].maintainer
+        else:
+            return None
 
     def __unicode__(self):
         return "%s: %s <%s>" % (self.recipe.pn, self.maintainer.name,
