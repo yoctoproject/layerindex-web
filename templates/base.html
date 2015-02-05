@@ -51,15 +51,18 @@
                         </ul>
                     </div>
                 {% else %}
+                    {% if application == 'layerindex' %}
                     <div class="pull-right">
                         <a class="btn" href="{% url auth_login %}">{% trans "Log in" %}</a>
                     </div>
+                    {% endif %}
                 {% endif %}
+                {% if application == 'layerindex' %}
                 <ul class="nav pull-right">
                     <li class="divider-vertical"></li>
                 </ul>
+                {% endif %}
                 {% block topfunctions %}
-                {% if application == 'layerindex' %}
                 <div class="pull-right nav-spacer">
                     <a class="btn btn-info" href="{% url submit_layer %}">Submit layer</a>
                 </div>
@@ -77,7 +80,6 @@
                     </li>
                     {% endif %}
                 </ul>
-                {% endif %}
                 {% endblock %}
             </div> <!-- end of "container" -->
         </div> <!--  "end of "navbar-inner" -->
@@ -85,7 +87,11 @@
     {% endautoescape %}
     {% endblock %}
 
+    {% if application == 'layerindex' %}
     <div id="content" class="container top-padded">
+    {% else %}
+    <div id="content" class="container-fluid top-padded">
+    {% endif %}
         {% if messages %}
             {% for message in messages %}
             <div{% if message.tags %} class="alert {{ message.tags }}"{% endif %}>{{ message }}</div>
@@ -103,7 +109,7 @@
             &bull; <a href="{% url about %}">about this site</a>
             &bull; <a href="http://www.openembedded.org/Layers_FAQ">FAQ</a>
             {% else %}
-            <a href="{% url about %}">about this site</a>
+            <a href="{% url about %}">About the Recipe Reporting System</a>
             &bull; <a href="https://www.yoctoproject.org/about">About the Yocto Project</a>
             {% endif %}
         </div>
