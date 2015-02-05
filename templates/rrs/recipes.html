@@ -29,7 +29,22 @@
                     <b class="caret"></b>
                 </a>
                 <ul class="dropdown-menu" id="select-status">
-                    {% for us in all_upstream_status %}
+                    {% for us in upstream_status_set_choices %}
+                    {% if us = upstream_status %}
+                    <li class="active">
+                    <a href="#">
+                    {% else %}
+                    <li>
+                    <a href="{% url this_url_name milestone_name %}?upstream_status={{ us|urlencode }}&maintainer_name={{ maintainer_name|urlencode }}">
+                    {% endif %}
+                    {{ us }}
+                    </a>
+                    </li>
+                    {% endfor %}
+
+                    <li class="divider"/>
+
+                    {% for us in upstream_status_choices %}
                     {% if us = upstream_status %}
                     <li class="active">
                     <a href="#">
@@ -50,7 +65,24 @@
                     Maintainer: <strong>{{ maintainer_name }}</strong>
                     <b class="caret"></b>
                 </a>
-                <ul class="dropdown-menu" id="selected-maintainer">
+                <ul class="dropdown-menu" id="selected-maintainer" style="overflow:scroll;max-height:40em;">
+                    {% for m in set_maintainers %}
+                    {% if m = maintainer_name %}
+                    <li class="active">
+                    <a href="#">
+                    {% else %}
+                    <li>
+                    <a href="{% url this_url_name milestone_name %}?upstream_status={{ upstream_status|urlencode }}&maintainer_name={{ m|urlencode }}">
+                    {% endif %}
+
+                    {{ m }}</a>
+
+                    </li>
+                    {% endfor %}
+
+
+                    <li class="divider"/>
+
                     {% for m in all_maintainers %}
                     {% if m = maintainer_name %}
                     <li class="active">

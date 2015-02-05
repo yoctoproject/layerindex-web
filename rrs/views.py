@@ -47,7 +47,7 @@ def _get_milestone_statistics(milestone, maintainer_name=None):
                 history = recipe_upstream_history, status = 'N').count()
         milestone_statistics['unknown'] = milestone_statistics['all'] - \
                 (milestone_statistics['up_to_date'] + milestone_statistics['not_updated'])
-        milestone_statistics['percentage'] = "%.2f" % \
+        milestone_statistics['percentage'] = "%.0f" % \
             ((float(milestone_statistics['up_to_date']) /
                 float(milestone_statistics['all'])) * 100)
     else:
@@ -75,7 +75,7 @@ def _get_milestone_statistics(milestone, maintainer_name=None):
             else:
                 milestone_statistics['unknown'] += 1
 
-        milestone_statistics['percentage'] = "%.2f" % \
+        milestone_statistics['percentage'] = "%.0f" % \
             ((float(milestone_statistics['up_to_date']) /
                 float(milestone_statistics['all'])) * 100)
 
@@ -195,17 +195,18 @@ class RecipeListView(ListView):
         context['recipe_list_count'] = self.recipe_list_count
 
         context['upstream_status'] = self.upstream_status
-        all_upstream_status = []
-        for us in RecipeUpstream.RECIPE_UPSTREAM_STATUS_CHOICES:
-            if us[0] != 'D': # Downgrade is displayed as Unknown
-                all_upstream_status.append(us[1])
-        context['all_upstream_status'] = all_upstream_status
+        ruch = RecipeUpstream.RECIPE_UPSTREAM_STATUS_CHOICES_DICT
+        context['upstream_status_set_choices'] = [ruch['A']]
+        context['upstream_status_choices'] = [ruch['N'], ruch['Y'], ruch['U']]
 
         context['maintainer_name'] = self.maintainer_name
-        all_maintainers = ['All']
+        context['set_maintainers'] =  ['All', 'No Maintainer']
+        all_maintainers = []
         for rm in RecipeMaintainer.objects.filter(history =
                 self.recipe_maintainer_history).values(
                 'maintainer__name').distinct().order_by('maintainer__name'):
+            if rm['maintainer__name'] in context['set_maintainers']:
+                continue
             all_maintainers.append(rm['maintainer__name'])
         context['all_maintainers'] = all_maintainers
 
