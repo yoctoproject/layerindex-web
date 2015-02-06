@@ -143,9 +143,6 @@ class RecipeListView(ListView):
                     recipe, recipe_upstream_history)
 
             if recipe_upstream is None:
-                if self.upstream_status != 'All':
-                    continue
-
                 upstream_status = ''
                 upstream_version = ''
             else:
@@ -157,23 +154,13 @@ class RecipeListView(ListView):
                 if upstream_status == 'Downgrade':
                     upstream_status = 'Unknown' # Downgrade is displayed as Unknown
  
-                if self.upstream_status != 'All' and \
-                    self.upstream_status != upstream_status:
-                    continue
-
                 upstream_version = recipe_upstream.version
 
             maintainer = RecipeMaintainer.get_maintainer_by_recipe_and_history(
                     recipe, self.recipe_maintainer_history)
             if maintainer is None:
-                if self.maintainer_name != 'All':
-                    continue
-
                 maintainer_name = ''
             else:
-                if self.maintainer_name != 'All' and self.maintainer_name != maintainer.name:
-                    continue
-
                 maintainer_name = maintainer.name
 
             recipe_list_item = RecipeList(recipe.id, recipe.pn, recipe.summary)
