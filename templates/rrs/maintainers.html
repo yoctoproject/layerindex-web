@@ -21,7 +21,7 @@
     <div class="navbar-inner table-controls">
         <ul class="nav">
             <li class="dropdown">
-            <span class="badge" style="margin-top:11px;">{{ maintainer_count }} maintainers</span>
+            <span class="badge" style="margin-top:11px;"></span>
             </li>
         </ul>    		
         <form class="navbar-form pull-right">
@@ -30,9 +30,9 @@
     </div>
 </div>
 
-{% if maintainer_count == 0 %}
-<div class="alert"> No maintainers found</div>
-{% else %}
+<div id="no_maintainers_alert" class="alert">
+    No maintainers found <a href="#" id="view-all-maintainers" style="margin-left:10px;">View all maintainers</a>
+</div>
 <table class="table table-bordered table-hovere" id="statistics-table">
     <thead>
         <tr>
@@ -100,7 +100,6 @@
 {% endfor %}
 </tbody>
 </table>
-{% endif %}
 {% endblock %}
 
 {% block scripts %}
@@ -110,6 +109,27 @@
 <script>
 $(document).ready(function() {
     statisticsTable = $('#statistics-table');
+
+    function updateMaintainerCount() {
+        $('#statistics-table').show()
+        $('#no_maintainers_alert').hide()
+
+        count = 0
+        $('tr:visible').each(function() {
+            count++
+        });
+
+        if (count == 1) {
+            $('#statistics-table').hide()
+            $('#no_maintainers_alert').show()
+        }
+
+        if (count == 2) {
+            $('.badge').html("1 maintainer");
+        } else {
+            $('.badge').html((count - 1) + " maintainers")
+        }
+    }
 
     $(statisticsTable).tablesorter({
         sortList: [[0,0]],
@@ -133,7 +153,16 @@ $(document).ready(function() {
 
     $("#filter").keyup(function() { 
         $.uiTableFilter(statisticsTable, this.value);
+        updateMaintainerCount()
     });
+
+    $("#view-all-maintainers").click(function() {
+        $.uiTableFilter(statisticsTable, '');
+        $("#filter").val('')
+        updateMaintainerCount()
+    });
+
+    updateMaintainerCount()
 });
 </script>
 {% endif %}
