@@ -21,80 +21,36 @@
     <div class="navbar-inner table-controls">
         <ul class="nav">
             <li class="dropdown">
-                <span class="badge">{{ recipe_list_count }} recipes</span>
+                <span class="badge"></span>
             </li>
             <li class="dropdown">
                 <a data-toggle="dropdown" href="#" class="dropdown-toggle" id="selected-status">
-                    Upstream status: <strong>{{ upstream_status }}</strong>
+                    Upstream status: <strong></strong>
                     <b class="caret"></b>
                 </a>
                 <ul class="dropdown-menu" id="select-status">
                     {% for us in upstream_status_set_choices %}
-                    {% if us = upstream_status %}
-                    <li class="active">
-                    <a href="#">
-                    {% else %}
-                    <li>
-                    <a href="{% url this_url_name milestone_name %}?upstream_status={{ us|urlencode }}&maintainer_name={{ maintainer_name|urlencode }}">
-                    {% endif %}
-                    {{ us }}
-                    </a>
-                    </li>
+                    <li><a href="#">{{ us }}</a></li> 
                     {% endfor %}
-
                     <li class="divider"/>
-
                     {% for us in upstream_status_choices %}
-                    {% if us = upstream_status %}
-                    <li class="active">
-                    <a href="#">
-                    {% else %}
-                    <li>
-                    <a href="{% url this_url_name milestone_name %}?upstream_status={{ us|urlencode }}&maintainer_name={{ maintainer_name|urlencode }}">
-                    {% endif %}
-
-                    {{ us }}
-                    </a>
-                    </li>
+                    <li><a href="#">{{ us }}</a></li>
                     {% endfor %}
                 </ul>
             </li>
             <li><p>and</p></li>
             <li class="dropdown">
-                <a data-toggle="dropdown" href="#" class="dropdown-toggle" id="select-maintainer">
-                    Maintainer: <strong>{{ maintainer_name }}</strong>
+                <a data-toggle="dropdown" href="#" class="dropdown-toggle" id="selected-maintainer">
+                    Maintainer: <strong></strong>
                     <b class="caret"></b>
                 </a>
-                <ul class="dropdown-menu" id="selected-maintainer" style="overflow:scroll;max-height:40em;">
+                <ul class="dropdown-menu" id="select-maintainer" style="overflow:scroll;max-height:40em;">
                     {% for m in set_maintainers %}
-                    {% if m = maintainer_name %}
-                    <li class="active">
-                    <a href="#">
-                    {% else %}
-                    <li>
-                    <a href="{% url this_url_name milestone_name %}?upstream_status={{ upstream_status|urlencode }}&maintainer_name={{ m|urlencode }}">
-                    {% endif %}
-
-                    {{ m }}</a>
-
-                    </li>
+                    <li><a href="#">{{ m }}</a></li>
                     {% endfor %}
-
-
                     <li class="divider"/>
-
                     {% for m in all_maintainers %}
-                    {% if m = maintainer_name %}
-                    <li class="active">
-                    <a href="#">
-                    {% else %}
-                    <li>
-                    <a href="{% url this_url_name milestone_name %}?upstream_status={{ upstream_status|urlencode }}&maintainer_name={{ m|urlencode }}">
-                    {% endif %}
-
-                    {{ m }}</a>
-
-                    </li>
+                    <li class="active"><a href="#">{{ m }}</a></li>
                     {% endfor %}
                 </ul>
             </li>
@@ -106,22 +62,23 @@
     </div>
 </div>
 
-<table class="table table-bordered tablesorter table-hover recipestable">
+<div id="no_recipes_alert" class="alert">
+    No recipes found <a href="#" id="view-all-recipes" style="margin-left:10px;">View all recipes</a>
+</div>
+<table class="table table-bordered tablesorter table-hover" id="recipestable">
 <thead>
     <tr>
+        <th class="upstream_status_column span2 sorted">Upstream status<b class="caret"/></th>
         <th class="recipe_column">Recipe</th>
         <th class="version_column muted">Version</th>
-        <th class="upstream_status_column"><b>Upstream status</b></th>
-        <th class="upstream_version_column muted">Upstream version</th>
+        <th class="upstream_version_column muted header">Upstream version</th>
         <th class="maintainer_column"><b>Maintainer</b></th>
-        <th class="summary_column muted span5">Summary</th>
+        <th class="summary_column muted span5 header">Summary</th>
     </tr>
     </thead>
 <tbody>
 {% for r in recipe_list %}
 <tr>
-    <td class="recipe_column"><a href="{% url "recipedetail" r.pk %}">{{ r.name }}</a></td>
-    <td class="version_column">{{ r.version }}</td>
     {% if r.upstream_status == "Up-to-date" %}
     <td class="text-success">
     {% elif r.upstream_status == "Not updated" %}
@@ -133,6 +90,8 @@
     {% endif %}
         {{ r.upstream_status }}
     </td>
+    <td class="recipe_column"><a href="{% url "recipedetail" r.pk %}">{{ r.name }}</a></td>
+    <td class="version_column">{{ r.version }}</td>
     <td class="upstream_version_column">{{ r.upstream_version }}</td>
     <td class="maintainer_column">{{ r.maintainer_name }}</td>
     <td class="summary_column">{{ r.summary }}</td>
@@ -144,12 +103,154 @@
 
 {% block scripts %}
 <script src="{% static "js/uitablefilter.js" %}"></script>
+<script src="{% static "js/jquery.tablesorter.js" %}"></script>
+<script>
+(function($) {
+    $.fn.multiFilter = function(filters) {
+        var $table = $(this);
+        return $table.find('tbody > tr').each(function() {
+            var tr = $(this);
+
+            // Make it an array to avoid special cases later.
+            if(!$.isArray(filters))
+                filters = [ filters ];
+
+            howMany = 0;
+            for(i = 0, f = filters[0]; i < filters.length; f = filters[++i]) {
+                var index = 0;
+                $table.find('thead > tr > th').each(function(i) {
+                    if($(this).text() == f.column) {
+                        index = i;
+                        return false;
+                    }
+                });
+                var text = tr.find('td:eq(' + index + ')').text();
+                if(text.toLowerCase().indexOf(f.word.toLowerCase()) != -1)
+                    ++howMany;
+            }
+            if(howMany == filters.length)
+                tr.show();
+            else
+                tr.hide();
+        });
+    };
+})(jQuery);
+</script>
 <script>
 $(document).ready(function() {
+    recipesTable = $('#recipestable')
+    upstreamStatus = '{{ upstream_status }}'
+    maintainer = '{{ maintainer_name }}'
+
+    function updateRecipeCount() {
+        $('#recipestable').show()
+        $('#no_recipes_alert').hide()
+
+        var count = 0;
+        $('tr:visible').each(function() {
+            count++
+        });
+
+        if (count == 1) {
+            $('#recipestable').hide()
+            $('#no_recipes_alert').show()
+        }
+
+        if (count == 2) {
+            $('.badge').html("1 recipe");
+        } else {
+            $('.badge').html((count - 1) + " recipes");
+        }
+    }
+
+    function updateStatusSelected() {
+        $("#selected-status strong").html(upstreamStatus)
+
+        statusList = document.getElementById("select-status").getElementsByTagName("li")
+        for (var i = 0; i < statusList.length; i++) {
+            if (statusList[i].textContent == upstreamStatus) {
+                $(statusList[i]).addClass("active")
+            } else {
+                $(statusList[i]).removeClass("active")
+            }
+        }
+    }
+
+    function updateMaintainerSelected() {
+        $("#selected-maintainer strong").html(maintainer)
+
+        maintainerList = document.getElementById("select-maintainer").getElementsByTagName("li")
+        for (var i = 0; i < maintainerList.length; i++) {
+            if (maintainerList[i].textContent == maintainer) {
+                $(maintainerList[i]).addClass("active")
+            } else {
+                $(maintainerList[i]).removeClass("active")
+            }
+        }
+    }
+
+    function applyFilters() {
+        if (upstreamStatus == 'All') {
+            upstreamStatusFilter = ''
+        } else {
+            upstreamStatusFilter = upstreamStatus
+        }
+
+        if (maintainer == 'All') {
+            maintainerFilter = ''
+        } else {
+            maintainerFilter = maintainer
+        }
+
+        $(recipesTable).multiFilter([
+            { column: 'Upstream status', word: upstreamStatusFilter },
+            { column: 'Maintainer', word: maintainerFilter },
+        ]);
+
+        updateStatusSelected()
+        updateMaintainerSelected()
+    }
+
+    $(recipesTable).tablesorter({
+        sortList: [[0,0]],
+        headers: {
+            1: { sorter: false },
+            2: { sorter: false },
+            3: { sorter: false },
+            4: { sorter: false },
+            5: { sorter: false },
+        }
+    }); 
+
     $("#filter").keyup(function() { 
-        var recipestable = $('.recipestable');
-        $.uiTableFilter(recipestable, this.value);
+        upstreamStatus = 'All' 
+        maintainer = 'All'
+        applyFilters()
+        $.uiTableFilter(recipesTable, this.value);
+        updateRecipeCount()
     });
+
+    $("#select-status a").click(function() {
+        upstreamStatus = this.text
+        applyFilters()
+        updateRecipeCount()
+    });
+
+    $("#select-maintainer a").click(function() {
+        maintainer = this.text
+        applyFilters()
+        updateRecipeCount()
+    });
+
+    $("#view-all-recipes").click(function() { 
+        upstreamStatus = 'All' 
+        maintainer = 'All'
+        applyFilters()
+        updateRecipeCount()
+    })
+
+    applyFilters()
+    updateRecipeCount()
 });
 </script>
 {% endblock %}
