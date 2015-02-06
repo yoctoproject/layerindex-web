@@ -33,10 +33,10 @@
 {% if maintainer_count == 0 %}
 <div class="alert"> No maintainers found</div>
 {% else %}
-<table class="table table-bordered table-hover statisticstable">
+<table class="table table-bordered table-hovere" id="statistics-table">
     <thead>
         <tr>
-            <th>Maintainer</th>
+            <th class="sorted">Maintainer<b class="caret"/></th>
             <th class="muted">Assigned recipes</th>
             <th class="muted">Up-to-date</th>
             <th>Not updated</th>
@@ -106,11 +106,33 @@
 {% block scripts %}
 {% if maintainer_count > 0 %}
 <script src="{% static "js/uitablefilter.js" %}"></script>
+<script src="{% static "js/jquery.tablesorter.js" %}"></script>
 <script>
 $(document).ready(function() {
+    statisticsTable = $('#statistics-table');
+
+    $(statisticsTable).tablesorter({
+        sortList: [[0,0]],
+        headers: {
+            1: { sorter: false },
+            2: { sorter: false },
+            3: { sorter: false },
+            4: { sorter: false },
+            5: { sorter: false },
+            6: { sorter: false },
+            7: { sorter: false },
+            8: { sorter: false },
+            9: { sorter: false },
+            10: { sorter: false },
+            11: { sorter: false },
+            12: { sorter: false },
+            13: { sorter: false },
+            14: { sorter: false },
+        }
+    });
+
     $("#filter").keyup(function() { 
-        var table = $('.statisticstable');
-        $.uiTableFilter(table, this.value);
+        $.uiTableFilter(statisticsTable, this.value);
     });
 });
 </script>
