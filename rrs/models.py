@@ -12,6 +12,7 @@ sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__), '../
 from datetime import date
 
 from django.db import models
+from django.db.models.query import Q
 from layerindex.models import Recipe
 
 class Milestone(models.Model):
@@ -166,6 +167,7 @@ class RecipeUpstream(models.Model):
     RECIPE_UPSTREAM_STATUS_CHOICES = (
         ('A', 'All'),
         ('N', 'Not updated'),
+        ('C', 'Can\'t be updated'),
         ('Y', 'Up-to-date'),
         ('D', 'Downgrade'),
         ('U', 'Unknown'),
@@ -186,6 +188,29 @@ class RecipeUpstream(models.Model):
     no_update_reason = models.CharField(max_length=255, blank=True)
     date = models.DateTimeField()
 
+    @staticmethod
+    def get_recipes_not_updated(history):
+        qry = RecipeUpstream.objects.filter(history = history, status = 'N',
+                no_update_reason = '').order_by('pn')
+        return qry
+
+    @staticmethod
+    def get_recipes_cant_be_updated(history):
+        qry = RecipeUpstream.objects.filter(history = history, status = 'N') \
+                .exclude(no_update_reason = '').order_by('pn')
+        return qry
+
+    @staticmethod
+    def get_recipes_up_to_date(history):
+        qry = RecipeUpstream.objects.filter(history = history, status = 'Y' \
+                ).order_by('pn')
+        return qry
+
+    @staticmethod
+    def get_recipes_unknown(history):
+        qry = RecipeUpstream.objects.filter(history = history,
+                status__in = ['U', 'D']).order_by('pn')
+        return qry
 
     @staticmethod
     def get_by_recipe_and_history(recipe, history):

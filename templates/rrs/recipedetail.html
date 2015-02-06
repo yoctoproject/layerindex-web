@@ -35,10 +35,12 @@
             <li class="lead">Upstream status: <strong class="text-success">{{ upstream_status }}</strong></li>
             {% elif upstream_status == "Not updated" %}
             <li class="lead">Upstream status: <strong class="text-error">{{ upstream_status }}</strong></li>
+            {% elif upstream_status == "Can't be updated" %}
+            <li class="lead">Upstream status: <strong class="muted">{{ upstream_status }}</strong></li>
             {% else %}
             <li class="lead">Upstream status: <strong class="text-warning">{{ upstream_status }}</strong></li>
             {% endif %}
-            {% if upstream_status == "Not updated" %}
+            {% if upstream_status == "Not updated" or upstream_status == "Can't be updated" %}
             <li class="divider-vertical"></li>
             <li class="lead">Upstream version: <strong>{{ upstream_version }}</strong></li>
             {% endif %}

@@ -40,6 +40,7 @@
             <th class="muted">Assigned recipes</th>
             <th class="muted">Up-to-date</th>
             <th>Not updated</th>
+            <th class="muted">Can't be updated</th>
             <th class="muted">Unknown</th>
             <th>% done</th>
 
@@ -73,6 +74,11 @@
         <td>
             <a href="{% url 'recipes' milestone_name %}?upstream_status={{ "Not updated"|urlencode }}&maintainer_name={{ ml.name|urlencode }}">
                 {{ ml.recipes_not_updated }}
+            </a>
+        </td>
+        <td>
+            <a href="{% url 'recipes' milestone_name %}?upstream_status={{ "Can't be updated"|urlencode }}&maintainer_name={{ ml.name|urlencode }}">
+                {{ ml.recipes_cant_be_updated }}
             </a>
         </td>
         <td>
