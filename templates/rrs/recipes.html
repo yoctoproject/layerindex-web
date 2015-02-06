@@ -246,8 +246,9 @@ $(document).ready(function() {
         upstreamStatus = 'All' 
         maintainer = 'All'
         applyFilters()
+        $("#filter").val('')
         updateRecipeCount()
-    })
+    });
 
     applyFilters()
     updateRecipeCount()
