@@ -126,6 +126,8 @@
     <td class="text-success">
     {% elif r.upstream_status == "Not updated" %}
     <td class="text-error">
+    {% elif r.upstream_status == "Can't be updated" %}
+    <td class="muted">
     {% else %}
     <td class="text-warning">
     {% endif %}

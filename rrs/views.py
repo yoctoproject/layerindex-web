@@ -41,12 +41,14 @@ def _get_milestone_statistics(milestone, maintainer_name=None):
     if maintainer_name is None:
         milestone_statistics['all'] = Recipe.objects.all().count()
 
-        milestone_statistics['up_to_date'] = RecipeUpstream.objects.filter(
-                history = recipe_upstream_history, status = 'Y').count()
-        milestone_statistics['not_updated'] = RecipeUpstream.objects.filter(
-                history = recipe_upstream_history, status = 'N').count()
-        milestone_statistics['unknown'] = milestone_statistics['all'] - \
-                (milestone_statistics['up_to_date'] + milestone_statistics['not_updated'])
+        milestone_statistics['up_to_date'] = \
+            RecipeUpstream.get_recipes_up_to_date(recipe_upstream_history).count()
+        milestone_statistics['not_updated'] = \
+            RecipeUpstream.get_recipes_not_updated(recipe_upstream_history).count()
+        milestone_statistics['cant_be_updated'] = \
+            RecipeUpstream.get_recipes_cant_be_updated(recipe_upstream_history).count()
+        milestone_statistics['unknown'] = \
+            RecipeUpstream.get_recipes_unknown(recipe_upstream_history).count()
         milestone_statistics['percentage'] = "%.0f" % \
             ((float(milestone_statistics['up_to_date']) /
                 float(milestone_statistics['all'])) * 100)
@@ -66,12 +68,16 @@ def _get_milestone_statistics(milestone, maintainer_name=None):
 
         milestone_statistics['up_to_date'] = 0
         milestone_statistics['not_updated'] = 0
+        milestone_statistics['cant_be_updated'] = 0
         milestone_statistics['unknown'] = 0
         for ru in recipe_upstream_all:
             if ru.status == 'Y':
                 milestone_statistics['up_to_date'] += 1
             elif ru.status == 'N':
-                milestone_statistics['not_updated'] += 1
+                if ru.no_update_reason == '':
+                    milestone_statistics['not_updated'] += 1
+                else:
+                    milestone_statistics['cant_be_updated'] += 1
             else:
                 milestone_statistics['unknown'] += 1
 
@@ -143,6 +149,8 @@ class RecipeListView(ListView):
                 upstream_status = ''
                 upstream_version = ''
             else:
+                if recipe_upstream.status == 'N' and recipe_upstream.no_update_reason:
+                    recipe_upstream.status = 'C'
                 upstream_status = \
                         RecipeUpstream.RECIPE_UPSTREAM_STATUS_CHOICES_DICT[
                                 recipe_upstream.status]
@@ -190,6 +198,7 @@ class RecipeListView(ListView):
         context['recipes_percentage'] = self.milestone_statistics['percentage']
         context['recipes_up_to_date'] = self.milestone_statistics['up_to_date']
         context['recipes_not_updated'] = self.milestone_statistics['not_updated']
+        context['recipes_cant_be_updated'] = self.milestone_statistics['cant_be_updated']
         context['recipes_unknown'] = self.milestone_statistics['unknown']
 
         context['recipe_list_count'] = self.recipe_list_count
@@ -197,7 +206,7 @@ class RecipeListView(ListView):
         context['upstream_status'] = self.upstream_status
         ruch = RecipeUpstream.RECIPE_UPSTREAM_STATUS_CHOICES_DICT
         context['upstream_status_set_choices'] = [ruch['A']]
-        context['upstream_status_choices'] = [ruch['N'], ruch['Y'], ruch['U']]
+        context['upstream_status_choices'] = [ruch['N'], ruch['C'], ruch['Y'], ruch['U']]
 
         context['maintainer_name'] = self.maintainer_name
         context['set_maintainers'] =  ['All', 'No Maintainer']
@@ -286,10 +295,13 @@ class RecipeDetailView(DetailView):
         )
         recipe_upstream = RecipeUpstream.get_by_recipe_and_history(
             recipe, recipe_upstream_history)
+        if recipe_upstream.status == 'N' and recipe_upstream.no_update_reason:
+            recipe_upstream.status = 'C'
         context['upstream_status'] = \
             RecipeUpstream.RECIPE_UPSTREAM_STATUS_CHOICES_DICT[recipe_upstream.status]
         context['upstream_version'] = recipe_upstream.version
         context['upstream_no_update_reason'] = recipe_upstream.no_update_reason
+
 
         self.recipe_maintainer_history = RecipeMaintainerHistory.get_last()
         recipe_maintainer = RecipeMaintainer.objects.filter(recipe = recipe,
@@ -324,6 +336,7 @@ class MaintainerList():
     recipes_all = 0
     recipes_up_to_date = '0'
     recipes_not_updated = '0'
+    recipes_cant_be_updated = '0'
     recipes_unknown = '0'
     percentage_done = '0.00'
 
@@ -364,6 +377,7 @@ class MaintainerListView(ListView):
             ml.recipes_all = milestone_statistics['all']
             ml.recipes_up_to_date = milestone_statistics['up_to_date']
             ml.recipes_not_updated = milestone_statistics['not_updated']
+            ml.recipes_cant_be_updated = milestone_statistics['cant_be_updated']
             ml.recipes_unknown = milestone_statistics['unknown']
             ml.percentage_done = milestone_statistics['percentage']
 
@@ -393,6 +407,7 @@ class MaintainerListView(ListView):
         context['recipes_percentage'] = self.milestone_statistics['percentage']
         context['recipes_up_to_date'] = self.milestone_statistics['up_to_date']
         context['recipes_not_updated'] = self.milestone_statistics['not_updated']
+        context['recipes_cant_be_updated'] = self.milestone_statistics['cant_be_updated']
         context['recipes_unknown'] = self.milestone_statistics['unknown']
 
         context['maintainer_count'] = self.maintainer_count
