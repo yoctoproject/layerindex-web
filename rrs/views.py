@@ -366,7 +366,7 @@ class MaintainerListView(ListView):
             ml.recipes_not_updated = milestone_statistics['not_updated']
             ml.recipes_cant_be_updated = milestone_statistics['cant_be_updated']
             ml.recipes_unknown = milestone_statistics['unknown']
-            ml.percentage_done = milestone_statistics['percentage']
+            ml.percentage_done = milestone_statistics['percentage'] + '%'
 
             ml.week_statistics = []
             for week_no in milestone_week_intervals.keys():
@@ -379,7 +379,7 @@ class MaintainerListView(ListView):
                 number = RecipeUpgrade.objects.filter(maintainer__name = ml.name,
                         commit_date__gte = start_date,
                         commit_date__lte = end_date).count()
-                ml.week_statistics.append(number)
+                ml.week_statistics.append('' if number == 0 else number)
 
         return maintainer_list
 
