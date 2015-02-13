@@ -182,8 +182,12 @@ def get_upstream_info_thread(envdata, result, recipe_mutex, result_mutex, logger
                 recipe_result['type'] = 'A'
                 recipe_result['date'] = datetime.utcnow()
             except Exception as inst:
+                import sys, traceback
                 logger.warn("get_upstream_info, recipe %s, pv %s, unexpected error: %s" 
                             % (recipe.pn, recipe_pv, repr(inst)))
+                print '-' * 60
+                traceback.print_exc(file=sys.stdout)
+                print '-' * 60
 
                 recipe_result['date'] = datetime.utcnow()
         else:
