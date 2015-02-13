@@ -56,8 +56,9 @@
             </li>
         </ul>
 
-        <form class="navbar-form pull-right">
+        <form id="form-search" class="navbar-form pull-right">
             <input type="text" class="input-xxlarge" placeholder="Search all recipes" id="filter"/>                
+            <button type="submit" value="Search" class="btn btn-info" id="btn-search">Search</button>
         </form>
     </div>
 </div>
@@ -222,12 +223,14 @@ $(document).ready(function() {
         }
     }); 
 
-    $("#filter").keyup(function() { 
+    $("#form-search").submit(function( event ) {
         upstreamStatus = 'All' 
         maintainer = 'All'
+        search_text = $("#filter").val()
         applyFilters()
-        $.uiTableFilter(recipesTable, this.value);
+        $.uiTableFilter(recipesTable, search_text);
         updateRecipeCount()
+        event.preventDefault();
     });
 
     $("#select-status a").click(function() {
