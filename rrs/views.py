@@ -137,13 +137,13 @@ class RecipeListView(ListView):
                 current_date <= milestone.end_date:
                 version = recipe.pv
             else:
-                version = ''
-
                 rup = RecipeUpgrade.get_by_recipe_and_date(recipe,
                         milestone.end_date)
 
-                if not rup is None:
-                    version = rup.version
+                if rup is None: # Recipe don't exit in this Milestone
+                    continue
+
+                version = rup.version
 
             recipe_upstream = RecipeUpstream.get_by_recipe_and_history(
                     recipe, recipe_upstream_history)
@@ -176,7 +176,7 @@ class RecipeListView(ListView):
             recipe_list_item.maintainer_name = maintainer_name
             recipe_list.append(recipe_list_item)
 
-            self.recipe_list_count = len(recipe_list)
+        self.recipe_list_count = len(recipe_list)
 
         return recipe_list
 
