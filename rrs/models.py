@@ -255,6 +255,16 @@ class RecipeUpgrade(models.Model):
     author_date = models.DateTimeField()
     commit_date = models.DateTimeField()
 
+    @staticmethod
+    def get_by_recipe_and_date(recipe, current_date):
+        rup_qry = RecipeUpgrade.objects.filter(recipe = recipe,
+                commit_date__lte = current_date).order_by('commit_date')
+
+        if rup_qry:
+            return rup_qry[0]
+        else:
+            return None
+
     def short_sha1(self):
         return self.sha1[0:6]
 
