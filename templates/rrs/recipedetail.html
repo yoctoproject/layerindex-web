@@ -45,7 +45,7 @@
             <li class="lead">Upstream version: <strong>{{ upstream_version }}</strong></li>
             {% endif %}
             <li class="divider-vertical"></li>
-            <li class="lead">Maintainer: <strong><a href="{% url recipes milestone_name %}?maintainer_name={{ maintainer_name|urlencode }}">{{ maintainer_name }}</a></strong></li>
+            <li class="lead">Maintainer: <strong><a href="{% url recipes release_name milestone_name %}?maintainer_name={{ maintainer_name|urlencode }}">{{ maintainer_name }}</a></strong></li>
             <li class="divider-vertical"></li>
         </ul>
     </div>
@@ -79,14 +79,14 @@
                     <td>{{ rud.title }}</td>
                     <td>{{ rud.version }}</td>
                     {% if rud.milestone_name %}
-                    <td><a href="{% url recipes rud.milestone_name %}">{{ rud.milestone_name }}</a></td>
+                    <td><a href="{% url recipes rud.release_name rud.milestone_name %}">{{ rud.milestone_name }}</a></td>
                     {% else %}
                     <td>{{ rud.milestone_name }}</td>
                     {% endif %}
                     <td>{{ rud.date }}</td>
 
                     {% if rud.is_recipe_maintainer %} 
-                    <td><a href="{% url recipes rud.milestone_name %}?maintainer_name={{ rud.maintainer_name|urlencode }}">{{ rud.maintainer_name }}</a></td>
+                    <td><a href="{% url recipes rud.release_name rud.milestone_name %}?maintainer_name={{ rud.maintainer_name|urlencode }}">{{ rud.maintainer_name }}</a></td>
                     {% else %}
                     <td>{{ rud.maintainer_name }}</a></td>
                     {% endif %}

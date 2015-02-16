@@ -15,28 +15,54 @@ from django.db import models
 from django.db.models.query import Q
 from layerindex.models import Recipe
 
-class Milestone(models.Model):
+class Release(models.Model):
     name = models.CharField(max_length=100, unique=True)
     start_date = models.DateField()
     end_date = models.DateField()
 
-    """ Get current milestone """
+    @staticmethod
+    def get_by_date(date):
+        release_qry = Release.objects.filter(start_date__lte = date, 
+                end_date__gte = date).order_by('-end_date')
+
+        if release_qry:
+            return release_qry[0]
+        else:
+            return None
+
     @staticmethod
     def get_current():
         current = date.today()
-        current_milestone = Milestone.get_by_date(current)
-        return current_milestone or Milestone.objects.filter().order_by('-id')[0]
+        current_release = Release.get_by_date(current)
 
-    """ Get milestone by date """
+        return current_release or Release.objects.filter().order_by('-end_date')[0]
+
+    def __unicode__(self):
+        return '%s: %s - %s' % (self.name, self.start_date, self.end_date)
+
+class Milestone(models.Model):
+    release = models.ForeignKey(Release)
+    name = models.CharField(max_length=100, unique=True)
+    start_date = models.DateField()
+    end_date = models.DateField()
+
+    """ Get milestone by release and date """
     @staticmethod
-    def get_by_date(date):
-        milestone_set = Milestone.objects.filter(start_date__lte = date, 
-                end_date__gte = date).order_by('-id')
+    def get_by_release_and_date(release, date):
+        milestone_set = Milestone.objects.filter(release = release,
+                start_date__lte = date, end_date__gte = date).order_by('-end_date')
 
         if milestone_set:
             return milestone_set[0]
         else:
             return None
+
+    """ Get current milestone """
+    @staticmethod
+    def get_current(release):
+        current = date.today()
+        current_milestone = Milestone.get_by_release_and_date(release, current)
+        return current_milestone or Milestone.objects.filter().order_by('-end_date')[0]
 
     """ Get week intervals from start and end of Milestone """ 
     def get_week_intervals(self):
@@ -60,7 +86,7 @@ class Milestone(models.Model):
         return weeks
 
     def __unicode__(self):
-        return '%s' % (self.name)
+        return '%s: %s - %s' % (self.name, self.start_date, self.end_date)
 
 class Maintainer(models.Model):
     name = models.CharField(max_length=255, unique=True)
@@ -256,14 +282,10 @@ class RecipeUpgrade(models.Model):
     commit_date = models.DateTimeField()
 
     @staticmethod
-    def get_by_recipe_and_date(recipe, current_date):
-        rup_qry = RecipeUpgrade.objects.filter(recipe = recipe,
-                commit_date__lte = current_date).order_by('commit_date')
-
-        if rup_qry:
-            return rup_qry[0]
-        else:
-            return None
+    def get_by_recipe_and_date(recipe, end_date):
+        ru = RecipeUpgrade.objects.filter(recipe = recipe,
+                commit_date__lte = end_date)
+        return ru[0] if ru else None
 
     def short_sha1(self):
         return self.sha1[0:6]

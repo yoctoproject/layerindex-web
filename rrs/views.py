@@ -7,7 +7,7 @@ from django.views.generic import ListView, DetailView
 from django.core.urlresolvers import resolve
 
 from layerindex.models import Recipe
-from rrs.models import Milestone, Maintainer, RecipeMaintainerHistory, \
+from rrs.models import Release, Milestone, Maintainer, RecipeMaintainerHistory, \
         RecipeMaintainer, RecipeUpstreamHistory, RecipeUpstream, \
         RecipeDistro, RecipeUpgrade
 
@@ -49,9 +49,6 @@ def _get_milestone_statistics(milestone, maintainer_name=None):
             RecipeUpstream.get_recipes_cant_be_updated(recipe_upstream_history).count()
         milestone_statistics['unknown'] = \
             RecipeUpstream.get_recipes_unknown(recipe_upstream_history).count()
-        milestone_statistics['percentage'] = "%.0f" % \
-            ((float(milestone_statistics['up_to_date']) /
-                float(milestone_statistics['all'])) * 100)
     else:
         recipe_maintainer_history = RecipeMaintainerHistory.get_by_end_date(
             milestone.end_date)
@@ -81,6 +78,9 @@ def _get_milestone_statistics(milestone, maintainer_name=None):
             else:
                 milestone_statistics['unknown'] += 1
 
+    if milestone_statistics['all'] == 0:
+        milestone_statistics['percentage'] = 0
+    else:
         milestone_statistics['percentage'] = "%.0f" % \
             ((float(milestone_statistics['up_to_date']) /
                 float(milestone_statistics['all'])) * 100)
@@ -105,8 +105,11 @@ class RecipeListView(ListView):
     context_object_name = 'recipe_list'
 
     def get_queryset(self):
+        self.release_name = self.kwargs['release_name']
+        release = get_object_or_404(Release, name=self.release_name)
+
         self.milestone_name = self.kwargs['milestone_name']
-        milestone = get_object_or_404(Milestone, name=self.milestone_name)
+        milestone = get_object_or_404(Milestone, release = release, name=self.milestone_name)
 
         if 'upstream_status' in self.request.GET.keys():
             self.upstream_status = self.request.GET['upstream_status']
@@ -185,8 +188,11 @@ class RecipeListView(ListView):
 
         context['this_url_name'] = resolve(self.request.path_info).url_name
 
+        context['release_name'] = self.release_name
+        context['all_releases'] = Release.objects.filter().order_by('-end_date')
         context['milestone_name'] = self.milestone_name
-        context['all_milestones'] = Milestone.objects.filter().order_by('-end_date')
+        context['all_milestones'] = Milestone.objects.filter(release__name =
+                self.release_name).order_by('-end_date')
 
         context['recipes_percentage'] = self.milestone_statistics['percentage']
         context['recipes_up_to_date'] = self.milestone_statistics['up_to_date']
@@ -223,6 +229,7 @@ class RecipeListView(ListView):
 class RecipeUpgradeDetail():
     title = None
     version = None
+    release_name = None
     milestone_name = None
     date = None
     maintainer_name = None
@@ -230,10 +237,11 @@ class RecipeUpgradeDetail():
     commit = None
     commit_url = None
 
-    def __init__(self, title, version, milestone_name, date, 
+    def __init__(self, title, version, release_name, milestone_name, date, 
             maintainer_name, is_recipe_maintainer, commit, commit_url):
         self.title = title
         self.version = version
+        self.release_name = release_name
         self.milestone_name = milestone_name
         self.date = date
         self.maintainer_name = maintainer_name
@@ -242,14 +250,19 @@ class RecipeUpgradeDetail():
         self.commit_url = commit_url
 
 def _get_recipe_upgrade_detail(recipe_upgrade):
-    milestone = Milestone.get_by_date(recipe_upgrade.commit_date)
-    if milestone is None:
-        milestone_name = ''
-        recipe_maintainer_history = None
-    else:
-        milestone_name = milestone.name
-        recipe_maintainer_history = RecipeMaintainerHistory.get_by_end_date(
-            milestone.end_date)
+    release_name = ''
+    milestone_name = ''
+    recipe_maintainer_history = None
+
+    release = Release.get_by_date(recipe_upgrade.commit_date)
+    if release:
+        release_name = release.name
+        milestone = Milestone.get_by_release_and_date(release,
+                recipe_upgrade.commit_date)
+        if milestone:
+            milestone_name = milestone.name
+            recipe_maintainer_history = RecipeMaintainerHistory.get_by_end_date(
+                milestone.end_date)
 
     is_recipe_maintainer = False
     maintainer_name = ''
@@ -267,8 +280,8 @@ def _get_recipe_upgrade_detail(recipe_upgrade):
         '/commit/?id=' + recipe_upgrade.sha1
 
     rud = RecipeUpgradeDetail(recipe_upgrade.title, recipe_upgrade.version, \
-            milestone_name, recipe_upgrade.commit_date, maintainer_name, \
-            is_recipe_maintainer, commit, commit_url)
+            release_name, milestone_name, recipe_upgrade.commit_date, \
+            maintainer_name, is_recipe_maintainer, commit, commit_url)
 
     return rud
 
@@ -279,22 +292,28 @@ class RecipeDetailView(DetailView):
         context = super(RecipeDetailView, self).get_context_data(**kwargs)
         recipe = self.get_object()
 
-        milestone = Milestone.get_current()
+        release = Release.get_current()
+        context['release_name'] = release.name
+        milestone = Milestone.get_current(release)
         context['milestone_name'] = milestone.name
 
+        context['upstream_status'] = ''
+        context['upstream_version'] = ''
+        context['upstream_no_update_reason'] = ''
         recipe_upstream_history = RecipeUpstreamHistory.get_last_by_date_range(
             milestone.start_date,
             milestone.end_date
         )
-        recipe_upstream = RecipeUpstream.get_by_recipe_and_history(
-            recipe, recipe_upstream_history)
-        if recipe_upstream.status == 'N' and recipe_upstream.no_update_reason:
-            recipe_upstream.status = 'C'
-        context['upstream_status'] = \
-            RecipeUpstream.RECIPE_UPSTREAM_STATUS_CHOICES_DICT[recipe_upstream.status]
-        context['upstream_version'] = recipe_upstream.version
-        context['upstream_no_update_reason'] = recipe_upstream.no_update_reason
-
+        if recipe_upstream_history:
+            recipe_upstream = RecipeUpstream.get_by_recipe_and_history(
+                recipe, recipe_upstream_history)
+            if recipe_upstream:
+                if recipe_upstream.status == 'N' and recipe_upstream.no_update_reason:
+                    recipe_upstream.status = 'C'
+                context['upstream_status'] = \
+                    RecipeUpstream.RECIPE_UPSTREAM_STATUS_CHOICES_DICT[recipe_upstream.status]
+                context['upstream_version'] = recipe_upstream.version
+                context['upstream_no_update_reason'] = recipe_upstream.no_update_reason
 
         self.recipe_maintainer_history = RecipeMaintainerHistory.get_last()
         recipe_maintainer = RecipeMaintainer.objects.filter(recipe = recipe,
@@ -345,8 +364,12 @@ class MaintainerListView(ListView):
         maintainer_list = []
         self.maintainer_count = 0
 
+        self.release_name = self.kwargs['release_name']
+        release = get_object_or_404(Release, name=self.release_name)
         self.milestone_name = self.kwargs['milestone_name']
-        milestone = get_object_or_404(Milestone, name=self.milestone_name)
+        milestone = get_object_or_404(Milestone, release = release,
+                name=self.milestone_name)
+
         milestone_week_intervals = milestone.get_week_intervals()
 
         self.milestone_statistics = _get_milestone_statistics(milestone)
@@ -394,8 +417,11 @@ class MaintainerListView(ListView):
 
         context['this_url_name'] = resolve(self.request.path_info).url_name
 
+        context['release_name'] = self.release_name
+        context['all_releases'] = Release.objects.filter().order_by('-end_date')
         context['milestone_name'] = self.milestone_name
-        context['all_milestones'] = Milestone.objects.filter().order_by('-id')
+        context['all_milestones'] = Milestone.objects.filter(release__name =
+                self.release_name).order_by('-end_date')
 
         context['recipes_percentage'] = self.milestone_statistics['percentage']
         context['recipes_up_to_date'] = self.milestone_statistics['up_to_date']
