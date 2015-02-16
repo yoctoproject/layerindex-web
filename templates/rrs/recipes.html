@@ -212,17 +212,6 @@ $(document).ready(function() {
         updateMaintainerSelected()
     }
 
-    $(recipesTable).tablesorter({
-        sortList: [[0,0]],
-        headers: {
-            1: { sorter: false },
-            2: { sorter: false },
-            3: { sorter: false },
-            4: { sorter: false },
-            5: { sorter: false },
-        }
-    }); 
-
     $("#form-search").submit(function( event ) {
         upstreamStatus = 'All' 
         maintainer = 'All'
@@ -252,6 +241,19 @@ $(document).ready(function() {
         $("#filter").val('')
         updateRecipeCount()
     });
+
+{% if recipe_list_count > 0 %}
+    $(recipesTable).tablesorter({
+        sortList: [[0,0]],
+        headers: {
+            1: { sorter: false },
+            2: { sorter: false },
+            3: { sorter: false },
+            4: { sorter: false },
+            5: { sorter: false },
+        }
+    }); 
+{% endif %}
 
     applyFilters()
     updateRecipeCount()

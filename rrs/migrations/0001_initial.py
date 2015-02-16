@@ -8,9 +8,19 @@ from django.db import models
 class Migration(SchemaMigration):
 
     def forwards(self, orm):
+        # Adding model 'Release'
+        db.create_table('rrs_release', (
+            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('name', self.gf('django.db.models.fields.CharField')(unique=True, max_length=100)),
+            ('start_date', self.gf('django.db.models.fields.DateField')()),
+            ('end_date', self.gf('django.db.models.fields.DateField')()),
+        ))
+        db.send_create_signal('rrs', ['Release'])
+
         # Adding model 'Milestone'
         db.create_table('rrs_milestone', (
             ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('release', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['rrs.Release'])),
             ('name', self.gf('django.db.models.fields.CharField')(unique=True, max_length=100)),
             ('start_date', self.gf('django.db.models.fields.DateField')()),
             ('end_date', self.gf('django.db.models.fields.DateField')()),
@@ -89,6 +99,9 @@ class Migration(SchemaMigration):
 
 
     def backwards(self, orm):
+        # Deleting model 'Release'
+        db.delete_table('rrs_release')
+
         # Deleting model 'Milestone'
         db.delete_table('rrs_milestone')
 
@@ -167,7 +180,7 @@ class Migration(SchemaMigration):
             'layerbranch': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['layerindex.LayerBranch']"}),
             'license': ('django.db.models.fields.CharField', [], {'max_length': '100', 'blank': 'True'}),
             'pn': ('django.db.models.fields.CharField', [], {'max_length': '100', 'blank': 'True'}),
-            'provides': ('django.db.models.fields.CharField', [], {'max_length': '255', 'blank': 'True'}),
+            'provides': ('django.db.models.fields.CharField', [], {'max_length': '2048', 'blank': 'True'}),
             'pv': ('django.db.models.fields.CharField', [], {'max_length': '100', 'blank': 'True'}),
             'section': ('django.db.models.fields.CharField', [], {'max_length': '100', 'blank': 'True'}),
             'src_uri': ('django.db.models.fields.CharField', [], {'max_length': '255', 'blank': 'True'}),
@@ -185,6 +198,7 @@ class Migration(SchemaMigration):
             'end_date': ('django.db.models.fields.DateField', [], {}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '100'}),
+            'release': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['rrs.Release']"}),
             'start_date': ('django.db.models.fields.DateField', [], {})
         },
         'rrs.recipedistro': {
@@ -236,6 +250,13 @@ class Migration(SchemaMigration):
             'end_date': ('django.db.models.fields.DateTimeField', [], {}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'start_date': ('django.db.models.fields.DateTimeField', [], {})
+        },
+        'rrs.release': {
+            'Meta': {'object_name': 'Release'},
+            'end_date': ('django.db.models.fields.DateField', [], {}),
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '100'}),
+            'start_date': ('django.db.models.fields.DateField', [], {})
         }
     }
 

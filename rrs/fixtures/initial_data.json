@@ -7,7 +7,6 @@
             "email": ""
         }
     },
-
     {
         "pk": 1,
         "model": "rrs.maintainer",
@@ -17,9 +16,10 @@
         }
     },
 
+
     {
         "pk": 1, 
-        "model": "rrs.milestone", 
+        "model": "rrs.release", 
         "fields": {
             "name": "1.0", 
             "end_date": "2011-04-15", 
@@ -27,44 +27,60 @@
         }
     }, 
     {
-        "pk": 2, 
+        "pk": 41, 
         "model": "rrs.milestone", 
         "fields": {
+	    "release" : 1,
+            "name": "1.0All", 
+            "end_date": "2011-04-15", 
+            "start_date": "2010-06-20"
+        }
+    }, 
+    {
+        "pk": 1, 
+        "model": "rrs.milestone", 
+        "fields": {
+	    "release" : 1,
             "name": "1.0M1", 
             "end_date": "2010-11-08", 
             "start_date": "2010-06-20"
         }
     }, 
     {
-        "pk": 3, 
+        "pk": 2, 
         "model": "rrs.milestone", 
         "fields": {
+	    "release" : 1,
             "name": "1.0M2", 
             "end_date": "2010-12-24", 
             "start_date": "2010-11-08"
         }
     }, 
     {
-        "pk": 4, 
+        "pk": 3, 
         "model": "rrs.milestone", 
         "fields": {
+	    "release" : 1,
             "name": "1.0M3", 
             "end_date": "2011-02-08", 
             "start_date": "2010-12-20"
         }
     }, 
     {
-        "pk": 5, 
+        "pk": 4, 
         "model": "rrs.milestone", 
         "fields": {
+	    "release" : 1,
             "name": "1.0M4", 
             "end_date": "2011-04-15", 
             "start_date": "2011-02-07"
         }
     }, 
+
+
     {
-        "pk": 6, 
-        "model": "rrs.milestone", 
+        "pk": 2, 
+        "model": "rrs.release", 
         "fields": {
             "name": "1.1", 
             "end_date": "2011-10-06", 
@@ -72,44 +88,60 @@
         }
     }, 
     {
-        "pk": 7, 
+        "pk": 42, 
         "model": "rrs.milestone", 
         "fields": {
+	    "release" : 2,
+            "name": "1.1All", 
+            "end_date": "2011-10-06", 
+            "start_date": "2011-04-18"
+        }
+    }, 
+    {
+        "pk": 5, 
+        "model": "rrs.milestone", 
+        "fields": {
+	    "release" : 2,
             "name": "1.1M1", 
             "end_date": "2011-06-13", 
             "start_date": "2011-04-18"
         }
     }, 
     {
-        "pk": 8, 
+        "pk": 6, 
         "model": "rrs.milestone", 
         "fields": {
+	    "release" : 2,
             "name": "1.1M2", 
             "end_date": "2011-07-25", 
             "start_date": "2011-05-30"
         }
     }, 
     {
-        "pk": 9, 
+        "pk": 7, 
         "model": "rrs.milestone", 
         "fields": {
+	    "release" : 2,
             "name": "1.1M3", 
             "end_date": "2011-08-15", 
             "start_date": "2011-07-11"
         }
     }, 
     {
-        "pk": 10, 
+        "pk": 8, 
         "model": "rrs.milestone", 
         "fields": {
+	    "release" : 2,
             "name": "1.1M4", 
             "end_date": "2011-10-06", 
             "start_date": "2011-08-15"
         }
     }, 
+
+
     {
-        "pk": 11, 
-        "model": "rrs.milestone", 
+        "pk": 3, 
+        "model": "rrs.release", 
         "fields": {
             "name": "1.2", 
             "end_date": "2012-04-27", 
@@ -117,44 +149,60 @@
         }
     }, 
     {
-        "pk": 12, 
+        "pk": 43, 
         "model": "rrs.milestone", 
         "fields": {
+	    "release" : 3,
+            "name": "1.2All", 
+            "end_date": "2012-04-27", 
+            "start_date": "2011-10-31"
+        }
+    }, 
+    {
+        "pk": 9, 
+        "model": "rrs.milestone", 
+        "fields": {
+	    "release" : 3,
             "name": "1.2M1", 
             "end_date": "2011-12-23", 
             "start_date": "2011-10-31"
         }
     }, 
     {
-        "pk": 13, 
+        "pk": 10, 
         "model": "rrs.milestone", 
         "fields": {
+	    "release" : 3,
             "name": "1.2M2", 
             "end_date": "2012-02-03", 
             "start_date": "2011-12-12"
         }
     }, 
     {
-        "pk": 14, 
+        "pk": 11, 
         "model": "rrs.milestone", 
         "fields": {
+	    "release" : 3,
             "name": "1.2M3", 
             "end_date": "2012-03-16", 
             "start_date": "2012-01-23"
         }
     }, 
     {
-        "pk": 15, 
+        "pk": 12, 
         "model": "rrs.milestone", 
         "fields": {
+	    "release" : 3,
             "name": "1.2M4", 
             "end_date": "2012-04-27", 
             "start_date": "2012-03-05"
         }
     }, 
+
+
     {
-        "pk": 16, 
-        "model": "rrs.milestone", 
+        "pk": 4, 
+        "model": "rrs.release", 
         "fields": {
             "name": "1.3", 
             "end_date": "2012-10-26", 
@@ -162,53 +210,70 @@
         }
     }, 
     {
-        "pk": 17, 
+        "pk": 44, 
         "model": "rrs.milestone", 
         "fields": {
+	    "release" : 4,
+            "name": "1.3All", 
+            "end_date": "2012-10-26", 
+            "start_date": "2012-05-14"
+        }
+    }, 
+    {
+        "pk": 13, 
+        "model": "rrs.milestone", 
+        "fields": {
+	    "release" : 4,
             "name": "1.3M1", 
             "end_date": "2012-06-29", 
             "start_date": "2012-05-14"
         }
     }, 
     {
-        "pk": 18, 
+        "pk": 14, 
         "model": "rrs.milestone", 
         "fields": {
+	    "release" : 4,
             "name": "1.3M2", 
             "end_date": "2012-07-27", 
             "start_date": "2012-06-11"
         }
     }, 
     {
-        "pk": 19, 
+        "pk": 15, 
         "model": "rrs.milestone", 
         "fields": {
+	    "release" : 4,
             "name": "1.3M3", 
             "end_date": "2012-08-24", 
             "start_date": "2012-07-08"
         }
     }, 
     {
-        "pk": 20, 
+        "pk": 16, 
         "model": "rrs.milestone", 
         "fields": {
+	    "release" : 4,
             "name": "1.3M4", 
             "end_date": "2012-09-21", 
             "start_date": "2012-08-06"
         }
     }, 
     {
-        "pk": 21, 
+        "pk": 17, 
         "model": "rrs.milestone", 
         "fields": {
+	    "release" : 4,
             "name": "1.3M5", 
             "end_date": "2012-10-26", 
             "start_date": "2012-09-19"
         }
     }, 
+
+
     {
-        "pk": 22, 
-        "model": "rrs.milestone", 
+        "pk": 5, 
+        "model": "rrs.release", 
         "fields": {
             "name": "1.4", 
             "end_date": "2013-04-26", 
@@ -216,62 +281,80 @@
         }
     }, 
     {
-        "pk": 23, 
+        "pk": 45, 
         "model": "rrs.milestone", 
         "fields": {
+	    "release" : 5,
+            "name": "1.4All", 
+            "end_date": "2013-04-26", 
+            "start_date": "2012-10-29"
+        }
+    }, 
+    {
+        "pk": 18, 
+        "model": "rrs.milestone", 
+        "fields": {
+	    "release" : 5,
             "name": "1.4M1", 
             "end_date": "2012-12-14", 
             "start_date": "2012-10-29"
         }
     }, 
     {
-        "pk": 24, 
+        "pk": 19, 
         "model": "rrs.milestone", 
         "fields": {
+	    "release" : 5,
             "name": "1.4M2", 
             "end_date": "2013-01-11", 
             "start_date": "2012-11-26"
         }
     }, 
     {
-        "pk": 25, 
+        "pk": 20, 
         "model": "rrs.milestone", 
         "fields": {
+	    "release" : 5,
             "name": "1.4M3", 
             "end_date": "2013-02-08", 
             "start_date": "2012-12-24"
         }
     }, 
     {
-        "pk": 26, 
+        "pk": 21, 
         "model": "rrs.milestone", 
         "fields": {
+	    "release" : 5,
             "name": "1.4M4", 
             "end_date": "2013-03-08", 
             "start_date": "2013-01-21"
         }
     }, 
     {
-        "pk": 27, 
+        "pk": 22, 
         "model": "rrs.milestone", 
         "fields": {
+	    "release" : 5,
             "name": "1.4M5", 
             "end_date": "2013-04-05", 
             "start_date": "2013-02-18"
         }
     }, 
     {
-        "pk": 28, 
+        "pk": 23, 
         "model": "rrs.milestone", 
         "fields": {
+	    "release" : 5,
             "name": "1.4M6", 
             "end_date": "2013-04-26", 
             "start_date": "2013-03-18"
         }
     }, 
+
+
     {
-        "pk": 29, 
-        "model": "rrs.milestone", 
+        "pk": 6, 
+        "model": "rrs.release", 
         "fields": {
             "name": "1.5", 
             "end_date": "2013-10-18", 
@@ -279,53 +362,70 @@
         }
     }, 
     {
-        "pk": 30, 
+        "pk": 46, 
         "model": "rrs.milestone", 
         "fields": {
+	    "release" : 6,
+            "name": "1.5All", 
+            "end_date": "2013-10-18", 
+            "start_date": "2013-05-06"
+        }
+    }, 
+    {
+        "pk": 23, 
+        "model": "rrs.milestone", 
+        "fields": {
+	    "release" : 6,
             "name": "1.5M1", 
             "end_date": "2013-06-21", 
             "start_date": "2013-05-06"
         }
     }, 
     {
-        "pk": 31, 
+        "pk": 24, 
         "model": "rrs.milestone", 
         "fields": {
+	    "release" : 6,
             "name": "1.5M2", 
             "end_date": "2013-07-19", 
             "start_date": "2013-06-03"
         }
     }, 
     {
-        "pk": 32, 
+        "pk": 25, 
         "model": "rrs.milestone", 
         "fields": {
+	    "release" : 6,
             "name": "1.5M3", 
             "end_date": "2013-08-16", 
             "start_date": "2013-07-01"
         }
     }, 
     {
-        "pk": 33, 
+        "pk": 26, 
         "model": "rrs.milestone", 
         "fields": {
+	    "release" : 6,
             "name": "1.5M4", 
             "end_date": "2013-09-13", 
             "start_date": "2013-07-29"
         }
     }, 
     {
-        "pk": 34, 
+        "pk": 27, 
         "model": "rrs.milestone", 
         "fields": {
+	    "release" : 6,
             "name": "1.5M5", 
             "end_date": "2013-10-18", 
             "start_date": "2013-08-26"
         }
     }, 
+
+
     {
-        "pk": 35, 
-        "model": "rrs.milestone", 
+        "pk": 7, 
+        "model": "rrs.release", 
         "fields": {
             "name": "1.6", 
             "end_date": "2014-05-25", 
@@ -333,53 +433,70 @@
         }
     }, 
     {
-        "pk": 36, 
+        "pk": 47, 
         "model": "rrs.milestone", 
         "fields": {
+	    "release" : 7,
+            "name": "1.6All", 
+            "end_date": "2014-05-25", 
+            "start_date": "2013-11-11"
+        }
+    }, 
+    {
+        "pk": 28, 
+        "model": "rrs.milestone", 
+        "fields": {
+	    "release" : 7,
             "name": "1.6M1", 
             "end_date": "2013-12-20", 
             "start_date": "2013-11-11"
         }
     }, 
     {
-        "pk": 37, 
+        "pk": 29, 
         "model": "rrs.milestone", 
         "fields": {
+	    "release" : 7,
             "name": "1.6M2", 
             "end_date": "2014-01-31", 
             "start_date": "2013-12-09"
         }
     }, 
     {
-        "pk": 38, 
+        "pk": 30, 
         "model": "rrs.milestone", 
         "fields": {
+	    "release" : 7,
             "name": "1.6M3", 
             "end_date": "2014-02-28", 
             "start_date": "2014-01-13"
         }
     }, 
     {
-        "pk": 39, 
+        "pk": 31, 
         "model": "rrs.milestone", 
         "fields": {
+	    "release" : 7,
             "name": "1.6M4", 
             "end_date": "2014-03-28", 
             "start_date": "2014-02-10"
         }
     }, 
     {
-        "pk": 40, 
+        "pk": 32, 
         "model": "rrs.milestone", 
         "fields": {
+	    "release" : 7,
             "name": "1.6M5", 
             "end_date": "2014-05-25", 
             "start_date": "2014-03-25"
         }
     }, 
+
+
     {
-        "pk": 41, 
-        "model": "rrs.milestone", 
+        "pk": 8, 
+        "model": "rrs.release", 
         "fields": {
             "name": "1.7", 
             "end_date": "2014-10-31", 
@@ -387,44 +504,60 @@
         }
     }, 
     {
-        "pk": 42, 
+        "pk": 48, 
         "model": "rrs.milestone", 
         "fields": {
+	    "release" : 8,
+            "name": "1.7All", 
+            "end_date": "2014-10-31", 
+            "start_date": "2014-05-19"
+        }
+    }, 
+    {
+        "pk": 33, 
+        "model": "rrs.milestone", 
+        "fields": {
+	    "release" : 8,
             "name": "1.7M1", 
             "end_date": "2014-07-11", 
             "start_date": "2014-05-19"
         }
     }, 
     {
-        "pk": 43, 
+        "pk": 34, 
         "model": "rrs.milestone", 
         "fields": {
+	    "release" : 8,
             "name": "1.7M2", 
             "end_date": "2014-08-15", 
             "start_date": "2014-06-30"
         }
     }, 
     {
-        "pk": 44, 
+        "pk": 35, 
         "model": "rrs.milestone", 
         "fields": {
+	    "release" : 8,
             "name": "1.7M3", 
             "end_date": "2014-09-19", 
             "start_date": "2014-08-04"
         }
     }, 
     {
-        "pk": 45, 
+        "pk": 36, 
         "model": "rrs.milestone", 
         "fields": {
+	    "release" : 8,
             "name": "1.7M4", 
             "end_date": "2014-10-31", 
             "start_date": "2014-09-08"
         }
     }, 
+
+
     {
-        "pk": 46, 
-        "model": "rrs.milestone", 
+        "pk": 9, 
+        "model": "rrs.release", 
         "fields": {
             "name": "1.8", 
             "end_date": "2015-04-24", 
@@ -432,36 +565,50 @@
         }
     }, 
     {
-        "pk": 47, 
+        "pk": 49, 
         "model": "rrs.milestone", 
         "fields": {
+	    "release" : 9,
+            "name": "1.8All", 
+            "end_date": "2014-12-19", 
+            "start_date": "2014-11-03"
+        }
+    }, 
+    {
+        "pk": 37, 
+        "model": "rrs.milestone", 
+        "fields": {
+	    "release" : 9,
             "name": "1.8M1", 
             "end_date": "2014-12-19", 
             "start_date": "2014-11-03"
         }
     }, 
     {
-        "pk": 48, 
+        "pk": 38, 
         "model": "rrs.milestone", 
         "fields": {
+	    "release" : 9,
             "name": "1.8M2", 
             "end_date": "2015-01-30", 
             "start_date": "2014-12-03"
         }
     }, 
     {
-        "pk": 49, 
+        "pk": 39, 
         "model": "rrs.milestone", 
         "fields": {
+	    "release" : 9,
             "name": "1.8M3", 
             "end_date": "2015-03-06", 
             "start_date": "2015-01-14"
         }
     }, 
     {
-        "pk": 50, 
+        "pk": 40, 
         "model": "rrs.milestone", 
         "fields": {
+	    "release" : 9,
             "name": "1.8M4", 
             "end_date": "2015-04-24", 
             "start_date": "2015-02-19"
