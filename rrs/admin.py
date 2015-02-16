@@ -7,12 +7,17 @@
 from django.contrib import admin
 from django.contrib.admin import DateFieldListFilter
 
-from rrs.models import Milestone, Maintainer, RecipeMaintainerHistory, \
+from rrs.models import Release, Milestone, Maintainer, RecipeMaintainerHistory, \
         RecipeMaintainer, RecipeDistro, RecipeUpgrade, RecipeUpstream, \
         RecipeUpstreamHistory
 
+class ReleaseAdmin(admin.ModelAdmin):
+    search_fields = ['name']
+    model = Release
+
 class MilestoneAdmin(admin.ModelAdmin):
     search_fields = ['name']
+    list_filter = ['release__name']
     model = Milestone
 
 class MaintainerAdmin(admin.ModelAdmin):
@@ -53,6 +58,7 @@ class RecipeUpstreamAdmin(admin.ModelAdmin):
             'type', ('date', DateFieldListFilter), 'history']
     model = RecipeUpstream
 
+admin.site.register(Release, ReleaseAdmin)
 admin.site.register(Milestone, MilestoneAdmin)
 admin.site.register(Maintainer, MaintainerAdmin)
 admin.site.register(RecipeMaintainerHistory, RecipeMaintainerHistoryAdmin)

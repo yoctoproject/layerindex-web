@@ -24,8 +24,9 @@
             <span class="badge" style="margin-top:11px;"></span>
             </li>
         </ul>    		
-        <form class="navbar-form pull-right">
-            <input type="text" class="input-xxlarge pull-right" placeholder="Search maintainers" id="filter">				
+        <form id="form-search" class="navbar-form pull-right">
+            <input type="text" class="input-xxlarge" placeholder="Search maintainers" id="filter">				
+            <button type="submit" value="Search" class="btn btn-info" id="btn-search">Search</button>
         </form>
     </div>
 </div>
@@ -33,27 +34,27 @@
 <div id="no_maintainers_alert" class="alert">
     No maintainers found <a href="#" id="view-all-maintainers" style="margin-left:10px;">View all maintainers</a>
 </div>
-<table class="table table-bordered table-hovere" id="statistics-table">
-    <thead>
-        <tr>
-            <th class="sorted">Maintainer<b class="caret"/></th>
-            <th class="muted">Assigned recipes</th>
-            <th class="muted">Up-to-date</th>
-            <th>Not updated</th>
-            <th class="muted">Can't be updated</th>
-            <th class="muted">Unknown</th>
-            <th>% done</th>
+<table class="table table-bordered table-hover" id="statistics-table">
+<thead>
+    <tr>
+        <th class="sorted">Maintainer<b class="caret"/></th>
+        <th class="muted">Assigned recipes</th>
+        <th class="muted">Up-to-date</th>
+        <th>Not updated</th>
+        <th class="muted">Can't be updated</th>
+        <th class="muted">Unknown</th>
+        <th>% done</th>
 
-            {% for w in milestone_weeks %}
-            {% if current_week == forloop.counter0 %}
-            <th class="current-wk">
-            {% else %}
-            <th class="muted">
-            {% endif %}
-            wk{{ w }}
-            </th>
-            {% endfor %}
-        </tr>
+        {% for w in milestone_weeks %}
+        {% if current_week == forloop.counter0 %}
+        <th class="current-wk">
+        {% else %}
+        <th class="muted">
+        {% endif %}
+        wk{{ w }}
+        </th>
+        {% endfor %}
+    </tr>
 </thead>
 <tbody>
 {% for ml in maintainer_list %}
@@ -62,27 +63,27 @@
             {{ ml.name }}
         </td>
         <td>
-            <a href="{% url 'recipes' milestone_name %}?maintainer_name={{ ml.name|urlencode }}">
+            <a href="{% url 'recipes' release_name milestone_name %}?maintainer_name={{ ml.name|urlencode }}">
                 {{ ml.recipes_all }}
             </a>
         </td>
         <td>
-            <a href="{% url 'recipes' milestone_name %}?upstream_status={{ "Up-to-date"|urlencode }}&maintainer_name={{ ml.name|urlencode }}">
+            <a href="{% url 'recipes' release_name milestone_name %}?upstream_status={{ "Up-to-date"|urlencode }}&maintainer_name={{ ml.name|urlencode }}">
                 {{ ml.recipes_up_to_date }}
             </a>
         </td>
         <td>
-            <a href="{% url 'recipes' milestone_name %}?upstream_status={{ "Not updated"|urlencode }}&maintainer_name={{ ml.name|urlencode }}">
+            <a href="{% url 'recipes' release_name milestone_name %}?upstream_status={{ "Not updated"|urlencode }}&maintainer_name={{ ml.name|urlencode }}">
                 {{ ml.recipes_not_updated }}
             </a>
         </td>
         <td>
-            <a href="{% url 'recipes' milestone_name %}?upstream_status={{ "Can't be updated"|urlencode }}&maintainer_name={{ ml.name|urlencode }}">
+            <a href="{% url 'recipes' release_name milestone_name %}?upstream_status={{ "Can't be updated"|urlencode }}&maintainer_name={{ ml.name|urlencode }}">
                 {{ ml.recipes_cant_be_updated }}
             </a>
         </td>
         <td>
-            <a href="{% url 'recipes' milestone_name %}?upstream_status={{ "Unknown"|urlencode }}&maintainer_name={{ ml.name|urlencode }}">
+            <a href="{% url 'recipes' release_name milestone_name %}?upstream_status={{ "Unknown"|urlencode }}&maintainer_name={{ ml.name|urlencode }}">
                 {{ ml.recipes_unknown }}
             </a>
         </td>
@@ -103,7 +104,6 @@
 {% endblock %}
 
 {% block scripts %}
-{% if maintainer_count > 0 %}
 <script src="{% static "js/uitablefilter.js" %}"></script>
 <script src="{% static "js/jquery.tablesorter.js" %}"></script>
 <script>
@@ -131,6 +131,20 @@ $(document).ready(function() {
         }
     }
 
+    $("#form-search").submit(function( event ) {
+        search_text = $("#filter").val()
+        $.uiTableFilter(statisticsTable, search_text);
+        updateMaintainerCount()
+        event.preventDefault();
+    });
+
+    $("#view-all-maintainers").click(function() {
+        $.uiTableFilter(statisticsTable, '');
+        $("#filter").val('')
+        updateMaintainerCount()
+    });
+
+{% if maintainer_count > 0 %}
     $(statisticsTable).tablesorter({
         sortList: [[0,0]],
         headers: {
@@ -150,20 +164,9 @@ $(document).ready(function() {
             14: { sorter: false },
         }
     });
-
-    $("#filter").keyup(function() { 
-        $.uiTableFilter(statisticsTable, this.value);
-        updateMaintainerCount()
-    });
-
-    $("#view-all-maintainers").click(function() {
-        $.uiTableFilter(statisticsTable, '');
-        $("#filter").val('')
-        updateMaintainerCount()
-    });
+{% endif %}
 
     updateMaintainerCount()
 });
 </script>
-{% endif %}
 {% endblock %}

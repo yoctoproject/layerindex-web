@@ -14,6 +14,43 @@
 {% endcomment %}
 
 {% block topfunctions %}
+<ul class="nav">
+<li class="divider-vertical" style="display; list-item;"/>
+{% block release_selector %}
+    <li class="dropdown">
+        <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+        Release: <b>{{ release_name }}</b>
+        <b class="caret"></b>
+        </a>
+        <ul class="dropdown-menu">
+            {% for r in all_releases %}
+                <li><a href="{% url this_url_name r.name r.name|add:"All" %}{{ extra_url_param }}">
+                    {% if r.name = release_name %}<b>{% endif %}
+                    {{ r.name }}
+                    {% if r.name = release_name %}</b>{% endif %}
+                </a></li>
+            {% endfor %}
+        </ul>
+    </li>
+{% endblock %}
+{% block milestone_selector %}
+    <li class="dropdown">
+        <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+        Milestone: <b>{{ milestone_name }}</b>
+        <b class="caret"></b>
+        </a>
+        <ul class="dropdown-menu">
+            {% for m in all_milestones %}
+                <li><a href="{% url this_url_name release_name m.name %}{{ extra_url_param }}">
+                    {% if m.name = milestone_name %}<b>{% endif %}
+                    {{ m.name }}
+                    {% if m.name = milestone_name %}</b>{% endif %}
+                </a></li>
+            {% endfor %}
+        </ul>
+    </li>
+{% endblock %}
+</ul>
 {% endblock %}
 
 {% block content %}
@@ -21,24 +58,8 @@
 
             <div class="navbar">
                 <div class="navbar-inner">
+                    <span class="brand">{{ milestone_name }}</span>
                     <ul class="nav">
-                        {% block milestone_selector %}
-                        <li class="dropdown">
-                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                            Milestone: <b>{{ milestone_name }}</b>
-                            <b class="caret"></b>
-                            </a>
-                            <ul class="dropdown-menu">
-                                {% for m in all_milestones %}
-                                    <li><a href="{% url this_url_name m.name %}{{ extra_url_param }}">
-                                        {% if m.name = milestone_name %}<b>{% endif %}
-                                        {{ m.name }}
-                                        {% if m.name = milestone_name %}</b>{% endif %}
-                                    </a></li>
-                                {% endfor %}
-                            </ul>
-                        </li>
-                        {% endblock %}
                         <li class="divider-vertical"></li>
                         <li class="lead" id="percentage"><strong>{{ recipes_percentage }}%</strong> done</li>
                         <li class="divider-vertical"></li>
@@ -64,7 +85,7 @@
                 <a href="#">
 		{% else %}
                 <li>
-                <a href="{% url 'recipes' milestone_name %}{{ extra_url_param }}">
+                <a href="{% url 'recipes' release_name milestone_name %}{{ extra_url_param }}">
 		{% endif %}
                 Recipes status</a>
                 </li>
@@ -74,7 +95,7 @@
                 <a href="#">
 		{% else %}
                 <li>
-                <a href="{% url 'maintainers' milestone_name %}">
+                <a href="{% url 'maintainers' release_name milestone_name %}">
 		{% endif %}
                 Maintainer statistics</a>
                 </li>
