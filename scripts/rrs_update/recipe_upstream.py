@@ -10,6 +10,26 @@ from rrs.models import RecipeUpstream, RecipeUpstreamHistory
 git_regex = re.compile("(?P<gprefix>(v|))(?P<gver>((\d+[\.\-_]*)+))(?P<gmiddle>(\+|)(git|)(r|)(AUTOINC|)(\+|))(?P<ghash>.*)")
 
 """
+    Version comparision supporting git.
+"""
+def vercmp_string(a, b):
+    import bb.utils
+    cmp_result = None
+
+    if 'git' in a or 'git' in b:
+        match_a = git_regex.match(a)
+        match_b = git_regex.match(b)
+
+        if match_a and match_b:
+            cmp_result = bb.utils.vercmp_string(match_a.group('gver'),
+                            match_b.group('gver'))
+
+    if cmp_result is None:
+        cmp_result = bb.utils.vercmp_string(a, b)
+
+    return cmp_result
+
+"""
     Update Recipe upstream information searching in upstream sites.
     Adds information only when the version changes.
 """
@@ -78,21 +98,7 @@ def get_upstream_info(envdata, logger):
 def get_upstream_info_thread(envdata, result, recipe_mutex, result_mutex, logger):
     from datetime import datetime
 
-    def vercmp_string(a, b, recipe_type):
-        cmp_result = None
 
-        if recipe_type == 'git':
-            match_a = git_regex.match(a)
-            match_b = git_regex.match(b)
-
-            if match_a and match_b:
-                cmp_result = bb.utils.vercmp_string(match_a.group('gver'),
-                                match_b.group('gver'))
-    
-        if cmp_result is None:
-            cmp_result = bb.utils.vercmp_string(a, b)
-
-        return cmp_result
 
     while True:
         recipe = None
@@ -201,11 +207,11 @@ def get_upstream_info_thread(envdata, result, recipe_mutex, result_mutex, logger
 
         if not recipe_result['version']:
             recipe_result['status'] = 'U' # Unknown, need to review why
-        elif vercmp_string(recipe_pv, recipe_result['version'], recipe_type) == -1:
+        elif vercmp_string(recipe_pv, recipe_result['version']) == -1:
             recipe_result['status'] = 'N' # Not update
-        elif vercmp_string(recipe_pv, recipe_result['version'], recipe_type) == 0:
+        elif vercmp_string(recipe_pv, recipe_result['version']) == 0:
             recipe_result['status'] = 'Y' # Up-to-date
-        elif vercmp_string(recipe_pv, recipe_result['version'], recipe_type) == 1:
+        elif vercmp_string(recipe_pv, recipe_result['version']) == 1:
             recipe_result['status'] = 'D' # Downgrade, need to review why
 
         result_mutex.acquire()

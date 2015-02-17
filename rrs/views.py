@@ -128,21 +128,30 @@ def _get_recipe_list(milestone):
 
             version = rup.version
 
-        recipe_upstream = RecipeUpstream.get_by_recipe_and_history(
-                recipe, recipe_upstream_history)
+        upstream_version = ''
+        upstream_status = ''
+        if recipe_upstream_history:
+            recipe_upstream = RecipeUpstream.get_by_recipe_and_history(
+                    recipe, recipe_upstream_history)
 
-        if recipe_upstream is None:
-            upstream_status = ''
-            upstream_version = ''
-        else:
+            if recipe_upstream is None:
+                recipe_upstream = RecipeUpstream()
+                recipe_upstream.history = recipe_upstream_history
+                recipe_upstream.recipe = recipe
+                recipe_upstream.version = ''
+                recipe_upstream.type = 'M' # Manual
+                recipe_upstream.status = 'U' # Unknown
+                recipe_upstream.no_update_reason = ''
+                recipe_upstream.date = recipe_upstream_history.end_date
+                recipe_upstream.save()
+
             if recipe_upstream.status == 'N' and recipe_upstream.no_update_reason:
                 recipe_upstream.status = 'C'
             upstream_status = \
-                    RecipeUpstream.RECIPE_UPSTREAM_STATUS_CHOICES_DICT[
-                            recipe_upstream.status]
+                RecipeUpstream.RECIPE_UPSTREAM_STATUS_CHOICES_DICT[
+                         recipe_upstream.status]
             if upstream_status == 'Downgrade':
                 upstream_status = 'Unknown' # Downgrade is displayed as Unknown
-
             upstream_version = recipe_upstream.version
 
         maintainer = RecipeMaintainer.get_maintainer_by_recipe_and_history(
