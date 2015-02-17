@@ -1,8 +1,12 @@
 {% extends "base.html" %}
 {% load i18n %}
 
+{% block topfunctions %}
+{% endblock %}
+
 {% block content %}
 {% autoescape on %}
+<div class="row-fluid">
 <h2>About</h2>
 
 <p>The Recipe Reporting System is the main tool for tracking the recipe versions 
@@ -39,11 +43,11 @@ OpenEmbedded</a> build system.</p>
 <p>The Recipe Reporting System is maintained by the <a href="http://www.yoctoproject.org">Yocto Project</a>.</p>
 <p>Some of the contributors are:</p>
 <ul>
+        <li><a href="mailto:anibal.limon@intel.com">Aníbal Limón</a></li>
+        <li><a href="mailto:belen.barros.pena@intel.com">Belen Barros Pena</a></li>
+        <li><a href="mailto:saul.wold@intel.com">Saul Wold</a></li>
+        <li><a href="mailto:michael@yoctoproject.org">Michael Halstead</a></li>
 	<li>Marius Avram</li>
-	<li>Saul Wold</li>
-	<li>Aníbal Limón</li>
-	<li>Belen Barros Pena</li>
-	<li>Michael Halstead</li>
 </ul>
 
 <p>Special mention is due to Paul Eggleton, who is the author of the 
@@ -51,6 +55,8 @@ OpenEmbedded</a> build system.</p>
 on which the Recipe Reporting System is based.</p> 		
 
 <p>The code is Open Source and can be found on <a href="http://git.yoctoproject.org/cgit/cgit.cgi/layerindex-web/">git.yoctoproject.org</a>. Patches welcome!</p>
+
+</div>
 
 {% endautoescape %}
 {% endblock %}
