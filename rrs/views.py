@@ -380,7 +380,7 @@ class MaintainerList():
     recipes_unknown = '0'
     percentage_done = '0.00'
 
-    week_statistics = None
+    interval_statistics = None
 
     def __init__(self, name):
         self.name = name
@@ -398,7 +398,10 @@ class MaintainerListView(ListView):
         milestone = get_object_or_404(Milestone, release = release,
                 name=self.milestone_name)
 
-        milestone_week_intervals = milestone.get_week_intervals()
+        if "All" in milestone.name:
+            intervals = milestone.get_milestone_intervals(release)
+        else:
+            intervals = milestone.get_week_intervals()
 
         self.milestone_statistics = _get_milestone_statistics(milestone)
 
@@ -413,8 +416,7 @@ class MaintainerListView(ListView):
 
             self.maintainer_count = len(maintainer_list)
 
-        self.milestone_weeks = sorted(milestone_week_intervals.keys())
-        self.current_week = -1
+        self.intervals = sorted(intervals.keys())
         current_date = date.today()
         for ml in maintainer_list:
             milestone_statistics = _get_milestone_statistics(milestone, ml.name)
@@ -425,18 +427,19 @@ class MaintainerListView(ListView):
             ml.recipes_unknown = milestone_statistics['unknown']
             ml.percentage_done = milestone_statistics['percentage'] + '%'
 
-            ml.week_statistics = []
-            for week_no in milestone_week_intervals.keys():
-                start_date = milestone_week_intervals[week_no]['start_date']
-                end_date = milestone_week_intervals[week_no]['end_date']
+            ml.interval_statistics = []
+            self.current_interval = -1
+            for idx, i in enumerate(sorted(intervals.keys())):
+                start_date = intervals[i]['start_date']
+                end_date = intervals[i]['end_date']
 
                 if current_date >= start_date and current_date <= end_date:
-                    self.current_week = week_no - 1 # used in template for loop
+                    self.current_interval = idx
 
                 number = RecipeUpgrade.objects.filter(maintainer__name = ml.name,
                         commit_date__gte = start_date,
                         commit_date__lte = end_date).count()
-                ml.week_statistics.append('' if number == 0 else number)
+                ml.interval_statistics.append('' if number == 0 else number)
 
         return maintainer_list
 
@@ -458,8 +461,8 @@ class MaintainerListView(ListView):
         context['recipes_unknown'] = self.milestone_statistics['unknown']
 
         context['maintainer_count'] = self.maintainer_count
-        context['milestone_weeks'] = self.milestone_weeks
-        context['current_week'] = self.current_week
+        context['intervals'] = self.intervals
+        context['current_interval'] = self.current_interval
 
         return context
 
