@@ -45,13 +45,13 @@
         <th class="muted">Unknown</th>
         <th>% done</th>
 
-        {% for w in milestone_weeks %}
-        {% if current_week == forloop.counter0 %}
+        {% for i in intervals %}
+        {% if current_interval == forloop.counter0 %}
         <th class="current-wk">
         {% else %}
         <th class="muted">
         {% endif %}
-        wk{{ w }}
+        {{ i }}
         </th>
         {% endfor %}
     </tr>
@@ -88,8 +88,8 @@
             </a>
         </td>
         <td>{{ ml.percentage_done }}</td>
-        {% for number in ml.week_statistics %}
-            {% if current_week == forloop.counter0 %}
+        {% for number in ml.interval_statistics %}
+            {% if current_interval == forloop.counter0 %}
             <td class="current-wk">
             {% else %}
             <td class="muted">
