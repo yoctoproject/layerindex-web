@@ -155,6 +155,11 @@ class RecipeMaintainerHistory(models.Model):
 
         if rmh_qry:
             return rmh_qry[0]
+
+        rmh_qry = RecipeMaintainerHistory.objects.filter(
+                ).order_by('date')
+        if rmh_qry:
+            return rmh_qry[0]
         else:
             return None
 
