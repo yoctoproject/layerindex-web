@@ -64,6 +64,22 @@ class Milestone(models.Model):
         current_milestone = Milestone.get_by_release_and_date(release, current)
         return current_milestone or Milestone.objects.filter().order_by('-end_date')[0]
 
+    """ Get milestone intervals by release """ 
+    @staticmethod
+    def get_milestone_intervals(release):
+        milestones = Milestone.objects.filter(release = release)
+
+        milestone_dir = {}
+        for m in milestones:
+            if "All" in m.name:
+                continue
+
+            milestone_dir[m.name] = {}
+            milestone_dir[m.name]['start_date'] = m.start_date
+            milestone_dir[m.name]['end_date'] = m.end_date
+
+        return milestone_dir
+
     """ Get week intervals from start and end of Milestone """ 
     def get_week_intervals(self):
         from datetime import timedelta
@@ -77,9 +93,10 @@ class Milestone(models.Model):
             if current_date >= self.end_date:
                 break;
 
-            weeks[week_no] = {}
-            weeks[week_no]['start_date'] = current_date
-            weeks[week_no]['end_date'] = current_date + week_delta
+            week = "Wk" + str(week_no)
+            weeks[week] = {}
+            weeks[week]['start_date'] = current_date
+            weeks[week]['end_date'] = current_date + week_delta
             current_date += week_delta
             week_no += 1
 
