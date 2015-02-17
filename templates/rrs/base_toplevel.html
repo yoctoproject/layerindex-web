@@ -71,7 +71,7 @@
                         <li class="divider-vertical"></li>
                         <li class="lead" id="unknown-recipes">Unknown: <span class="text-warning">{{ recipes_unknown }}</strong></li>
                     </ul>
-                    <a href="#" class="btn pull-right">Export recipe list</a>
+                    <a href="{% url 'recipesreport' release_name milestone_name %}" class="btn pull-right">Export recipe list</a>
                     <ul class="nav">
                         {% block navs %}{% endblock %}
                     </ul>

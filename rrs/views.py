@@ -1,5 +1,8 @@
 import urllib
 
+import csv
+from django.http import HttpResponse
+
 from datetime import date
 from django.http import Http404
 from django.shortcuts import get_object_or_404
@@ -101,6 +104,63 @@ class RecipeList():
         self.name = name
         self.summary = summary
 
+def _get_recipe_list(milestone):
+    recipe_maintainer_history = RecipeMaintainerHistory.get_by_end_date(
+        milestone.end_date)
+
+    recipe_upstream_history = RecipeUpstreamHistory.get_last_by_date_range(
+        milestone.start_date,
+        milestone.end_date
+    )
+
+    recipe_list = []
+    current_date = date.today()
+    for recipe in Recipe.objects.filter().order_by('pn'):
+        if current_date >= milestone.start_date and \
+            current_date <= milestone.end_date:
+            version = recipe.pv
+        else:
+            rup = RecipeUpgrade.get_by_recipe_and_date(recipe,
+                    milestone.end_date)
+
+            if rup is None: # Recipe don't exit in this Milestone
+                continue
+
+            version = rup.version
+
+        recipe_upstream = RecipeUpstream.get_by_recipe_and_history(
+                recipe, recipe_upstream_history)
+
+        if recipe_upstream is None:
+            upstream_status = ''
+            upstream_version = ''
+        else:
+            if recipe_upstream.status == 'N' and recipe_upstream.no_update_reason:
+                recipe_upstream.status = 'C'
+            upstream_status = \
+                    RecipeUpstream.RECIPE_UPSTREAM_STATUS_CHOICES_DICT[
+                            recipe_upstream.status]
+            if upstream_status == 'Downgrade':
+                upstream_status = 'Unknown' # Downgrade is displayed as Unknown
+
+            upstream_version = recipe_upstream.version
+
+        maintainer = RecipeMaintainer.get_maintainer_by_recipe_and_history(
+                recipe, recipe_maintainer_history)
+        if maintainer is None:
+            maintainer_name = ''
+        else:
+            maintainer_name = maintainer.name
+
+        recipe_list_item = RecipeList(recipe.id, recipe.pn, recipe.summary)
+        recipe_list_item.version = version
+        recipe_list_item.upstream_status = upstream_status
+        recipe_list_item.upstream_version = upstream_version
+        recipe_list_item.maintainer_name = maintainer_name
+        recipe_list.append(recipe_list_item)
+
+    return recipe_list
+
 class RecipeListView(ListView):
     context_object_name = 'recipe_list'
 
@@ -127,58 +187,8 @@ class RecipeListView(ListView):
 
         self.recipe_maintainer_history = RecipeMaintainerHistory.get_by_end_date(
             milestone.end_date)
-        recipe_upstream_history = RecipeUpstreamHistory.get_last_by_date_range(
-            milestone.start_date,
-            milestone.end_date
-        )
 
-        recipe_list = []
-        self.recipe_list_count = 0
-        current_date = date.today()
-        for recipe in Recipe.objects.filter().order_by('pn'):
-            if current_date >= milestone.start_date and \
-                current_date <= milestone.end_date:
-                version = recipe.pv
-            else:
-                rup = RecipeUpgrade.get_by_recipe_and_date(recipe,
-                        milestone.end_date)
-
-                if rup is None: # Recipe don't exit in this Milestone
-                    continue
-
-                version = rup.version
-
-            recipe_upstream = RecipeUpstream.get_by_recipe_and_history(
-                    recipe, recipe_upstream_history)
-
-            if recipe_upstream is None:
-                upstream_status = ''
-                upstream_version = ''
-            else:
-                if recipe_upstream.status == 'N' and recipe_upstream.no_update_reason:
-                    recipe_upstream.status = 'C'
-                upstream_status = \
-                        RecipeUpstream.RECIPE_UPSTREAM_STATUS_CHOICES_DICT[
-                                recipe_upstream.status]
-                if upstream_status == 'Downgrade':
-                    upstream_status = 'Unknown' # Downgrade is displayed as Unknown
- 
-                upstream_version = recipe_upstream.version
-
-            maintainer = RecipeMaintainer.get_maintainer_by_recipe_and_history(
-                    recipe, self.recipe_maintainer_history)
-            if maintainer is None:
-                maintainer_name = ''
-            else:
-                maintainer_name = maintainer.name
-
-            recipe_list_item = RecipeList(recipe.id, recipe.pn, recipe.summary)
-            recipe_list_item.version = version
-            recipe_list_item.upstream_status = upstream_status
-            recipe_list_item.upstream_version = upstream_version
-            recipe_list_item.maintainer_name = maintainer_name
-            recipe_list.append(recipe_list_item)
-
+        recipe_list = _get_recipe_list(milestone)
         self.recipe_list_count = len(recipe_list)
 
         return recipe_list
@@ -225,6 +235,24 @@ class RecipeListView(ListView):
         context['extra_url_param'] = extra_url_param
 
         return context
+
+def recipes_report(request, release_name, milestone_name):
+    release = get_object_or_404(Release, name=release_name)
+    milestone = get_object_or_404(Milestone, release = release, name=milestone_name)
+
+    recipe_list = _get_recipe_list(milestone)
+
+    response = HttpResponse(mimetype='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="%s.csv"' % (milestone_name)
+
+    writer = csv.writer(response)
+    writer.writerow(['Upstream status', 'Name', 'Version',
+        'Upstream version', 'Maintainer', 'Summary'])
+    for r in recipe_list:
+        writer.writerow([r.upstream_status, r.name, r.version,
+            r.upstream_version, r.maintainer_name.encode('utf-8'), r.summary])
+
+    return response
 
 class RecipeUpgradeDetail():
     title = None
@@ -434,3 +462,4 @@ class MaintainerListView(ListView):
         context['current_week'] = self.current_week
 
         return context
+
