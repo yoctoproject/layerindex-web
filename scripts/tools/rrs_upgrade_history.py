@@ -222,7 +222,10 @@ def upgrade_history(logger):
         datestr = date.strftime("%Y-%m-%d")
         date_next = date + timedelta(days=1)
         date_nextstr = date_next.strftime("%Y-%m-%d")
-        utils.runcmd("git branch -D " + datestr + " &> /dev/null", repodir)
+	try:
+            utils.runcmd("git branch -D " + datestr + " &> /dev/null", repodir)
+	except:
+            pass
         utils.runcmd("git checkout -b " + datestr, repodir)
 
         # Get commits for the current day
