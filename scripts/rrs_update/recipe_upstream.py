@@ -207,12 +207,20 @@ def get_upstream_info_thread(envdata, result, recipe_mutex, result_mutex, logger
 
         if not recipe_result['version']:
             recipe_result['status'] = 'U' # Unknown, need to review why
-        elif vercmp_string(recipe_pv, recipe_result['version']) == -1:
-            recipe_result['status'] = 'N' # Not update
-        elif vercmp_string(recipe_pv, recipe_result['version']) == 0:
-            recipe_result['status'] = 'Y' # Up-to-date
-        elif vercmp_string(recipe_pv, recipe_result['version']) == 1:
-            recipe_result['status'] = 'D' # Downgrade, need to review why
+        else:
+            try:
+                cmp_ver = vercmp_string(recipe_pv, recipe_result['version'])
+
+                if cmp_ver == -1:
+                    recipe_result['status'] = 'N' # Not update
+                elif cmp_ver == 0:
+                    recipe_result['status'] = 'Y' # Up-to-date
+                elif cmp_ver == 1:
+                    recipe_result['status'] = 'D' # Downgrade, need to review why
+            except:
+                recipe_result['status'] = 'U' # Unknown
+                logger.error("vercmp_string: %s, %s - %s" % (recipe.pn, recipe_pv,
+                    recipe_result['version']))
 
         result_mutex.acquire()
         result[recipe] = recipe_result

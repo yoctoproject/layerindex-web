@@ -9,6 +9,8 @@ from django.db import transaction
 from layerindex.models import Recipe
 from rrs.models import Maintainer, RecipeUpgrade
 
+from recipe_upstream import vercmp_string
+
 """
     Discovers the upgraded packages in the last day.
 """
@@ -72,9 +74,13 @@ def update_recipe_upgrades(layerbranch, repodir, layerdir, config_data, logger):
                     prev_pv = None
 
                 # if no previous version in database consider it an upgrade
-                if not prev_pv or prev_pv != pv:
-                    logger.debug("Detected upgrade for %s in commit %s." % (pn, commit))
-                    create_upgrade(commit, repodir, recipe, pv, logger)
+                try:
+                    if not prev_pv or vercmp_string(prev_pv, pv) == -1:
+                        logger.debug("Detected upgrade for %s in commit %s." % (pn, commit))
+                        create_upgrade(commit, repodir, recipe, pv, logger)
+                except:
+                    logger.error("vercmp_string: %s, %s - %s" % (recipe.pn,
+                        prev_pv, pv))
 
             utils.runcmd("git checkout origin/master ", repodir)
             utils.runcmd("git branch -D " + temp_branch, repodir)

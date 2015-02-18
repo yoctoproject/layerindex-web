@@ -88,14 +88,19 @@ def upstream_history(directory, logger):
                     if ru.version == '':
                         ru.status = 'U' # Unknown
                     else:
-                        cmp_ver = vercmp_string(row['Version'], ru.version)
+                        try:
+                            cmp_ver = vercmp_string(row['Version'], ru.version)
+                            if cmp_ver == -1:
+                                ru.status = 'N' # Not updated
+                            elif cmp_ver == 0:
+                                ru.status = 'Y' # Up-to-date
+                            else:
+                                ru.status = 'D' # Downgrade
+                        except:
+                            ru.status = 'U'
+                            logger.error("vercmp_string: %s, %s - %s" % (row['PackageName'],
+                                row['Version'], ru.version))
 
-                        if cmp_ver == -1:
-                            ru.status = 'N' # Not updated
-                        elif cmp_ver == 0:
-                            ru.status = 'Y' # Up-to-date
-                        else:
-                            ru.status = 'D' # Downgrade
                     ru.type = 'A' # Automatic
                     ru.no_update_reason = row['NoUpgradeReason']
                     ru.date = ru.history.end_date
