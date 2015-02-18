@@ -66,20 +66,23 @@
 <div id="no_recipes_alert" class="alert" style="display:none">
     No recipes found <a href="#" id="view-all-recipes" style="margin-left:10px;">View all recipes</a>
 </div>
-<table class="table table-bordered tablesorter table-hover" id="recipestable">
+<table class="table tablesorter table-bordered table-hover" id="recipestable">
 <thead>
     <tr>
-        <th class="upstream_status_column span2 sorted">Upstream status<b class="caret"/></th>
         <th class="recipe_column">Recipe</th>
         <th class="version_column muted">Version</th>
-        <th class="upstream_version_column muted header">Upstream version</th>
-        <th class="maintainer_column"><b>Maintainer</b></th>
-        <th class="summary_column muted span5 header">Summary</th>
+        <th class="upstream_version_column muted">Upstream version</th>
+        <th class="upstream_status_column span2">Upstream status</th>
+        <th class="maintainer_column">Maintainer</th>
+        <th class="summary_column muted span5">Summary</th>
     </tr>
-    </thead>
+</thead>
 <tbody>
 {% for r in recipe_list %}
 <tr>
+    <td class="recipe_column"><a href="{% url "recipedetail" r.pk %}">{{ r.name }}</a></td>
+    <td class="version_column">{{ r.version }}</td>
+    <td class="upstream_version_column">{{ r.upstream_version }}</td>
     {% if r.upstream_status == "Up-to-date" %}
     <td class="text-success">
     {% elif r.upstream_status == "Not updated" %}
@@ -91,15 +94,30 @@
     {% endif %}
         {{ r.upstream_status }}
     </td>
-    <td class="recipe_column"><a href="{% url "recipedetail" r.pk %}">{{ r.name }}</a></td>
-    <td class="version_column">{{ r.version }}</td>
-    <td class="upstream_version_column">{{ r.upstream_version }}</td>
     <td class="maintainer_column">{{ r.maintainer_name }}</td>
     <td class="summary_column">{{ r.summary }}</td>
 </tr>
 {% endfor %}
 </tbody>
 </table>
+<style>
+th.header {
+    background-image: url({{ STATIC_URL }}/img/small.gif);
+    cursor: pointer;
+    font-weight: bold;
+    background-repeat: no-repeat;
+    background-position: center left;
+    padding-left: 20px;
+    border-right: 1px solid #dad9c7;
+    margin-left: -1px;
+}
+th.headerSortUp {
+    background-image: url({{ STATIC_URL }}/img/small_asc.gif);
+}
+th.headerSortDown {
+    background-image: url({{ STATIC_URL }}/img/small_desc.gif);
+}
+</style>
 {% endblock %}
 
 {% block scripts %}
@@ -246,12 +264,10 @@ $(document).ready(function() {
 
 {% if recipe_list_count > 0 %}
     $(recipesTable).tablesorter({
-        sortList: [[0,0]],
+        sortList: [[0,0], [3,0], [4,0]],
         headers: {
             1: { sorter: false },
             2: { sorter: false },
-            3: { sorter: false },
-            4: { sorter: false },
             5: { sorter: false },
         }
     }); 

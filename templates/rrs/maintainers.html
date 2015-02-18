@@ -37,7 +37,7 @@
 <table class="table table-bordered table-hover" id="statistics-table">
 <thead>
     <tr>
-        <th class="sorted">Maintainer<b class="caret"/></th>
+        <th class="sorted">Maintainer</th>
         <th class="muted">Assigned recipes</th>
         <th class="muted">Up-to-date</th>
         <th>Not updated</th>
@@ -101,6 +101,24 @@
 {% endfor %}
 </tbody>
 </table>
+<style>
+th.header {
+    background-image: url({{ STATIC_URL }}/img/small.gif);
+    cursor: pointer;
+    font-weight: bold;
+    background-repeat: no-repeat;
+    background-position: center left;
+    padding-left: 20px;
+    border-right: 1px solid #dad9c7;
+    margin-left: -1px;
+}
+th.headerSortUp {
+    background-image: url({{ STATIC_URL }}/img/small_asc.gif);
+}
+th.headerSortDown {
+    background-image: url({{ STATIC_URL }}/img/small_desc.gif);
+}
+</style>
 {% endblock %}
 
 {% block scripts %}

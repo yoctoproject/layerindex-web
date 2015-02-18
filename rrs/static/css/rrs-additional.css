@@ -36,9 +36,8 @@
 }
 
 /* Sorting styles  */
-
 th > a, th.muted {
-	font-weight: normal;
+    font-weight: normal;
 }
 
 .sorted {
@@ -85,10 +84,6 @@ th > a, th.muted {
 .current-wk {
 	background-color: #fcf8e3;
 	color: #c09853;
-}
-
-th .caret {
-	vertical-align: middle;
 }
 
 /* status styles */
