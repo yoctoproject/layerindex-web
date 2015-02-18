@@ -75,6 +75,7 @@
         <th class="upstream_status_column span2">Upstream status</th>
         <th class="maintainer_column">Maintainer</th>
         <th class="summary_column muted span5">Summary</th>
+        <th class="no_update_reason_column muted span5" style="display:none">No update reason</th>
     </tr>
 </thead>
 <tbody>
@@ -96,6 +97,7 @@
     </td>
     <td class="maintainer_column">{{ r.maintainer_name }}</td>
     <td class="summary_column">{{ r.summary }}</td>
+    <td class="no_update_reason_column" style="display:none">{{ r.no_update_reason }}</td>
 </tr>
 {% endfor %}
 </tbody>
@@ -209,6 +211,12 @@ $(document).ready(function() {
     }
 
     function applyFilters() {
+        if (upstreamStatus == 'Can\'t be updated') {
+            $('.no_update_reason_column').show()
+        } else {
+            $('.no_update_reason_column').hide()
+        }
+
         if (upstreamStatus == 'All') {
             upstreamStatusFilter = ''
         } else {
@@ -269,6 +277,7 @@ $(document).ready(function() {
             1: { sorter: false },
             2: { sorter: false },
             5: { sorter: false },
+            6: { sorter: false },
         }
     }); 
 {% endif %}

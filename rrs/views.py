@@ -98,6 +98,7 @@ class RecipeList():
     upstream_status = None
     upstream_version = None
     maintainer_name = None
+    no_update_reason = None
 
     def __init__(self, pk, name, summary):
         self.pk = pk
@@ -130,6 +131,7 @@ def _get_recipe_list(milestone):
 
         upstream_version = ''
         upstream_status = ''
+        no_update_reason = ''
         if recipe_upstream_history:
             recipe_upstream = RecipeUpstream.get_by_recipe_and_history(
                     recipe, recipe_upstream_history)
@@ -153,6 +155,7 @@ def _get_recipe_list(milestone):
             if upstream_status == 'Downgrade':
                 upstream_status = 'Unknown' # Downgrade is displayed as Unknown
             upstream_version = recipe_upstream.version
+            no_update_reason = recipe_upstream.no_update_reason
 
         maintainer = RecipeMaintainer.get_maintainer_by_recipe_and_history(
                 recipe, recipe_maintainer_history)
@@ -166,6 +169,7 @@ def _get_recipe_list(milestone):
         recipe_list_item.upstream_status = upstream_status
         recipe_list_item.upstream_version = upstream_version
         recipe_list_item.maintainer_name = maintainer_name
+        recipe_list_item.no_update_reason = no_update_reason
         recipe_list.append(recipe_list_item)
 
     return recipe_list
