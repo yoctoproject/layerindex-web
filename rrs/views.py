@@ -227,7 +227,7 @@ class RecipeListView(ListView):
         context['upstream_status_choices'] = [ruch['N'], ruch['C'], ruch['Y'], ruch['U']]
 
         context['maintainer_name'] = self.maintainer_name
-        context['set_maintainers'] =  ['All', 'No Maintainer']
+        context['set_maintainers'] =  ['All', 'No maintainer']
         all_maintainers = []
         for rm in RecipeMaintainer.objects.filter(history =
                 self.recipe_maintainer_history).values(

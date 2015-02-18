@@ -35,6 +35,10 @@
     margin-top: 5px;
 }
 
+.nav-pills {
+	margin-top: 40px;
+}
+
 /* Sorting styles  */
 th > a, th.muted {
     font-weight: normal;
