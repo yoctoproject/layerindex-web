@@ -347,6 +347,8 @@ class RecipeDetailView(DetailView):
             if recipe_upstream:
                 if recipe_upstream.status == 'N' and recipe_upstream.no_update_reason:
                     recipe_upstream.status = 'C'
+                elif recipe_upstream.status == 'D':
+                    recipe_upstream.status = 'U'
                 context['upstream_status'] = \
                     RecipeUpstream.RECIPE_UPSTREAM_STATUS_CHOICES_DICT[recipe_upstream.status]
                 context['upstream_version'] = recipe_upstream.version
@@ -430,10 +432,14 @@ class MaintainerListView(ListView):
         for ml in maintainer_list:
             milestone_statistics = _get_milestone_statistics(milestone, ml.name)
             ml.recipes_all = milestone_statistics['all']
-            ml.recipes_up_to_date = milestone_statistics['up_to_date']
-            ml.recipes_not_updated = milestone_statistics['not_updated']
-            ml.recipes_cant_be_updated = milestone_statistics['cant_be_updated']
-            ml.recipes_unknown = milestone_statistics['unknown']
+            ml.recipes_up_to_date = ('' if milestone_statistics['up_to_date'] == 0
+                    else milestone_statistics['up_to_date'])
+            ml.recipes_not_updated = ('' if milestone_statistics['not_updated'] == 0
+                    else milestone_statistics['not_updated'])
+            ml.recipes_cant_be_updated = ('' if milestone_statistics['cant_be_updated'] == 0
+                    else milestone_statistics['cant_be_updated'])
+            ml.recipes_unknown = ('' if milestone_statistics['unknown'] == 0
+                    else milestone_statistics['unknown'])
             ml.percentage_done = milestone_statistics['percentage'] + '%'
 
             ml.interval_statistics = []
