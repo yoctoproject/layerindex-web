@@ -3,7 +3,7 @@
         "pk": 0, 
         "model": "rrs.maintainer", 
         "fields": {
-            "name": "No Maintainer", 
+            "name": "No maintainer", 
             "email": ""
         }
     },

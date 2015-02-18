@@ -31,20 +31,20 @@
     <div class="navbar-inner">
         <ul class="nav">
             {% if upstream_status == "Up-to-date" %}
-            <li class="lead">Upstream status: <strong class="text-success">{{ upstream_status }}</strong></li>
+            <li class="lead">Upstream status: <span class="text-success">{{ upstream_status }}</span></li>
             {% elif upstream_status == "Not updated" %}
-            <li class="lead">Upstream status: <strong class="text-error">{{ upstream_status }}</strong></li>
+            <li class="lead">Upstream status: <span class="text-error">{{ upstream_status }}</span></li>
             {% elif upstream_status == "Can't be updated" %}
-            <li class="lead">Upstream status: <strong class="muted">{{ upstream_status }}</strong></li>
+            <li class="lead">Upstream status: <span class="muted">{{ upstream_status }}</span></li>
             {% else %}
-            <li class="lead">Upstream status: <strong class="text-warning">{{ upstream_status }}</strong></li>
+            <li class="lead">Upstream status: <span class="text-warning">{{ upstream_status }}</span></li>
             {% endif %}
             {% if upstream_status == "Not updated" or upstream_status == "Can't be updated" %}
             <li class="divider-vertical"></li>
-            <li class="lead">Upstream version: <strong>{{ upstream_version }}</strong></li>
+            <li class="lead">Upstream version: <span>{{ upstream_version }}</span></li>
             {% endif %}
             <li class="divider-vertical"></li>
-            <li class="lead">Maintainer: <strong><a href="{% url recipes release_name milestone_name %}?maintainer_name={{ maintainer_name|urlencode }}">{{ maintainer_name }}</a></strong></li>
+            <li class="lead">Maintainer: <span><a href="{% url recipes release_name milestone_name %}?maintainer_name={{ maintainer_name|urlencode }}">{{ maintainer_name }}</a></span></li>
             <li class="divider-vertical"></li>
         </ul>
     </div>
