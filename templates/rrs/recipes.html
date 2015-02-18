@@ -225,12 +225,14 @@ $(document).ready(function() {
     $("#select-status a").click(function() {
         upstreamStatus = this.text
         applyFilters()
+        $("#filter").val('')
         updateRecipeCount()
     });
 
     $("#select-maintainer a").click(function() {
         maintainer = this.text
         applyFilters()
+        $("#filter").val('')
         updateRecipeCount()
     });
 
