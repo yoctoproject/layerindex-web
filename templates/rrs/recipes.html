@@ -163,8 +163,8 @@ th.headerSortDown {
 <script>
 $(document).ready(function() {
     recipesTable = $('#recipestable')
-    upstreamStatus = '{{ upstream_status }}'
-    maintainer = '{{ maintainer_name }}'
+    upstreamStatus = $("<div/>").html('{{ upstream_status }}').text()
+    maintainer = $("<div/>").html('{{ maintainer_name }}').text()
 
     function updateRecipeCount() {
         $('#recipestable').show()
