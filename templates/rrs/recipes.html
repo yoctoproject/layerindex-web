@@ -56,8 +56,11 @@
             </li>
         </ul>
 
-        <form id="form-search" class="navbar-form pull-right">
-            <input type="text" class="input-xxlarge" placeholder="Search all recipes" id="filter"/>                
+        <form id="form-search" class="pull-right input-append">
+            <input type="text" class="input-xlarge" placeholder="Search all recipes" id="filter"/>                
+            <a class="add-on btn" id="clear-search-btn">
+                <i class="icon-remove"></i>
+            </a>
             <button type="submit" value="Search" class="btn btn-info" id="btn-search">Search</button>
         </form>
     </div>
@@ -262,13 +265,23 @@ $(document).ready(function() {
         updateRecipeCount()
     });
 
-    $("#view-all-recipes").click(function() { 
+    function clearSearch() {
         upstreamStatus = 'All' 
         maintainer = 'All'
         applyFilters()
         $("#filter").val('')
         updateRecipeCount()
+    }
+
+    $("#view-all-recipes").click(function() { 
+        clearSearch()
     });
+
+    $("#clear-search-btn").click(function() { 
+        clearSearch()
+    });
+
+    $(".icon-remove").tooltip( {container: 'body', html: true, title: "Clear search" });
 
 {% if recipe_list_count > 0 %}
     $(recipesTable).tablesorter({

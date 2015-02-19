@@ -24,8 +24,11 @@
             <span class="badge" style="margin-top:11px;"></span>
             </li>
         </ul>    		
-        <form id="form-search" class="navbar-form pull-right">
-            <input type="text" class="input-xxlarge" placeholder="Search maintainers" id="filter">				
+        <form id="form-search" class="pull-right input-append">
+            <input type="text" class="input-xlarge" placeholder="Search maintainers" id="filter">				
+            <a class="add-on btn" id="clear-search-btn">
+                <i class="icon-remove"></i>
+            </a>
             <button type="submit" value="Search" class="btn btn-info" id="btn-search">Search</button>
         </form>
     </div>
@@ -156,10 +159,18 @@ $(document).ready(function() {
         event.preventDefault();
     });
 
-    $("#view-all-maintainers").click(function() {
+    function clearSearch() {
         $.uiTableFilter(statisticsTable, '');
         $("#filter").val('')
         updateMaintainerCount()
+    }
+
+    $("#view-all-maintainers").click(function() {
+        clearSearch()
+    });
+
+    $("#clear-search-btn").click(function() { 
+        clearSearch()
     });
 
 {% if maintainer_count > 0 %}
