@@ -214,8 +214,7 @@ class RecipeListView(ListView):
         context['release_name'] = self.release_name
         context['all_releases'] = Release.objects.filter().order_by('-end_date')
         context['milestone_name'] = self.milestone_name
-        context['all_milestones'] = Milestone.objects.filter(release__name =
-                self.release_name).order_by('-end_date')
+        context['all_milestones'] = Milestone.get_by_release_name(self.release_name)
 
         context['recipes_percentage'] = self.milestone_statistics['percentage']
         context['recipes_up_to_date'] = self.milestone_statistics['up_to_date']
@@ -476,8 +475,7 @@ class MaintainerListView(ListView):
         context['release_name'] = self.release_name
         context['all_releases'] = Release.objects.filter().order_by('-end_date')
         context['milestone_name'] = self.milestone_name
-        context['all_milestones'] = Milestone.objects.filter(release__name =
-                self.release_name).order_by('-end_date')
+        context['all_milestones'] = Milestone.get_by_release_name(self.release_name)
 
         context['recipes_percentage'] = self.milestone_statistics['percentage']
         context['recipes_up_to_date'] = self.milestone_statistics['up_to_date']

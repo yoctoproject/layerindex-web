@@ -38,13 +38,38 @@ class Release(models.Model):
         return current_release or Release.objects.filter().order_by('-end_date')[0]
 
     def __unicode__(self):
-        return '%s: %s - %s' % (self.name, self.start_date, self.end_date)
+        return '%s' % (self.name)
 
 class Milestone(models.Model):
     release = models.ForeignKey(Release)
-    name = models.CharField(max_length=100, unique=True)
+    name = models.CharField(max_length=100)
     start_date = models.DateField()
     end_date = models.DateField()
+
+    class Meta:
+        unique_together = ('release', 'name',)
+
+    """ Get milestones, filtering don't exist yet and ordering """
+    @staticmethod
+    def get_by_release_name(release_name):
+        milestones = []
+        today = date.today()
+
+        mall = Milestone.objects.get(release__name = release_name, name = 'All')
+        if mall:
+            milestones.append(mall)
+
+        mqry = Milestone.objects.filter(release__name = release_name).order_by('-end_date')
+        for m in mqry:
+            if m.name == 'All':
+                continue
+
+            if m.start_date > today:
+                continue
+
+            milestones.append(m)
+
+        return milestones
 
     """ Get milestone by release and date """
     @staticmethod
@@ -60,9 +85,18 @@ class Milestone(models.Model):
     """ Get current milestone """
     @staticmethod
     def get_current(release):
-        current = date.today()
-        current_milestone = Milestone.get_by_release_and_date(release, current)
-        return current_milestone or Milestone.objects.filter().order_by('-end_date')[0]
+        current_milestone =  None
+        current_date = date.today()
+
+        mqry = Milestone.objects.filter(release = release, start_date__lte = current_date,
+                 end_date__gte = current_date).exclude(name = 'All').order_by('-end_date')
+        if mqry:
+            current_milestone = mqry[0]
+        else:
+            current_milestone = Milestone.objects.filter(release = release). \
+                order_by('-end_date')[0]
+
+        return current_milestone
 
     """ Get milestone intervals by release """ 
     @staticmethod
@@ -102,7 +136,7 @@ class Milestone(models.Model):
         return weeks
 
     def __unicode__(self):
-        return '%s: %s - %s' % (self.name, self.start_date, self.end_date)
+        return '%s%s' % (self.release.name, self.name)
 
 class Maintainer(models.Model):
     name = models.CharField(max_length=255, unique=True)

@@ -24,7 +24,7 @@
         </a>
         <ul class="dropdown-menu">
             {% for r in all_releases %}
-                <li><a href="{% url this_url_name r.name r.name|add:"All" %}{{ extra_url_param }}">
+                <li><a href="{% url this_url_name r.name "All" %}{{ extra_url_param }}">
                     {% if r.name = release_name %}<b>{% endif %}
                     {{ r.name }}
                     {% if r.name = release_name %}</b>{% endif %}
@@ -58,7 +58,12 @@
 
             <div class="navbar">
                 <div class="navbar-inner">
-                    <span class="brand">{{ milestone_name }}</span>
+                    <span class="brand">
+                        {{ release_name }}
+                        {% if milestone_name != "All" %}
+                        {{ milestone_name }}
+                        {% endif %}
+                    </span>
                     <ul class="nav">
                         <li class="divider-vertical"></li>
                         <li class="lead" id="percentage"><strong>{{ recipes_percentage }}%</strong> done</li>
