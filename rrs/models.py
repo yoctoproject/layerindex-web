@@ -93,10 +93,9 @@ class Milestone(models.Model):
             if current_date >= self.end_date:
                 break;
 
-            week = "Wk" + str(week_no)
-            weeks[week] = {}
-            weeks[week]['start_date'] = current_date
-            weeks[week]['end_date'] = current_date + week_delta
+            weeks[week_no] = {}
+            weeks[week_no]['start_date'] = current_date
+            weeks[week_no]['end_date'] = current_date + week_delta
             current_date += week_delta
             week_no += 1
 

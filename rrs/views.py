@@ -415,8 +415,10 @@ class MaintainerListView(ListView):
 
         if "All" in milestone.name:
             intervals = milestone.get_milestone_intervals(release)
+            interval_type = 'Milestone'
         else:
             intervals = milestone.get_week_intervals()
+            interval_type = 'Week'
 
         self.milestone_statistics = _get_milestone_statistics(milestone)
 
@@ -460,6 +462,10 @@ class MaintainerListView(ListView):
                         commit_date__lte = end_date).count()
                 ml.interval_statistics.append('' if number == 0 else number)
 
+        # To add Wk prefix after get statics to avoid sorting problems
+        if interval_type == 'Week':
+            self.intervals = ['Wk' + str(i) for i in self.intervals]
+
         return maintainer_list
 
     def get_context_data(self, **kwargs):
@@ -481,6 +487,7 @@ class MaintainerListView(ListView):
 
         context['maintainer_count'] = self.maintainer_count
         context['intervals'] = self.intervals
+        context['interval_range'] = range(len(self.intervals))
         context['current_interval'] = self.current_interval
 
         return context
