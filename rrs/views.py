@@ -240,12 +240,6 @@ class RecipeListView(ListView):
             all_maintainers.append(rm['maintainer__name'])
         context['all_maintainers'] = all_maintainers
 
-        extra_url_param = '?' + urllib.urlencode({
-            'upstream_status': self.upstream_status,
-            'maintainer_name': self.maintainer_name.encode('utf8')
-        })
-        context['extra_url_param'] = extra_url_param
-
         return context
 
 def recipes_report(request, release_name, milestone_name):
