@@ -18,7 +18,11 @@
     <link rel="stylesheet" href="{% static "css/bootstrap.css" %}" />
     <link rel="stylesheet" href="{% static "css/bootstrap-responsive.css" %}" />
     <link rel="stylesheet" href="{% static "css/additional.css" %}" />
+    {% if application == 'layerindex' %}
     <link rel="icon" type="image/vnd.microsoft.icon" href="{% static "img/favicon.ico" %}" />
+    {% else %}
+    <link rel="icon" type="image/vnd.microsoft.icon" href="{% static "img/yct-favicon.ico" %}" />
+    {% endif %}
     <title>{{ site_name }}{% block title_append %} - {% endblock %}</title>
 </head>
 
