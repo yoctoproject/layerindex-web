@@ -75,7 +75,8 @@ class Milestone(models.Model):
     @staticmethod
     def get_by_release_and_date(release, date):
         milestone_set = Milestone.objects.filter(release = release,
-                start_date__lte = date, end_date__gte = date).order_by('-end_date')
+                start_date__lte = date, end_date__gte = date). \
+                exclude(name = 'All').order_by('-end_date')
 
         if milestone_set:
             return milestone_set[0]
