@@ -78,9 +78,21 @@
                     <td>{{ rud.title }}</td>
                     <td>{{ rud.version }}</td>
                     {% if rud.milestone_name %}
-                    <td><a href="{% url recipes rud.release_name rud.milestone_name %}">{{ rud.milestone_name }}</a></td>
+                    <td>
+                        <a href="{% url recipes rud.release_name rud.milestone_name %}">
+                            {{ rud.release_name }}
+                            {% if rud.milestone_name != "All" %}
+                            {{ rud.milestone_name }}
+                            {% endif %}
+                        </a>
+                    </td>
                     {% else %}
-                    <td>{{ rud.milestone_name }}</td>
+                    <td>
+                        {{ rud.release_name }}
+                        {% if rud.milestone_name != "All" %}
+                        {{ rud.milestone_name }}
+                        {% endif %}
+                    </td>
                     {% endif %}
                     <td>{{ rud.date }}</td>
 
