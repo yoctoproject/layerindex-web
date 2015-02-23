@@ -26,10 +26,10 @@
         </ul>    		
         <form id="form-search" class="pull-right input-append">
             <input type="text" class="input-xlarge" placeholder="Search maintainers" id="filter">				
-            <a class="add-on btn" id="clear-search-btn">
+            <a class="add-on btn" id="clear-search-btn" style="display:none">
                 <i class="icon-remove"></i>
             </a>
-            <button type="submit" value="Search" class="btn btn-info" id="btn-search">Search</button>
+            <button type="submit" value="Search" class="btn" id="btn-search">Search</button>
         </form>
     </div>
 </div>
@@ -156,11 +156,13 @@ $(document).ready(function() {
         search_text = $("#filter").val()
         $.uiTableFilter(statisticsTable, search_text);
         updateMaintainerCount()
+        $("#clear-search-btn").show()
         event.preventDefault();
     });
 
     function clearSearch() {
         $.uiTableFilter(statisticsTable, '');
+        $("#clear-search-btn").hide()
         $("#filter").val('')
         updateMaintainerCount()
     }
