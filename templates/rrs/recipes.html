@@ -58,10 +58,10 @@
 
         <form id="form-search" class="pull-right input-append">
             <input type="text" class="input-xlarge" placeholder="Search all recipes" id="filter"/>                
-            <a class="add-on btn" id="clear-search-btn">
+            <a class="add-on btn" style="display:none" id="clear-search-btn">
                 <i class="icon-remove"></i>
             </a>
-            <button type="submit" value="Search" class="btn btn-info" id="btn-search">Search</button>
+            <button type="submit" value="Search" class="btn" id="btn-search">Search</button>
         </form>
     </div>
 </div>
@@ -245,39 +245,39 @@ $(document).ready(function() {
         upstreamStatus = 'All' 
         maintainer = 'All'
         search_text = $("#filter").val()
+        $("#clear-search-btn").show()
         applyFilters()
         $.uiTableFilter(recipesTable, search_text);
         updateRecipeCount()
         event.preventDefault();
     });
 
+    function clearSearch() {
+        $("#filter").val('')
+        $("#clear-search-btn").hide()
+        applyFilters()
+        updateRecipeCount()
+    }
+
     $("#select-status a").click(function() {
         upstreamStatus = this.text
-        applyFilters()
-        $("#filter").val('')
-        updateRecipeCount()
+        clearSearch()
     });
 
     $("#select-maintainer a").click(function() {
         maintainer = this.text
-        applyFilters()
-        $("#filter").val('')
-        updateRecipeCount()
+        clearSearch()
     });
 
-    function clearSearch() {
+    $("#view-all-recipes").click(function() { 
         upstreamStatus = 'All' 
         maintainer = 'All'
-        applyFilters()
-        $("#filter").val('')
-        updateRecipeCount()
-    }
-
-    $("#view-all-recipes").click(function() { 
         clearSearch()
     });
 
     $("#clear-search-btn").click(function() { 
+        upstreamStatus = 'All' 
+        maintainer = 'All'
         clearSearch()
     });
 
