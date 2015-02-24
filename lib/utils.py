@@ -64,8 +64,20 @@ def setup_django():
     setup_environ(settings)
 
 def logger_create(name):
+    import settings
+    from datetime import datetime
+
     logger = logging.getLogger(name)
-    loggerhandler = logging.StreamHandler()
+    try:
+        log_dir = settings.LOG_DIR
+    except:
+        log_dir = ''
+
+    if log_dir:
+        filename = os.path.join(settings.LOG_DIR, "%s_%s.log" % (name, datetime.now().strftime("%Y-%m-%d_%H:%M")))
+        loggerhandler = logging.FileHandler(filename)
+    else:
+        loggerhandler = logging.StreamHandler()
     loggerhandler.setFormatter(logging.Formatter("%(levelname)s: %(message)s"))
     logger.addHandler(loggerhandler)
     logger.setLevel(logging.INFO)
