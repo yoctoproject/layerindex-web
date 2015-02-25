@@ -45,7 +45,7 @@ RECIPE_NO_UPDATE_REASON_pn-"xxx" = "Not upgrade to 2.0 is unstable"
 
 You can check the detail information at:
 
-http://packages.yoctoproject.org/upgradepkgname
+http://packages.yoctoproject.org/
 
 """
 
@@ -100,7 +100,7 @@ http://packages.yoctoproject.org/upgradepkgname
 The based commit is:
 
 %s
-Any problem, please contact Saul Wold <sgw@linux.intel.com> 
+Any problem, please contact Anibal Limon <anibal.limon@intel.com> 
 """ % ((upgradable_count - no_upgradable_count), upgradable_count, 
         utils.runcmd("git log -1", repodir))
 
