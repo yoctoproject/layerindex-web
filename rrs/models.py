@@ -17,8 +17,8 @@ from layerindex.models import Recipe
 
 class Release(models.Model):
     name = models.CharField(max_length=100, unique=True)
-    start_date = models.DateField()
-    end_date = models.DateField()
+    start_date = models.DateField(db_index=True)
+    end_date = models.DateField(db_index=True)
 
     @staticmethod
     def get_by_date(date):
@@ -43,8 +43,8 @@ class Release(models.Model):
 class Milestone(models.Model):
     release = models.ForeignKey(Release)
     name = models.CharField(max_length=100)
-    start_date = models.DateField()
-    end_date = models.DateField()
+    start_date = models.DateField(db_index=True)
+    end_date = models.DateField(db_index=True)
 
     class Meta:
         unique_together = ('release', 'name',)
@@ -169,7 +169,7 @@ class Maintainer(models.Model):
 
 class RecipeMaintainerHistory(models.Model):
     title = models.CharField(max_length=255, blank=True)
-    date = models.DateTimeField()
+    date = models.DateTimeField(db_index=True)
     author = models.ForeignKey(Maintainer)
     sha1 = models.CharField(max_length=64, unique=True)
 
@@ -265,10 +265,10 @@ class RecipeUpstream(models.Model):
     recipe = models.ForeignKey(Recipe)
     history = models.ForeignKey(RecipeUpstreamHistory)
     version = models.CharField(max_length=100, blank=True)
-    type = models.CharField(max_length=1, choices=RECIPE_UPSTREAM_TYPE_CHOICES, blank=True)
-    status =  models.CharField(max_length=1, choices=RECIPE_UPSTREAM_STATUS_CHOICES, blank=True)
-    no_update_reason = models.CharField(max_length=255, blank=True)
-    date = models.DateTimeField()
+    type = models.CharField(max_length=1, choices=RECIPE_UPSTREAM_TYPE_CHOICES, blank=True, db_index=True)
+    status =  models.CharField(max_length=1, choices=RECIPE_UPSTREAM_STATUS_CHOICES, blank=True, db_index=True)
+    no_update_reason = models.CharField(max_length=255, blank=True, db_index=True)
+    date = models.DateTimeField(db_index=True)
 
     @staticmethod
     def get_recipes_not_updated(history):
@@ -334,8 +334,8 @@ class RecipeUpgrade(models.Model):
     sha1 = models.CharField(max_length=40, blank=True)
     title = models.CharField(max_length=1024, blank=True)
     version = models.CharField(max_length=100, blank=True)
-    author_date = models.DateTimeField()
-    commit_date = models.DateTimeField()
+    author_date = models.DateTimeField(db_index=True)
+    commit_date = models.DateTimeField(db_index=True)
 
     @staticmethod
     def get_by_recipe_and_date(recipe, end_date):
