@@ -220,8 +220,8 @@ class RecipeMaintainer(models.Model):
                                 self.maintainer.email)
 
 class RecipeUpstreamHistory(models.Model):
-    start_date = models.DateTimeField()
-    end_date = models.DateTimeField()
+    start_date = models.DateTimeField(db_index=True)
+    end_date = models.DateTimeField(db_index=True)
 
     @staticmethod
     def get_last_by_date_range(start, end):
