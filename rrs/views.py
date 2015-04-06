@@ -480,7 +480,8 @@ class MaintainerListView(ListView):
         context['maintainer_count'] = self.maintainer_count
         context['intervals'] = self.intervals
         context['interval_range'] = range(len(self.intervals))
-        context['current_interval'] = self.current_interval
+        if hasattr(self, 'current_interval'):
+                context['current_interval'] = self.current_interval
 
         return context
 
