@@ -39,7 +39,7 @@
 </div>
 <table class="table table-bordered table-hover" id="statistics-table">
 <thead>
-    <tr>
+    <tr class="headerRow">
         <th class="sorted">Maintainer</th>
         <th class="muted">Assigned recipes</th>
         <th class="muted">Up-to-date</th>
@@ -59,34 +59,34 @@
         {% endfor %}
     </tr>
 </thead>
-<tbody>
+<tbody id="statistics-table-body">
 {% for ml in maintainer_list %}
     <tr>
         <td>
             {{ ml.name }}
         </td>
         <td>
-            <a href="{% url 'recipes' release_name milestone_name %}?maintainer_name={{ ml.name|urlencode }}">
+            <a class="rowData" href="{% url 'recipes' release_name milestone_name %}?maintainer_name={{ ml.name|urlencode }}">
                 {{ ml.recipes_all }}
             </a>
         </td>
         <td>
-            <a href="{% url 'recipes' release_name milestone_name %}?upstream_status={{ "Up-to-date"|urlencode }}&maintainer_name={{ ml.name|urlencode }}">
+            <a class="rowData" href="{% url 'recipes' release_name milestone_name %}?upstream_status={{ "Up-to-date"|urlencode }}&maintainer_name={{ ml.name|urlencode }}">
                 {{ ml.recipes_up_to_date }}
             </a>
         </td>
         <td>
-            <a href="{% url 'recipes' release_name milestone_name %}?upstream_status={{ "Not updated"|urlencode }}&maintainer_name={{ ml.name|urlencode }}">
+            <a class="rowData" href="{% url 'recipes' release_name milestone_name %}?upstream_status={{ "Not updated"|urlencode }}&maintainer_name={{ ml.name|urlencode }}">
                 {{ ml.recipes_not_updated }}
             </a>
         </td>
         <td>
-            <a href="{% url 'recipes' release_name milestone_name %}?upstream_status={{ "Can't be updated"|urlencode }}&maintainer_name={{ ml.name|urlencode }}">
+            <a class="rowData" href="{% url 'recipes' release_name milestone_name %}?upstream_status={{ "Can't be updated"|urlencode }}&maintainer_name={{ ml.name|urlencode }}">
                 {{ ml.recipes_cant_be_updated }}
             </a>
         </td>
         <td>
-            <a href="{% url 'recipes' release_name milestone_name %}?upstream_status={{ "Unknown"|urlencode }}&maintainer_name={{ ml.name|urlencode }}">
+            <a class="rowData" href="{% url 'recipes' release_name milestone_name %}?upstream_status={{ "Unknown"|urlencode }}&maintainer_name={{ ml.name|urlencode }}">
                 {{ ml.recipes_unknown }}
             </a>
         </td>
@@ -103,6 +103,26 @@
     </tr>
 {% endfor %}
 </tbody>
+<tfoot id="statistics-table-foot">
+   <tr class="totalRow">
+        <th id="totalCell">Total</th>
+        <th id="totalAssigned" class="totalCol"></th>
+        <th id="totalUptoDate" class="totalCol"></th>
+        <th class="totalCol"></th>
+        <th class="totalCol"></th>
+        <th class="totalCol"></th>
+        <th id="totalPercentage"></th>
+        {% for i in intervals %}
+        {% if current_interval == forloop.counter0 %}
+        <th class="current-wk">
+        {% else %}
+        <th class="totalCol">
+        {% endif %}
+        {{ i }}
+        </th>
+        {% endfor %}
+    </tr>
+</tfoot>
 </table>
 <style>
 th.header {
@@ -130,6 +150,11 @@ th.headerSortDown {
 <script>
 $(document).ready(function() {
     statisticsTable = $('#statistics-table');
+    var totals = []
+    $("#statistics-table th").each(function(i){  
+        totals.push(0);
+    });
+    
 
     function updateMaintainerCount() {
         $('#statistics-table').show()
@@ -150,6 +175,7 @@ $(document).ready(function() {
         } else {
             $('.badge').html((count - 1) + " maintainers")
         }
+        updateTotals()
     }
 
     $("#form-search").submit(function( event ) {
@@ -174,6 +200,31 @@ $(document).ready(function() {
     $("#clear-search-btn").click(function() { 
         clearSearch()
     });
+
+    function updateTotals() {
+        for (count=0; count<totals.length; count++) {
+            totals[count]=0
+        }
+        var $dataRows=$("#statistics-table-body tr:visible")
+        $dataRows.each(function() {
+            $(this).find('.rowData, .current-wk, .muted').each(function(i){
+                if ($(this).html().trim() != '') {
+                    totals[i] += parseInt($(this).html())
+                }
+            })
+        })
+
+        var $totalRow=$("#statistics-table-foot tr.totalRow")
+        $totalRow.find('.totalCol, .current-wk').each(function(i) {
+                $(this).html(totals[i]);
+        })
+
+        tempInt1 = parseInt($("#totalUptoDate").html())
+        tempInt2 = parseInt($("#totalAssigned").html())
+        tempInt1 = ((tempInt1/tempInt2).toFixed(2))*100
+        $("#totalPercentage").html(tempInt1 +'%')
+
+    }
 
 {% if maintainer_count > 0 %}
     $(statisticsTable).tablesorter({
