@@ -90,6 +90,10 @@ th > a, th.muted {
 	color: #c09853;
 }
 
+.totalRow { 
+	background-color: #fcf8e3;
+}
+
 /* status styles */
 
 .well{

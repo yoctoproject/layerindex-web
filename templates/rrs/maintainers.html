@@ -105,21 +105,36 @@
 </tbody>
 <tfoot id="statistics-table-foot">
    <tr class="totalRow">
-        <th id="totalCell">Total</th>
-        <th id="totalAssigned" class="totalCol"></th>
-        <th id="totalUptoDate" class="totalCol"></th>
-        <th class="totalCol"></th>
-        <th class="totalCol"></th>
-        <th class="totalCol"></th>
-        <th id="totalPercentage"></th>
+        <td id="totalCell">Total</td>
+        <td>
+            <a id="totalAssigned" class="totalCol" href="{% url 'recipes' release_name milestone_name %}">
+            </a>
+       </td>
+        <td> 
+            <a id="totalUptoDate" class="totalCol" href="{% url 'recipes' release_name milestone_name %}?upstream_status={{ "Up-to-date"|urlencode }}">
+            </a>
+        </td>
+        <td>
+            <a class="totalCol"  href="{% url 'recipes' release_name milestone_name %}?upstream_status={{ "Not updated"|urlencode }}">
+            </a>
+        </td>
+        <td>
+            <a class="totalCol" href="{% url 'recipes' release_name milestone_name %}?upstream_status={{ "Can't be updated"|urlencode }}">
+            </a>
+        </td>
+        <td> 
+            <a class="totalCol" href="{% url 'recipes' release_name milestone_name %}?upstream_status={{ "Unknown"|urlencode }}">
+            </a>
+        </td>
+        <td id="totalPercentage"></td>
         {% for i in intervals %}
         {% if current_interval == forloop.counter0 %}
-        <th class="current-wk">
+        <td class="current-wk">
         {% else %}
-        <th class="totalCol">
+        <td class="totalCol">
         {% endif %}
         {{ i }}
-        </th>
+        </td>
         {% endfor %}
     </tr>
 </tfoot>
@@ -160,7 +175,7 @@ $(document).ready(function() {
         $('#statistics-table').show()
         $('#no_maintainers_alert').hide()
 
-        count = 0
+        count = -1
         $('tr:visible').each(function() {
             count++
         });
@@ -223,7 +238,6 @@ $(document).ready(function() {
         tempInt2 = parseInt($("#totalAssigned").html())
         tempInt1 = ((tempInt1/tempInt2).toFixed(2))*100
         $("#totalPercentage").html(tempInt1 +'%')
-
     }
 
 {% if maintainer_count > 0 %}
