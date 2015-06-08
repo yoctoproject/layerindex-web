@@ -40,3 +40,15 @@ $ ./scripts/tools/rrs_upgrade_history.py # can take a lot of time
 
 $ ./scripts/tools/rrs_maintainer_history.py
 $ ./scripts/update.py
+
+Maintenance
+-----------
+
+The code for this application is maintained by the Yocto Project.
+
+The latest version of the code can always be found here:
+
+  http://git.yoctoproject.org/cgit/cgit.cgi/layerindex-web/log/?h=rrs
+
+Contributions are welcome. Please send patches / pull requests to
+yocto@yoctoproject.org with '[rrs]' in the subject.
