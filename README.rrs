@@ -51,4 +51,5 @@ The latest version of the code can always be found here:
   http://git.yoctoproject.org/cgit/cgit.cgi/layerindex-web/log/?h=rrs
 
 Contributions are welcome. Please send patches / pull requests to
-yocto@yoctoproject.org with '[rrs]' in the subject.
+yocto@yoctoproject.org with '[rrs]' in the subject and cc the current
+maintainer that is Aníbal Limón <anibal.limon@linux.intel.com>.
