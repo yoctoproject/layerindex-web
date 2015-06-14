@@ -582,6 +582,19 @@ def main():
                     transaction.rollback()
                 else:
                     transaction.commit()
+
+                # Slightly hacky way of avoiding memory leaks
+                bb.event.ui_queue = []
+                bb.parse.parse_py.BBHandler.cached_statements = {}
+                bb.codeparser.codeparsercache = bb.codeparser.CodeParserCache()
+                bb.codeparser.codecache = bb.codeparser.SetCache()
+                bb.fetch._checksum_cache = bb.checksum.FileChecksumCache()
+                bb.fetch.urldata_cache = {}
+                bb.fetch.saved_headrevs = {}
+                bb.parse.__pkgsplit_cache__={}
+                bb.parse.__mtime_cache = {}
+                bb.parse.init_parser(tinfoil.config_data)
+
             except KeyboardInterrupt:
                 transaction.rollback()
                 logger.warn("Update interrupted, changes to %s rolled back" % layer.name)
