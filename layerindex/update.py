@@ -587,7 +587,8 @@ def main():
                 bb.event.ui_queue = []
                 bb.parse.parse_py.BBHandler.cached_statements = {}
                 bb.codeparser.codeparsercache = bb.codeparser.CodeParserCache()
-                bb.codeparser.codecache = bb.codeparser.SetCache()
+                if hasattr(bb.codeparser, 'codecache'):
+                    bb.codeparser.codecache = bb.codeparser.SetCache()
                 bb.fetch._checksum_cache = bb.checksum.FileChecksumCache()
                 bb.fetch.urldata_cache = {}
                 bb.fetch.saved_headrevs = {}
