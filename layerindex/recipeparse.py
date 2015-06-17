@@ -104,6 +104,10 @@ def init_parser(settings, branch, bitbakepath, enable_tracking=False, nocheckout
     if not os.path.exists(oe_tmpdir):
         os.makedirs(oe_tmpdir)
 
+    # Ensure BBFILES as an initial value so that the old mode of BBFILES := "${BBFILES} ..." works
+    if not tinfoil.config_data.getVar('BBFILES', False):
+        tinfoil.config_data.setVar('BBFILES', '')
+
     return (tinfoil, tempdir)
 
 def checkout_layer_branch(layerbranch, repodir, logger=None):
