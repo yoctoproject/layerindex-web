@@ -448,6 +448,21 @@ class Raw():
         return Raw.dictfetchall(cur)
 
     @staticmethod
+    def get_reup_by_last_updated(date):
+        cur = connection.cursor()
+        cur.execute("""SELECT te.recipe_id, te.status, te.date, te.rownum FROM(
+                    SELECT  recipe_id, status, date, ROW_NUMBER() OVER(
+                        PARTITION BY recipe_id
+                        ORDER BY date DESC
+                    ) AS rownum
+                    FROM rrs_RecipeUpstream
+                    WHERE status = 'Y'
+                    AND date <= %s) AS te
+            WHERE te.rownum = 1;
+            """, [date])
+        return Raw.dictfetchall(cur)
+
+    @staticmethod
     def dictfetchall(cursor):
         "Returns all rows from a cursor as a dict"
         desc = cursor.description
