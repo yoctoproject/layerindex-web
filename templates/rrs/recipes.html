@@ -88,13 +88,13 @@
     <td class="version_column">{{ r.version }}</td>
     <td class="upstream_version_column">{{ r.upstream_version }}</td>
     {% if r.upstream_status == "Up-to-date" %}
-    <td class="text-success">
+    <td class="text-success" data-toggle="tooltip" title="{{r.outdated}}">
     {% elif r.upstream_status == "Not updated" %}
-    <td class="text-error">
+    <td class="text-error" data-toggle="tooltip" title="{{r.outdated}}">
     {% elif r.upstream_status == "Can't be updated" %}
-    <td class="muted">
+    <td class="muted" data-toggle="tooltip" title="{{r.outdated}}">
     {% else %}
-    <td class="text-warning">
+    <td class="text-warning" data-toggle="tooltip" title="{{r.outdated}}">
     {% endif %}
         {{ r.upstream_status }}
     </td>

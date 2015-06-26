@@ -3,7 +3,7 @@ import urllib
 import csv
 from django.http import HttpResponse
 
-from datetime import date
+from datetime import date, datetime
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.views.generic import ListView, DetailView
@@ -96,6 +96,7 @@ class RecipeList():
     summary = None
     upstream_status = None
     upstream_version = None
+    outdated = None
     maintainer_name = None
     no_update_reason = None
 
@@ -116,6 +117,7 @@ def _get_recipe_list(milestone):
     recipe_list = []
     recipes_ids = []
     recipe_upstream_dict_all = {}
+    recipe_last_updated_dict_all = {}
     maintainers_dict_all = {}
     current_date = date.today()
 
@@ -127,12 +129,17 @@ def _get_recipe_list(milestone):
     if recipe_upstream_history:
         recipe_upstream_all = Raw.get_reup_by_recipes_and_date(
                 recipes_ids, recipe_upstream_history.id)
+        recipe_last_updated = Raw.get_reup_by_last_updated(
+                milestone.end_date)
         maintainers_all = Raw.get_ma_by_recipes_and_date(
                 recipes_ids, recipe_maintainer_history[0])
         for reup in recipe_upstream_all:
             recipe_upstream_dict_all[reup['recipe_id']] = reup
+        for rela in recipe_last_updated:
+            recipe_last_updated_dict_all[rela['recipe_id']] = rela
         for ma in maintainers_all:
             maintainers_dict_all[ma['recipe_id']] = ma['name']
+
     else:
         recipe_upstream_all = None
 
@@ -140,6 +147,7 @@ def _get_recipe_list(milestone):
         upstream_version = ''
         upstream_status = ''
         no_update_reason = ''
+        outdated = ''
 
         if recipe_upstream_history:
             recipe_upstream = recipe_upstream_dict_all.get(recipe['id'])
@@ -167,11 +175,24 @@ def _get_recipe_list(milestone):
             upstream_version = recipe_upstream['version']
             no_update_reason = recipe_upstream['no_update_reason']
 
+            #Get how long the recipe hasn't been updated
+            if recipe_upstream['status'] != 'Y':
+                recipe_last_updated = \
+                    recipe_last_updated_dict_all.get(recipe['id'])
+                if recipe_last_updated:
+                    recipe_date = recipe_last_updated['date']
+                    outdated = (current_date - recipe_date.date()).days
+                else:
+                    outdated = 'Unknown'
+            else:
+                outdated = 'Up-to-date'
+
         maintainer_name =  maintainers_dict_all.get(recipe['id'], '')
         recipe_list_item = RecipeList(recipe['id'], recipe['pn'], recipe['summary'])
         recipe_list_item.version = recipe['version']
         recipe_list_item.upstream_status = upstream_status
         recipe_list_item.upstream_version = upstream_version
+        recipe_list_item.outdated = outdated
         recipe_list_item.maintainer_name = maintainer_name
         recipe_list_item.no_update_reason = no_update_reason
         recipe_list.append(recipe_list_item)
