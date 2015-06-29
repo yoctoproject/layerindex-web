@@ -350,6 +350,8 @@ class RecipeDetailView(DetailView):
     def get_context_data(self, **kwargs):
         context = super(RecipeDetailView, self).get_context_data(**kwargs)
         recipe = self.get_object()
+        if not recipe:
+            raise django.http.Http404
 
         release = Release.get_current()
         context['release_name'] = release.name
@@ -378,10 +380,12 @@ class RecipeDetailView(DetailView):
 
         self.recipe_maintainer_history = RecipeMaintainerHistory.get_last()
         recipe_maintainer = RecipeMaintainer.objects.filter(recipe = recipe,
-                history = self.recipe_maintainer_history)[0]
-        maintainer = recipe_maintainer.maintainer
-
-        context['maintainer_name'] = maintainer.name
+                history = self.recipe_maintainer_history)
+        if recipe_maintainer:
+            maintainer = recipe_maintainer[0].maintainer
+            context['maintainer_name'] = maintainer.name
+        else:
+            context['maintainer_name'] = 'No maintainer'
 
         context['recipe_upgrade_details'] = []
         for ru in RecipeUpgrade.objects.filter(recipe =
