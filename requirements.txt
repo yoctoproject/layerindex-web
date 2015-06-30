@@ -17,3 +17,4 @@ python-nvd3==0.12.2
 regex==2014.06.28
 six==1.7.3
 wsgiref==0.1.2
+GitPython>=0.3.1
