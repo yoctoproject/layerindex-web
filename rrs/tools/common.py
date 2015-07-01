@@ -26,3 +26,14 @@ def update_repo(fetchdir, repo_name, repo_url, pull, logger):
         out = utils.runcmd("git fetch", path, logger = logger)
 
     return path
+
+def get_pv_type(pv):
+    pv_type = ''
+    if '+git' in pv:
+        pv_type = 'git'
+    elif '+svn' in pv:
+        pv_type = 'svn'
+    elif '+hg' in pv:
+        pv_type = 'hg'
+
+    return pv_type
