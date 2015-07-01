@@ -121,10 +121,18 @@ def _get_recipe_list(milestone):
     maintainers_dict_all = {}
     current_date = date.today()
 
-    recipes = Raw.get_reupg_by_date(
-            milestone.end_date)
-    for recipe in recipes:
-        recipes_ids.append(recipe['id'])
+    # If the is the curent milestone take the data recipes table
+    # otherwise take it from recipe upgrade
+    if current_date >= milestone.start_date and \
+            current_date <= milestone.end_date:
+        recipes = Raw.get_re_all()
+    else:
+        recipes = Raw.get_reupg_by_date(milestone.end_date)
+
+    for i,re in enumerate(recipes):
+        if re.has_key('pv'):
+            recipes[i]['version'] = re['pv']
+        recipes_ids.append(re['id'])
 
     if recipe_upstream_history:
         recipe_upstream_all = Raw.get_reup_by_recipes_and_date(
