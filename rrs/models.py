@@ -430,6 +430,13 @@ class Raw():
         return stats
 
     @staticmethod
+    def get_re_all():
+        cur = connection.cursor()
+        cur.execute("""SELECT id, pn, pv, summary
+                FROM layerindex_recipe""")
+        return Raw.dictfetchall(cur)
+
+    @staticmethod
     def get_reupg_by_date(date):
         cur = connection.cursor()
         cur.execute("""SELECT re.id, re.pn, re.summary, te.version, rownum FROM (
