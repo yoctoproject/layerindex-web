@@ -272,6 +272,11 @@ class RecipeUpstream(models.Model):
     date = models.DateTimeField(db_index=True)
 
     @staticmethod
+    def get_all_recipes(history):
+        qry = RecipeUpstream.objects.filter(history = history)
+        return qry
+
+    @staticmethod
     def get_recipes_not_updated(history):
         qry = RecipeUpstream.objects.filter(history = history, status = 'N',
                 no_update_reason = '').order_by('pn')
