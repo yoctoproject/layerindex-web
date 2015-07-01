@@ -341,7 +341,7 @@ class RecipeUpgrade(models.Model):
     def get_by_recipe_and_date(recipe, end_date):
         ru = RecipeUpgrade.objects.filter(recipe = recipe,
                 commit_date__lte = end_date)
-        return ru[0] if ru else None
+        return ru[len(ru) - 1] if ru else None
 
     def short_sha1(self):
         return self.sha1[0:6]
