@@ -42,8 +42,8 @@ def _get_milestone_statistics(milestone, maintainer_name=None):
     )
 
     if maintainer_name is None:
-        milestone_statistics['all'] = Recipe.objects.all().count()
-
+        milestone_statistics['all'] = \
+            RecipeUpstream.get_all_recipes(recipe_upstream_history).count()
         milestone_statistics['up_to_date'] = \
             RecipeUpstream.get_recipes_up_to_date(recipe_upstream_history).count()
         milestone_statistics['not_updated'] = \
