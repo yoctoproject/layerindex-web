@@ -12,6 +12,8 @@
 
 import sys
 import os.path
+import optparse
+import logging
 
 sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__))))
 from common import common_setup, update_repo, get_pv_type
@@ -21,8 +23,6 @@ from layerindex import utils
 utils.setup_django()
 from django.db import transaction
 import settings
-import optparse
-import logging
 
 from layerindex.models import Recipe, LayerBranch
 
