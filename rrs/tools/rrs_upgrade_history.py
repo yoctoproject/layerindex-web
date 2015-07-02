@@ -14,6 +14,8 @@ from datetime import timedelta
 
 import sys
 import os.path
+import optparse
+import logging
 
 sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__))))
 from common import common_setup, update_repo, get_pv_type
@@ -24,8 +26,6 @@ from layerindex.update import split_recipe_fn
 utils.setup_django()
 from django.db import transaction
 import settings
-import optparse
-import logging
 
 from layerindex.models import Recipe, LayerItem, LayerBranch
 from rrs.models import Maintainer, RecipeUpgrade
