@@ -2,9 +2,6 @@
 
 # Filters recipes only keep one by PN.
 #
-# To detect package versions of the recipes the script uses the name of the recipe.
-# This doesn't work for some git and svn recipes, but is good enough for historical data.
-#
 # Copyright (C) 2015 Intel Corporation
 # Author: Anibal Limon <anibal.limon@linux.intel.com>
 #
