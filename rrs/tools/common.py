@@ -37,3 +37,67 @@ def get_pv_type(pv):
         pv_type = 'hg'
 
     return pv_type
+
+def get_recipe_files(layerdir):
+    from layerindex import recipeparse
+    import os
+
+    sublayer_dirs = []
+    for root, dirs, files in os.walk(layerdir):
+        for d in dirs:
+            if os.path.exists(os.path.join(root, d, 'conf', 'layer.conf')):
+                sublayer_dirs.append(os.path.join(root, d) + os.sep)
+
+    recipe_files = []
+    for root, dirs, files in os.walk(layerdir):
+        if '.git' in dirs:
+            dirs.remove('.git')
+
+        # remove sublayer dirs
+        for d in dirs[:]:
+            fullpath = os.path.join(root, d) + os.sep
+            if fullpath in sublayer_dirs:
+                dirs.remove(d)
+
+        for f in files:
+            fullpath = os.path.join(root, f)
+            (typename, _, filename) = recipeparse.detect_file_type(fullpath,
+                    layerdir + os.sep)
+            if typename == 'recipe':
+                recipe_files.append(fullpath)
+    return recipe_files
+
+def load_recipes(layerbranch, bitbakepath, fetchdir, settings, logger,
+        recipe_files=None, nocheckout=False):
+    from layerindex import recipeparse
+
+    try:
+        (tinfoil, tempdir) = recipeparse.init_parser(settings,
+                layerbranch.branch, bitbakepath, nocheckout=nocheckout,
+                logger=logger)
+    except recipeparse.RecipeParseError as e:
+        logger.error(str(e))
+        sys.exit(1)
+
+    layer = layerbranch.layer
+    urldir = layer.get_fetch_dir()
+    repodir = os.path.join(fetchdir, urldir)
+    layerdir = os.path.join(repodir, layerbranch.vcs_subdir)
+
+    d = recipeparse.setup_layer(tinfoil.config_data, fetchdir, layerdir,
+            layer, layerbranch)
+
+    if recipe_files is None:
+        recipe_files = get_recipe_files(layerdir)
+
+    recipes = []
+    for rp in recipe_files:
+        try:
+            data = bb.cache.Cache.loadDataFull(rp, [], d)
+            recipes.append(data)
+        except Exception as e:
+            logger.warn("%s: branch %s couldn't be parsed, %s" \
+                    % (layerbranch, rp, str(e)))
+            continue
+
+    return (tinfoil, d, recipes)
