@@ -18,7 +18,7 @@ import optparse
 import logging
 
 sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__))))
-from common import common_setup, update_repo, get_pv_type
+from common import common_setup, update_repo, get_pv_type, load_recipes
 common_setup()
 from layerindex import utils, recipeparse
 from layerindex.update import split_recipe_fn
@@ -27,14 +27,32 @@ utils.setup_django()
 from django.db import transaction
 import settings
 
-from layerindex.models import Recipe, LayerItem, LayerBranch
-from rrs.models import Maintainer, RecipeUpgrade
+logger = utils.logger_create("HistoryUpgrade")
+fetchdir = settings.LAYER_FETCH_DIR
+if not fetchdir:
+    logger.error("Please set LAYER_FETCH_DIR in settings.py")
+    sys.exit(1)
+
+# setup bitbake
+bitbakepath = os.path.join(fetchdir, 'bitbake')
+sys.path.insert(0, os.path.join(bitbakepath, 'lib'))
+from bb import BBHandledException
+from bb.utils import vercmp_string
+
+# setup poky/oecore
+pokypath = update_repo(settings.LAYER_FETCH_DIR, 'poky', settings.POKY_REPO_URL,
+    True, logger)
+# XXX: To use oe-core libraries from poky because the layer oe-core
+# is checkout an old revision.
+sys.path.insert(0, os.path.join(pokypath, 'meta', 'lib'))
+from oe.recipeutils import get_recipe_pv_without_srcpv
 
 """
     Store upgrade into RecipeUpgrade model.
 """
-def _create_upgrade(recipe, pv, commit, title, info, logger):
+def _save_upgrade(recipe, pv, commit, title, info, logger):
     from email.utils import parsedate_tz, mktime_tz
+    from rrs.models import Maintainer, RecipeUpgrade
 
     maintainer_name = info.split(';')[0]
     maintainer_email = info.split(';')[1]
@@ -56,25 +74,48 @@ def _create_upgrade(recipe, pv, commit, title, info, logger):
     upgrade.save()
 
 """
-    Returns recipe name and version by recipe filename.
+    Create upgrade receives new recipe_data and cmp versions.
 """
-def _get_recipe_name_and_version(fullpath):
-    import re
+def _create_upgrade(recipe_data, layerbranch, ct, title, info, logger, initial=False):
+    from layerindex.models import Recipe
+    from rrs.models import RecipeUpgrade
 
-    (pn, pv) = split_recipe_fn(fullpath)
+    pn = recipe_data.getVar('PN', True)
+    pv = recipe_data.getVar('PV', True)
 
-    with open(fullpath, 'rb') as f:
-        for line in f.read().split('\n'):
-            m = re.match("PV = \"(.*)\"", line)
-            if m:
-                pv = m.group(1)
+    try:
+        recipe = Recipe.objects.get(pn=pn, layerbranch=layerbranch)
+    except Exception as e:
+        logger.warn("%s: Not found in Layer branch %s." %
+                    (pn, str(layerbranch)))
+        return
 
-                # remove ${SRCREV}, ${SRC...}
-                m = re.match(".*(\$\{.*\})", pv)
-                if m:
-                    pv = pv.replace(m.group(1), '')
+    try:
+        latest_upgrade = RecipeUpgrade.objects.filter(
+                recipe = recipe).order_by('-commit_date')[0]
+        prev_pv = latest_upgrade.version
+    except:
+        prev_pv = None
 
-    return (pn, pv)
+    if prev_pv is None:
+        logger.debug("%s: Initial upgrade ( -> %s)." % (recipe.pn, pv))
+        _save_upgrade(recipe, pv, ct, title, info, logger)
+    else:
+        (ppv, _, _) = get_recipe_pv_without_srcpv(prev_pv,
+                get_pv_type(prev_pv))
+        (npv, _, _) = get_recipe_pv_without_srcpv(pv,
+                get_pv_type(pv))
+
+        if vercmp_string(ppv, npv) == -1:
+            if initial is True:
+                logger.debug("%s: Update initial upgrade ( -> %s)." % \
+                        (recipe.pn, pv)) 
+                latest_upgrade.version = pv
+                latest_upgrade.save()
+            else:
+                logger.debug("%s: Detected upgrade (%s -> %s)" \
+                        " in ct %s." % (pn, prev_pv, pv, ct))
+                _save_upgrade(recipe, pv, ct, title, info, logger)
 
 """
     Returns a list containing the fullpaths to the recipes from a commit.
@@ -103,163 +144,90 @@ def _get_recipes_filenames(ct, repodir, layerdir, logger):
     Upgrade history handler.
 """
 def upgrade_history(options, logger):
-    pokypath = update_repo(settings.LAYER_FETCH_DIR, 'poky', settings.POKY_REPO_URL,
-        True, logger)
-    sys.path.insert(0, os.path.join(pokypath, 'bitbake', 'lib'))
-    sys.path.insert(0, os.path.join(pokypath, 'meta', 'lib'))
-    from bb.utils import vercmp_string
-    from oe.recipeutils import get_recipe_pv_without_srcpv
+    from layerindex.models import LayerBranch
 
-    layername = settings.CORE_LAYER_NAME
-    branchname = "master"
-    layer = LayerItem.objects.filter(name__iexact = layername)[0]
-    if not layer:
-        logger.error("Core layer does not exist, please set into settings.")
-        sys.exit(1)
-    urldir = layer.get_fetch_dir()
-    layerbranch = LayerBranch.objects.filter(layer__name__iexact =
-                        layername).filter(branch__name__iexact =
-                        branchname)[0]
-    repodir = os.path.join(settings.LAYER_FETCH_DIR, urldir)
-    layerdir = os.path.join(repodir, layerbranch.vcs_subdir)
-
+    # start date
     now = datetime.today()
     today = now.strftime("%Y-%m-%d")
     if options.initial:
-        # starting date of the yocto project
-        since = "2010-06-11"
+        # starting date of the yocto project 1.6 release
+        since = "2013-11-11"
         #RecipeUpgrade.objects.all().delete()
     else:
         since = (now - timedelta(days=8)).strftime("%Y-%m-%d")
 
+    # do
     branch_name_tmp = "recipe_upgrades"
-    utils.runcmd("git checkout origin/master -f", repodir)
-    # try to delete temp_branch if exists
-    try:
-        utils.runcmd("git branch -D %s" % (branch_name_tmp), repodir,
-                logger=logger)
-    except:
-        pass
+    for layerbranch in LayerBranch.objects.all():
+        layer = layerbranch.layer
+        urldir = layer.get_fetch_dir()
+        repodir = os.path.join(fetchdir, urldir)
+        layerdir = os.path.join(repodir, layerbranch.vcs_subdir)
 
-    commits = utils.runcmd("git log --since='" + since + "' --until='" +
-                            today + "' --format='%H' --reverse", repodir,
-                            logger=logger)
+        utils.runcmd("git checkout origin/master -f", repodir)
+        ## try to delete temp_branch if exists
+        try:
+            utils.runcmd("git branch -D %s" % (branch_name_tmp), repodir,
+                    logger=logger)
+        except:
+            pass
 
-    transaction.enter_transaction_management()
-    transaction.managed(True)
-    if options.initial:
-        logger.debug("Adding initial upgrade history ....")
+        commits = utils.runcmd("git log --since='" + since + 
+                                 "' --format='%H' --reverse", repodir,
+                                logger=logger)
+        commit_list = commits.split('\n')
 
-        title = "Initial import."
-        info = "No maintainer;;Fri, 11 Jun 2010 00:00:00 +0000;Fri, 11 Jun 2010 00:00:00 +0000"
-
-        ct = commits.split('\n')[0]
-        utils.runcmd("git checkout %s -b %s -f" % (ct, branch_name_tmp),
-                        repodir, logger=logger)
-
-        for recipe in Recipe.objects.filter(layerbranch=layerbranch):
-            fns = utils.runcmd("find . -name \"%s*.bb\" -type f" % recipe.bpn,
-                    repodir, logger=logger)
-
-            pn = ''
-            pv = ''
-            for fn in fns.split('\n'):
-                if not fn:
-                    continue
-
-                # validate if is the same recipe
-                if recipe.pn != split_recipe_fn(fn)[0]:
-                    continue
-
-                (npn, npv) = _get_recipe_name_and_version(os.path.join(repodir, fn))
-
-                if not pv:
-                    pn = npn
-                    pv = npv
-                else:
-                    (pv_tmp, _, _) = get_recipe_pv_without_srcpv(pv, get_pv_type(pv))
-                    (npv_tmp, _, _) = get_recipe_pv_without_srcpv(npv, get_pv_type(npv))
-
-                    if npv == 'git':
-                        continue
-                    elif pv_tmp == 'git' or vercmp_string(pv_tmp, npv_tmp) == -1:
-                        pn = npn
-                        pv = npv
-
-            if not pv:
-                logger.debug("%s: Don't exist at initial." % (recipe.pn))
-                continue
-
-            logger.debug("%s: Initial upgrade ( -> %s)." % (recipe.pn, pv))
-            _create_upgrade(recipe, pv, '', title, info, logger)
-
-        utils.runcmd("git checkout master -f", repodir, logger=logger)
-        utils.runcmd("git branch -D %s" % (branch_name_tmp), repodir, logger=logger)
-    transaction.commit()
-    transaction.leave_transaction_management()
-
-    transaction.enter_transaction_management()
-    transaction.managed(True)
-    logger.debug("Adding upgrade history from %s to %s ..." % (since, today))
-    for ct in commits.split("\n"):
-        if ct != "":
-            logger.debug("Analysing commit %s ..." % ct)
-
+        transaction.enter_transaction_management()
+        transaction.managed(True)
+        if options.initial:
+            logger.debug("Adding initial upgrade history ....")
+    
+            title = "Initial import at 1.6 release start."
+            info = "No maintainer;;Mon, 11 Nov 2013 00:00:00 +0000;Mon, 11 Nov 2013 00:00:00 +0000"
+    
+            ct = commit_list.pop(0)
             utils.runcmd("git checkout %s -b %s -f" % (ct, branch_name_tmp),
-                    repodir, logger=logger)
+                            repodir, logger=logger)
 
-            fns = _get_recipes_filenames(ct, repodir, layerdir, logger)
-            for fn in fns:
-                (pn, pv) = _get_recipe_name_and_version(fn)
+            (tinfoil, d, recipes) = load_recipes(layerbranch, bitbakepath,
+                                    fetchdir, settings, logger, nocheckout=True)
 
-                try:
-                    recipe = Recipe.objects.get(layerbranch = layerbranch,
-                            pn__exact = pn)
-                except Exception as e:
-                    # Most probably a native found
-                    logger.warn("%s: Not found in database, %s." %
-                                (pn, str(e)))
-                    continue
+            for recipe_data in recipes:
+                _create_upgrade(recipe_data, layerbranch, '', title,
+                        info, logger, initial=True)
 
-                try:
-                    latest_upgrade = RecipeUpgrade.objects.filter(
-                            recipe = recipe).order_by('-commit_date')[0]
-                    prev_pv = latest_upgrade.version
-                except Exception as e:
-                    logger.debug("%s: No previous version found." % (pn))
-                    prev_pv = None
-
-                try:
-                    title = utils.runcmd("git log --format='%s' -n 1 " + ct,
-                                            repodir, logger=logger)
-                    info = utils.runcmd("git log  --format='%an;%ae;%ad;%cd' --date=rfc -n 1 " \
-                            + ct, destdir=repodir, logger=logger)
-
-                    if not prev_pv:
-                        logger.debug("%s: Initial upgrade ( -> %s)." % (recipe.pn, pv))
-                        _create_upgrade(recipe, pv, ct, title, info, logger)
-                    else:
-                        (ppv, _, _) = get_recipe_pv_without_srcpv(prev_pv,
-                                get_pv_type(prev_pv))
-                        (npv, _, _) = get_recipe_pv_without_srcpv(pv,
-                                get_pv_type(pv))
-
-                        if npv == 'git':
-                            continue
-                        elif ppv == 'git' or vercmp_string(ppv, npv) == -1:
-                            logger.debug("%s: Detected upgrade (%s -> %s)" \
-                                    " in ct %s." % (pn, prev_pv, pv, ct))
-                            _create_upgrade(recipe, pv, ct, title, info, logger)
-                except:
-                    logger.error("%s: vercmp_string, %s - %s" % (recipe.pn,
-                        prev_pv, pv))
-
+            tinfoil.shutdown()
+    
             utils.runcmd("git checkout master -f", repodir, logger=logger)
             utils.runcmd("git branch -D %s" % (branch_name_tmp), repodir, logger=logger)
 
-    transaction.commit()
-    transaction.leave_transaction_management()
+        logger.debug("Adding upgrade history from %s to %s ..." % (since, today))
+        for ct in commit_list:
+            if ct:
+                logger.debug("Analysing commit %s ..." % ct)
 
+                utils.runcmd("git checkout %s -b %s -f" % (ct, branch_name_tmp),
+                        repodir, logger=logger)
+
+                title = utils.runcmd("git log --format='%s' -n 1 " + ct,
+                                                repodir, logger=logger)
+                info = utils.runcmd("git log  --format='%an;%ae;%ad;%cd' --date=rfc -n 1 " \
+                                + ct, destdir=repodir, logger=logger)
+
+                fns = _get_recipes_filenames(ct, repodir, layerdir, logger)
+                (tinfoil, d, recipes) = load_recipes(layerbranch, bitbakepath,
+                                    fetchdir, settings, logger, recipe_files=fns,
+                                    nocheckout=True)
+                for recipe_data in recipes:
+                    _create_upgrade(recipe_data, layerbranch, ct, title,
+                                        info, logger)
+                tinfoil.shutdown()
+
+                utils.runcmd("git checkout master -f", repodir, logger=logger)
+                utils.runcmd("git branch -D %s" % (branch_name_tmp), repodir, logger=logger)
+
+        transaction.commit()
+        transaction.leave_transaction_management()
 
 if __name__=="__main__":
     parser = optparse.OptionParser(usage = """%prog [options]""")
@@ -272,7 +240,6 @@ if __name__=="__main__":
             help = "Enable debug output",
             action="store_const", const=logging.DEBUG, dest="loglevel", default=logging.INFO)
     
-    logger = utils.logger_create("HistoryUpgrade")
     options, args = parser.parse_args(sys.argv)
     logger.setLevel(options.loglevel)
 
