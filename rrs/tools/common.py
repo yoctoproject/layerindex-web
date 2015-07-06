@@ -9,6 +9,28 @@ def common_setup():
     import sys, os
     sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__), '../../')))
 
+def get_logger(name, settings):
+    import logging
+    import os
+
+    logger = logging.getLogger(name)
+    formatter = logging.Formatter("%(asctime)s: %(levelname)s: %(message)s")
+
+    handler = logging.StreamHandler()
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+
+    filename = os.path.join(settings.TOOLS_LOG_DIR, name)
+    maxBytes = 8388608 # 8MB
+    handler = logging.handlers.RotatingFileHandler(filename,
+                    maxBytes=maxBytes)
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+
+    logger.setLevel(logging.INFO)
+
+    return logger
+
 def update_repo(fetchdir, repo_name, repo_url, pull, logger):
     import os
     from layerindex import utils, recipeparse
