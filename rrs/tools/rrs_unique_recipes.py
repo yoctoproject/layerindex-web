@@ -13,7 +13,7 @@ import optparse
 import logging
 
 sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__))))
-from common import common_setup, update_repo, get_pv_type
+from common import common_setup, update_repo, get_pv_type, get_logger
 common_setup()
 from layerindex import utils
 
@@ -30,7 +30,7 @@ if __name__=="__main__":
             help = "Enable debug output",
             action="store_const", const=logging.DEBUG, dest="loglevel", default=logging.INFO)
     
-    logger = utils.logger_create("HistoryUpgrade")
+    logger = get_logger("UniqueRecipes", settings)
     options, args = parser.parse_args(sys.argv)
     logger.setLevel(options.loglevel)
 
