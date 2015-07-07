@@ -33,12 +33,15 @@ fetchdir = settings.LAYER_FETCH_DIR
 if not fetchdir:
     logger.error("Please set LAYER_FETCH_DIR in settings.py")
     sys.exit(1)
+branch_name_tmp = "recipe_upgrades"
 
 # setup bitbake
 bitbakepath = os.path.join(fetchdir, 'bitbake')
 sys.path.insert(0, os.path.join(bitbakepath, 'lib'))
 from bb import BBHandledException
 from bb.utils import vercmp_string
+
+import multiprocessing as mp
 
 """
     Store upgrade into RecipeUpgrade model.
@@ -135,6 +138,64 @@ def _get_recipes_filenames(ct, repodir, layerdir, logger):
 
     return ct_files
 
+def do_initial(layerbranch, ct, logger):
+    layer = layerbranch.layer
+    urldir = layer.get_fetch_dir()
+    repodir = os.path.join(fetchdir, urldir)
+    layerdir = os.path.join(repodir, layerbranch.vcs_subdir)
+
+    utils.runcmd("git checkout %s -b %s -f" % (ct, branch_name_tmp),
+                    repodir, logger=logger)
+    utils.runcmd("git clean -dfx", repodir, logger=logger)
+
+    title = "Initial import at 1.6 release start."
+    info = "No maintainer;;Mon, 11 Nov 2013 00:00:00 +0000;Mon, 11 Nov 2013 00:00:00 +0000"
+
+    (tinfoil, d, recipes) = load_recipes(layerbranch, bitbakepath,
+                            fetchdir, settings, logger, nocheckout=True)
+
+    for recipe_data in recipes:
+        _create_upgrade(recipe_data, layerbranch, '', title,
+                info, logger, initial=True)
+
+    tinfoil.shutdown()
+
+    utils.runcmd("git checkout master -f", repodir, logger=logger)
+    utils.runcmd("git branch -D %s" % (branch_name_tmp), repodir, logger=logger)
+
+def do_loop(layerbranch, ct, logger):
+    layer = layerbranch.layer
+    urldir = layer.get_fetch_dir()
+    repodir = os.path.join(fetchdir, urldir)
+    layerdir = os.path.join(repodir, layerbranch.vcs_subdir)
+
+    utils.runcmd("git checkout %s -b %s -f" % (ct, branch_name_tmp),
+            repodir, logger=logger)
+    utils.runcmd("git clean -dfx", repodir, logger=logger)
+
+    fns = _get_recipes_filenames(ct, repodir, layerdir, logger)
+    if not fns:
+        utils.runcmd("git checkout master -f", repodir, logger=logger)
+        utils.runcmd("git branch -D %s" % (branch_name_tmp), repodir, logger=logger)
+        return
+
+    (tinfoil, d, recipes) = load_recipes(layerbranch, bitbakepath,
+                        fetchdir, settings, logger, recipe_files=fns,
+                        nocheckout=True)
+
+    title = utils.runcmd("git log --format='%s' -n 1 " + ct,
+                                    repodir, logger=logger)
+    info = utils.runcmd("git log  --format='%an;%ae;%ad;%cd' --date=rfc -n 1 " \
+                    + ct, destdir=repodir, logger=logger)
+    for recipe_data in recipes:
+        _create_upgrade(recipe_data, layerbranch, ct, title,
+                            info, logger)
+    tinfoil.shutdown()
+
+    utils.runcmd("git checkout master -f", repodir, logger=logger)
+    utils.runcmd("git branch -D %s" % (branch_name_tmp), repodir, logger=logger)
+
+
 """
     Upgrade history handler.
 """
@@ -152,16 +213,15 @@ def upgrade_history(options, logger):
         since = (now - timedelta(days=8)).strftime("%Y-%m-%d")
 
     # do
-    branch_name_tmp = "recipe_upgrades"
     for layerbranch in LayerBranch.objects.all():
         layer = layerbranch.layer
         urldir = layer.get_fetch_dir()
         repodir = os.path.join(fetchdir, urldir)
         layerdir = os.path.join(repodir, layerbranch.vcs_subdir)
 
-        utils.runcmd("git checkout origin/master -f", repodir)
         ## try to delete temp_branch if exists
         try:
+            utils.runcmd("git checkout origin/master -f", repodir)
             utils.runcmd("git branch -D %s" % (branch_name_tmp), repodir,
                     logger=logger)
         except:
@@ -176,56 +236,24 @@ def upgrade_history(options, logger):
         transaction.managed(True)
         if options.initial:
             logger.debug("Adding initial upgrade history ....")
-    
-            title = "Initial import at 1.6 release start."
-            info = "No maintainer;;Mon, 11 Nov 2013 00:00:00 +0000;Mon, 11 Nov 2013 00:00:00 +0000"
-    
+
             ct = commit_list.pop(0)
-            utils.runcmd("git checkout %s -b %s -f" % (ct, branch_name_tmp),
-                            repodir, logger=logger)
-            utils.runcmd("git clean -dfx", repodir, logger=logger)
-            (tinfoil, d, recipes) = load_recipes(layerbranch, bitbakepath,
-                                    fetchdir, settings, logger, nocheckout=True)
 
-            for recipe_data in recipes:
-                _create_upgrade(recipe_data, layerbranch, '', title,
-                        info, logger, initial=True)
-
-            tinfoil.shutdown()
-    
-            utils.runcmd("git checkout master -f", repodir, logger=logger)
-            utils.runcmd("git branch -D %s" % (branch_name_tmp), repodir, logger=logger)
+            # XXX: To avoid cooker parser problems due to load multiple instances
+            # of cooker parser with different metadata revisions.
+            p = mp.Process(target=do_initial, args=(layerbranch, ct, logger,))
+            p.start()
+            p.join()
 
         logger.debug("Adding upgrade history from %s to %s ..." % (since, today))
         for ct in commit_list:
             if ct:
                 logger.debug("Analysing commit %s ..." % ct)
-
-                utils.runcmd("git checkout %s -b %s -f" % (ct, branch_name_tmp),
-                        repodir, logger=logger)
-                utils.runcmd("git clean -dfx", repodir, logger=logger)
-
-                fns = _get_recipes_filenames(ct, repodir, layerdir, logger)
-                if not fns:
-                    utils.runcmd("git checkout master -f", repodir, logger=logger)
-                    utils.runcmd("git branch -D %s" % (branch_name_tmp), repodir, logger=logger)
-                    continue
-
-                (tinfoil, d, recipes) = load_recipes(layerbranch, bitbakepath,
-                                    fetchdir, settings, logger, recipe_files=fns,
-                                    nocheckout=True)
-
-                title = utils.runcmd("git log --format='%s' -n 1 " + ct,
-                                                repodir, logger=logger)
-                info = utils.runcmd("git log  --format='%an;%ae;%ad;%cd' --date=rfc -n 1 " \
-                                + ct, destdir=repodir, logger=logger)
-                for recipe_data in recipes:
-                    _create_upgrade(recipe_data, layerbranch, ct, title,
-                                        info, logger)
-                tinfoil.shutdown()
-
-                utils.runcmd("git checkout master -f", repodir, logger=logger)
-                utils.runcmd("git branch -D %s" % (branch_name_tmp), repodir, logger=logger)
+                # XXX: To avoid cooker parser problems due to load multiple instances
+                # of cooker parser with different metadata revisions.
+                p = mp.Process(target=do_loop, args=(layerbranch, ct, logger,))
+                p.start()
+                p.join()
 
         transaction.commit()
         transaction.leave_transaction_management()
