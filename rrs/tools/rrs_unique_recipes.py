@@ -13,13 +13,24 @@ import optparse
 import logging
 
 sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__))))
-from common import common_setup, update_repo, get_pv_type, get_logger
+from common import common_setup, get_pv_type, get_logger, get_recipe_pv_without_srcpv
 common_setup()
 from layerindex import utils
 
 utils.setup_django()
 from django.db import transaction
 import settings
+
+logger = get_logger("UniqueRecipes", settings)
+fetchdir = settings.LAYER_FETCH_DIR
+if not fetchdir:
+    logger.error("Please set LAYER_FETCH_DIR in settings.py")
+    sys.exit(1)
+
+# setup bitbake
+bitbakepath = os.path.join(fetchdir, 'bitbake')
+sys.path.insert(0, os.path.join(bitbakepath, 'lib'))
+from bb.utils import vercmp_string
 
 from layerindex.models import Recipe, LayerBranch
 
@@ -30,32 +41,13 @@ if __name__=="__main__":
             help = "Enable debug output",
             action="store_const", const=logging.DEBUG, dest="loglevel", default=logging.INFO)
     
-    logger = get_logger("UniqueRecipes", settings)
     options, args = parser.parse_args(sys.argv)
     logger.setLevel(options.loglevel)
-
-    # setup poky
-    pokypath = update_repo(settings.LAYER_FETCH_DIR, 'poky', settings.POKY_REPO_URL,
-        True, logger)
-    sys.path.insert(0, os.path.join(pokypath, 'bitbake', 'lib'))
-    sys.path.insert(0, os.path.join(pokypath, 'meta', 'lib'))
-    from bb.utils import vercmp_string
-    from oe.recipeutils import get_recipe_pv_without_srcpv
 
     logger.info('Starting unique recipes ...')
 
     transaction.enter_transaction_management()
     transaction.managed(True)
-
-    # remove native, nativesdk cross and initial recipes
-    logger.info('Starting remove of recipes with preffix or suffix ...')
-    words = ['nativesdk-', '-native', '-cross', '-initial', '-source']
-    for layerbranch in LayerBranch.objects.all():
-        for recipe in Recipe.objects.filter(layerbranch=layerbranch):
-            match = any(w in recipe.pn for w in words)
-            if match:
-                recipe.delete()
-                logger.debug("%s: Removed found prefix or suffix." % recipe.pn)
 
     # only keep the major version of recipe
     logger.info('Starting remove of duplicate recipes only keep major version ...')
@@ -63,17 +55,17 @@ if __name__=="__main__":
         recipes = {}
 
         for recipe in Recipe.objects.filter(layerbranch=layerbranch):
-            recipes[recipe.bpn] = None
+            recipes[recipe.pn] = None
 
-        for bpn in recipes.keys():
+        for pn in recipes.keys():
             for recipe in Recipe.objects.filter(layerbranch=layerbranch,
-                    bpn=bpn):
+                    pn=pn):
 
-                if recipes[bpn] is None:
-                    recipes[bpn] = recipe
+                if recipes[pn] is None:
+                    recipes[pn] = recipe
                 else:
-                    (ppv, _, _) = get_recipe_pv_without_srcpv(recipes[bpn].pv,
-                            get_pv_type(recipes[bpn].pv))
+                    (ppv, _, _) = get_recipe_pv_without_srcpv(recipes[pn].pv,
+                            get_pv_type(recipes[pn].pv))
                     (npv, _, _) = get_recipe_pv_without_srcpv(recipe.pv,
                             get_pv_type(recipe.pv))
 
@@ -83,12 +75,12 @@ if __name__=="__main__":
                         recipe.delete()
                     elif ppv == 'git' or vercmp_string(ppv, npv) == -1:
                         logger.debug("%s: Removed older recipe (%s), new recipe (%s)." \
-                                % (recipes[bpn].pn, recipes[bpn].pv, recipe.pv))
-                        recipes[bpn].delete()
-                        recipes[bpn] = recipe
+                                % (recipes[pn].pn, recipes[pn].pv, recipe.pv))
+                        recipes[pn].delete()
+                        recipes[pn] = recipe
                     else:
                         logger.debug("%s: Removed older recipe (%s), current recipe (%s)." \
-                                % (recipes[bpn].pn, recipe.pv, recipes[bpn].pv))
+                                % (recipes[pn].pn, recipe.pv, recipes[pn].pv))
                         recipe.delete()
 
 
