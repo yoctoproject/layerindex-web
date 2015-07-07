@@ -49,7 +49,7 @@ if __name__=="__main__":
 
     # remove native, nativesdk cross and initial recipes
     logger.info('Starting remove of recipes with preffix or suffix ...')
-    words = ['nativesdk-', '-native', '-cross', '-initial']
+    words = ['nativesdk-', '-native', '-cross', '-initial', '-source']
     for layerbranch in LayerBranch.objects.all():
         for recipe in Recipe.objects.filter(layerbranch=layerbranch):
             match = any(w in recipe.pn for w in words)
