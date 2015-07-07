@@ -234,3 +234,6 @@ POKY_REPO_URL = "git://git.yoctoproject.org/poky"
 RRS_EMAIL_SUBJECT = '[Recipe reporting system] Upgradable recipe name list'
 RRS_EMAIL_FROM = 'recipe-report@yoctoproject.org'
 RRS_EMAIL_TO = 'list@example.com'
+
+# Full path to directory where rrs tools stores logs
+TOOLS_LOG_DIR = ""
