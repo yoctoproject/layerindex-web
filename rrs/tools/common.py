@@ -92,6 +92,7 @@ def get_recipe_files(layerdir):
 def load_recipes(layerbranch, bitbakepath, fetchdir, settings, logger,
         recipe_files=None, nocheckout=False):
     from layerindex import recipeparse
+    from bb.fetch import FetchError
 
     try:
         (tinfoil, tempdir) = recipeparse.init_parser(settings,
@@ -123,7 +124,7 @@ def load_recipes(layerbranch, bitbakepath, fetchdir, settings, logger,
 
             recipes.append(data)
         except Exception as e:
-            logger.warn("%s: branch %s couldn't be parsed, %s" \
+            logger.error("%s: branch %s couldn't be parsed, %s" \
                     % (layerbranch, rp, str(e)))
             continue
 
