@@ -18,7 +18,8 @@ import optparse
 import logging
 
 sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__))))
-from common import common_setup, update_repo, get_pv_type, load_recipes
+from common import common_setup, update_repo, get_pv_type, load_recipes, \
+        get_logger
 common_setup()
 from layerindex import utils, recipeparse
 from layerindex.update import split_recipe_fn
@@ -27,7 +28,7 @@ utils.setup_django()
 from django.db import transaction
 import settings
 
-logger = utils.logger_create("HistoryUpgrade")
+logger = get_logger("HistoryUpgrade", settings)
 fetchdir = settings.LAYER_FETCH_DIR
 if not fetchdir:
     logger.error("Please set LAYER_FETCH_DIR in settings.py")

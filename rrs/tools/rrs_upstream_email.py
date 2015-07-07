@@ -15,7 +15,7 @@ import logging
 from tabulate import tabulate
 
 sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__))))
-from common import common_setup, update_repo, get_pv_type
+from common import common_setup, update_repo, get_pv_type, get_logger
 common_setup()
 from layerindex import utils
 
@@ -27,7 +27,7 @@ from layerindex.models import LayerItem, LayerBranch, Recipe
 from rrs.models import Maintainer, RecipeMaintainerHistory, RecipeMaintainer, \
     RecipeUpstream, RecipeUpstreamHistory
 
-logger = utils.logger_create('RrsUpstreamEmail')
+logger = get_logger('UpstreamEmail', settings)
 
 LAYERBRANCH_NAME = "master"
 
