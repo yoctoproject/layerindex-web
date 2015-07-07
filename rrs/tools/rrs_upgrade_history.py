@@ -40,14 +40,6 @@ sys.path.insert(0, os.path.join(bitbakepath, 'lib'))
 from bb import BBHandledException
 from bb.utils import vercmp_string
 
-# setup poky/oecore
-pokypath = update_repo(settings.LAYER_FETCH_DIR, 'poky', settings.POKY_REPO_URL,
-    True, logger)
-# XXX: To use oe-core libraries from poky because the layer oe-core
-# is checkout an old revision.
-sys.path.insert(0, os.path.join(pokypath, 'meta', 'lib'))
-from oe.recipeutils import get_recipe_pv_without_srcpv
-
 """
     Store upgrade into RecipeUpgrade model.
 """
@@ -102,6 +94,8 @@ def _create_upgrade(recipe_data, layerbranch, ct, title, info, logger, initial=F
         logger.debug("%s: Initial upgrade ( -> %s)." % (recipe.pn, pv))
         _save_upgrade(recipe, pv, ct, title, info, logger)
     else:
+        from common import get_recipe_pv_without_srcpv
+
         (ppv, _, _) = get_recipe_pv_without_srcpv(prev_pv,
                 get_pv_type(prev_pv))
         (npv, _, _) = get_recipe_pv_without_srcpv(pv,
@@ -189,6 +183,7 @@ def upgrade_history(options, logger):
             ct = commit_list.pop(0)
             utils.runcmd("git checkout %s -b %s -f" % (ct, branch_name_tmp),
                             repodir, logger=logger)
+            utils.runcmd("git clean -dfx", repodir, logger=logger)
             (tinfoil, d, recipes) = load_recipes(layerbranch, bitbakepath,
                                     fetchdir, settings, logger, nocheckout=True)
 
@@ -208,6 +203,7 @@ def upgrade_history(options, logger):
 
                 utils.runcmd("git checkout %s -b %s -f" % (ct, branch_name_tmp),
                         repodir, logger=logger)
+                utils.runcmd("git clean -dfx", repodir, logger=logger)
 
                 fns = _get_recipes_filenames(ct, repodir, layerdir, logger)
                 if not fns:
