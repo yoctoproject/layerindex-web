@@ -13,7 +13,7 @@ import optparse
 import logging
 
 sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__))))
-from common import common_setup, update_repo
+from common import common_setup, update_repo, get_logger
 common_setup()
 from layerindex import utils, recipeparse
 
@@ -159,7 +159,7 @@ if __name__=="__main__":
             action="store_const", const=logging.DEBUG, dest="loglevel",
             default=logging.INFO)
     
-    logger = utils.logger_create("MaintainerUpdate")
+    logger = get_logger("MaintainerUpdate", settings)
     options, args = parser.parse_args(sys.argv)
     logger.setLevel(options.loglevel)
 
