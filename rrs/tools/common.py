@@ -116,6 +116,11 @@ def load_recipes(layerbranch, bitbakepath, fetchdir, settings, logger,
     for rp in recipe_files:
         try:
             data = bb.cache.Cache.loadDataFull(rp, [], d)
+            try:
+                pv = data.getVar('PV', True)
+            except FetchError:
+                data.setVar('SRCPV', '')
+
             recipes.append(data)
         except Exception as e:
             logger.warn("%s: branch %s couldn't be parsed, %s" \
