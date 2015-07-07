@@ -188,7 +188,6 @@ def upgrade_history(options, logger):
             ct = commit_list.pop(0)
             utils.runcmd("git checkout %s -b %s -f" % (ct, branch_name_tmp),
                             repodir, logger=logger)
-
             (tinfoil, d, recipes) = load_recipes(layerbranch, bitbakepath,
                                     fetchdir, settings, logger, nocheckout=True)
 
@@ -209,15 +208,20 @@ def upgrade_history(options, logger):
                 utils.runcmd("git checkout %s -b %s -f" % (ct, branch_name_tmp),
                         repodir, logger=logger)
 
+                fns = _get_recipes_filenames(ct, repodir, layerdir, logger)
+                if not fns:
+                    utils.runcmd("git checkout master -f", repodir, logger=logger)
+                    utils.runcmd("git branch -D %s" % (branch_name_tmp), repodir, logger=logger)
+                    continue
+
+                (tinfoil, d, recipes) = load_recipes(layerbranch, bitbakepath,
+                                    fetchdir, settings, logger, recipe_files=fns,
+                                    nocheckout=True)
+
                 title = utils.runcmd("git log --format='%s' -n 1 " + ct,
                                                 repodir, logger=logger)
                 info = utils.runcmd("git log  --format='%an;%ae;%ad;%cd' --date=rfc -n 1 " \
                                 + ct, destdir=repodir, logger=logger)
-
-                fns = _get_recipes_filenames(ct, repodir, layerdir, logger)
-                (tinfoil, d, recipes) = load_recipes(layerbranch, bitbakepath,
-                                    fetchdir, settings, logger, recipe_files=fns,
-                                    nocheckout=True)
                 for recipe_data in recipes:
                     _create_upgrade(recipe_data, layerbranch, ct, title,
                                         info, logger)
