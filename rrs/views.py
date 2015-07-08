@@ -117,17 +117,13 @@ def _get_recipe_list(milestone):
     recipe_list = []
     current_date = date.today()
     for recipe in Recipe.objects.filter().order_by('pn'):
-        if current_date >= milestone.start_date and \
-            current_date <= milestone.end_date:
-            version = recipe.pv
-        else:
-            rup = RecipeUpgrade.get_by_recipe_and_date(recipe,
-                    milestone.end_date)
+        rup = RecipeUpgrade.get_by_recipe_and_date(recipe,
+                milestone.end_date)
 
-            if rup is None: # Recipe don't exit in this Milestone
-                continue
+        if rup is None: # Recipe don't exit in this Milestone
+            continue
 
-            version = rup.version
+        version = rup.version
 
         upstream_version = ''
         upstream_status = ''
