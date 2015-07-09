@@ -40,10 +40,29 @@ def _get_milestone_statistics(milestone, maintainer_name=None):
         milestone.start_date,
         milestone.end_date
     )
+    recipe_upstream_history_first = \
+        RecipeUpstreamHistory.get_first_by_date_range(
+            milestone.start_date,
+            milestone.end_date,
+    )
 
     if maintainer_name is None:
-        milestone_statistics['all'] = \
-            RecipeUpstream.get_all_recipes(recipe_upstream_history).count()
+        if recipe_upstream_history_first:
+            recipes_not_upgraded = \
+                Raw.get_reup_by_date(recipe_upstream_history_first.id)
+            if recipes_not_upgraded:
+                recipes_upgraded = \
+                    Raw.get_reupg_by_dates_and_recipes(
+                        milestone.start_date, milestone.end_date, recipes_not_upgraded)
+                milestone_statistics['all'] = \
+                    float(len(recipes_upgraded))/float(len(recipes_not_upgraded))
+            else:
+                milestone_statistics['all'] = 0
+        else:
+            milestone_statistics['all'] = 0
+
+        milestone_statistics['percentage'] = "%.0f" % \
+            (float(milestone_statistics['all']) * 100.0)
         milestone_statistics['up_to_date'] = \
             RecipeUpstream.get_recipes_up_to_date(recipe_upstream_history).count()
         milestone_statistics['not_updated'] = \
@@ -79,13 +98,12 @@ def _get_milestone_statistics(milestone, maintainer_name=None):
                     milestone_statistics['cant_be_updated'] += 1
             else:
                 milestone_statistics['unknown'] += 1
-
-    if milestone_statistics['all'] == 0:
-        milestone_statistics['percentage'] = 0
-    else:
-        milestone_statistics['percentage'] = "%.0f" % \
-            ((float(milestone_statistics['up_to_date']) /
-                float(milestone_statistics['all'])) * 100)
+        if milestone_statistics['all'] == 0:
+            milestone_statistics['percentage'] = '0'
+        else:
+            milestone_statistics['percentage'] = "%.0f" % \
+                ((float(milestone_statistics['up_to_date']) /
+                    float(milestone_statistics['all'])) * 100)
 
     return milestone_statistics
 
