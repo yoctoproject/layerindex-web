@@ -207,7 +207,7 @@ def _get_recipe_list(milestone):
                     recipe_last_updated_dict_all.get(recipe['id'])
                 if recipe_last_updated:
                     recipe_date = recipe_last_updated['date']
-                    outdated = (current_date - recipe_date.date()).days
+                    outdated = recipe_date.date().isoformat()
                 else:
                     outdated = 'Unknown'
             else:
@@ -360,13 +360,14 @@ def _get_recipe_upgrade_detail(recipe_upgrade):
             .count() > 0:
             is_recipe_maintainer = True
 
+    commit_date = recipe_upgrade.commit_date.date().isoformat()
     commit = recipe_upgrade.sha1[:10]
     commit_url = recipe_upgrade.recipe.layerbranch.layer.vcs_web_url + \
         '/commit/?id=' + recipe_upgrade.sha1
 
     rud = RecipeUpgradeDetail(recipe_upgrade.title, recipe_upgrade.version, \
-            release_name, milestone_name, recipe_upgrade.commit_date, \
-            maintainer_name, is_recipe_maintainer, commit, commit_url)
+            release_name, milestone_name, commit_date, maintainer_name, \
+            is_recipe_maintainer, commit, commit_url)
 
     return rud
 
