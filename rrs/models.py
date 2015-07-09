@@ -235,6 +235,16 @@ class RecipeUpstreamHistory(models.Model):
             return None
 
     @staticmethod
+    def get_first_by_date_range(start, end):
+        history = RecipeUpstreamHistory.objects.filter(start_date__gte = start,
+                start_date__lte = end).order_by('start_date')
+
+        if history:
+            return history[0]
+        else:
+            return None
+
+    @staticmethod
     def get_last():
         history = RecipeUpstreamHistory.objects.filter().order_by('-start_date')
 
@@ -472,6 +482,40 @@ class Raw():
                     AND date <= %s) AS te
             WHERE te.rownum = 1;
             """, [date])
+        return Raw.dictfetchall(cur)
+
+    @staticmethod
+    def get_reup_by_date(date_id):
+        cur = connection.cursor()
+        cur.execute("""SELECT DISTINCT recipe_id
+                    FROM rrs_RecipeUpstream
+                    WHERE status = 'N'
+                    AND history_id = %s
+                    """, [date_id])
+        return [i[0] for i in cur.fetchall()]
+
+    @staticmethod
+    def get_reupg_by_dates(start_date, end_date):
+        cur = connection.cursor()
+        cur.execute("""SELECT id, recipe_id, maintainer_id, author_date, commit_date
+                    FROM rrs_recipeupgrade
+                    WHERE commit_date >= %s
+                    AND commit_date <= %s
+                    ORDER BY commit_date DESC;
+                    """, [start_date, end_date])
+        return Raw.dictfetchall(cur)
+
+    @staticmethod
+    def get_reupg_by_dates_and_recipes(start_date, end_date, recipes_id):
+        recipes = str(recipes_id).strip('[]')
+
+        cur = connection.cursor()
+        qry = """SELECT DISTINCT recipe_id
+                FROM rrs_RecipeUpgrade"""
+        qry += "\nWHERE commit_date >= '%s'" % str(start_date)
+        qry += "\nAND commit_date <= '%s'" % str(end_date)
+        qry += "\nAND recipe_id IN (%s);" % recipes
+        cur.execute(qry)
         return Raw.dictfetchall(cur)
 
     @staticmethod
