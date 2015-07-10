@@ -158,8 +158,6 @@ def do_initial(layerbranch, ct, logger):
         _create_upgrade(recipe_data, layerbranch, '', title,
                 info, logger, initial=True)
 
-    tinfoil.shutdown()
-
     utils.runcmd("git checkout master -f", repodir, logger=logger)
     utils.runcmd("git branch -D %s" % (branch_name_tmp), repodir, logger=logger)
 
@@ -190,7 +188,6 @@ def do_loop(layerbranch, ct, logger):
     for recipe_data in recipes:
         _create_upgrade(recipe_data, layerbranch, ct, title,
                             info, logger)
-    tinfoil.shutdown()
 
     utils.runcmd("git checkout master -f", repodir, logger=logger)
     utils.runcmd("git branch -D %s" % (branch_name_tmp), repodir, logger=logger)

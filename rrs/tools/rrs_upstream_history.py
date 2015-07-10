@@ -140,8 +140,6 @@ if __name__=="__main__":
             logger.debug('%s: layer branch %s, pv %s, upstream (%s)' % (recipe.pn,
                 str(layerbranch), recipe.pv, str(ru)))
 
-        tinfoil.shutdown()
-
     transaction.commit()
     transaction.leave_transaction_management()
 
