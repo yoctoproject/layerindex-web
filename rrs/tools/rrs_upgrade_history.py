@@ -140,9 +140,9 @@ def _get_recipes_filenames(ct, repodir, layerdir, logger):
 
 def do_initial(layerbranch, ct, logger):
     layer = layerbranch.layer
-    urldir = layer.get_fetch_dir()
+    urldir = str(layer.get_fetch_dir())
     repodir = os.path.join(fetchdir, urldir)
-    layerdir = os.path.join(repodir, layerbranch.vcs_subdir)
+    layerdir = os.path.join(repodir, str(layerbranch.vcs_subdir))
 
     utils.runcmd("git checkout %s -b %s -f" % (ct, branch_name_tmp),
                     repodir, logger=logger)
@@ -163,9 +163,9 @@ def do_initial(layerbranch, ct, logger):
 
 def do_loop(layerbranch, ct, logger):
     layer = layerbranch.layer
-    urldir = layer.get_fetch_dir()
+    urldir = str(layer.get_fetch_dir())
     repodir = os.path.join(fetchdir, urldir)
-    layerdir = os.path.join(repodir, layerbranch.vcs_subdir)
+    layerdir = os.path.join(repodir, str(layerbranch.vcs_subdir))
 
     utils.runcmd("git checkout %s -b %s -f" % (ct, branch_name_tmp),
             repodir, logger=logger)
