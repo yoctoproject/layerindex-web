@@ -142,7 +142,3 @@ if __name__=="__main__":
 
     transaction.commit()
     transaction.leave_transaction_management()
-
-    history.end_date = datetime.now()
-    history.save()
-
