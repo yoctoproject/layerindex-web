@@ -449,15 +449,9 @@ class Raw():
     def get_reup_by_last_updated(date):
         """ Get last time the Recipes were upgraded """
         cur = connection.cursor()
-        cur.execute("""SELECT te.recipe_id, te.status, te.date, te.rownum FROM(
-                            SELECT recipe_id, status, date, ROW_NUMBER() OVER(
-                                PARTITION BY recipe_id
-                                ORDER BY date DESC
-                            ) AS rownum
-                        FROM rrs_RecipeUpstream
-                        WHERE status = 'Y'
-                        AND date <= %s) AS te
-                        WHERE te.rownum = 1;
+        cur.execute("""SELECT recipe_id, MAX(commit_date) AS date
+                       FROM rrs_recipeupgrade
+                       GROUP BY recipe_id;
                     """, [date])
         return Raw.dictfetchall(cur)
 

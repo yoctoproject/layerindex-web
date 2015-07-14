@@ -145,22 +145,23 @@ def _get_recipe_list(milestone):
             recipes[i]['version'] = re['pv']
         recipes_ids.append(re['id'])
 
-    if recipes and recipe_upstream_history:
-        recipe_upstream_all = Raw.get_reup_by_recipes_and_date(
-                recipes_ids, recipe_upstream_history.id)
+    if recipes:
         recipe_last_updated = Raw.get_reup_by_last_updated(
                 milestone.end_date)
-        maintainers_all = Raw.get_ma_by_recipes_and_date(
-                recipes_ids, recipe_maintainer_history[0])
-        for reup in recipe_upstream_all:
-            recipe_upstream_dict_all[reup['recipe_id']] = reup
         for rela in recipe_last_updated:
             recipe_last_updated_dict_all[rela['recipe_id']] = rela
-        for ma in maintainers_all:
-            maintainers_dict_all[ma['recipe_id']] = ma['name']
 
-    else:
-        recipe_upstream_all = None
+        if recipe_upstream_history:
+            recipe_upstream_all = Raw.get_reup_by_recipes_and_date(
+                recipes_ids, recipe_upstream_history.id)
+            for reup in recipe_upstream_all:
+                recipe_upstream_dict_all[reup['recipe_id']] = reup
+    
+        if recipe_maintainer_history:
+            maintainers_all = Raw.get_ma_by_recipes_and_date(
+                recipes_ids, recipe_maintainer_history[0])
+            for ma in maintainers_all:
+                maintainers_dict_all[ma['recipe_id']] = ma['name']
 
     for recipe in recipes:
         upstream_version = ''
@@ -201,8 +202,6 @@ def _get_recipe_list(milestone):
                 if recipe_last_updated:
                     recipe_date = recipe_last_updated['date']
                     outdated = recipe_date.date().isoformat()
-                else:
-                    outdated = 'Unknown'
             else:
                 outdated = 'Up-to-date'
 
