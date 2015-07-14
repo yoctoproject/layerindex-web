@@ -148,6 +148,19 @@ def maintainer_history(logger):
         utils.runcmd("git checkout master -f", pokypath, logger=logger)
         utils.runcmd("git branch -D %s" % (branchname), pokypath, logger=logger)
 
+    # set new recipes to no maintainer if don't have one
+    m = Maintainer.objects.get(id = 0) # No Maintainer
+    rms = RecipeMaintainerHistory.get_last()
+    for recipe in Recipe.objects.all():
+        if not RecipeMaintainer.objects.filter(recipe = recipe, history = rms):
+            rm = RecipeMaintainer()
+            rm.recipe = recipe
+            rm.maintainer = m
+            rm.history = rms
+            rm.save()
+            logger.debug("%s: New recipe not found maintainer set to 'No maintainer'." % \
+                            (recipe.pn))
+
     transaction.commit()
     transaction.leave_transaction_management()
 
