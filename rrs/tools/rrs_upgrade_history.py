@@ -104,7 +104,10 @@ def _create_upgrade(recipe_data, layerbranch, ct, title, info, logger, initial=F
         (npv, _, _) = get_recipe_pv_without_srcpv(pv,
                 get_pv_type(pv))
 
-        if vercmp_string(ppv, npv) == -1:
+        if npv == 'git':
+            logger.debug("%s: Avoiding upgrade to unversioned git." % \
+                    (recipe.pn)) 
+        elif ppv == 'git' or vercmp_string(ppv, npv) == -1:
             if initial is True:
                 logger.debug("%s: Update initial upgrade ( -> %s)." % \
                         (recipe.pn, pv)) 
