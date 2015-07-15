@@ -106,8 +106,18 @@ if __name__=="__main__":
     transaction.enter_transaction_management()
     transaction.managed(True)
     for layerbranch in LayerBranch.objects.all():
+        layer = layerbranch.layer
+        urldir = layer.get_fetch_dir()
+        repodir = os.path.join(fetchdir, urldir)
+        layerdir = os.path.join(repodir, layerbranch.vcs_subdir)
+
+        recipe_files = []
+        for recipe in Recipe.objects.filter(layerbranch = layerbranch):
+            file = str(os.path.join(layerdir, recipe.full_path()))
+            recipe_files.append(file)
+
         (tinfoil, d, recipes) = load_recipes(layerbranch, bitbakepath,
-                fetchdir, settings, logger)
+                fetchdir, settings, logger,  recipe_files=recipe_files)
 
         if not recipes:
             continue
