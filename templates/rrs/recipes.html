@@ -99,14 +99,7 @@
     {% endif %}
         {{ r.upstream_status }}
     </td>
-    {% if r.outdated == "Up-to-date" %}
-    <td class="text-success">
-    {% elif r.outdated == "Unknown" %}
-    <td class="text-warning">
-    {% else %}
-    <td class="text-error">
-    {% endif %}
-        {{r.outdated}}</td>
+    <td class="last_updated_column">{{r.outdated}}</td>
     <td class="maintainer_column">{{ r.maintainer_name }}</td>
     <td class="summary_column">{{ r.summary }}</td>
     <td class="no_update_reason_column" style="display:none">{{ r.no_update_reason }}</td>
