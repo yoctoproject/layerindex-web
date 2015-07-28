@@ -196,14 +196,13 @@ def _get_recipe_list(milestone):
             no_update_reason = recipe_upstream['no_update_reason']
 
             #Get how long the recipe hasn't been updated
-            if recipe_upstream['status'] != 'Y':
-                recipe_last_updated = \
-                    recipe_last_updated_dict_all.get(recipe['id'])
-                if recipe_last_updated:
-                    recipe_date = recipe_last_updated['date']
-                    outdated = recipe_date.date().isoformat()
+            recipe_last_updated = \
+                recipe_last_updated_dict_all.get(recipe['id'])
+            if recipe_last_updated:
+                recipe_date = recipe_last_updated['date']
+                outdated = recipe_date.date().isoformat()
             else:
-                outdated = 'Up-to-date'
+                outdated = ""
 
         maintainer_name =  maintainers_dict_all.get(recipe['id'], '')
         recipe_list_item = RecipeList(recipe['id'], recipe['pn'], recipe['summary'])
