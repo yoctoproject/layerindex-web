@@ -17,6 +17,10 @@
     min-width: 60px;
 }
 
+.last_updated_column {
+    min-width: 60px;
+}
+
 .maintainer_column {
     min-width: 110px;
 }
