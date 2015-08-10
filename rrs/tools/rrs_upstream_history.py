@@ -39,6 +39,43 @@ sys.path.insert(0, os.path.join(bitbakepath, 'lib'))
 from layerindex.models import Recipe, LayerBranch
 from rrs.models import RecipeUpstream, RecipeUpstreamHistory
 
+def set_regexes(d):
+    """
+        Utility function to set regexes to SPECIAL_PKGSUFFIX packages
+        that don't have set it.
+
+        For example: python-native use regex from python if don't have
+        one set it.
+    """
+
+    variables = ['REGEX', 'REGEX_URI', 'GITTAGREGEX']
+
+    if any(d.getVar(var, True) for var in variables):
+        return
+
+    suffixes = d.getVar('SPECIAL_PKGSUFFIX', True).split()
+    suffixes.append('nativesdk-')
+
+    localdata = bb.data.createCopy(d)
+
+    pn = localdata.getVar('PN', True)
+    for sfx in suffixes:
+        if pn.find(sfx) != -1:
+            pnstripped = pn.replace(sfx, '')
+            localdata.setVar('OVERRIDES', "pn-" + pnstripped + ":" +
+                    d.getVar('OVERRIDES', True))
+            bb.data.update_data(localdata)
+
+            for var in variables:
+                new_value = localdata.getVar(var, True)
+                if new_value is None:
+                    continue
+
+                d.setVar(var, new_value)
+                logger.debug("%s: %s new value %s" % (pn, var,
+                    d.getVar(var, True)))
+            break
+
 def get_upstream_info(thread_worker, arg):
     from bb.utils import vercmp_string
     from oe.recipeutils import get_recipe_upstream_version, \
@@ -121,6 +158,9 @@ if __name__=="__main__":
 
         if not recipes:
             continue
+
+        for recipe_data in recipes:
+            set_regexes(recipe_data)
 
         history = RecipeUpstreamHistory(start_date = datetime.now())
 
