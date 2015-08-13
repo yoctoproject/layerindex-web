@@ -218,8 +218,10 @@ $(document).ready(function() {
     function applyFilters() {
         if (upstreamStatus == 'Can\'t be updated') {
             $('.no_update_reason_column').show()
+            $('.summary_column').hide()            
         } else {
             $('.no_update_reason_column').hide()
+            $('.summary_column').show()            
         }
 
         if (upstreamStatus == 'All') {
