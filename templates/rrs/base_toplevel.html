@@ -51,6 +51,7 @@
     </li>
 {% endblock %}
 </ul>
+                    <a href="{% url 'recipesreport' release_name milestone_name %}" class="btn pull-right">Export recipe list</a>
 {% endblock %}
 
 {% block content %}
@@ -58,25 +59,34 @@
 
             <div class="navbar">
                 <div class="navbar-inner">
-                    <span class="brand">
-                        {{ release_name }}
-                        {% if milestone_name != "All" %}
-                        {{ milestone_name }}
-                        {% endif %}
-                    </span>
                     <ul class="nav">
-                        <li class="divider-vertical"></li>
-                        <li class="lead" id="percentage" data-toggle="tooltip" title="Upgrades done in the period divided by recipes not updated at the beginning of the period"><strong>{{ recipes_percentage }}%</strong> Updated</li>
-                        <li class="divider-vertical"></li>
-                        <li class="lead" id="up-to-date-recipes">Up-to-date: <span class="text-success">{{ recipes_up_to_date }}</strong></li>
-                        <li class="divider-vertical"></li>
-                        <li class="lead" id="not-updated-recipes">Not updated: <span class="text-error">{{ recipes_not_updated }}</strong></li>
-                        <li class="divider-vertical"></li>
-                        <li class="lead" id="cant-be-updated-recipes">Can't be updated: <span class="muted">{{ recipes_cant_be_updated }}</strong></li>
-                        <li class="divider-vertical"></li>
-                        <li class="lead" id="unknown-recipes">Unknown: <span class="text-warning">{{ recipes_unknown }}</strong></li>
+                        <li class="lead">
+                            {{ release_name }}
+                            {% if milestone_name != "All" %}
+                            {{ milestone_name }}
+                            {% endif %}
+                        </li>
+                        <li class="lead" id="up-to-date-recipes">
+                            <span class="text-success">{{ recipes_percentage_up_to_date }}%</span>
+                            <span class="secondary-info">up-to-date ({{ recipes_up_to_date }})</span>
+                        </li>
+                        <li class="lead" id="not-updated-recipes">
+                            <span class="text-error">{{ recipes_percentage_not_updated }}%</span>
+                            <span class="secondary-info">not updated ({{ recipes_not_updated }})</span>
+                        </li>
+                        <li class="lead" id="cant-be-updated-recipes">
+                            <span class="muted">{{ recipes_percentage_cant_be_updated }}%</span>
+                            <span class="secondary-info">can't be updated ({{ recipes_cant_be_updated }})</span>
+                        </li>
+                        <li class="lead" id="unknown-recipes">
+                            <span class="text-warning">{{ recipes_percentage_unknown }}%</span>
+                            <span class="secondary-info">unknown ({{ recipes_unknown }})</span>
+                        </li>
+                        <li class="lead" id="percentage">
+                            <span class="normal-text">{{ recipes_percentage }}%</span>
+                            <span class="secondary-info">of planned work done ({{ recipes_all_upgraded }} of {{ recipes_all_not_upgraded }})</span>
+                        </li>
                     </ul>
-                    <a href="{% url 'recipesreport' release_name milestone_name %}" class="btn pull-right">Export recipe list</a>
                     <ul class="nav">
                         {% block navs %}{% endblock %}
                     </ul>

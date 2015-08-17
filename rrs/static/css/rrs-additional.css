@@ -43,6 +43,11 @@
 	margin-top: 40px;
 }
 
+.nav > li.lead {
+	margin: 5px 25px 0 5px;
+}
+
+
 /* Sorting styles  */
 th > a, th.muted {
     font-weight: normal;
@@ -69,6 +74,10 @@ th > a, th.muted {
 	color: #777777;
 	padding: 10px 5px;
 	margin-bottom: 0;
+}
+
+.navbar .nav > li > .secondary-info {
+    font-size:70%;
 }
 
 .navbar .badge {
@@ -102,10 +111,6 @@ th > a, th.muted {
 
 .well{
 	padding: 8px 14px 8px 14px;
-}
-
-.nav > li.lead {
-	margin: 5px 0 0 5px;
 }
 
 
