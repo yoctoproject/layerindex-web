@@ -47,22 +47,8 @@ def _get_milestone_statistics(milestone, maintainer_name=None):
     )
 
     if maintainer_name is None:
-        if recipe_upstream_history_first:
-            recipes_not_upgraded = \
-                Raw.get_reup_by_date(recipe_upstream_history_first.id)
-            if recipes_not_upgraded:
-                recipes_upgraded = \
-                    Raw.get_reupg_by_dates_and_recipes(
-                        milestone.start_date, milestone.end_date, recipes_not_upgraded)
-                milestone_statistics['all'] = \
-                    float(len(recipes_upgraded))/float(len(recipes_not_upgraded))
-            else:
-                milestone_statistics['all'] = 0
-        else:
-            milestone_statistics['all'] = 0
-
-        milestone_statistics['percentage'] = "%.0f" % \
-            (float(milestone_statistics['all']) * 100.0)
+        milestone_statistics['all'] = \
+            RecipeUpstream.get_all_recipes(recipe_upstream_history).count()
         milestone_statistics['up_to_date'] = \
             RecipeUpstream.get_recipes_up_to_date(recipe_upstream_history).count()
         milestone_statistics['not_updated'] = \
@@ -71,6 +57,39 @@ def _get_milestone_statistics(milestone, maintainer_name=None):
             RecipeUpstream.get_recipes_cant_be_updated(recipe_upstream_history).count()
         milestone_statistics['unknown'] = \
             RecipeUpstream.get_recipes_unknown(recipe_upstream_history).count()
+        milestone_statistics['percentage'] = 0
+        milestone_statistics['all_upgraded'] = 0
+        milestone_statistics['all_not_upgraded'] = 0
+        milestone_statistics['percentage_up_to_date'] = 0
+        milestone_statistics['percentage_not_updated'] = 0
+        milestone_statistics['percentage_cant_be_updated'] = 0
+        milestone_statistics['percentage_unknown'] = 0
+
+        if recipe_upstream_history_first:
+            recipes_not_upgraded = \
+                Raw.get_reup_by_date(recipe_upstream_history_first.id)
+            if recipes_not_upgraded:
+                recipes_upgraded = \
+                    Raw.get_reupg_by_dates_and_recipes(
+                        milestone.start_date, milestone.end_date, recipes_not_upgraded)
+                milestone_statistics['percentage'] = "%.0f" % \
+                    ((float(len(recipes_upgraded)) * 100.0)
+                    /float(len(recipes_not_upgraded)))
+                milestone_statistics['all_upgraded'] = len(recipes_upgraded)
+                milestone_statistics['all_not_upgraded'] = len(recipes_not_upgraded)
+                milestone_statistics['percentage_up_to_date'] = "%.0f" % \
+                    (float(milestone_statistics['up_to_date']) * 100.0 \
+                    /float(milestone_statistics['all']))
+                milestone_statistics['percentage_not_updated'] = "%.0f" % \
+                    (float(milestone_statistics['not_updated']) * 100.0 \
+                    /float(milestone_statistics['all']))
+                milestone_statistics['percentage_cant_be_updated'] = "%.0f" % \
+                    (float(milestone_statistics['cant_be_updated']) * 100.0 \
+                    /float(milestone_statistics['all']))
+                milestone_statistics['percentage_unknown'] = "%.0f" % \
+                    (float(milestone_statistics['unknown']) * 100.0
+                    /float(milestone_statistics['all']))
+
     else:
         recipe_maintainer_history = Raw.get_remahi_by_end_date(
                 milestone.end_date)
@@ -259,10 +278,20 @@ class RecipeListView(ListView):
         context['all_milestones'] = Milestone.get_by_release_name(self.release_name)
 
         context['recipes_percentage'] = self.milestone_statistics['percentage']
+        context['recipes_all_upgraded'] = self.milestone_statistics['all_upgraded']
+        context['recipes_all_not_upgraded'] = self.milestone_statistics['all_not_upgraded']
         context['recipes_up_to_date'] = self.milestone_statistics['up_to_date']
         context['recipes_not_updated'] = self.milestone_statistics['not_updated']
         context['recipes_cant_be_updated'] = self.milestone_statistics['cant_be_updated']
         context['recipes_unknown'] = self.milestone_statistics['unknown']
+        context['recipes_percentage_up_to_date'] = \
+            self.milestone_statistics['percentage_up_to_date']
+        context['recipes_percentage_not_updated'] = \
+            self.milestone_statistics['percentage_not_updated']
+        context['recipes_percentage_cant_be_updated'] = \
+            self.milestone_statistics['percentage_cant_be_updated']
+        context['recipes_percentage_unknown'] = \
+            self.milestone_statistics['percentage_unknown']
 
         context['recipe_list_count'] = self.recipe_list_count
 
@@ -519,10 +548,20 @@ class MaintainerListView(ListView):
         context['all_milestones'] = Milestone.get_by_release_name(self.release_name)
 
         context['recipes_percentage'] = self.milestone_statistics['percentage']
+        context['recipes_all_upgraded'] = self.milestone_statistics['all_upgraded']
+        context['recipes_all_not_upgraded'] = self.milestone_statistics['all_not_upgraded']
         context['recipes_up_to_date'] = self.milestone_statistics['up_to_date']
         context['recipes_not_updated'] = self.milestone_statistics['not_updated']
         context['recipes_cant_be_updated'] = self.milestone_statistics['cant_be_updated']
         context['recipes_unknown'] = self.milestone_statistics['unknown']
+        context['recipes_percentage_up_to_date'] = \
+            self.milestone_statistics['percentage_up_to_date']
+        context['recipes_percentage_not_updated'] = \
+            self.milestone_statistics['percentage_not_updated']
+        context['recipes_percentage_cant_be_updated'] = \
+            self.milestone_statistics['percentage_cant_be_updated']
+        context['recipes_percentage_unknown'] = \
+            self.milestone_statistics['percentage_unknown']
 
         context['maintainer_count'] = self.maintainer_count
         context['intervals'] = self.intervals
