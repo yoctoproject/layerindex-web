@@ -429,6 +429,41 @@ class Raw():
         return stats
 
     @staticmethod
+    def get_reup_statistics(date, date_id):
+        """ Special case to get recipes statistics removing gcc-source duplicates """
+        recipes = []
+        updated = 0
+        not_updated = 0
+        cant = 0
+        unknown = 0
+
+        all_recipes = Raw.get_reupg_by_date(date)
+        for re in all_recipes:
+            recipes.append(re["id"])
+
+        if date_id:
+            recipes = str(recipes).strip('[]')
+            qry = """SELECT id, status, no_update_reason
+                    FROM rrs_RecipeUpstream"""
+            qry += "\nWHERE history_id = '%s'" % str(date_id.id)
+            qry += "\nAND recipe_id IN (%s);" % recipes
+            cur = connection.cursor()
+            cur.execute(qry)
+
+            for re in Raw.dictfetchall(cur):
+                if re["status"] == "Y":
+                    updated += 1
+                elif re["status"]  == "N" and re["no_update_reason"] == "":
+                    not_updated += 1
+                elif re["status"] == "N":
+                    cant += 1
+                # We count downgrade as unknown
+                else:
+                    unknown += 1
+
+        return (updated, not_updated, cant, unknown)
+
+    @staticmethod
     def get_reup_by_recipes_and_date(recipes_id, date_id=None):
         """ Get Recipe Upstream based on Recipes and Recipe Upstream History """
         stats = []

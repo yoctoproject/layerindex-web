@@ -47,16 +47,14 @@ def _get_milestone_statistics(milestone, maintainer_name=None):
     )
 
     if maintainer_name is None:
+        t_updated, t_not_updated, t_cant, t_unknown = \
+            Raw.get_reup_statistics(milestone.end_date, recipe_upstream_history)
         milestone_statistics['all'] = \
-            RecipeUpstream.get_all_recipes(recipe_upstream_history).count()
-        milestone_statistics['up_to_date'] = \
-            RecipeUpstream.get_recipes_up_to_date(recipe_upstream_history).count()
-        milestone_statistics['not_updated'] = \
-            RecipeUpstream.get_recipes_not_updated(recipe_upstream_history).count()
-        milestone_statistics['cant_be_updated'] = \
-            RecipeUpstream.get_recipes_cant_be_updated(recipe_upstream_history).count()
-        milestone_statistics['unknown'] = \
-            RecipeUpstream.get_recipes_unknown(recipe_upstream_history).count()
+            t_updated + t_not_updated + t_cant + t_unknown
+        milestone_statistics['up_to_date'] = t_updated
+        milestone_statistics['not_updated'] = t_not_updated
+        milestone_statistics['cant_be_updated'] = t_cant
+        milestone_statistics['unknown'] = t_unknown
         milestone_statistics['percentage'] = 0
         milestone_statistics['all_upgraded'] = 0
         milestone_statistics['all_not_upgraded'] = 0
