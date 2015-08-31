@@ -52,7 +52,7 @@
                     <tbody>
                         {% for recipe in recipe_list %}
                             <tr {% if recipe.preferred_count > 0 %}class="muted"{% endif %}>
-                                <td><a href="{% url recipe recipe.id %}">{{ recipe.name }}</a></td>
+                                <td><a href="{% url recipe recipe.id %}">{{ recipe.name }}</a>{% if 'image' in recipe.inherits.split %}<i class="icon-hdd"></i>{% endif %}</td>
                                 <td>{{ recipe.pv }}</td>
                                 <td>{{ recipe.short_desc }}</td>
                                 <td><a href="{% url layer_item url_branch recipe.layerbranch.layer.name %}">{{ recipe.layerbranch.layer.name }}</a></td>
@@ -82,6 +82,8 @@
         firstfield = $("#filter-form input:text").first()
         if( ! firstfield.val() )
             firstfield.focus()
+
+        $('.icon-hdd').tooltip({title:"Inherits image"});
     });
 </script>
 {% endblock %}

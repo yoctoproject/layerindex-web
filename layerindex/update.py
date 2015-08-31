@@ -65,6 +65,10 @@ def update_recipe_file(data, path, recipe, layerdir_start, repodir):
         recipe.bugtracker = envdata.getVar("BUGTRACKER", True) or ""
         recipe.provides = envdata.getVar("PROVIDES", True) or ""
         recipe.bbclassextend = envdata.getVar("BBCLASSEXTEND", True) or ""
+        # Handle recipe inherits for this recipe
+        gr = set(data.getVar("__inherit_cache", True) or [])
+        lr = set(envdata.getVar("__inherit_cache", True) or [])
+        recipe.inherits = ' '.join(sorted({split_recipe_fn(r)[0] for r in lr if r not in gr}))
         recipe.save()
 
         # Get file dependencies within this layer

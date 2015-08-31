@@ -83,6 +83,18 @@
                             <th>Layer</th>
                             <td><a href="{% url layer_item recipe.layerbranch.branch.name recipe.layerbranch.layer.name %}">{{ recipe.layerbranch.layer.name }}</a> ({{ recipe.layerbranch.branch.name}} branch)</td>
                         </tr>
+                        <tr>
+                            <th>Inherits</th>
+                            <td>
+                                {% if recipe.inherits %}
+                                    <ul class="unstyled">
+                                        {% for recipe in recipe.inherits.split %}
+                                            <li>{{ recipe }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </td>
+                        </tr>
                     </tbody>
                 </table>
 

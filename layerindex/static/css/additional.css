@@ -199,3 +199,15 @@ padding: 8px;
 .buttonblock-btn {
     margin-left: 8px;
 }
+
+.icon-hdd {
+    margin-left: 6px;
+}
+
+.icon-hdd:hover {
+    cursor: pointer;
+}
+
+ul.unstyled {
+    margin-bottom: 0;
+}

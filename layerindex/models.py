@@ -242,7 +242,7 @@ class Recipe(models.Model):
     bugtracker = models.URLField(blank=True)
     provides = models.CharField(max_length=255, blank=True)
     bbclassextend = models.CharField(max_length=100, blank=True)
-
+    inherits = models.CharField(max_length=255, blank=True)
     updated = models.DateTimeField(auto_now = True)
 
     def vcs_web_url(self):
