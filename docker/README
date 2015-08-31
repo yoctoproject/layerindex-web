@@ -1,0 +1,26 @@
+## This is set up to make a cluster of three containers. First we build two from the root of the repo.
+docker build -t halstead/layerindex-app .
+docker build -t halstead/layerindex-web -f Dockerfile.web .
+
+## Start a database server. We use MariaDB in production.
+## In order to configure your settings.py file to use this database server, use:
+##   'ENGINE': 'django.db.backends.mysql',
+##   'NAME': 'layersdb',
+##   'USER': 'root',
+##   'PASSWORD': 'testingpw',
+##   'HOST': 'layersdb',
+##   'PORT': '',
+docker run -d --name layerdb -e MYSQL_ROOT_PASSWORD=testingpw -e MYSQL_DATABASE=layersdb mariadb
+
+## If you have a copy of the the production data now is the time to insert it.
+## If not you can skip the next step for a clean install.
+xzcat ./layerdb.sql.xz | docker run -i --link layerdb:layersdb --rm mariadb sh -c 'exec mysql -hlayersdb -uroot -p"testingpw" layersdb'
+
+docker run -d --link layerdb:layersdb --name layersapp halstead/layerindex-app
+docker run -d --link layersapp:layersapp --name layersweb -p 49153:80 halstead/layerindex-web
+
+## To apply layerindex migration
+docker run --rm --link layerdb:layersdb halstead/layerindex-app /opt/migrate.sh
+
+## To update the layer info we can run the job in a temporary container.
+docker run --rm --link layerdb:layersdb halstead/layerindex-app /opt/updatelayers.sh

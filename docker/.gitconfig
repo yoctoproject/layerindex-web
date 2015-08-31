@@ -1,0 +1,11 @@
+# This .gitconfig file resides in /root/ in the "layersapp" container
+# add any settings you'd like to have in there, such as proxy servers
+[http]
+    #proxy = http://your.proxy.server:port
+[https]
+    #proxy = https://your.proxy.server:port
+[core]
+    # Optional: uncomment this line if you want to use a proxy script
+    #gitproxy = /opt/bin/git-proxy
+[socks]
+    #proxy = your.socks.proxy:port
