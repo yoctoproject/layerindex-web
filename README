@@ -107,6 +107,9 @@ Setup instructions:
    * templates/base.html
    * templates/layerindex/about.html
 
+7. To use layerindex-web with Docker containers, refer to docker/README
+   keeping in mind you'll need to set up Docker properly as part of the
+   setup process.
 
 Usage
 -----

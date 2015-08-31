@@ -1,0 +1,12 @@
+#!/bin/bash
+
+# This simple proxy script (for git) resides at /opt/bin in the layersapp
+# container. If you use it, uncomment the appropriate line in .gitproxy
+# this method has been tested using a socks proxy
+PROXY=your.proxy.server
+PORT=portnumber
+
+METHOD="-X 5 -x ${PROXY}:${PORT}"
+
+# BSD netcat is used to connect
+/bin/nc $METHOD $*
