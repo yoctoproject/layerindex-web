@@ -244,6 +244,7 @@ class Recipe(models.Model):
     bbclassextend = models.CharField(max_length=255, blank=True)
     src_uri = models.CharField(max_length=255, blank=True)
     depends = models.TextField(blank=True)
+    inherits = models.CharField(max_length=255, blank=True)
 
     updated = models.DateTimeField(auto_now = True)
 
