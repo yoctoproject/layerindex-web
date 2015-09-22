@@ -54,14 +54,20 @@ def set_regexes(d):
         return
 
     suffixes = d.getVar('SPECIAL_PKGSUFFIX', True).split()
-    suffixes.append('nativesdk-')
+    prefixes = ['nativesdk-']
+
+    special = list(suffixes)
+    special.extend(prefixes)
 
     localdata = bb.data.createCopy(d)
-
     pn = localdata.getVar('PN', True)
-    for sfx in suffixes:
-        if pn.find(sfx) != -1:
-            pnstripped = pn.replace(sfx, '')
+    for s in special:
+        if pn.find(s) != -1:
+            if s in suffixes:
+                pnstripped = pn.split(s)[0]
+            else:
+                pnstripped = pn.replace(s, '')
+
             localdata.setVar('OVERRIDES', "pn-" + pnstripped + ":" +
                     d.getVar('OVERRIDES', True))
             bb.data.update_data(localdata)
