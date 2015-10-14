@@ -47,7 +47,7 @@ RECIPE_NO_UPDATE_REASON_pn-"xxx" = "Not upgrade to 2.0 is unstable"
 
 You can check the detail information at:
 
-http://packages.yoctoproject.org/
+http://recipes.yoctoproject.org/
 
 """
 
