@@ -1,13 +1,30 @@
 TODO:
 
+* Auto-detect dead layers and visually mark
+  * Formal deprecation process?
+  * Email people when status will change?
+* Sync dependencies with layer.conf
+* Show other branches when looking at layer - maybe change the focus to show all layers rather than layers at a selected branch? 
+* Show recipe blacklist info
+* Allow users to make a comment sent to admins/maintainers?
+* Marking for recipes with ptest enabled
+* Searching for the git recipe is a bit annoying
+* Make it easy to update people's email addresses
+
 Bugs
+* git recipe shows up all _git bbappends: http://layers.openembedded.org/layerindex/recipe/5542/
 * Duplication of first maintainer when editing to add a second?
 * PROVIDES column appears to be too short for some recipes
 
 Other
+* Full-text search on layer contents
+* Only allow fast-forward merges when pulling?
+* Handle layers that have branch (e.g. master) that is empty
+* Add log in again link to logout page.
 * Collect interesting news (layer add/delete, recipe add/delete/upgrade) and provide RSS feed
 * "Split layer" tool for when a layer is split out of another? (Saves time adding records everywhere)
 * Search for bbclasses?
+* Search for recipes inheriting specific classes
 * All-branch search/results so you can see version availability of recipes in all branches at once?
 * Show OE-Classic search results in OE-Core search? (with appropriate disclaimers)
 * Display no-results found message when search does not return any results in layer search
@@ -29,4 +46,4 @@ Other
 * Use bar instead of pie graphs for OE-Classic statistics
 * Ensure OE-Core appears before meta-oe in layer list
 * Ability for reviewers to comment before publishing a layer?
-* Record recipe parse errors against recipe
+* Record update & parse errors against recipe/layer
