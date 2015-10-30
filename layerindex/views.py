@@ -372,6 +372,12 @@ class RecipeSearchView(ListView):
     context_object_name = 'recipe_list'
     paginate_by = 50
 
+    def render_to_response(self, context, **kwargs):
+        if len(self.object_list) == 1:
+            return HttpResponseRedirect(reverse('recipe', args=(self.object_list[0].id,)))
+        else:
+            return super(ListView, self).render_to_response(context, **kwargs)
+
     def get_queryset(self):
         _check_url_branch(self.kwargs)
         query_string = self.request.GET.get('q', '')
