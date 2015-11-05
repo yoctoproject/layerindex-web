@@ -11,7 +11,8 @@ urlpatterns = patterns('',
                     Release.get_current().name,
                     Milestone.get_current(Release.get_current()).name,
                 )
-            )
+            ),
+         'permanent' : False
         },
         name='frontpage'),
     url(r'^recipes/(?P<release_name>.*)/(?P<milestone_name>.*)/$',
