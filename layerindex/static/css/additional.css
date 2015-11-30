@@ -200,14 +200,29 @@ padding: 8px;
     margin-left: 8px;
 }
 
-.icon-hdd {
+.label-inverse, .icon-hdd {
     margin-left: 6px;
 }
 
-.icon-hdd:hover {
+.label-inverse:hover, .icon-hdd:hover {
     cursor: pointer;
+}
+
+.label-inverse:hover {
+    background-color: #999;
 }
 
 ul.unstyled {
     margin-bottom: 0;
+}
+
+blockquote.span7.warn {
+    border-color: #c09853;
+    margin-bottom: 0;
+    margin-left: 0;
+    min-height: 0;
+}
+
+.valign-middle {
+    vertical-align: middle;
 }

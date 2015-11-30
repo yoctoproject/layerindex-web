@@ -69,6 +69,7 @@ def update_recipe_file(data, path, recipe, layerdir_start, repodir):
         gr = set(data.getVar("__inherit_cache", True) or [])
         lr = set(envdata.getVar("__inherit_cache", True) or [])
         recipe.inherits = ' '.join(sorted({os.path.splitext(os.path.basename(r))[0] for r in lr if r not in gr}))
+        recipe.blacklisted = envdata.getVarFlag('PNBLACKLIST', recipe.pn, True) or ""
         recipe.save()
 
         # Get file dependencies within this layer

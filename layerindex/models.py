@@ -244,6 +244,7 @@ class Recipe(models.Model):
     bbclassextend = models.CharField(max_length=100, blank=True)
     inherits = models.CharField(max_length=255, blank=True)
     updated = models.DateTimeField(auto_now = True)
+    blacklisted = models.CharField(max_length=255, blank=True)
 
     def vcs_web_url(self):
         url = self.layerbranch.file_url(os.path.join(self.filepath, self.filename))
