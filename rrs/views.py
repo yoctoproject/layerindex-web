@@ -253,6 +253,15 @@ class RecipeListView(ListView):
         else:
             self.maintainer_name = 'All'
 
+        if 'search' in self.request.GET.keys():
+            self.search = self.request.GET['search']
+
+            # only allow one type of filter search or upstream_status/maintainer
+            self.upstream_status = 'All'
+            self.maintainer_name = 'All'
+        else:
+            self.search = ''
+
         _check_url_params(self.upstream_status, self.maintainer_name)
 
         self.milestone_statistics = _get_milestone_statistics(milestone)
@@ -308,6 +317,8 @@ class RecipeListView(ListView):
                 continue
             all_maintainers.append(rm['maintainer__name'])
         context['all_maintainers'] = all_maintainers
+
+        context['search'] = self.search
 
         return context
 
