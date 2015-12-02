@@ -167,6 +167,16 @@ $(document).ready(function() {
     recipesTable = $('#recipestable')
     upstreamStatus = $("<div/>").html('{{ upstream_status }}').text()
     maintainer = $("<div/>").html('{{ maintainer_name }}').text()
+    search = '{{ search }}'
+
+    function updateQueryString(queryString) {
+        if (window.history.pushState) {
+            var newurl = window.location.protocol + "//" +
+                window.location.host + window.location.pathname +
+                queryString
+            window.history.pushState({path:newurl}, '', newurl);
+        }
+    }
 
     function updateRecipeCount() {
         $('#recipestable').show()
@@ -243,21 +253,38 @@ $(document).ready(function() {
 
         updateStatusSelected()
         updateMaintainerSelected()
+
+        queryString = ''
+        if (search != '') {
+            $.uiTableFilter(recipesTable, search);
+            queryString = '?search=' + search
+        } else {
+            if (upstreamStatus != 'All' && maintainer != 'All') {
+                queryString = '?upstream_status=' + upstreamStatus +
+                    '&maintainer_name=' + maintainer
+            } else if (upstreamStatus != 'All') {
+                queryString = '?upstream_status=' + upstreamStatus
+            } else if (maintainer != 'All') {
+                queryString = '?maintainer_name=' + maintainer
+            }
+        }
+        updateQueryString(queryString)
     }
 
     $("#form-search").submit(function( event ) {
         upstreamStatus = 'All' 
         maintainer = 'All'
-        search_text = $("#filter").val()
+        search = $("#filter").val()
         $("#clear-search-btn").show()
         applyFilters()
-        $.uiTableFilter(recipesTable, search_text);
         updateRecipeCount()
+
         event.preventDefault();
     });
 
     function clearSearch() {
         $("#filter").val('')
+        search = $("#filter").val()
         $("#clear-search-btn").hide()
         applyFilters()
         updateRecipeCount()
@@ -299,6 +326,10 @@ $(document).ready(function() {
     }); 
 {% endif %}
 
+    if (search != '') {
+        $("#filter").val(search)
+        $("#clear-search-btn").show()
+    }
     applyFilters()
     updateRecipeCount()
 });
