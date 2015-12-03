@@ -234,6 +234,12 @@ $(document).ready(function() {
             $('.summary_column').show()            
         }
 
+        if (upstreamStatus == 'Up-to-date' || upstreamStatus == 'All') {
+            $('.upstream_version_column').hide();
+        } else {
+            $('.upstream_version_column').show();
+        }
+
         if (upstreamStatus == 'All') {
             upstreamStatusFilter = ''
         } else {
