@@ -38,12 +38,12 @@ def send_email(recipes, repodir, options):
     header = """This mail was sent out by Recipe reporting system.
 
 This message list those recipes which need to be upgraded. If maintainers
-believe some of them needn't to upgrade this time, they can fill in
-RECIPE_NO_UPDATE_REASON_pn-"xxx" in upstream_tracking files to ignore this
-recipe remainder until newer upstream version was detected.
+believe some of them needn't to upgrade at this time, they can fill
+RECIPE_NO_UPDATE_REASON in respective recipe file to ignore this remainder
+until newer upstream version was detected.
 
 Example:
-RECIPE_NO_UPDATE_REASON_pn-"xxx" = "Not upgrade to 2.0 is unstable"
+RECIPE_NO_UPDATE_REASON = "Version 2.0 is unstable"
 
 You can check the detail information at:
 
