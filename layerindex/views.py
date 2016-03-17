@@ -11,6 +11,7 @@ from django.core.exceptions import PermissionDenied
 from django.template import RequestContext
 from layerindex.models import Branch, LayerItem, LayerMaintainer, LayerBranch, LayerDependency, LayerNote, Recipe, Machine, BBClass, BBAppend, RecipeChange, RecipeChangeset, ClassicRecipe
 from datetime import datetime
+from itertools import chain
 from django.views.generic import TemplateView, DetailView, ListView
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
 from django.views.generic.base import RedirectView
@@ -373,18 +374,28 @@ class RecipeSearchView(ListView):
         query_string = self.request.GET.get('q', '')
         init_qs = Recipe.objects.filter(layerbranch__branch__name=self.kwargs['branch'])
         if query_string.strip():
-            entry_query = simplesearch.get_query(query_string, ['pn', 'summary', 'description', 'filename'])
-            qs = init_qs.filter(entry_query).order_by('pn', 'layerbranch__layer')
+            order_by = ('pn', 'layerbranch__layer')
+
+            entry_query = simplesearch.get_query(query_string, ['pn'])
+            qs1 = init_qs.filter(entry_query).order_by(*order_by)
+            qs1 = recipes_preferred_count(qs1)
+
+            entry_query = simplesearch.get_query(query_string, ['description', 'summary'])
+            qs2 = init_qs.filter(entry_query).order_by(*order_by)
+            qs2 = recipes_preferred_count(qs2)
+
+            qs = list(chain(qs1, qs2))
         else:
             if 'q' in self.request.GET:
                 qs = init_qs.order_by('pn', 'layerbranch__layer')
+                qs = list(recipes_preferred_count(qs))
             else:
                 # It's a bit too slow to return all records by default, and most people
                 # won't actually want that (if they do they can just hit the search button
                 # with no query string)
                 return Recipe.objects.none()
 
-        return recipes_preferred_count(qs)
+        return qs
 
     def get_context_data(self, **kwargs):
         context = super(RecipeSearchView, self).get_context_data(**kwargs)
@@ -689,8 +700,15 @@ class ClassicRecipeSearchView(RecipeSearchView):
         if category:
             init_qs = init_qs.filter(classic_category__icontains=category)
         if query_string.strip():
-            entry_query = simplesearch.get_query(query_string, ['pn', 'summary', 'description', 'filename'])
-            qs = init_qs.filter(entry_query).order_by('pn', 'layerbranch__layer')
+            order_by = ('pn', 'layerbranch__layer')
+
+            entry_query = simplesearch.get_query(query_string, ['pn'])
+            qs1 = init_qs.filter(entry_query).order_by(*order_by)
+
+            entry_query = simplesearch.get_query(query_string, ['summary', 'description'])
+            qs2 = init_qs.filter(entry_query).order_by(*order_by)
+
+            qs = list(chain(qs1, qs2))
         else:
             if 'q' in self.request.GET:
                 qs = init_qs.order_by('pn', 'layerbranch__layer')
