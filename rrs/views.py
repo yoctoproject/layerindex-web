@@ -6,13 +6,21 @@ from django.http import HttpResponse
 from datetime import date, datetime
 from django.http import Http404
 from django.shortcuts import get_object_or_404
-from django.views.generic import ListView, DetailView
-from django.core.urlresolvers import resolve
+from django.views.generic import ListView, DetailView, RedirectView
+from django.core.urlresolvers import resolve, reverse
 
 from layerindex.models import Recipe
 from rrs.models import Release, Milestone, Maintainer, RecipeMaintainerHistory, \
         RecipeMaintainer, RecipeUpstreamHistory, RecipeUpstream, \
         RecipeDistro, RecipeUpgrade, Raw
+
+class FrontPageRedirect(RedirectView):
+    permanent = False
+
+    def get_redirect_url(self):
+        release_name = Release.get_current().name
+        milestone_name = Milestone.get_current(Release.get_current()).name
+        return reverse('recipes', args=(release_name, milestone_name))
 
 def _check_url_params(upstream_status, maintainer_name):
     get_object_or_404(Maintainer, name=maintainer_name)
