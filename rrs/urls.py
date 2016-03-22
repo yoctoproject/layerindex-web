@@ -1,19 +1,11 @@
 from django.conf.urls import patterns, include, url
 
 from rrs.models import Release, Milestone
-from rrs.views import RecipeListView, recipes_report, RecipeDetailView, MaintainerListView
+from rrs.views import RecipeListView, recipes_report, RecipeDetailView, \
+    MaintainerListView, FrontPageRedirect
 
 urlpatterns = patterns('',
-    url(r'^$', redirect_to,
-        {'url' :
-            reverse_lazy('recipes',
-                args = (
-                    Release.get_current().name,
-                    Milestone.get_current(Release.get_current()).name,
-                )
-            ),
-         'permanent' : False
-        },
+    url(r'^$', FrontPageRedirect.as_view(),
         name='frontpage'),
     url(r'^recipes/(?P<release_name>.*)/(?P<milestone_name>.*)/$',
         RecipeListView.as_view(
