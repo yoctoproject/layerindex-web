@@ -106,7 +106,7 @@ if __name__=="__main__":
 
         from oe import distro_check
         logger.debug("Downloading distro's package information ...")
-        distro_check.create_distro_packages_list(fetchdir)
+        distro_check.create_distro_packages_list(fetchdir, d)
         pkglst_dir = os.path.join(fetchdir, "package_lists")
 
         RecipeDistro.objects.filter(recipe__layerbranch = layerbranch).delete()
