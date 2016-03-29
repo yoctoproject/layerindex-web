@@ -24,7 +24,7 @@ import settings
 from layerindex.models import Recipe, LayerBranch, LayerItem
 from rrs.models import Maintainer, RecipeMaintainerHistory, RecipeMaintainer
 
-MAINTAINERS_INCLUDE_PATH = 'meta-yocto/conf/distro/include/maintainers.inc'
+MAINTAINERS_INCLUDE_PATH = 'meta-poky/conf/distro/include/maintainers.inc'
 
 
 """
