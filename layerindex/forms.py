@@ -189,25 +189,6 @@ class BulkChangeEditForm(forms.ModelForm):
         model = RecipeChange
         fields = ('summary', 'description', 'homepage', 'bugtracker', 'section', 'license')
 
-    def __init__(self, *args, **kwargs):
-        instance = kwargs.get('instance', None)
-        initial = kwargs.get('initial', {})
-        if instance:
-            recipe = instance.recipe
-            if recipe:
-                for fieldname in self._meta.fields:
-                    if not getattr(instance, fieldname):
-                        initial[fieldname] = getattr(recipe, fieldname)
-        kwargs['initial'] = initial
-        super(BulkChangeEditForm, self).__init__(*args, **kwargs)
-
-    def clear_same_values(self):
-        for fieldname in self._meta.fields:
-            oldval = getattr(self.instance.recipe, fieldname)
-            newval = getattr(self.instance, fieldname)
-            if oldval == newval:
-                setattr(self.instance, fieldname, '')
-
 BulkChangeEditFormSet = modelformset_factory(RecipeChange, form=BulkChangeEditForm, extra=0)
 
 

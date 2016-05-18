@@ -97,14 +97,15 @@ def patch_recipe(fn, relpath, values):
 
     with tempfile.NamedTemporaryFile('w', delete=False) as tf:
         def outputvalue(name):
-            rawtext = '%s = "%s"\n' % (name, values[name])
-            if name in nowrap_vars:
-                tf.write(rawtext)
-            else:
-                wrapped = textwrap.wrap(rawtext)
-                for wrapline in wrapped[:-1]:
-                    tf.write('%s \\\n' % wrapline)
-                tf.write('%s\n' % wrapped[-1])
+            if values[name]:
+                rawtext = '%s = "%s"\n' % (name, values[name])
+                if name in nowrap_vars:
+                    tf.write(rawtext)
+                else:
+                    wrapped = textwrap.wrap(rawtext)
+                    for wrapline in wrapped[:-1]:
+                        tf.write('%s \\\n' % wrapline)
+                    tf.write('%s\n' % wrapped[-1])
 
         tfn = tf.name
         with open(fn, 'r') as f:
