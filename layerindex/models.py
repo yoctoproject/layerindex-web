@@ -418,12 +418,16 @@ class RecipeChange(models.Model):
 
     def changed_fields(self, mapped = False):
         res = {}
-        for field in self._meta.fields:
-            if not field.name in ['id', 'changeset', 'recipe']:
-                value = getattr(self, field.name)
-                if value:
-                    if mapped:
-                        res[self.RECIPE_VARIABLE_MAP[field.name]] = value
-                    else:
-                        res[field.name] = value
+        for fieldname in self.RECIPE_VARIABLE_MAP:
+            value = getattr(self, fieldname)
+            origvalue = getattr(self.recipe, fieldname)
+            if value != origvalue:
+                if mapped:
+                    res[self.RECIPE_VARIABLE_MAP[fieldname]] = value
+                else:
+                    res[fieldname] = value
         return res
+
+    def reset_fields(self):
+        for fieldname in self.RECIPE_VARIABLE_MAP:
+            setattr(self, fieldname, getattr(self.recipe, fieldname))

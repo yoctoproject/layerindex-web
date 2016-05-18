@@ -200,8 +200,6 @@ def bulk_change_edit_view(request, template_name, pk):
     if request.method == 'POST':
         formset = BulkChangeEditFormSet(request.POST, queryset=changeset.recipechange_set.all())
         if formset.is_valid():
-            for form in formset:
-                form.clear_same_values()
             formset.save()
             return HttpResponseRedirect(reverse('bulk_change_review', args=(changeset.id,)))
     else:
@@ -524,6 +522,7 @@ class BulkChangeSearchView(AdvancedRecipeSearchView):
                     change = RecipeChange()
                     change.changeset = changeset
                     change.recipe = recipe
+                    change.reset_fields()
                     change.save()
 
         if 'add_selected' in request.POST:
