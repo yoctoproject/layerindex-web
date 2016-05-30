@@ -38,5 +38,4 @@ Other
 * Update script could send warnings when parsing layers to maintainers? (optional)
 * Click on OE-Classic graph element to go to query?
 * Use bar instead of pie graphs for OE-Classic statistics
-* Ensure OE-Core appears before meta-oe in layer list
 * Ability for reviewers to comment before publishing a layer?
