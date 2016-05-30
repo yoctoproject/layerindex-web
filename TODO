@@ -5,10 +5,8 @@ TODO:
   * Email people when status will change?
 * Sync dependencies with layer.conf
 * Show other branches when looking at layer - maybe change the focus to show all layers rather than layers at a selected branch? 
-* Show recipe blacklist info
 * Allow users to make a comment sent to admins/maintainers?
 * Marking for recipes with ptest enabled
-* Searching for the git recipe is a bit annoying
 * Make it easy to update people's email addresses
 
 Bugs
@@ -18,7 +16,6 @@ Bugs
 
 Other
 * Full-text search on layer contents
-* Only allow fast-forward merges when pulling?
 * Handle layers that have branch (e.g. master) that is empty
 * Add log in again link to logout page.
 * Collect interesting news (layer add/delete, recipe add/delete/upgrade) and provide RSS feed
