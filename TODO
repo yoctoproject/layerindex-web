@@ -10,7 +10,6 @@ TODO:
 * Make it easy to update people's email addresses
 
 Bugs
-* git recipe shows up all _git bbappends: http://layers.openembedded.org/layerindex/recipe/5542/
 * Duplication of first maintainer when editing to add a second?
 * PROVIDES column appears to be too short for some recipes
 

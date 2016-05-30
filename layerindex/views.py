@@ -672,7 +672,7 @@ class RecipeDetailView(DetailView):
             verappendprefix = recipe.filename.split('.bb')[0]
             appendprefix = verappendprefix.split('_')[0]
             #context['verappends'] = BBAppend.objects.filter(layerbranch__branch=recipe.layerbranch.branch).filter(filename='%s.bbappend' % verappendprefix)
-            context['appends'] = BBAppend.objects.filter(layerbranch__branch=recipe.layerbranch.branch).filter(filename__regex=r'%s(_[^_]*)?\.bbappend' % appendprefix)
+            context['appends'] = BBAppend.objects.filter(layerbranch__branch=recipe.layerbranch.branch).filter(filename__regex=r'^%s(_[^_]*)?\.bbappend' % appendprefix)
             verappends = []
             for append in context['appends']:
                 if append.matches_recipe(recipe):
