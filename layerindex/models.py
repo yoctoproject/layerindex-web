@@ -19,6 +19,7 @@ class Branch(models.Model):
     bitbake_branch = models.CharField(max_length=50)
     short_description = models.CharField(max_length=50, blank=True)
     sort_priority = models.IntegerField(blank=True, null=True)
+    updates_enabled = models.BooleanField('Enable updates', default=True, help_text='Enable automatically updating layer metadata for this branch via the update script')
 
     updated = models.DateTimeField(auto_now = True, default = datetime.now)
 

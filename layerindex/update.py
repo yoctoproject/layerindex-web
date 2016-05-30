@@ -57,8 +57,8 @@ def main():
     %prog [options]""")
 
     parser.add_option("-b", "--branch",
-            help = "Specify branch to update",
-            action="store", dest="branch", default='master')
+            help = "Specify branch(es) to update (use commas to separate multiple). Default is all enabled branches.",
+            action="store", dest="branch", default='')
     parser.add_option("-l", "--layer",
             help = "Specify layers to update (use commas to separate multiple). Default is all published layers.",
             action="store", dest="layers")
@@ -92,14 +92,19 @@ def main():
 
     utils.setup_django()
     import settings
-    from layerindex.models import LayerItem
+    from layerindex.models import Branch, LayerItem
 
     logger.setLevel(options.loglevel)
 
-    branch = utils.get_branch(options.branch)
-    if not branch:
-        logger.error("Specified branch %s is not valid" % options.branch)
-        sys.exit(1)
+    if options.branch:
+        branches = options.branch.split(',')
+        for branch in branches:
+            if not utils.get_branch(branch):
+                logger.error("Specified branch %s is not valid" % branch)
+                sys.exit(1)
+    else:
+        branchquery = Branch.objects.filter(updates_enabled=True)
+        branches = [branch.name for branch in branchquery]
 
     fetchdir = settings.LAYER_FETCH_DIR
     if not fetchdir:
@@ -164,31 +169,32 @@ def main():
         # We now do this by calling out to a separate script; doing otherwise turned out to be
         # unreliable due to leaking memory (we're using bitbake internals in a manner in which
         # they never get used during normal operation).
-        for layer in layerquery:
-            if layer.vcs_url in failedrepos:
-                logger.info("Skipping update of layer %s as fetch of repository %s failed" % (layer.name, layer.vcs_url))
+        for branch in branches:
+            for layer in layerquery:
+                if layer.vcs_url in failedrepos:
+                    logger.info("Skipping update of layer %s as fetch of repository %s failed" % (layer.name, layer.vcs_url))
 
-            urldir = layer.get_fetch_dir()
-            repodir = os.path.join(fetchdir, urldir)
+                urldir = layer.get_fetch_dir()
+                repodir = os.path.join(fetchdir, urldir)
 
-            cmd = 'python update_layer.py -l %s -b %s' % (layer.name, options.branch)
-            if options.reload:
-                cmd += ' --reload'
-            if options.fullreload:
-                cmd += ' --fullreload'
-            if options.nocheckout:
-                cmd += ' --nocheckout'
-            if options.dryrun:
-                cmd += ' -n'
-            if options.loglevel == logging.DEBUG:
-                cmd += ' -d'
-            elif options.loglevel == logging.ERROR:
-                cmd += ' -q'
-            logger.debug('Running layer update command: %s' % cmd)
-            ret = run_command_interruptible(cmd)
-            if ret == 254:
-                # Interrupted by user, break out of loop
-                break
+                cmd = 'python update_layer.py -l %s -b %s' % (layer.name, branch)
+                if options.reload:
+                    cmd += ' --reload'
+                if options.fullreload:
+                    cmd += ' --fullreload'
+                if options.nocheckout:
+                    cmd += ' --nocheckout'
+                if options.dryrun:
+                    cmd += ' -n'
+                if options.loglevel == logging.DEBUG:
+                    cmd += ' -d'
+                elif options.loglevel == logging.ERROR:
+                    cmd += ' -q'
+                logger.debug('Running layer update command: %s' % cmd)
+                ret = run_command_interruptible(cmd)
+                if ret == 254:
+                    # Interrupted by user, break out of loop
+                    break
 
     finally:
         utils.unlock_file(lockfile)

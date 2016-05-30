@@ -119,11 +119,8 @@ On a regular basis you need to run the update script:
 path/to/layerindex/update.py
 
 This will fetch all of the layer repositories, analyse their contents
-and update the database with the results. Note that if you set up more
-than just the master branch in the database, you will need to run the
-script once for each branch using -b (or --branch) to specify the
-branch name. Run the script with --help for further information on
-available options.
+and update the database with the results. Run the script with --help for
+further information on available options.
 
 
 Maintenance
