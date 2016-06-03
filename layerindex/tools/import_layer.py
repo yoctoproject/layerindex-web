@@ -164,7 +164,7 @@ def get_github_layerinfo(layer_url, username = None, password = None):
         data = resp.read()
         json_data = json.loads(data)
         #headers = dict((key, value) for key, value in resp.getheaders())
-        #print headers
+        #print(headers)
         owner_resp = github_api_call(json_data['owner']['url'].split('api.github.com')[-1])
         if resp.status in [200, 302]:
             owner_data = owner_resp.read()

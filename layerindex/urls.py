@@ -11,7 +11,7 @@ from django.core.urlresolvers import reverse_lazy
 from layerindex.views import LayerListView, LayerReviewListView, LayerReviewDetailView, RecipeSearchView, MachineSearchView, PlainTextListView, LayerDetailView, edit_layer_view, delete_layer_view, edit_layernote_view, delete_layernote_view, HistoryListView, EditProfileFormView, AdvancedRecipeSearchView, BulkChangeView, BulkChangeSearchView, bulk_change_edit_view, bulk_change_patch_view, BulkChangeDeleteView, RecipeDetailView, RedirectParamsView, ClassicRecipeSearchView, ClassicRecipeDetailView, ClassicRecipeStatsView
 from layerindex.models import LayerItem, Recipe, RecipeChangeset
 from rest_framework import routers
-import restviews
+from . import restviews
 from django.conf.urls import include
 
 router = routers.DefaultRouter()

@@ -23,7 +23,7 @@ def addurlparameter(parser, token):
     from re import split
     bits = split(r'\s+', token.contents, 2)
     if len(bits) < 2:
-        raise TemplateSyntaxError, "'%s' tag requires two arguments" % bits[0]
+        raise TemplateSyntaxError("'%s' tag requires two arguments" % bits[0])
     return AddParameter(bits[1],bits[2])
 
 register.tag('addurlparameter', addurlparameter)

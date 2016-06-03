@@ -82,10 +82,10 @@ def main():
         layerrecipes = Recipe.objects.filter(layer=layer)
         for recipe in layerrecipes:
             fullpath = str(os.path.join(repodir, layer.vcs_subdir, recipe.filepath, recipe.filename))
-            print fullpath
+            print(fullpath)
             try:
                 envdata = bb.cache.Cache.loadDataFull(fullpath, [], tinfoil.config_data)
-                print "DESCRIPTION = \"%s\"" % envdata.getVar("DESCRIPTION", True)
+                print("DESCRIPTION = \"%s\"" % envdata.getVar("DESCRIPTION", True))
             except Exception as e:
                 logger.info("Unable to read %s: %s", fullpath, str(e))
 
