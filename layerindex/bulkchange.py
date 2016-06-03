@@ -70,7 +70,7 @@ def generate_patches(tinfoil, fetchdir, changeset, outputdir):
         tar = tarfile.open(None, "w:gz", tmptarfile)
         for patch in patches:
             patchfn = os.path.join(tmpoutdir, patch)
-            tar.add(patchfn)
+            tar.add(patchfn, arcname=patch)
         tar.close()
         ret = tmptarname
     elif len(patches) == 1:
