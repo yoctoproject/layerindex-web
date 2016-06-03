@@ -26,7 +26,7 @@ class Branch(models.Model):
     class Meta:
         verbose_name_plural = "Branches"
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
 
@@ -106,7 +106,7 @@ class LayerItem(models.Model):
     def get_absolute_url(self):
         return reverse('layer_item', args=('master',self.name));
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
 
@@ -188,7 +188,7 @@ class LayerBranch(models.Model):
                     url = resolveComponents(url)
             return url
 
-    def __unicode__(self):
+    def __str__(self):
         return "%s: %s" % (self.layer.name, self.branch.name)
 
 
@@ -203,7 +203,7 @@ class LayerMaintainer(models.Model):
     responsibility = models.CharField(max_length=200, blank=True, help_text='Specific area(s) this maintainer is responsible for, if not the entire layer')
     status = models.CharField(max_length=1, choices=MAINTAINER_STATUS_CHOICES, default='A')
 
-    def __unicode__(self):
+    def __str__(self):
         respstr = ""
         if self.responsibility:
             respstr = " (%s)" % self.responsibility
@@ -217,7 +217,7 @@ class LayerDependency(models.Model):
     class Meta:
         verbose_name_plural = "Layer dependencies"
 
-    def __unicode__(self):
+    def __str__(self):
         return "%s depends on %s" % (self.layerbranch.layer.name, self.dependency.name)
 
 
@@ -225,7 +225,7 @@ class LayerNote(models.Model):
     layer = models.ForeignKey(LayerItem)
     text = models.TextField()
 
-    def __unicode__(self):
+    def __str__(self):
         return "%s: %s" % (self.layer.name, self.text)
 
 
@@ -266,7 +266,7 @@ class Recipe(models.Model):
         else:
             return self.filename.split('_')[0]
 
-    def __unicode__(self):
+    def __str__(self):
         return os.path.join(self.filepath, self.filename)
 
 
@@ -278,7 +278,7 @@ class RecipeFileDependency(models.Model):
     class Meta:
         verbose_name_plural = "Recipe file dependencies"
 
-    def __unicode__(self):
+    def __str__(self):
         return '%s' % self.path
 
 
@@ -341,7 +341,7 @@ class Machine(models.Model):
         url = self.layerbranch.file_url(os.path.join('conf/machine/%s.conf' % self.name))
         return url or ''
 
-    def __unicode__(self):
+    def __str__(self):
         return '%s (%s)' % (self.name, self.layerbranch.layer.name)
 
 
@@ -367,7 +367,7 @@ class BBAppend(models.Model):
             return fnmatch.fnmatch(recipename, appendname.replace('%', '*'))
         return False
 
-    def __unicode__(self):
+    def __str__(self):
         return os.path.join(self.filepath, self.filename)
 
 
@@ -383,7 +383,7 @@ class BBClass(models.Model):
         url = self.layerbranch.file_url(os.path.join('classes', "%s.bbclass" % self.name))
         return url or ''
 
-    def __unicode__(self):
+    def __str__(self):
         return '%s (%s)' % (self.name, self.layerbranch.layer.name)
 
 
@@ -391,7 +391,7 @@ class RecipeChangeset(models.Model):
     user = models.ForeignKey(User)
     name = models.CharField(max_length=255)
 
-    def __unicode__(self):
+    def __str__(self):
         return '%s' % (self.name)
 
 

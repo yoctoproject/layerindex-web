@@ -4,6 +4,7 @@
 #
 # Licensed under the MIT license, see COPYING.MIT for details
 
+import sys
 from django.shortcuts import get_object_or_404, render
 from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidden, Http404
 from django.core.urlresolvers import reverse, reverse_lazy, resolve
@@ -26,7 +27,7 @@ from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from reversion.models import Revision
-import simplesearch
+from . import simplesearch
 import settings
 from django.dispatch import receiver
 import reversion
@@ -212,14 +213,14 @@ def bulk_change_edit_view(request, template_name, pk):
 def bulk_change_patch_view(request, pk):
     import os
     import os.path
-    import utils
+    from layerindex.utils import runcmd
     changeset = get_object_or_404(RecipeChangeset, pk=pk)
     # FIXME this couples the web server and machine running the update script together,
     # but given that it's a separate script the way is open to decouple them in future
     try:
-        ret = utils.runcmd('python bulkchange.py %d %s' % (int(pk), settings.TEMP_BASE_DIR), os.path.dirname(__file__))
+        ret = runcmd('%s bulkchange.py %d %s' % (sys.executable, int(pk), settings.TEMP_BASE_DIR), os.path.dirname(__file__))
         if ret:
-            fn = ret.splitlines()[-1]
+            fn = ret.splitlines()[-1].decode('utf-8')
             if os.path.exists(fn):
                 if fn.endswith('.tar.gz'):
                     mimetype = 'application/x-gzip'

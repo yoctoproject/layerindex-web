@@ -6,7 +6,8 @@
 # Licensed under the MIT license, see COPYING.MIT for details
 
 import sys
-import os.path
+import os
+import tempfile
 import subprocess
 import logging
 import time
@@ -32,10 +33,10 @@ def runcmd(cmd, destdir=None, printerr=True, logger=None):
         return output if succeed
     """
     #logger.debug("run cmd '%s' in %s" % (cmd, os.getcwd() if destdir is None else destdir))
-    out = os.tmpfile()
+    out = tempfile.TemporaryFile()
     try:
         subprocess.check_call(cmd, stdout=out, stderr=out, cwd=destdir, shell=True)
-    except subprocess.CalledProcessError,e:
+    except subprocess.CalledProcessError as e:
         out.seek(0)
         if printerr:
             output = out.read()

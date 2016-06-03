@@ -50,7 +50,7 @@ def generate_patches(tinfoil, fetchdir, changeset, outputdir):
                     outfile = open(os.path.join(tmpoutdir, patchname), 'w')
                     last_layer = layer
                 recipefile = str(os.path.join(layerfetchdir, layerbranch.vcs_subdir, change.recipe.filepath, change.recipe.filename))
-                varlist = list(set(fields.keys() + meta_vars))
+                varlist = list(set(list(fields.keys()) + meta_vars))
                 varfiles = recipeparse.get_var_files(recipefile, varlist, config_data_copy)
                 filevars = localise_file_vars(recipefile, varfiles, fields.keys())
                 for f, fvars in filevars.items():
@@ -66,7 +66,7 @@ def generate_patches(tinfoil, fetchdir, changeset, outputdir):
     ret = None
     if len(patches) > 1:
         (tmptarfd, tmptarname) = tempfile.mkstemp('.tar.gz', 'bulkchange-', outputdir)
-        tmptarfile = os.fdopen(tmptarfd, "w")
+        tmptarfile = os.fdopen(tmptarfd, "wb")
         tar = tarfile.open(None, "w:gz", tmptarfile)
         for patch in patches:
             patchfn = os.path.join(tmpoutdir, patch)
@@ -75,7 +75,7 @@ def generate_patches(tinfoil, fetchdir, changeset, outputdir):
         ret = tmptarname
     elif len(patches) == 1:
         (tmppatchfd, tmppatchname) = tempfile.mkstemp('.patch', 'bulkchange-', outputdir)
-        tmppatchfile = os.fdopen(tmppatchfd, "w")
+        tmppatchfile = os.fdopen(tmppatchfd, "wb")
         with open(os.path.join(tmpoutdir, patches[0]), "rb") as patchfile:
             shutil.copyfileobj(patchfile, tmppatchfile)
         tmppatchfile.close()
@@ -93,7 +93,7 @@ def patch_recipe(fn, relpath, values):
     remainingnames = {}
     for k in values.keys():
         remainingnames[k] = recipe_progression.index(k) if k in recipe_progression else -1
-    remainingnames = SortedDict(sorted(remainingnames.iteritems(), key=lambda x: x[1]))
+    remainingnames = SortedDict(sorted(remainingnames.items(), key=lambda x: x[1]))
 
     with tempfile.NamedTemporaryFile('w', delete=False) as tf:
         def outputvalue(name):
@@ -234,7 +234,7 @@ def main():
         utils.unlock_file(lockfile)
 
     if outp:
-        print outp
+        print(outp)
     else:
         sys.stderr.write("No changes to write\n")
         sys.exit(1)
