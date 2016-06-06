@@ -22,7 +22,7 @@
 
 {% autoescape on %}
         <ul class="breadcrumb">
-            <li><a href="{% url layer_list url_branch %}">{{ layerbranch.branch.name }}</a> <span class="divider">&rarr;</span></li>
+            <li><a href="{% url 'layer_list' url_branch %}">{{ layerbranch.branch.name }}</a> <span class="divider">&rarr;</span></li>
             <li class="active">{{ layeritem.name }}</li>
         </ul>
 
@@ -36,9 +36,9 @@
                         {% if user.is_authenticated %}
                             <span class="pull-right">
                                 {% if perms.layerindex.publish_layer or useredit %}
-                                    <a href="{% url edit_layer url_branch layeritem.name %}" class="btn">Edit layer</a>
+                                    <a href="{% url 'edit_layer' url_branch layeritem.name %}" class="btn">Edit layer</a>
                                     {% if layeritem.layernote_set.count = 0 %}
-                                        <a href="{% url add_layernote layeritem.name %}" class="btn">Add note</a>
+                                        <a href="{% url 'add_layernote' layeritem.name %}" class="btn">Add note</a>
                                     {% endif %}
                                 {% endif %}
                             </span>
@@ -63,8 +63,8 @@
                         {% if perms.layerindex.publish_layer or useredit %}
                             <br><br>
                             <p>
-                                <a href="{% url edit_layernote layeritem.name note.pk %}" class="btn">Edit note</a>
-                                <a href="{% url delete_layernote layeritem.name note.pk %}" class='btn'>Delete note</a>
+                                <a href="{% url 'edit_layernote' layeritem.name note.pk %}" class="btn">Edit note</a>
+                                <a href="{% url 'delete_layernote' layeritem.name note.pk %}" class='btn'>Delete note</a>
                             </p>
                         {% endif %}
                     </div>
@@ -144,7 +144,7 @@
                             <p>The {{ layeritem.name }} layer depends upon:</p>
                             <ul>
                                 {% for dep in layerbranch.dependencies_set.all %}
-                                    <li><a href="{% url layer_item url_branch dep.dependency.name %}">{{ dep.dependency.name }}</a></li>
+                                    <li><a href="{% url 'layer_item' url_branch dep.dependency.name %}">{{ dep.dependency.name }}</a></li>
                                 {% endfor %}
                             </ul>
                          </div> <!-- end of well -->
@@ -198,7 +198,7 @@
                         <tbody>
                             {% for recipe in layerbranch.sorted_recipes %}
                                 <tr>
-                                    <td><a href="{% url recipe recipe.id %}">{{ recipe.name }}</a>{% if 'image' in recipe.inherits.split %}<i class="icon-hdd"></i>{% endif %}{% if recipe.blacklisted %}<span class="label label-inverse" title="{{ recipe.blacklisted }}">blacklisted</span>{% endif %}</td>
+                                    <td><a href="{% url 'recipe' recipe.id %}">{{ recipe.name }}</a>{% if 'image' in recipe.inherits.split %}<i class="icon-hdd"></i>{% endif %}{% if recipe.blacklisted %}<span class="label label-inverse" title="{{ recipe.blacklisted }}">blacklisted</span>{% endif %}</td>
                                     <td>{{ recipe.pv }}</td>
                                     <td class="span8">{{ recipe.short_desc }}</td>
                                 </tr>

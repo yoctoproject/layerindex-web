@@ -4,9 +4,8 @@
 #
 # Licensed under the MIT license, see COPYING.MIT for details
 
-from django.conf.urls.defaults import *
-from django.views.generic import TemplateView, DetailView, ListView
-from django.views.generic.simple import redirect_to
+from django.conf.urls import *
+from django.views.generic import TemplateView, DetailView, ListView, RedirectView
 from django.views.defaults import page_not_found
 from django.core.urlresolvers import reverse_lazy
 from layerindex.views import LayerListView, LayerReviewListView, LayerReviewDetailView, RecipeSearchView, MachineSearchView, PlainTextListView, LayerDetailView, edit_layer_view, delete_layer_view, edit_layernote_view, delete_layernote_view, HistoryListView, EditProfileFormView, AdvancedRecipeSearchView, BulkChangeView, BulkChangeSearchView, bulk_change_edit_view, bulk_change_patch_view, BulkChangeDeleteView, RecipeDetailView, RedirectParamsView, ClassicRecipeSearchView, ClassicRecipeDetailView, ClassicRecipeStatsView
@@ -24,19 +23,20 @@ router.register(r'recipes', restviews.RecipeViewSet)
 router.register(r'machines', restviews.MachineViewSet)
 
 urlpatterns = patterns('',
-    url(r'^$', redirect_to, {'url' : reverse_lazy('layer_list', args=('master',))},
+    url(r'^$',
+        RedirectView.as_view(url=reverse_lazy('layer_list', args=('master',))),
         name='frontpage'),
 
     url(r'^api/', include(router.urls)),
 
     url(r'^layers/$',
-        redirect_to, {'url' : reverse_lazy('layer_list', args=('master',))}),
+        RedirectView.as_view(url=reverse_lazy('layer_list', args=('master',)))),
     url(r'^layer/(?P<slug>[-\w]+)/$',
         RedirectParamsView.as_view(), {'redirect_name': 'layer_item', 'branch':'master'}),
     url(r'^recipes/$',
-        redirect_to, {'url' : reverse_lazy('recipe_search', args=('master',))}),
+        RedirectView.as_view(url=reverse_lazy('recipe_search', args=('master',)))),
     url(r'^machines/$',
-        redirect_to, {'url' : reverse_lazy('machine_search', args=('master',))}),
+        RedirectView.as_view(url=reverse_lazy('machine_search', args=('master',)))),
  
     url(r'^submit/$', edit_layer_view, {'template_name': 'layerindex/submitlayer.html'}, name="submit_layer"),
     url(r'^submit/thanks$',
@@ -107,7 +107,7 @@ urlpatterns = patterns('',
             template_name='layerindex/about.html'),
             name="about"),
     url(r'^oe-classic/$',
-        redirect_to, {'url' : reverse_lazy('classic_recipe_search')},
+        RedirectView.as_view(url=reverse_lazy('classic_recipe_search')),
             name='classic'),
     url(r'^oe-classic/recipes/$',
         ClassicRecipeSearchView.as_view(

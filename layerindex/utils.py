@@ -57,12 +57,6 @@ def setup_django():
     sys.path.append(newpath)
     os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
 
-    from django.core.management import setup_environ
-    from django.conf import settings
-    import settings
-
-    setup_environ(settings)
-
 def logger_create(name):
     logger = logging.getLogger(name)
     loggerhandler = logging.StreamHandler()

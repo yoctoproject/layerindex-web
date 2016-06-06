@@ -6,7 +6,7 @@
 
 from layerindex.models import LayerItem, LayerBranch, LayerMaintainer, LayerNote, RecipeChangeset, RecipeChange, ClassicRecipe
 from django import forms
-from django.core.validators import URLValidator, RegexValidator, email_re
+from django.core.validators import URLValidator, RegexValidator, EmailValidator
 from django.forms.models import inlineformset_factory, modelformset_factory
 from captcha.fields import CaptchaField
 from django.contrib.auth.models import User
@@ -29,9 +29,8 @@ class LayerMaintainerForm(forms.ModelForm):
         if email:
             if len(email) < 7:
                 raise forms.ValidationError('%s is not a valid email address' % email)
-            reg = re.compile(email_re)
-            if not reg.match(email):
-                raise forms.ValidationError('%s is not a valid email address' % email)
+            val = EmailValidator()
+            val(email)
 
         return email
 
@@ -115,21 +114,21 @@ class EditLayerForm(forms.ModelForm):
     def clean_vcs_web_tree_base_url(self):
         url = self.cleaned_data['vcs_web_tree_base_url'].strip()
         if url:
-            val = URLValidator(verify_exists=False)
+            val = URLValidator()
             val(url)
         return url
 
     def clean_vcs_web_file_base_url(self):
         url = self.cleaned_data['vcs_web_file_base_url'].strip()
         if url:
-            val = URLValidator(verify_exists=False)
+            val = URLValidator()
             val(url)
         return url
 
     def clean_usage_url(self):
         usage = self.cleaned_data['usage_url'].strip()
         if usage.startswith('http'):
-            val = URLValidator(verify_exists=False)
+            val = URLValidator()
             val(usage)
         return usage
 

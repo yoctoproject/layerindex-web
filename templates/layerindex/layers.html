@@ -18,9 +18,9 @@
 
 {% block navs %}
 {% autoescape on %}
-                            <li class="active"><a href="{% url layer_list url_branch %}">Layers</a></li>
-                            <li><a href="{% url recipe_search url_branch %}">Recipes</a></li>
-                            <li><a href="{% url machine_search url_branch %}">Machines</a></li>
+                            <li class="active"><a href="{% url 'layer_list' url_branch %}">Layers</a></li>
+                            <li><a href="{% url 'recipe_search' url_branch %}">Recipes</a></li>
+                            <li><a href="{% url 'machine_search' url_branch %}">Machines</a></li>
 {% endautoescape %}
 {% endblock %}
 
@@ -71,7 +71,7 @@
                 <tbody>
                     {% for layerbranch in layerbranch_list %}
                     <tr class="layertype_{{ layerbranch.layer.layer_type }}">
-                        <td><a href="{% url layer_item url_branch layerbranch.layer.name %}">{{ layerbranch.layer.name }}</a></td>
+                        <td><a href="{% url 'layer_item' url_branch layerbranch.layer.name %}">{{ layerbranch.layer.name }}</a></td>
                         <td>{{ layerbranch.layer.summary }}</td>
                         <td>{{ layerbranch.layer.get_layer_type_display }}</td>
                         <td class="showRollie">
