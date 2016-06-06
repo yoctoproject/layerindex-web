@@ -29,7 +29,7 @@ generate a patch for these changes which can be submitted for merging.</p>
     <h3>Select an existing changeset</h3>
     <ul>
     {% for changeset in changesets %}
-        <li><a href="{% url bulk_change_search changeset.id %}">{{ changeset.name }}</a></li>
+        <li><a href="{% url 'bulk_change_search' changeset.id %}">{{ changeset.name }}</a></li>
     {% endfor %}
     </ul>
 {% endif %}

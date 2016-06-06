@@ -42,7 +42,7 @@
     {% endfor %}
 
   <input type="submit" class="btn" value="{% trans 'Save' %}" />
-  <a class="btn" href="{% url frontpage %}">{% trans 'Cancel' %}</a>
+  <a class="btn" href="{% url 'frontpage' %}">{% trans 'Cancel' %}</a>
   {% csrf_token %}
 </form>
 

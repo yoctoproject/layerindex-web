@@ -5,10 +5,15 @@
 # Copyright (c) Django Software Foundation and individual contributors.
 # All rights reserved.
 
+<<<<<<< HEAD
 import settings
 
 from django.conf.urls.defaults import patterns, include, url
 from django.views.generic.simple import redirect_to
+=======
+from django.conf.urls import patterns, include, url
+from django.views.generic import RedirectView
+>>>>>>> 5c17970... Upgrade to Django 1.6+
 
 from django.contrib import admin
 admin.autodiscover()
@@ -22,10 +27,10 @@ urlpatterns = patterns('',
 if settings.APPLICATION == 'layerindex':
     urlpatterns += patterns('',
         url(r'^layerindex/', include('layerindex.urls')),
-        url(r'.*', redirect_to, {'url' : '/layerindex/'}),
+        url(r'.*', RedirectView.as_view(url='/layerindex/')),
     )
 elif settings.APPLICATION == 'rrs':
     urlpatterns += patterns('',
         url(r'^rrs/', include('rrs.urls')),
-        url(r'.*', redirect_to, {'url' : '/rrs/'}),
+        url(r'.*', RedirectView.as_view(url='/rrs/')),
     )

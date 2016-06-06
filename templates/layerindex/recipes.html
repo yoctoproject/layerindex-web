@@ -17,9 +17,9 @@
 
 {% block navs %}
 {% autoescape on %}
-                            <li><a href="{% url layer_list url_branch %}">Layers</a></li>
-                            <li class="active"><a href="{% url recipe_search url_branch %}">Recipes</a></li>
-                            <li><a href="{% url machine_search url_branch %}">Machines</a></li>
+                            <li><a href="{% url 'layer_list' url_branch %}">Layers</a></li>
+                            <li class="active"><a href="{% url 'recipe_search' url_branch %}">Recipes</a></li>
+                            <li><a href="{% url 'machine_search' url_branch %}">Machines</a></li>
 {% endautoescape %}
 {% endblock %}
 
@@ -31,7 +31,7 @@
 
                 <div class="row-fluid">
                     <div class="input-append">
-                        <form id="filter-form" action="{% url recipe_search url_branch %}" method="get">
+                        <form id="filter-form" action="{% url 'recipe_search' url_branch %}" method="get">
                             <input type="text" class="input-xxlarge" id="appendedInputButtons" placeholder="Search recipes" name="q" value="{{ search_keyword }}" />
                             <button class="btn" type="submit">search</button>
                         </form>
@@ -52,10 +52,10 @@
                     <tbody>
                         {% for recipe in recipe_list %}
                             <tr {% if recipe.preferred_count > 0 %}class="muted"{% endif %}>
-                                <td><a href="{% url recipe recipe.id %}">{{ recipe.name }}</a>{% if 'image' in recipe.inherits.split %}<i class="icon-hdd"></i>{% endif %}{% if recipe.blacklisted %}<span class="label label-inverse" title="{{ recipe.blacklisted }}">blacklisted</span>{% endif %}</td>
+                                <td><a href="{% url 'recipe' recipe.id %}">{{ recipe.name }}</a>{% if 'image' in recipe.inherits.split %}<i class="icon-hdd"></i>{% endif %}{% if recipe.blacklisted %}<span class="label label-inverse" title="{{ recipe.blacklisted }}">blacklisted</span>{% endif %}</td>
                                 <td>{{ recipe.pv }}</td>
                                 <td>{{ recipe.short_desc }}</td>
-                                <td><a href="{% url layer_item url_branch recipe.layerbranch.layer.name %}">{{ recipe.layerbranch.layer.name }}</a></td>
+                                <td><a href="{% url 'layer_item' url_branch recipe.layerbranch.layer.name %}">{{ recipe.layerbranch.layer.name }}</a></td>
                             </tr>
                         {% endfor %}
                     </tbody>

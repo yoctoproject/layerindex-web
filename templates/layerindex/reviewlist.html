@@ -36,7 +36,7 @@
                 <tbody>
                     {% for layerbranch in layerbranch_list %}
                     <tr class="layertype_{{ layerbranch.layer.layer_type }}">
-                        <td><a href="{% url layer_review layerbranch.layer.name %}">{{ layerbranch.layer.name }}</a></td>
+                        <td><a href="{% url 'layer_review' layerbranch.layer.name %}">{{ layerbranch.layer.name }}</a></td>
                         <td>{{ layerbranch.layer.summary }}</td>
                         <td>{{ layerbranch.layer.get_layer_type_display }}</td>
                         <td class="showRollie">

@@ -32,13 +32,13 @@
     <div class="navbar navbar-fixed-top">
         <div class="navbar-inner">
             <div class="container-fluid">
-                <a class="brand" href="{% url frontpage %}">{{ site_name }}</a>
+                <a class="brand" href="{% url 'frontpage' %}">{{ site_name }}</a>
 
                 {% if user.is_authenticated %}
                     <div class="btn-group pull-right">
                         {% if perms.layerindex.publish_layer %}
                         {% if unpublished_count > 0 %}
-                        <a class="btn" href="{% url layer_list_review %}?branch=master">
+                        <a class="btn" href="{% url 'layer_list_review' %}?branch=master">
                             <span class="badge badge-warning review-notification">{{ unpublished_count }}</span>
                         </a>
                         {% endif %}
@@ -49,15 +49,15 @@
                             <b class="caret"></b>
                         </button>
                         <ul class="dropdown-menu">
-                            <li><a href="{% url auth_logout %}">{% trans "Log out" %}</a></li>
-                            <li><a href="{% url auth_password_change %}">{% trans "Change password" %}</a></li>
-                            <li><a href="{% url profile %}">{% trans "Edit profile" %}</a></li>
+                            <li><a href="{% url 'auth_logout' %}">{% trans "Log out" %}</a></li>
+                            <li><a href="{% url 'auth_password_change' %}">{% trans "Change password" %}</a></li>
+                            <li><a href="{% url 'profile' %}">{% trans "Edit profile" %}</a></li>
                         </ul>
                     </div>
                 {% else %}
                     {% if application == 'layerindex' %}
                     <div class="pull-right">
-                        <a class="btn" href="{% url auth_login %}">{% trans "Log in" %}</a>
+                        <a class="btn" href="{% url 'auth_login' %}">{% trans "Log in" %}</a>
                     </div>
                     {% endif %}
                 {% endif %}
@@ -68,7 +68,7 @@
                 {% endif %}
                 {% block topfunctions %}
                 <div class="pull-right nav-spacer">
-                    <a class="btn btn-info" href="{% url submit_layer %}">Submit layer</a>
+                    <a class="btn btn-info" href="{% url 'submit_layer' %}">Submit layer</a>
                 </div>
                 <ul class="nav pull-right">
                     {% if user.is_authenticated %}
@@ -78,8 +78,8 @@
                         <b class="caret"></b>
                         </a>
                         <ul class="dropdown-menu">
-                            <li><a href="{% url bulk_change %}">Bulk Change</a></li>
-                            <li><a href="{% url duplicates 'master' %}">Duplicates</a></li>
+                            <li><a href="{% url 'bulk_change' %}">Bulk Change</a></li>
+                            <li><a href="{% url 'duplicates' 'master' %}">Duplicates</a></li>
                         </ul>
                     </li>
                     {% endif %}
@@ -109,8 +109,8 @@
         <hr />
         <div class="footer">
             {% if application == 'layerindex' %}
-            <a href="{% url history_list %}">change history</a>
-            &bull; <a href="{% url about %}">about this site</a>
+            <a href="{% url 'history_list' %}">change history</a>
+            &bull; <a href="{% url 'about' %}">about this site</a>
             &bull; <a href="http://www.openembedded.org/Layers_FAQ">FAQ</a>
             {% else %}
             <a href="{% url about %}">About the Recipe Reporting System</a>

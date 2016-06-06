@@ -17,8 +17,8 @@
 
 {% block navs %}
 {% autoescape on %}
-                            <li class="active"><a href="{% url classic_recipe_search %}">Recipes</a></li>
-                            <li><a href="{% url classic_recipe_stats %}">Stats</a></li>
+                            <li class="active"><a href="{% url 'classic_recipe_search' %}">Recipes</a></li>
+                            <li><a href="{% url 'classic_recipe_stats' %}">Stats</a></li>
 {% endautoescape %}
 {% endblock %}
 
@@ -31,7 +31,7 @@
                 <h2>OE-Classic recipes</h2>
 
                 <div class="alert alert-warning">
-                    <b>NOTE:</b> This is the recipe search for OE-Classic, the older monolithic version of OpenEmbedded which is no longer actively developed. <a href="{% url recipe_search 'master' %}">Click here</a> to search current recipes.
+                    <b>NOTE:</b> This is the recipe search for OE-Classic, the older monolithic version of OpenEmbedded which is no longer actively developed. <a href="{% url 'recipe_search' 'master' %}">Click here</a> to search current recipes.
                 </div>
 
                 <div class="row-fluid">
@@ -72,13 +72,13 @@
                     <tbody>
                         {% for recipe in recipe_list %}
                             <tr {% if recipe.preferred_count > 0 %}class="muted"{% endif %}>
-                                <td><a href="{% url classic_recipe recipe.id %}">{{ recipe.name }}</a></td>
+                                <td><a href="{% url 'classic_recipe' recipe.id %}">{{ recipe.name }}</a></td>
                                 <td>{{ recipe.pv }}</td>
                                 <td>{{ recipe.short_desc }}</td>
                                 <td>{{ recipe.get_cover_desc }}</td>
                                 <td>{{ recipe.classic_category }}</td>
                                 {% if multi_classic_layers %}
-                                <td><a href="{% url layer_item recipe.layerbranch.layer.name %}">{{ recipe.layerbranch.layer.name }}</a></td>
+                                <td><a href="{% url 'layer_item' recipe.layerbranch.layer.name %}">{{ recipe.layerbranch.layer.name }}</a></td>
                                 {% endif %}
                             </tr>
                         {% endfor %}

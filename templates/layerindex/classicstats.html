@@ -19,8 +19,8 @@
 
 {% block navs %}
 {% autoescape on %}
-                            <li><a href="{% url classic_recipe_search %}">Recipes</a></li>
-                            <li class="active"><a href="{% url classic_recipe_stats %}">Stats</a></li>
+                            <li><a href="{% url 'classic_recipe_search' %}">Recipes</a></li>
+                            <li class="active"><a href="{% url 'classic_recipe_stats' %}">Stats</a></li>
 {% endautoescape %}
 {% endblock %}
 

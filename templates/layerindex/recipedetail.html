@@ -21,8 +21,8 @@
 {% autoescape on %}
 
         <ul class="breadcrumb">
-            <li><a href="{% url layer_list recipe.layerbranch.branch.name %}">{{ recipe.layerbranch.branch.name }}</a> <span class="divider">&rarr;</span></li>
-            <li><a href="{% url layer_item recipe.layerbranch.branch.name recipe.layerbranch.layer.name %}">{{ recipe.layerbranch.layer.name }}</a> <span class="divider">&rarr;</span></li>
+            <li><a href="{% url 'layer_list' recipe.layerbranch.branch.name %}">{{ recipe.layerbranch.branch.name }}</a> <span class="divider">&rarr;</span></li>
+            <li><a href="{% url 'layer_item' recipe.layerbranch.branch.name recipe.layerbranch.layer.name %}">{{ recipe.layerbranch.layer.name }}</a> <span class="divider">&rarr;</span></li>
             <li class="active">{{ recipe.name }}</li>
         </ul>
 
@@ -36,7 +36,7 @@
             {% if recipe.blacklisted %}
                 <div class="alert">
                     <div class="row-fluid">
-                        <p>This recipe is <strong>blacklisted</strong> by the <a href="{% url layer_item recipe.layerbranch.branch.name recipe.layerbranch.layer.name %}">{{ recipe.layerbranch.layer.name }}</a> layer. The reason provided is:</p>
+                        <p>This recipe is <strong>blacklisted</strong> by the <a href="{% url 'layer_item' recipe.layerbranch.branch.name recipe.layerbranch.layer.name %}">{{ recipe.layerbranch.layer.name }}</a> layer. The reason provided is:</p>
                         <blockquote class="span7 warn">
                             <p>{{ recipe.blacklisted }}</p>
                         </blockquote>
@@ -92,7 +92,7 @@
                         </tr>
                         <tr>
                             <th>Layer</th>
-                            <td><a href="{% url layer_item recipe.layerbranch.branch.name recipe.layerbranch.layer.name %}">{{ recipe.layerbranch.layer.name }}</a> ({{ recipe.layerbranch.branch.name}} branch)</td>
+                            <td><a href="{% url 'layer_item' recipe.layerbranch.branch.name recipe.layerbranch.layer.name %}">{{ recipe.layerbranch.layer.name }}</a> ({{ recipe.layerbranch.branch.name}} branch)</td>
                         </tr>
                         <tr>
                             <th>Inherits</th>
@@ -116,7 +116,7 @@
                 {% for append in verappends %}
                     <tr>
                         <td>
-                            <a href="{% url layer_item append.layerbranch.branch.name append.layerbranch.layer.name %}">{{ append.layerbranch.layer.name }}</a>
+                            <a href="{% url 'layer_item' append.layerbranch.branch.name append.layerbranch.layer.name %}">{{ append.layerbranch.layer.name }}</a>
                         </td>
                         <td>
                             <a href="{{ append.vcs_web_url }}">{{ append.filename }}</a>
@@ -127,7 +127,7 @@
                     {% if not append in verappends %}
                     <tr>
                         <td>
-                            <a href="{% url layer_item append.layerbranch.branch.name append.layerbranch.layer.name %}" class="muted">{{ append.layerbranch.layer.name }}</a>
+                            <a href="{% url 'layer_item' append.layerbranch.branch.name append.layerbranch.layer.name %}" class="muted">{{ append.layerbranch.layer.name }}</a>
                         </td>
                         <td>
                             <a href="{{ append.vcs_web_url }}" class="muted">{{ append.filename }}</a>

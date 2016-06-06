@@ -7,7 +7,7 @@ link is valid for {{ expiration_days }} days.
 
 {% endblocktrans %}
 
-http://{{ site.domain }}{% url registration_activate activation_key %}
+http://{{ site.domain }}{% url "registration_activate" activation_key %}
 
 {% blocktrans %}
 If you did not make this request, please ignore this message.

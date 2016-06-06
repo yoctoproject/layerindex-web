@@ -1,6 +1,6 @@
-from models import Branch, LayerItem, LayerNote, LayerBranch, LayerDependency, Recipe, Machine
+from layerindex.models import Branch, LayerItem, LayerNote, LayerBranch, LayerDependency, Recipe, Machine
 from rest_framework import viewsets, serializers
-from querysethelper import params_to_queryset, get_search_tuple
+from layerindex.querysethelper import params_to_queryset, get_search_tuple
 
 class ParametricSearchableModelViewSet(viewsets.ModelViewSet):
     def get_queryset(self):

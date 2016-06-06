@@ -21,7 +21,7 @@
 {% autoescape on %}
 
         <ul class="breadcrumb">
-            <li><a href="{% url classic_recipe_search %}">OE-Classic</a> <span class="divider">&rarr;</span></li>
+            <li><a href="{% url 'classic_recipe_search' %}">OE-Classic</a> <span class="divider">&rarr;</span></li>
             <li class="active">{{ recipe.name }}</li>
         </ul>
 

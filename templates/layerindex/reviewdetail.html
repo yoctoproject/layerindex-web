@@ -35,14 +35,14 @@
                         {% if user.is_authenticated %}
                             <span class="pull-right">
                                 {% if perms.layerindex.publish_layer or useredit %}
-                                    <a href="{% url edit_layer 'master' layeritem.name %}?returnto=layer_review" class="btn">Edit layer</a>
+                                    <a href="{% url 'edit_layer' 'master' layeritem.name %}?returnto=layer_review" class="btn">Edit layer</a>
                                     {% if layeritem.layernote_set.count = 0 %}
-                                        <a href="{% url add_layernote layeritem.name %}" class="btn">Add note</a>
+                                        <a href="{% url 'add_layernote' layeritem.name %}" class="btn">Add note</a>
                                     {% endif %}
                                 {% endif %}
                                 {% if layeritem.status = "N" and perms.layerindex.publish_layer %}
-                                    <a href="{% url delete_layer layeritem.name %}" class="btn btn-warning">Delete layer</a>
-                                    <a href="{% url publish layeritem.name %}" class="btn btn-primary">Publish layer</a>
+                                    <a href="{% url 'delete_layer' layeritem.name %}" class="btn btn-warning">Delete layer</a>
+                                    <a href="{% url 'publish' layeritem.name %}" class="btn btn-primary">Publish layer</a>
                                 {% endif %}
                             </span>
                         {% endif %}
@@ -58,8 +58,8 @@
                         <p>{{ note.text }}</p>
                         {% if perms.layerindex.publish_layer or useredit %}
                             <p>
-                                <a href="{% url edit_layernote layeritem.name note.pk %}" class="btn">Edit note</a>
-                                <a href="{% url delete_layernote layeritem.name note.pk %}" class='btn'>Delete note</a>
+                                <a href="{% url 'edit_layernote' layeritem.name note.pk %}" class="btn">Edit note</a>
+                                <a href="{% url 'delete_layernote' layeritem.name note.pk %}" class='btn'>Delete note</a>
                             </p>
                         {% endif %}
                     </div>
@@ -163,7 +163,7 @@
                                 <td>
                                     <ul class="unstyled">
                                         {% for dep in layerbranch.dependencies_set.all %}
-                                            <li><a href="{% url layer_item 'master' dep.dependency.name %}">{{ dep.dependency.name }}</a></li>
+                                            <li><a href="{% url 'layer_item' 'master' dep.dependency.name %}">{{ dep.dependency.name }}</a></li>
                                         {% endfor %}
                                     </ul>
                                 </td>
