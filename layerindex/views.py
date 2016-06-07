@@ -630,29 +630,30 @@ def annotate_revision(sender, **kwargs):
     for ver, inst in zip(versions, instances):
         currentVersion = ver.field_dict
         modelmeta = ver.content_type.model_class()._meta
-        if ver.type == reversion.models.VERSION_DELETE:
-            changelist.append("Deleted %s: %s" % (modelmeta.verbose_name.lower(), ver.object_repr))
+        #FIXME modern django-reversion dropped the type field (argh!)
+        #if ver.type == reversion.models.VERSION_DELETE:
+        #    changelist.append("Deleted %s: %s" % (modelmeta.verbose_name.lower(), ver.object_repr))
+        #else:
+        pastver = reversion.get_for_object(inst)
+        if pastver:# and ver.type != reversion.models.VERSION_ADD:
+            pastVersion = pastver[0].field_dict
+            changes = set(currentVersion.items()) - set(pastVersion.items())
+            changedVars = [var[0] for var in changes]
+            fieldchanges = []
+            for field in changedVars:
+                if field not in ignorefields:
+                    modelfield = modelmeta.get_field(field)
+                    newvalue = currentVersion[field]
+                    if modelfield.choices:
+                        for v in modelfield.choices:
+                            if v[0] == newvalue:
+                                newvalue = v[1]
+                                break
+                    fieldchanges.append("%s to '%s'" % (modelfield.verbose_name.lower(), newvalue))
+            if fieldchanges:
+                changelist.append("Changed %s %s %s" % (modelmeta.verbose_name.lower(), ver.object_repr, ", ".join(fieldchanges)))
         else:
-            pastver = reversion.get_for_object(inst)
-            if pastver and ver.type != reversion.models.VERSION_ADD:
-                pastVersion = pastver[0].field_dict
-                changes = set(currentVersion.items()) - set(pastVersion.items())
-                changedVars = [var[0] for var in changes]
-                fieldchanges = []
-                for field in changedVars:
-                    if field not in ignorefields:
-                        modelfield = modelmeta.get_field(field)
-                        newvalue = currentVersion[field]
-                        if modelfield.choices:
-                            for v in modelfield.choices:
-                                if v[0] == newvalue:
-                                    newvalue = v[1]
-                                    break
-                        fieldchanges.append("%s to '%s'" % (modelfield.verbose_name.lower(), newvalue))
-                if fieldchanges:
-                    changelist.append("Changed %s %s %s" % (modelmeta.verbose_name.lower(), ver.object_repr, ", ".join(fieldchanges)))
-            else:
-                changelist.append("Added %s: %s" % (modelmeta.verbose_name.lower(), ver.object_repr))
+            changelist.append("Added %s: %s" % (modelmeta.verbose_name.lower(), ver.object_repr))
     comment = '\n'.join(changelist)
     if not comment:
         comment = 'No changes'
