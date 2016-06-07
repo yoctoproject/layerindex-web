@@ -1,6 +1,6 @@
 # layerindex-web - model definitions
 #
-# Copyright (C) 2013 Intel Corporation
+# Copyright (C) 2013-2016 Intel Corporation
 #
 # Licensed under the MIT license, see COPYING.MIT for details
 
@@ -14,12 +14,29 @@ import re
 import posixpath
 
 
+class PythonEnvironment(models.Model):
+    name = models.CharField(max_length=50)
+    python_command = models.CharField(max_length=255, default='python')
+    virtualenv_path = models.CharField(max_length=255, blank=True)
+
+    def get_command(self):
+        if self.virtualenv_path:
+            cmd = '. %s/bin/activate; %s' % (self.virtualenv_path, self.python_command)
+        else:
+            cmd = self.python_command
+        return cmd
+
+    def __str__(self):
+        return self.name
+
+
 class Branch(models.Model):
     name = models.CharField(max_length=50)
     bitbake_branch = models.CharField(max_length=50)
     short_description = models.CharField(max_length=50, blank=True)
     sort_priority = models.IntegerField(blank=True, null=True)
     updates_enabled = models.BooleanField('Enable updates', default=True, help_text='Enable automatically updating layer metadata for this branch via the update script')
+    update_environment = models.ForeignKey(PythonEnvironment, blank=True, null=True, on_delete=models.SET_NULL)
 
     updated = models.DateTimeField(auto_now = True, default = datetime.now)
 
