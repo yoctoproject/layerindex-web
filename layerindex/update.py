@@ -177,7 +177,12 @@ def main():
                 urldir = layer.get_fetch_dir()
                 repodir = os.path.join(fetchdir, urldir)
 
-                cmd = 'python update_layer.py -l %s -b %s' % (layer.name, branch)
+                branchobj = utils.get_branch(branch)
+                if branchobj.update_environment:
+                    cmdprefix = branchobj.update_environment.get_command()
+                else:
+                    cmdprefix = 'python'
+                cmd = '%s update_layer.py -l %s -b %s' % (cmdprefix, layer.name, branch)
                 if options.reload:
                     cmd += ' --reload'
                 if options.fullreload:

@@ -99,17 +99,27 @@ Setup instructions:
         next to your login name at the top right, click on the
         newly added layer entry, and then click on "Publish Layer".
 
-5. Set the site name (as displayed in the top bar and page titles) by
+5. If you need to support multiple branches of OpenEmbedded/BitBake
+   where some require Python 2.x and others require Python 3.x, then
+   you will need to set up "Python environment" records through the
+   admin interface to correspond to these so that the right Python
+   version gets used to parse the branch, and then set the
+   "Update environment" field on each branch record to point to the
+   appropriate environment. If you're using virtualenv you will need
+   separate virtual environments set up for Python 2 and 3 which you
+   should point to in the Python environment record.
+
+6. Set the site name (as displayed in the top bar and page titles) by
    going into the admin interface (http://127.0.0.1:8000/admin/),
    clicking on "Sites" at the bottom, and editing the first entry,
    setting "Display name" to the desired name.
 
-6. You may wish to customise some of the page templates to suit your
+7. You may wish to customise some of the page templates to suit your
    installation, in particular:
    * templates/base.html
    * templates/layerindex/about.html
 
-7. To use layerindex-web with Docker containers, refer to docker/README
+8. To use layerindex-web with Docker containers, refer to docker/README
    keeping in mind you'll need to set up Docker properly as part of the
    setup process.
 
@@ -156,7 +166,7 @@ Bundled nv.d3.js is redistributed under the Apache License 2.0.
 
 Bundled d3.js is redistributed under the BSD License.
 
-All other content is copyright (C) 2013 Intel Corporation and licensed
-under the MIT license (unless otherwise noted) - see COPYING.MIT for
-details.
+All other content is copyright (C) 2013-2016 Intel Corporation and
+licensed under the MIT license (unless otherwise noted) - see
+COPYING.MIT for details.
 
