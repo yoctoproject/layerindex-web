@@ -11,7 +11,7 @@ from layerindex.views import LayerListView, RecipeSearchView, MachineSearchView,
 
 urlpatterns = patterns('',
     url(r'^$', 
-        RedirectParamsView.as_view(), {'redirect_name': 'layer_list'}),
+        RedirectParamsView.as_view(permanent=False), {'redirect_name': 'layer_list'}),
     url(r'^layers/$',
         LayerListView.as_view(
             template_name='layerindex/layers.html'),

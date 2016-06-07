@@ -27,10 +27,10 @@ urlpatterns = patterns('',
 if settings.APPLICATION == 'layerindex':
     urlpatterns += patterns('',
         url(r'^layerindex/', include('layerindex.urls')),
-        url(r'.*', RedirectView.as_view(url='/layerindex/')),
+        url(r'.*', RedirectView.as_view(url='/layerindex/', permanent=False)),
     )
 elif settings.APPLICATION == 'rrs':
     urlpatterns += patterns('',
         url(r'^rrs/', include('rrs.urls')),
-        url(r'.*', RedirectView.as_view(url='/rrs/')),
+        url(r'.*', RedirectView.as_view(url='/rrs/', permanent=False)),
     )
