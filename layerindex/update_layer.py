@@ -17,6 +17,7 @@ import re
 import tempfile
 import shutil
 from distutils.version import LooseVersion
+import itertools
 import utils
 import recipeparse
 
@@ -325,7 +326,79 @@ def main():
                     subdir_start = ""
 
                 updatedrecipes = set()
-                for diffitem in diff.iter_change_type('D'):
+                dirtyrecipes = set()
+                other_deletes = []
+                other_adds = []
+                for diffitem in diff.iter_change_type('R'):
+                    oldpath = diffitem.a_blob.path
+                    newpath = diffitem.b_blob.path
+                    skip = False
+                    for removedir in removedirs:
+                        # FIXME what about files moved into removedirs?
+                        if oldpath.startswith(removedir):
+                            skip = True
+                            break
+                    if skip:
+                        continue
+                    if oldpath.startswith(subdir_start):
+                        (oldtypename, oldfilepath, oldfilename) = recipeparse.detect_file_type(oldpath, subdir_start)
+                        (newtypename, newfilepath, newfilename) = recipeparse.detect_file_type(newpath, subdir_start)
+                        if oldtypename != newtypename:
+                            # This is most likely to be a .inc file renamed to a .bb - and since
+                            # there may be another recipe deleted at the same time we probably want
+                            # to consider that, so just treat it as a delete and an add
+                            logger.debug("Treating rename of %s to %s as a delete and add (since type changed)" % (oldpath, newpath))
+                            other_deletes.append(diffitem)
+                            other_adds.append(diffitem)
+                        elif oldtypename == 'recipe':
+                            results = layerrecipes.filter(filepath=oldfilepath).filter(filename=oldfilename)
+                            if len(results):
+                                recipe = results[0]
+                                logger.debug("Rename recipe %s to %s" % (recipe, newpath))
+                                recipe.filepath = newfilepath
+                                recipe.filename = newfilename
+                                recipe.save()
+                                update_recipe_file(config_data_copy, os.path.join(layerdir, newfilepath), recipe, layerdir_start, repodir)
+                                updatedrecipes.add(os.path.join(oldfilepath, oldfilename))
+                                updatedrecipes.add(os.path.join(newfilepath, newfilename))
+                            else:
+                                logger.warn("Renamed recipe %s could not be found" % oldpath)
+                                other_adds.append(diffitem)
+                        elif oldtypename == 'bbappend':
+                            results = layerappends.filter(filepath=oldfilepath).filter(filename=oldfilename)
+                            if len(results):
+                                logger.debug("Rename bbappend %s to %s" % (results[0], newfilepath))
+                                results[0].filepath = newfilepath
+                                results[0].filename = newfilename
+                                results[0].save()
+                            else:
+                                logger.warn("Renamed bbappend %s could not be found" % oldpath)
+                                other_adds.append(diffitem)
+                        elif oldtypename == 'machine':
+                            results = layermachines.filter(name=oldfilename)
+                            if len(results):
+                                logger.debug("Rename machine %s to %s" % (results[0], newfilename))
+                                results[0].name = newfilename
+                                results[0].save()
+                            else:
+                                logger.warn("Renamed machine %s could not be found" % oldpath)
+                                other_adds.append(diffitem)
+                        elif oldtypename == 'bbclass':
+                            results = layerclasses.filter(name=oldfilename)
+                            if len(results):
+                                logger.debug("Rename class %s to %s" % (results[0], newfilename))
+                                results[0].name = newfilename
+                                results[0].save()
+                            else:
+                                logger.warn("Renamed class %s could not be found" % oldpath)
+                                other_adds.append(diffitem)
+
+                        deps = RecipeFileDependency.objects.filter(layerbranch=layerbranch).filter(path=oldpath)
+                        for dep in deps:
+                            dirtyrecipes.add(dep.recipe)
+
+
+                for diffitem in itertools.chain(diff.iter_change_type('D'), other_deletes):
                     path = diffitem.a_blob.path
                     if path.startswith(subdir_start):
                         skip = False
@@ -351,7 +424,7 @@ def main():
                         elif typename == 'bbclass':
                             layerclasses.filter(name=filename).delete()
 
-                for diffitem in diff.iter_change_type('A'):
+                for diffitem in itertools.chain(diff.iter_change_type('A'), other_adds):
                     path = diffitem.b_blob.path
                     if path.startswith(subdir_start):
                         skip = False
@@ -384,7 +457,6 @@ def main():
                             bbclass.name = filename
                             bbclass.save()
 
-                dirtyrecipes = set()
                 for diffitem in diff.iter_change_type('M'):
                     path = diffitem.a_blob.path
                     if path.startswith(subdir_start):
