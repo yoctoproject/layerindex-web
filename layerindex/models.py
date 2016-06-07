@@ -38,7 +38,7 @@ class Branch(models.Model):
     updates_enabled = models.BooleanField('Enable updates', default=True, help_text='Enable automatically updating layer metadata for this branch via the update script')
     update_environment = models.ForeignKey(PythonEnvironment, blank=True, null=True, on_delete=models.SET_NULL)
 
-    updated = models.DateTimeField(auto_now = True, default = datetime.now)
+    updated = models.DateTimeField(auto_now=True)
 
     class Meta:
         verbose_name_plural = "Branches"
@@ -73,7 +73,7 @@ class LayerItem(models.Model):
     index_preference = models.IntegerField('Preference', default=0, help_text='Number used to find preferred recipes in recipe search results (higher number is greater preference)')
     classic = models.BooleanField('Classic', default=False, help_text='Is this OE-Classic?')
 
-    updated = models.DateTimeField(auto_now = True)
+    updated = models.DateTimeField(auto_now=True)
 
     class Meta:
         verbose_name = "Layer"
@@ -136,7 +136,7 @@ class LayerBranch(models.Model):
     vcs_last_commit = models.DateTimeField('Last commit date', blank=True, null=True)
     actual_branch = models.CharField('Actual Branch', max_length=80, blank=True, help_text='Name of the actual branch in the repository matching the core branch')
 
-    updated = models.DateTimeField(auto_now = True)
+    updated = models.DateTimeField(auto_now=True)
 
     class Meta:
         verbose_name_plural = "Layer branches"
@@ -355,7 +355,7 @@ class Machine(models.Model):
     name = models.CharField(max_length=255)
     description = models.CharField(max_length=255)
 
-    updated = models.DateTimeField(auto_now = True)
+    updated = models.DateTimeField(auto_now=True)
 
     def vcs_web_url(self):
         url = self.layerbranch.file_url(os.path.join('conf/machine/%s.conf' % self.name))
