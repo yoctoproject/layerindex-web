@@ -24,19 +24,19 @@ router.register(r'machines', restviews.MachineViewSet)
 
 urlpatterns = patterns('',
     url(r'^$',
-        RedirectView.as_view(url=reverse_lazy('layer_list', args=('master',))),
+        RedirectView.as_view(url=reverse_lazy('layer_list', args=('master',)), permanent=False),
         name='frontpage'),
 
     url(r'^api/', include(router.urls)),
 
     url(r'^layers/$',
-        RedirectView.as_view(url=reverse_lazy('layer_list', args=('master',)))),
+        RedirectView.as_view(url=reverse_lazy('layer_list', args=('master',)), permanent=False)),
     url(r'^layer/(?P<slug>[-\w]+)/$',
-        RedirectParamsView.as_view(), {'redirect_name': 'layer_item', 'branch':'master'}),
+        RedirectParamsView.as_view(permanent=False), {'redirect_name': 'layer_item', 'branch':'master'}),
     url(r'^recipes/$',
-        RedirectView.as_view(url=reverse_lazy('recipe_search', args=('master',)))),
+        RedirectView.as_view(url=reverse_lazy('recipe_search', args=('master',)), permanent=False)),
     url(r'^machines/$',
-        RedirectView.as_view(url=reverse_lazy('machine_search', args=('master',)))),
+        RedirectView.as_view(url=reverse_lazy('machine_search', args=('master',)), permanent=False)),
  
     url(r'^submit/$', edit_layer_view, {'template_name': 'layerindex/submitlayer.html'}, name="submit_layer"),
     url(r'^submit/thanks$',
@@ -107,7 +107,7 @@ urlpatterns = patterns('',
             template_name='layerindex/about.html'),
             name="about"),
     url(r'^oe-classic/$',
-        RedirectView.as_view(url=reverse_lazy('classic_recipe_search')),
+        RedirectView.as_view(url=reverse_lazy('classic_recipe_search'), permanent=False),
             name='classic'),
     url(r'^oe-classic/recipes/$',
         ClassicRecipeSearchView.as_view(

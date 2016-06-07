@@ -16,6 +16,6 @@ urlpatterns = patterns('',
     url(r'^admin/', include(admin.site.urls)),
     url(r'^accounts/', include('registration.backends.default.urls')),
     url(r'^captcha/', include('captcha.urls')),
-    url(r'.*', RedirectView.as_view(url='/layerindex/')),
+    url(r'.*', RedirectView.as_view(url='/layerindex/', permanent=False)),
 )
 
