@@ -312,9 +312,9 @@ def main():
             # Check if any paths should be ignored because there are layers within this layer
             removedirs = []
             for root, dirs, files in os.walk(layerdir):
-                for d in dirs:
-                    if os.path.exists(os.path.join(root, d, 'conf', 'layer.conf')):
-                        removedirs.append(os.path.join(root, d) + os.sep)
+                for diritem in dirs:
+                    if os.path.exists(os.path.join(root, diritem, 'conf', 'layer.conf')):
+                        removedirs.append(os.path.join(root, diritem) + os.sep)
 
             if diff:
                 # Apply git changes to existing recipe list
@@ -325,12 +325,12 @@ def main():
                     subdir_start = ""
 
                 updatedrecipes = set()
-                for d in diff.iter_change_type('D'):
-                    path = d.a_blob.path
+                for diffitem in diff.iter_change_type('D'):
+                    path = diffitem.a_blob.path
                     if path.startswith(subdir_start):
                         skip = False
-                        for d in removedirs:
-                            if path.startswith(d):
+                        for removedir in removedirs:
+                            if path.startswith(removedir):
                                 skip = True
                                 break
                         if skip:
@@ -351,12 +351,12 @@ def main():
                         elif typename == 'bbclass':
                             layerclasses.filter(name=filename).delete()
 
-                for d in diff.iter_change_type('A'):
-                    path = d.b_blob.path
+                for diffitem in diff.iter_change_type('A'):
+                    path = diffitem.b_blob.path
                     if path.startswith(subdir_start):
                         skip = False
-                        for d in removedirs:
-                            if path.startswith(d):
+                        for removedir in removedirs:
+                            if path.startswith(removedir):
                                 skip = True
                                 break
                         if skip:
@@ -385,12 +385,12 @@ def main():
                             bbclass.save()
 
                 dirtyrecipes = set()
-                for d in diff.iter_change_type('M'):
-                    path = d.a_blob.path
+                for diffitem in diff.iter_change_type('M'):
+                    path = diffitem.a_blob.path
                     if path.startswith(subdir_start):
                         skip = False
-                        for d in removedirs:
-                            if path.startswith(d):
+                        for removedir in removedirs:
+                            if path.startswith(removedir):
                                 skip = True
                                 break
                         if skip:
@@ -432,8 +432,8 @@ def main():
                         fullpath = os.path.join(root, v['filename'])
                         preserve = True
                         if os.path.exists(fullpath):
-                            for d in removedirs:
-                                if fullpath.startswith(d):
+                            for removedir in removedirs:
+                                if fullpath.startswith(removedir):
                                     preserve = False
                                     break
                         else:
@@ -455,10 +455,10 @@ def main():
                 for root, dirs, files in os.walk(layerdir):
                     if '.git' in dirs:
                         dirs.remove('.git')
-                    for d in dirs[:]:
-                        fullpath = os.path.join(root, d) + os.sep
+                    for diritem in dirs[:]:
+                        fullpath = os.path.join(root, diritem) + os.sep
                         if fullpath in removedirs:
-                            dirs.remove(d)
+                            dirs.remove(diritem)
                     for f in files:
                         fullpath = os.path.join(root, f)
                         (typename, _, filename) = recipeparse.detect_file_type(fullpath, layerdir_start)
