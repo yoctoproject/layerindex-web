@@ -5,15 +5,10 @@
 # Copyright (c) Django Software Foundation and individual contributors.
 # All rights reserved.
 
-<<<<<<< HEAD
-import settings
 
-from django.conf.urls.defaults import patterns, include, url
-from django.views.generic.simple import redirect_to
-=======
+import settings
 from django.conf.urls import patterns, include, url
 from django.views.generic import RedirectView
->>>>>>> 5c17970... Upgrade to Django 1.6+
 
 from django.contrib import admin
 admin.autodiscover()
