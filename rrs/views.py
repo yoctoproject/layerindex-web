@@ -166,7 +166,7 @@ def _get_recipe_list(milestone):
 
     recipes = Raw.get_reupg_by_date(milestone.end_date)
     for i,re in enumerate(recipes):
-        if re.has_key('pv'):
+        if 'pv' in re:
             recipes[i]['version'] = re['pv']
         recipes_ids.append(re['id'])
 
