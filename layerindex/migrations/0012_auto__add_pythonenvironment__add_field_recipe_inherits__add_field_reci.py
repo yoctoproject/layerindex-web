@@ -8,20 +8,52 @@ from django.db import models
 class Migration(SchemaMigration):
 
     def forwards(self, orm):
+        # Adding model 'PythonEnvironment'
+        db.create_table('layerindex_pythonenvironment', (
+            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('name', self.gf('django.db.models.fields.CharField')(max_length=50)),
+            ('python_command', self.gf('django.db.models.fields.CharField')(default='python', max_length=255)),
+            ('virtualenv_path', self.gf('django.db.models.fields.CharField')(max_length=255, blank=True)),
+        ))
+        db.send_create_signal('layerindex', ['PythonEnvironment'])
 
-        # Changing field 'Recipe.license'
-        db.alter_column('layerindex_recipe', 'license', self.gf('django.db.models.fields.CharField')(max_length=2048))
+        # Adding field 'Recipe.inherits'
+        db.add_column('layerindex_recipe', 'inherits',
+                      self.gf('django.db.models.fields.CharField')(default='', max_length=255, blank=True),
+                      keep_default=False)
 
-        # Changing field 'Recipe.provides'
-        db.alter_column('layerindex_recipe', 'provides', self.gf('django.db.models.fields.CharField')(max_length=2048))
+        # Adding field 'Recipe.blacklisted'
+        db.add_column('layerindex_recipe', 'blacklisted',
+                      self.gf('django.db.models.fields.CharField')(default='', max_length=255, blank=True),
+                      keep_default=False)
+
+        # Adding field 'Branch.updates_enabled'
+        db.add_column('layerindex_branch', 'updates_enabled',
+                      self.gf('django.db.models.fields.BooleanField')(default=True),
+                      keep_default=False)
+
+        # Adding field 'Branch.update_environment'
+        db.add_column('layerindex_branch', 'update_environment',
+                      self.gf('django.db.models.fields.related.ForeignKey')(to=orm['layerindex.PythonEnvironment'], null=True, on_delete=models.SET_NULL, blank=True),
+                      keep_default=False)
+
 
     def backwards(self, orm):
+        # Deleting model 'PythonEnvironment'
+        db.delete_table('layerindex_pythonenvironment')
 
-        # Changing field 'Recipe.license'
-        db.alter_column('layerindex_recipe', 'license', self.gf('django.db.models.fields.CharField')(max_length=100))
+        # Deleting field 'Recipe.inherits'
+        db.delete_column('layerindex_recipe', 'inherits')
 
-        # Changing field 'Recipe.provides'
-        db.alter_column('layerindex_recipe', 'provides', self.gf('django.db.models.fields.CharField')(max_length=255))
+        # Deleting field 'Recipe.blacklisted'
+        db.delete_column('layerindex_recipe', 'blacklisted')
+
+        # Deleting field 'Branch.updates_enabled'
+        db.delete_column('layerindex_branch', 'updates_enabled')
+
+        # Deleting field 'Branch.update_environment'
+        db.delete_column('layerindex_branch', 'update_environment_id')
+
 
     models = {
         'auth.group': {
@@ -80,7 +112,8 @@ class Migration(SchemaMigration):
             'name': ('django.db.models.fields.CharField', [], {'max_length': '50'}),
             'short_description': ('django.db.models.fields.CharField', [], {'max_length': '50', 'blank': 'True'}),
             'sort_priority': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
-            'updated': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now', 'auto_now': 'True', 'blank': 'True'}),
+            'update_environment': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['layerindex.PythonEnvironment']", 'null': 'True', 'on_delete': 'models.SET_NULL', 'blank': 'True'}),
+            'updated': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'blank': 'True'}),
             'updates_enabled': ('django.db.models.fields.BooleanField', [], {'default': 'True'})
         },
         'layerindex.classicrecipe': {
@@ -152,11 +185,19 @@ class Migration(SchemaMigration):
             'name': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
             'updated': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'blank': 'True'})
         },
+        'layerindex.pythonenvironment': {
+            'Meta': {'object_name': 'PythonEnvironment'},
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'name': ('django.db.models.fields.CharField', [], {'max_length': '50'}),
+            'python_command': ('django.db.models.fields.CharField', [], {'default': "'python'", 'max_length': '255'}),
+            'virtualenv_path': ('django.db.models.fields.CharField', [], {'max_length': '255', 'blank': 'True'})
+        },
         'layerindex.recipe': {
             'Meta': {'object_name': 'Recipe'},
-            'bbclassextend': ('django.db.models.fields.CharField', [], {'max_length': '100', 'blank': 'True'}),
+            'bbclassextend': ('django.db.models.fields.CharField', [], {'max_length': '255', 'blank': 'True'}),
             'blacklisted': ('django.db.models.fields.CharField', [], {'max_length': '255', 'blank': 'True'}),
             'bugtracker': ('django.db.models.fields.URLField', [], {'max_length': '200', 'blank': 'True'}),
+            'depends': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
             'description': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
             'filename': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
             'filepath': ('django.db.models.fields.CharField', [], {'max_length': '255', 'blank': 'True'}),
@@ -168,8 +209,9 @@ class Migration(SchemaMigration):
             'pn': ('django.db.models.fields.CharField', [], {'max_length': '100', 'blank': 'True'}),
             'provides': ('django.db.models.fields.CharField', [], {'max_length': '2048', 'blank': 'True'}),
             'pv': ('django.db.models.fields.CharField', [], {'max_length': '100', 'blank': 'True'}),
-            'section': ('django.db.models.fields.CharField', [], {'max_length': '100', 'blank': 'True'}),
-            'summary': ('django.db.models.fields.CharField', [], {'max_length': '200', 'blank': 'True'}),
+            'section': ('django.db.models.fields.CharField', [], {'max_length': '255', 'blank': 'True'}),
+            'src_uri': ('django.db.models.fields.CharField', [], {'max_length': '255', 'blank': 'True'}),
+            'summary': ('django.db.models.fields.CharField', [], {'max_length': '255', 'blank': 'True'}),
             'updated': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'blank': 'True'})
         },
         'layerindex.recipechange': {
