@@ -22,7 +22,7 @@ from common import common_setup, update_repo, get_pv_type, load_recipes, \
         get_logger
 common_setup()
 from layerindex import utils, recipeparse
-from layerindex.update import split_recipe_fn
+from layerindex.update_layer import split_recipe_fn
 
 utils.setup_django()
 from django.db import transaction
