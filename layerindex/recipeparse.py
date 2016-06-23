@@ -8,10 +8,11 @@
 import sys
 import os
 import os.path
-import utils
 import tempfile
 import re
 import fnmatch
+
+from layerindex import utils
 
 class RecipeParseError(Exception):
     def __init__(self, msg):

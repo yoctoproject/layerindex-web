@@ -18,8 +18,8 @@ import tempfile
 import shutil
 from distutils.version import LooseVersion
 import itertools
-import utils
-import recipeparse
+from layerindex import utils
+from layerindex import recipeparse
 
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)

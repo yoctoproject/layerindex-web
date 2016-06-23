@@ -15,7 +15,7 @@ import logging
 import subprocess
 import signal
 from distutils.version import LooseVersion
-import utils
+from layerindex import utils
 
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
