@@ -5,13 +5,15 @@
 #
 # Licensed under the MIT license, see COPYING.MIT for details
 
+import logging
+
 def common_setup():
     import sys, os
     sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__), '../../')))
 
 def get_logger(name, settings):
-    import logging
     import os
+    from logging.handlers import RotatingFileHandler
 
     logger = logging.getLogger(name)
     formatter = logging.Formatter("%(asctime)s: %(levelname)s: %(message)s")
@@ -22,8 +24,8 @@ def get_logger(name, settings):
 
     filename = os.path.join(settings.TOOLS_LOG_DIR, name)
     maxBytes = 8388608 # 8MB
-    handler = logging.handlers.RotatingFileHandler(filename,
-                    maxBytes=maxBytes)
+    handler = RotatingFileHandler(filename, maxBytes=maxBytes)
+
     handler.setFormatter(formatter)
     logger.addHandler(handler)
 
