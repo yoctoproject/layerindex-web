@@ -48,7 +48,7 @@ def runcmd(cmd, destdir=None, printerr=True, logger=None):
         raise e
 
     out.seek(0)
-    output = out.read()
+    output = out.read().decode("utf-8")
     #logger.debug("output: %s" % output.rstrip() )
     return output
 

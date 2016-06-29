@@ -122,7 +122,7 @@ if __name__=="__main__":
                 continue
 
             distro_info = search_package_in_distros(pkglst_dir, recipe, recipe_data)
-            for distro, alias in distro_info.iteritems():
+            for distro, alias in distro_info.items():
                 recipedistro = RecipeDistro()
                 recipedistro.recipe = recipe
                 recipedistro.distro = distro
