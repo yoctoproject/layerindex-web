@@ -38,7 +38,7 @@ class Branch(models.Model):
     updates_enabled = models.BooleanField('Enable updates', default=True, help_text='Enable automatically updating layer metadata for this branch via the update script')
     update_environment = models.ForeignKey(PythonEnvironment, blank=True, null=True, on_delete=models.SET_NULL)
 
-    updated = models.DateTimeField(auto_now=True)
+    updated = models.DateTimeField(auto_now=True, blank=True, null=True)
 
     class Meta:
         verbose_name_plural = "Branches"
