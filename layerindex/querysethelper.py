@@ -1,4 +1,5 @@
 import operator
+import functools
 from django.db.models import Q
 
 def _verify_parameters(g, mandatory_parameters):
@@ -28,9 +29,9 @@ DESCENDING = "-"
 
 def __get_q_for_val(name, value):
     if "OR" in value:
-        return reduce(operator.or_, map(lambda x: __get_q_for_val(name, x), [ x for x in value.split("OR") ]))
+        return functools.reduce(operator.or_, map(lambda x: __get_q_for_val(name, x), [ x for x in value.split("OR") ]))
     if "AND" in value:
-        return reduce(operator.and_, map(lambda x: __get_q_for_val(name, x), [ x for x in value.split("AND") ]))
+        return functools.reduce(operator.and_, map(lambda x: __get_q_for_val(name, x), [ x for x in value.split("AND") ]))
     if value.startswith("NOT"):
         kwargs = { name : value.strip("NOT") }
         return ~Q(**kwargs)
@@ -45,7 +46,7 @@ def _get_filtering_query(filter_string):
     values = search_terms[1].split(VALUE_SEPARATOR)
 
     querydict = dict(zip(keys, values))
-    return reduce(operator.and_, map(lambda x: __get_q_for_val(x, querydict[x]), [k for k in querydict]))
+    return functools.reduce(operator.and_, map(lambda x: __get_q_for_val(x, querydict[x]), [k for k in querydict]))
 
 # we check that the input comes in a valid form that we can recognize
 def _validate_input(input, model):
@@ -68,7 +69,7 @@ def _validate_input(input, model):
         # Check we are looking for a valid field
         valid_fields = model._meta.get_all_field_names()
         for field in input_list[0].split(VALUE_SEPARATOR):
-            if not reduce(lambda x, y: x or y, map(lambda x: field.startswith(x), [ x for x in valid_fields ])):
+            if not functools.reduce(lambda x, y: x or y, map(lambda x: field.startswith(x), [ x for x in valid_fields ])):
                 return None, (field, [ x for x in valid_fields ])
 
     return input, invalid
@@ -81,8 +82,8 @@ def _get_search_results(search_term, queryset, model):
         q_map = map(lambda x: Q(**{x+'__icontains': st}),
                 model.search_allowed_fields)
 
-        search_objects.append(reduce(operator.or_, q_map))
-    search_object = reduce(operator.and_, search_objects)
+        search_objects.append(functools.reduce(operator.or_, q_map))
+    search_object = functools.reduce(operator.and_, search_objects)
     queryset = queryset.filter(search_object)
 
     return queryset
