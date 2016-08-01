@@ -150,7 +150,6 @@ INSTALLED_APPS = (
     'reversion',
     'reversion_compare',
     'captcha',
-    'south',
     'rest_framework',
     'corsheaders',
     'django_nvd3'
