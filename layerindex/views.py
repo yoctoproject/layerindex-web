@@ -237,8 +237,11 @@ def bulk_change_patch_view(request, pk):
     except Exception as e:
         output = getattr(e, 'output', None)
         if output:
+            output = output.decode('utf-8', errors="ignore")
             if 'timeout' in output:
                 return HttpResponse('Failed to generate patches: timed out waiting for lock. Please try again shortly.', content_type='text/plain')
+            else:
+                return HttpResponse('Failed to generate patches: %s' % output, content_type='text/plain')
         return HttpResponse('Failed to generate patches: %s' % e, content_type='text/plain')
     # FIXME better error handling
 
