@@ -4,6 +4,7 @@
 #
 # Licensed under the MIT license, see COPYING.MIT for details
 
+from collections import OrderedDict
 from layerindex.models import LayerItem, LayerBranch, LayerMaintainer, LayerNote, RecipeChangeset, RecipeChange, ClassicRecipe
 from django import forms
 from django.core.validators import URLValidator, RegexValidator, EmailValidator
@@ -66,10 +67,14 @@ class EditLayerForm(forms.ModelForm):
             if user.is_authenticated():
                 del self.fields['captcha']
         # Ensure repo subdir appears after repo URL
-        field_order = self.fields.keyOrder
+        field_order = list(self.fields.keys())
         field_order.pop(field_order.index('vcs_subdir'))
         name_pos = field_order.index('vcs_url') + 1
         field_order.insert(name_pos, 'vcs_subdir')
+        new_fields = OrderedDict()
+        for field in field_order:
+            new_fields[field] = self.fields[field]
+        self.fields = new_fields
         self.fields['vcs_subdir'].initial = layerbranch.vcs_subdir
         self.was_saved = False
 

@@ -12,19 +12,19 @@ Setup
 In order to make use of this application you will need:
 
 * Python 3.4+
-* Django 1.6.x - tested with 1.6.10; newer versions may work, but
-  the application has not been tested with 1.7 or newer.
+* Django 1.8.x - tested with 1.8.13; newer versions may work, but
+  the application has not been tested with 1.9 or newer.
 * For production usage, a web server set up to host Django applications
   (not needed for local-only testing)
 * A database supported by Django (SQLite, MySQL, etc.). Django takes
   care of creating the database itself, you just need to ensure that the
   database server (if not using SQLite) is configured and running.
 * The following third-party Django modules (tested versions listed):
-  * django-registration (1.0)
-  * django-reversion (1.8.7)
-  * django-reversion-compare (0.4.0)
+  * django-registration (2.1)
+  * django-reversion (1.9.3)
+  * django-reversion-compare (0.5.6)
   * django-simple-captcha (0.4.6)
-  * django-nvd3 (0.9.7)
+  * django-nvd3 (0.14.2)
   * djangorestframework (3.2.5)
   * django-cors-headers (1.1.0)
 * On the machine that will run the backend update script (which does not

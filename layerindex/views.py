@@ -121,7 +121,7 @@ def edit_layer_view(request, template_name, branch='master', slug=None):
         form = EditLayerForm(request.user, layerbranch, request.POST, instance=layeritem)
         maintainerformset = LayerMaintainerFormSet(request.POST, instance=layerbranch)
         if form.is_valid() and maintainerformset.is_valid():
-            with transaction.commit_on_success():
+            with transaction.atomic():
                 reset_last_rev = False
                 form.save()
                 layerbranch.layer = layeritem

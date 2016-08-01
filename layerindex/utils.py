@@ -53,10 +53,12 @@ def runcmd(cmd, destdir=None, printerr=True, logger=None):
     return output
 
 def setup_django():
+    import django
     # Get access to our Django model
     newpath = os.path.abspath(os.path.dirname(__file__) + '/..')
     sys.path.append(newpath)
     os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
+    django.setup()
 
 def logger_create(name):
     logger = logging.getLogger(name)
