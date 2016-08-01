@@ -47,15 +47,15 @@ Setup instructions:
 2. Run the following commands within the layerindex-web directory to
    initialise the database:
 
-   python manage.py syncdb
-   python manage.py migrate
+   python3 manage.py syncdb
+   python3 manage.py migrate
 
    You should answer "yes" when asked to create an admin account.
 
 3. You can test the web application locally by setting DEBUG = True in
    settings.py and running the following:
 
-   python manage.py runserver
+   python3 manage.py runserver
 
    Then visit http://127.0.0.1:8000/layerindex/ with your browser. As
    with all Django applications there is an admin interface available
