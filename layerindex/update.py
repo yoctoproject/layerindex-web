@@ -181,7 +181,7 @@ def main():
                 if branchobj.update_environment:
                     cmdprefix = branchobj.update_environment.get_command()
                 else:
-                    cmdprefix = 'python'
+                    cmdprefix = 'python3'
                 cmd = '%s update_layer.py -l %s -b %s' % (cmdprefix, layer.name, branch)
                 if options.reload:
                     cmd += ' --reload'
