@@ -1,8 +1,8 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Import a layer into the database
 #
-# Copyright (C) 2013 Intel Corporation
+# Copyright (C) 2016 Intel Corporation
 # Author: Paul Eggleton <paul.eggleton@linux.intel.com>
 #
 # Licensed under the MIT license, see COPYING.MIT for details
@@ -19,6 +19,9 @@ import glob
 import utils
 import logging
 import subprocess
+
+class DryRunRollbackException(Exception):
+    pass
 
 logger = utils.logger_create('LayerIndexImport')
 
@@ -138,12 +141,12 @@ def maintainers_extract(maintfn):
 
 
 def get_github_layerinfo(layer_url, username = None, password = None):
-    import httplib
+    import http.client
     import json
     from layerindex.models import LayerMaintainer
 
     def github_api_call(path):
-        conn = httplib.HTTPSConnection('api.github.com')
+        conn = http.client.HTTPSConnection('api.github.com')
         headers = {"User-Agent": "test_github.py"}
         if username:
             import base64
@@ -161,18 +164,18 @@ def get_github_layerinfo(layer_url, username = None, password = None):
         layer_url = layer_url[:-4]
     resp = github_api_call('/repos/%s' % layer_url.split('github.com/')[-1].rstrip('/'))
     if resp.status in [200, 302]:
-        data = resp.read()
+        data = resp.read().decode('utf-8')
         json_data = json.loads(data)
         #headers = dict((key, value) for key, value in resp.getheaders())
         #print(headers)
         owner_resp = github_api_call(json_data['owner']['url'].split('api.github.com')[-1])
         if resp.status in [200, 302]:
-            owner_data = owner_resp.read()
+            owner_data = owner_resp.read().decode('utf-8')
             owner_json_data = json.loads(owner_data)
         else:
-            logger.error('HTTP status %s reading owner info from github API: %s' % (resp.status, resp.read()))
+            logger.error('HTTP status %s reading owner info from github API: %s' % (resp.status, resp.read().decode('utf-8')))
     else:
-        logger.error('HTTP status %s reading repo info from github API: %s' % (resp.status, resp.read()))
+        logger.error('HTTP status %s reading repo info from github API: %s' % (resp.status, resp.read().decode('utf-8')))
 
     return (json_data, owner_json_data)
 
@@ -212,7 +215,7 @@ def main():
         if options.subdir:
             layer_name = options.subdir
         else:
-            layer_name = filter(None, layer_url.split('/'))[-1]
+            layer_name = [x for x in layer_url.split('/') if x][-1]
             if layer_name.endswith('.git'):
                 layer_name = layer_name[:-4]
 
@@ -244,168 +247,162 @@ def main():
 
     master_branch = utils.get_branch('master')
     core_layer = None
-    transaction.enter_transaction_management()
-    transaction.managed(True)
     try:
-        # Fetch layer
-        logger.info('Fetching repository %s' % layer_url)
+        with transaction.atomic():
+            # Fetch layer
+            logger.info('Fetching repository %s' % layer_url)
 
-        layer = LayerItem()
-        layer.name = layer_name
-        layer.status = 'P'
-        layer.layer_type = 'M'
-        layer.summary = 'tempvalue'
-        layer.description = layer.summary
+            layer = LayerItem()
+            layer.name = layer_name
+            layer.status = 'P'
+            layer.layer_type = 'M'
+            layer.summary = 'tempvalue'
+            layer.description = layer.summary
 
-        set_vcs_fields(layer, layer_url)
+            set_vcs_fields(layer, layer_url)
 
-        urldir = layer.get_fetch_dir()
-        repodir = os.path.join(fetchdir, urldir)
-        out = None
-        try:
-            if not os.path.exists(repodir):
-                out = utils.runcmd("git clone %s %s" % (layer.vcs_url, urldir), fetchdir, logger=logger)
+            urldir = layer.get_fetch_dir()
+            repodir = os.path.join(fetchdir, urldir)
+            out = None
+            try:
+                if not os.path.exists(repodir):
+                    out = utils.runcmd("git clone %s %s" % (layer.vcs_url, urldir), fetchdir, logger=logger)
+                else:
+                    out = utils.runcmd("git fetch", repodir, logger=logger)
+            except Exception as e:
+                logger.error("Fetch failed: %s" % str(e))
+                sys.exit(1)
+
+            actual_branch = ''
+            try:
+                out = utils.runcmd("git checkout origin/master", repodir, logger=logger)
+            except subprocess.CalledProcessError:
+                branches = utils.runcmd("git branch -r", repodir, logger=logger)
+                for line in branches.splitlines():
+                    if 'origin/HEAD ->' in line:
+                        actual_branch = line.split('-> origin/')[-1]
+                        break
+                if not actual_branch:
+                    logger.error("Repository has no master branch nor origin/HEAD")
+                    sys.exit(1)
+                out = utils.runcmd("git checkout origin/%s" % actual_branch, repodir, logger=logger)
+
+            layer_paths = []
+            if options.subdir:
+                layerdir = os.path.join(repodir, options.subdir)
+                if not os.path.exists(layerdir):
+                    logger.error("Subdirectory %s does not exist in repository for master branch" % options.subdir)
+                    sys.exit(1)
+                if not os.path.exists(os.path.join(layerdir, 'conf/layer.conf')):
+                    logger.error("conf/layer.conf not found in subdirectory %s" % options.subdir)
+                    sys.exit(1)
+                layer_paths.append(layerdir)
             else:
-                out = utils.runcmd("git fetch", repodir, logger=logger)
-        except Exception as e:
-            logger.error("Fetch failed: %s" % str(e))
-            sys.exit(1)
+                if os.path.exists(os.path.join(repodir, 'conf/layer.conf')):
+                    layer_paths.append(repodir)
+                # Find subdirs with a conf/layer.conf
+                for subdir in os.listdir(repodir):
+                    subdir_path = os.path.join(repodir, subdir)
+                    if os.path.isdir(subdir_path):
+                        if os.path.exists(os.path.join(subdir_path, 'conf/layer.conf')):
+                            layer_paths.append(subdir_path)
+                if not layer_paths:
+                    logger.error("conf/layer.conf not found in repository or first level subdirectories - is subdirectory set correctly?")
+                    sys.exit(1)
 
-        actual_branch = ''
-        try:
-            out = utils.runcmd("git checkout origin/master", repodir, logger=logger)
-        except subprocess.CalledProcessError:
-            branches = utils.runcmd("git branch -r", repodir, logger=logger)
-            for line in branches.splitlines():
-                if 'origin/HEAD ->' in line:
-                    actual_branch = line.split('-> origin/')[-1]
-                    break
-            if not actual_branch:
-                logger.error("Repository has no master branch nor origin/HEAD")
-                sys.exit(1)
-            out = utils.runcmd("git checkout origin/%s" % actual_branch, repodir, logger=logger)
+            if 'github.com' in layer.vcs_url:
+                json_data, owner_json_data = get_github_layerinfo(layer.vcs_url, github_login, github_password)
 
-        layer_paths = []
-        if options.subdir:
-            layerdir = os.path.join(repodir, options.subdir)
-            if not os.path.exists(layerdir):
-                logger.error("Subdirectory %s does not exist in repository for master branch" % options.subdir)
-                sys.exit(1)
-            if not os.path.exists(os.path.join(layerdir, 'conf/layer.conf')):
-                logger.error("conf/layer.conf not found in subdirectory %s" % options.subdir)
-                sys.exit(1)
-            layer_paths.append(layerdir)
-        else:
-            if os.path.exists(os.path.join(repodir, 'conf/layer.conf')):
-                layer_paths.append(repodir)
-            # Find subdirs with a conf/layer.conf
-            for subdir in os.listdir(repodir):
-                subdir_path = os.path.join(repodir, subdir)
-                if os.path.isdir(subdir_path):
-                    if os.path.exists(os.path.join(subdir_path, 'conf/layer.conf')):
-                        layer_paths.append(subdir_path)
-            if not layer_paths:
-                logger.error("conf/layer.conf not found in repository or first level subdirectories - is subdirectory set correctly?")
-                sys.exit(1)
+            for layerdir in layer_paths:
+                layer.pk = None
+                if layerdir != repodir:
+                    subdir = os.path.relpath(layerdir, repodir)
+                    if len(layer_paths) > 1:
+                        layer.name = subdir
+                else:
+                    subdir = ''
+                if LayerItem.objects.filter(name=layer.name).exists():
+                    logger.error('A layer named "%s" already exists in the database' % layer_name)
+                    sys.exit(1)
 
-        if 'github.com' in layer.vcs_url:
-            json_data, owner_json_data = get_github_layerinfo(layer.vcs_url, github_login, github_password)
+                logger.info('Creating layer %s' % layer.name)
+                # Guess layer type
+                if glob.glob(os.path.join(layerdir, 'conf/distro/*.conf')):
+                    layer.layer_type = 'D'
+                elif glob.glob(os.path.join(layerdir, 'conf/machine/*.conf')):
+                    layer.layer_type = 'B'
+                layer.save()
+                layerbranch = LayerBranch()
+                layerbranch.layer = layer
+                layerbranch.branch = master_branch
+                if layerdir != repodir:
+                    layerbranch.vcs_subdir = subdir
+                if actual_branch:
+                    layerbranch.actual_branch = actual_branch
+                layerbranch.save()
+                if layer.name != settings.CORE_LAYER_NAME:
+                    if not core_layer:
+                        core_layer = utils.get_layer(settings.CORE_LAYER_NAME)
+                    if core_layer:
+                        layerdep = LayerDependency()
+                        layerdep.layerbranch = layerbranch
+                        layerdep.dependency = core_layer
+                        layerdep.save()
 
-        for layerdir in layer_paths:
-            layer.pk = None
-            if layerdir != repodir:
-                subdir = os.path.relpath(layerdir, repodir)
-                if len(layer_paths) > 1:
-                    layer.name = subdir
-            else:
-                subdir = ''
-            if LayerItem.objects.filter(name=layer.name).exists():
-                logger.error('A layer named "%s" already exists in the database' % layer_name)
-                sys.exit(1)
+                # Get some extra meta-information
+                readme_files = glob.glob(os.path.join(layerdir, 'README*'))
+                if (not readme_files) and subdir:
+                    readme_files = glob.glob(os.path.join(repodir, 'README*'))
+                maintainer_files = glob.glob(os.path.join(layerdir, 'MAINTAINERS'))
+                if (not maintainer_files) and subdir:
+                    maintainer_files = glob.glob(os.path.join(repodir, 'MAINTAINERS'))
 
-            logger.info('Creating layer %s' % layer.name)
-            # Guess layer type
-            if glob.glob(os.path.join(layerdir, 'conf/distro/*.conf')):
-                layer.layer_type = 'D'
-            elif glob.glob(os.path.join(layerdir, 'conf/machine/*.conf')):
-                layer.layer_type = 'B'
-            layer.save()
-            layerbranch = LayerBranch()
-            layerbranch.layer = layer
-            layerbranch.branch = master_branch
-            if layerdir != repodir:
-                layerbranch.vcs_subdir = subdir
-            if actual_branch:
-                layerbranch.actual_branch = actual_branch
-            layerbranch.save()
-            if layer.name != settings.CORE_LAYER_NAME:
-                if not core_layer:
-                    core_layer = utils.get_layer(settings.CORE_LAYER_NAME)
-                if core_layer:
-                    layerdep = LayerDependency()
-                    layerdep.layerbranch = layerbranch
-                    layerdep.dependency = core_layer
-                    layerdep.save()
+                maintainers = []
+                if readme_files:
+                    (desc, maintainers, deps) = readme_extract(readme_files[0])
+                    if desc:
+                        layer.summary = layer.name
+                        layer.description = desc
+                if maintainer_files:
+                    maintainers.extend(maintainers_extract(readme_files[0]))
 
-            # Get some extra meta-information
-            readme_files = glob.glob(os.path.join(layerdir, 'README*'))
-            if (not readme_files) and subdir:
-                readme_files = glob.glob(os.path.join(repodir, 'README*'))
-            maintainer_files = glob.glob(os.path.join(layerdir, 'MAINTAINERS'))
-            if (not maintainer_files) and subdir:
-                maintainer_files = glob.glob(os.path.join(repodir, 'MAINTAINERS'))
+                if (not maintainers) and 'github.com' in layer.vcs_url:
+                    if json_data:
+                        layer.summary = json_data['description']
+                        layer.description = layer.summary
+                    if owner_json_data:
+                        owner_name = owner_json_data.get('name', None)
+                        owner_email = owner_json_data.get('email', None)
+                        if owner_name and owner_email:
+                            maintainers.append('%s <%s>' % (owner_name, owner_email))
 
-            maintainers = []
-            if readme_files:
-                (desc, maintainers, deps) = readme_extract(readme_files[0])
-                if desc:
-                    layer.summary = layer.name
-                    layer.description = desc
-            if maintainer_files:
-                maintainers.extend(maintainers_extract(readme_files[0]))
-
-            if (not maintainers) and 'github.com' in layer.vcs_url:
-                if json_data:
-                    layer.summary = json_data['description']
+                if layer.name == 'openembedded-core':
+                    layer.summary = 'Core metadata'
+                    layer.layer_type = 'A'
+                elif layer.name == 'meta-oe':
+                    layer.summary = 'Additional shared OE metadata'
                     layer.description = layer.summary
-                if owner_json_data:
-                    owner_name = owner_json_data.get('name', None)
-                    owner_email = owner_json_data.get('email', None)
-                    if owner_name and owner_email:
-                        maintainers.append('%s <%s>' % (owner_name, owner_email))
+                    layer.layer_type = 'A'
 
-            if layer.name == 'openembedded-core':
-                layer.summary = 'Core metadata'
-                layer.layer_type = 'A'
-            elif layer.name == 'meta-oe':
-                layer.summary = 'Additional shared OE metadata'
-                layer.description = layer.summary
-                layer.layer_type = 'A'
+                if maintainers:
+                    maint_re = re.compile(r'^"?([^"@$<>]+)"? *<([^<> ]+)>[ -]*(.+)?$')
+                    for maintentry in maintainers:
+                        res = maint_re.match(maintentry)
+                        if res:
+                            maintainer = LayerMaintainer()
+                            maintainer.layerbranch = layerbranch
+                            maintainer.name = res.group(1).strip()
+                            maintainer.email = res.group(2)
+                            if res.group(3):
+                                maintainer.responsibility = res.group(3).strip()
+                            maintainer.save()
 
-            if maintainers:
-                maint_re = re.compile(r'^"?([^"@$<>]+)"? *<([^<> ]+)>[ -]*(.+)?$')
-                for maintentry in maintainers:
-                    res = maint_re.match(maintentry)
-                    if res:
-                        maintainer = LayerMaintainer()
-                        maintainer.layerbranch = layerbranch
-                        maintainer.name = res.group(1).strip()
-                        maintainer.email = res.group(2)
-                        if res.group(3):
-                            maintainer.responsibility = res.group(3).strip()
-                        maintainer.save()
+                layer.save()
 
-            layer.save()
-
-        if options.dryrun:
-            transaction.rollback()
-        else:
-            transaction.commit()
-    except:
-        transaction.rollback()
-        raise
-    finally:
-        transaction.leave_transaction_management()
+            if options.dryrun:
+                raise DryRunRollbackException()
+    except DryRunRollbackException:
+        pass
 
     sys.exit(0)
 
