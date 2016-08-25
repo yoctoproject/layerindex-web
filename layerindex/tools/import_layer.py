@@ -200,6 +200,9 @@ def main():
     parser.add_option("-q", "--quiet",
             help = "Hide all output except error messages",
             action="store_const", const=logging.ERROR, dest="loglevel")
+    parser.add_option("-a", "--actual-branch",
+            help = "Set actual branch",
+            action="store", dest="actual_branch")
 
     options, args = parser.parse_args(sys.argv)
 
@@ -273,10 +276,13 @@ def main():
                 logger.error("Fetch failed: %s" % str(e))
                 sys.exit(1)
 
-            actual_branch = ''
+            actual_branch = 'master'
+            if (options.actual_branch):
+                actual_branch = options.actual_branch
             try:
-                out = utils.runcmd("git checkout origin/master", repodir, logger=logger)
+                out = utils.runcmd("git checkout origin/%s" % actual_branch, repodir, logger=logger)
             except subprocess.CalledProcessError:
+                actual_branch = None
                 branches = utils.runcmd("git branch -r", repodir, logger=logger)
                 for line in branches.splitlines():
                     if 'origin/HEAD ->' in line:
