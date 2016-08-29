@@ -34,6 +34,12 @@ def _setup_tinfoil(bitbakepath, enable_tracking):
             tinfoil.cooker.enableDataTracking()
     tinfoil.prepare(config_only = True)
 
+    # XXX: Setup databuilder
+    tinfoil.databuilder = bb.cookerdata.CookerDataBuilder(tinfoil.config)
+    tinfoil.databuilder.parseBaseConfiguration()
+
+    tinfoil.cache = bb.cache.NoCache(tinfoil.databuilder)
+
     return tinfoil
 
 def _parse_layer_conf(layerdir, data):
@@ -135,6 +141,7 @@ def setup_layer(config_data, fetchdir, layerdir, layer, layerbranch):
         deplayerdir = os.path.join(deprepodir, deplayerbranch.vcs_subdir)
         _parse_layer_conf(deplayerdir, config_data_copy)
     config_data_copy.delVar('LAYERDIR')
+
     return config_data_copy
 
 def get_var_files(fn, varlist, d):

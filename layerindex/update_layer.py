@@ -54,11 +54,11 @@ def split_recipe_fn(path):
         pv = "1.0"
     return (pn, pv)
 
-def update_recipe_file(data, path, recipe, layerdir_start, repodir):
+def update_recipe_file(tinfoil, data, path, recipe, layerdir_start, repodir):
     fn = str(os.path.join(path, recipe.filename))
     try:
         logger.debug('Updating recipe %s' % fn)
-        envdata = bb.cache.Cache.loadDataFull(fn, [], data)
+        envdata = tinfoil.cache.loadDataFull(fn, [])
         envdata.setVar('SRCPV', 'X')
         recipe.pn = envdata.getVar("PN", True)
         recipe.pv = envdata.getVar("PV", True)
@@ -356,7 +356,7 @@ def main():
                                     recipe.filepath = newfilepath
                                     recipe.filename = newfilename
                                     recipe.save()
-                                    update_recipe_file(config_data_copy, os.path.join(layerdir, newfilepath), recipe, layerdir_start, repodir)
+                                    update_recipe_file(tinfoil, config_data_copy, os.path.join(layerdir, newfilepath), recipe, layerdir_start, repodir)
                                     updatedrecipes.add(os.path.join(oldfilepath, oldfilename))
                                     updatedrecipes.add(os.path.join(newfilepath, newfilename))
                                 else:
@@ -471,7 +471,7 @@ def main():
                                 results = layerrecipes.filter(filepath=filepath).filter(filename=filename)[:1]
                                 if results:
                                     recipe = results[0]
-                                    update_recipe_file(config_data_copy, os.path.join(layerdir, filepath), recipe, layerdir_start, repodir)
+                                    update_recipe_file(tinfoil, config_data_copy, os.path.join(layerdir, filepath), recipe, layerdir_start, repodir)
                                     recipe.save()
                                     updatedrecipes.add(recipe.full_path())
                             elif typename == 'machine':
@@ -487,7 +487,7 @@ def main():
 
                     for recipe in dirtyrecipes:
                         if not recipe.full_path() in updatedrecipes:
-                            update_recipe_file(config_data_copy, os.path.join(layerdir, recipe.filepath), recipe, layerdir_start, repodir)
+                            update_recipe_file(tinfoil, config_data_copy, os.path.join(layerdir, recipe.filepath), recipe, layerdir_start, repodir)
                 else:
                     # Collect recipe data from scratch
 
@@ -513,7 +513,7 @@ def main():
                                 # Recipe still exists, update it
                                 results = layerrecipes.filter(id=v['id'])[:1]
                                 recipe = results[0]
-                                update_recipe_file(config_data_copy, root, recipe, layerdir_start, repodir)
+                                update_recipe_file(tinfoil, config_data_copy, root, recipe, layerdir_start, repodir)
                             else:
                                 # Recipe no longer exists, mark it for later on
                                 layerrecipes_delete.append(v)
@@ -575,7 +575,7 @@ def main():
                     recipe.filename = os.path.basename(added)
                     root = os.path.dirname(added)
                     recipe.filepath = os.path.relpath(root, layerdir)
-                    update_recipe_file(config_data_copy, root, recipe, layerdir_start, repodir)
+                    update_recipe_file(tinfoil, config_data_copy, root, recipe, layerdir_start, repodir)
                     recipe.save()
 
                 for deleted in layerrecipes_delete:
