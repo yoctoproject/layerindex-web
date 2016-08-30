@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Import OE-Classic recipe data into the layer index database
 #
@@ -27,11 +27,14 @@ import recipeparse
 logger = utils.logger_create('LayerIndexUpdate')
 
 
-def update_recipe_file(data, path, recipe, layerdir_start, repodir):
+def update_recipe_file(tinfoil, data, path, recipe, layerdir_start, repodir):
     fn = str(os.path.join(path, recipe.filename))
     try:
         logger.debug('Updating recipe %s' % fn)
-        envdata = bb.cache.Cache.loadDataFull(fn, [], data)
+        if hasattr(tinfoil, 'parse_recipe_file'):
+            envdata = tinfoil.parse_recipe_file(fn, appends=False, config_data=data)
+        else:
+            envdata = bb.cache.Cache.loadDataFull(fn, [], data)
         envdata.setVar('SRCPV', 'X')
         envdata.setVar('SRCDATE', 'X')
         envdata.setVar('SRCREV', 'X')
@@ -182,7 +185,7 @@ def main():
                     recipe.layerbranch = layerbranch
                     recipe.filename = filename
                     recipe.filepath = filepath
-                    update_recipe_file(config_data_copy, root, recipe, layerdir_start, oeclassicpath)
+                    update_recipe_file(tinfoil, config_data_copy, root, recipe, layerdir_start, oeclassicpath)
                     recipe.save()
 
         layerbranch.vcs_last_fetch = datetime.now()
