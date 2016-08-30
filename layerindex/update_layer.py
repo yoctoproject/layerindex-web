@@ -58,7 +58,10 @@ def update_recipe_file(tinfoil, data, path, recipe, layerdir_start, repodir):
     fn = str(os.path.join(path, recipe.filename))
     try:
         logger.debug('Updating recipe %s' % fn)
-        envdata = tinfoil.cache.loadDataFull(fn, [])
+        if hasattr(tinfoil, 'parse_recipe_file'):
+            envdata = tinfoil.parse_recipe_file(fn, appends=False, config_data=data)
+        else:
+            envdata = bb.cache.Cache.loadDataFull(fn, [], data)
         envdata.setVar('SRCPV', 'X')
         recipe.pn = envdata.getVar("PN", True)
         recipe.pv = envdata.getVar("PV", True)
