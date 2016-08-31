@@ -334,8 +334,20 @@ def main():
                 else:
                     subdir = ''
                 if LayerItem.objects.filter(name=layer.name).exists():
-                    logger.error('A layer named "%s" already exists in the database' % layer_name)
-                    sys.exit(1)
+                    if LayerItem.objects.filter(name=layer.name).exclude(vcs_url=layer.vcs_url).exists():
+                        conflict_list = LayerItem.objects.filter(name=layer.name).exclude(vcs_url=layer.vcs_url)
+                        conflict_list_urls = []
+                        for conflict in conflict_list:
+                            conflict_list_urls.append(conflict.vcs_url)
+                        cln = ', '.join(conflict_list_urls)
+                        logger.error('A layer named "%s" already exists in the database.  Possible name collision with %s.vcs_url = %s' % (layer.name, layer.name, cln))
+                        sys.exit(1)
+                    else:
+                        logger.info('The layer named "%s" already exists in the database. Skipping this layer with same vcs_url' % layer.name)
+                        layer_paths = [x for x in layer_paths if x != layerdir]
+                        continue
+
+
 
                 logger.info('Creating layer %s' % layer.name)
                 # Guess layer type
@@ -410,6 +422,10 @@ def main():
                             maintainer.save()
 
                 layer.save()
+
+            if not layer_paths:
+                logger.error('No layers added.')
+                sys.exit(1);
 
             if options.dryrun:
                 raise DryRunRollbackException()
