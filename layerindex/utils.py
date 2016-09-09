@@ -32,7 +32,8 @@ def runcmd(cmd, destdir=None, printerr=True, logger=None):
         execute command, raise CalledProcessError if fail
         return output if succeed
     """
-    #logger.debug("run cmd '%s' in %s" % (cmd, os.getcwd() if destdir is None else destdir))
+    if logger:
+        logger.debug("run cmd '%s' in %s" % (cmd, os.getcwd() if destdir is None else destdir))
     out = tempfile.TemporaryFile()
     try:
         subprocess.check_call(cmd, stdout=out, stderr=out, cwd=destdir, shell=True)
@@ -40,6 +41,7 @@ def runcmd(cmd, destdir=None, printerr=True, logger=None):
         out.seek(0)
         if printerr:
             output = out.read()
+            output = output.decode('ascii').strip()
             if logger:
                 logger.error("%s" % output)
             else:
@@ -49,7 +51,9 @@ def runcmd(cmd, destdir=None, printerr=True, logger=None):
 
     out.seek(0)
     output = out.read()
-    #logger.debug("output: %s" % output.rstrip() )
+    output = output.decode('ascii').strip()
+    if logger:
+        logger.debug("output: %s" % output.rstrip() )
     return output
 
 def setup_django():
