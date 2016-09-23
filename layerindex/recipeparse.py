@@ -134,15 +134,14 @@ def detect_file_type(path, subdir_start):
         if res:
             typename = 'machine'
             return (typename, None, res.group(1))
-        else:
-            res = bbclass_re.match(subpath)
-            if res:
-                typename = 'bbclass'
-                return (typename, None, res.group(1))
-            res = distro_conf_re.match(subpath)
-            if res:
-                typename = 'distro'
-                return (typename, None, res.group(1))
+        res = bbclass_re.match(subpath)
+        if res:
+            typename = 'bbclass'
+            return (typename, None, res.group(1))
+        res = distro_conf_re.match(subpath)
+        if res:
+            typename = 'distro'
+            return (typename, None, res.group(1))
 
     if typename == 'recipe' or typename == 'bbappend':
         if subdir_start:
