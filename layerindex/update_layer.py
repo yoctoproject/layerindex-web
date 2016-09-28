@@ -88,13 +88,30 @@ def update_recipe_file(tinfoil, data, path, recipe, layerdir_start, repodir):
             if depstr.startswith(layerdir_start) and not depstr.endswith('/conf/layer.conf'):
                 filedeps.append(os.path.relpath(depstr, repodir))
         from layerindex.models import RecipeFileDependency
-        RecipeFileDependency.objects.filter(recipe=recipe).delete()
+
+        recipedeps_delete = []
+
+        recipedeps = RecipeFileDependency.objects.filter(recipe=recipe)
+
+        for values in recipedeps.values('path'):
+            if 'path' in values:
+                recipedeps_delete.append(values['path'])
+
         for filedep in filedeps:
+            if filedep in recipedeps_delete:
+                recipedeps_delete.remove(filedep)
+                continue
+            # New item, add it...
             recipedep = RecipeFileDependency()
             recipedep.layerbranch = recipe.layerbranch
             recipedep.recipe = recipe
             recipedep.path = filedep
             recipedep.save()
+
+        for filedep in recipedeps_delete:
+            logger.debug('%s: removing %s' % (recipe.layerbranch, filedep))
+            recipedeps.filter(path=filedep).delete()
+
     except KeyboardInterrupt:
         raise
     except BaseException as e:
