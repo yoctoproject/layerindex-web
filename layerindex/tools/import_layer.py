@@ -181,6 +181,8 @@ def get_github_layerinfo(layer_url, username = None, password = None):
 
 
 def main():
+    valid_layer_name = re.compile('[-\w]+$')
+
     parser = optparse.OptionParser(
         usage = """
     %prog [options] <url> [name]""")
@@ -221,6 +223,10 @@ def main():
             layer_name = [x for x in layer_url.split('/') if x][-1]
             if layer_name.endswith('.git'):
                 layer_name = layer_name[:-4]
+
+    if not valid_layer_name.match(layer_name):
+        logger.error('Invalid layer name "%s" -  Layer name can only include letters, numbers and dashes.', layer_name)
+        sys.exit(1)
 
     if options.github_auth:
         if not ':' in options.github_auth:
