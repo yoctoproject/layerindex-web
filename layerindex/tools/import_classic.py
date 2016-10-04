@@ -160,6 +160,7 @@ def main():
         layerdir_start = os.path.normpath(oeclassicpath) + os.sep
         layerrecipes = Recipe.objects.filter(layerbranch=layerbranch)
         layermachines = Machine.objects.filter(layerbranch=layerbranch)
+        layerdistros = Distro.objects.filter(layerbranch=layerbranch)
         layerappends = BBAppend.objects.filter(layerbranch=layerbranch)
         layerclasses = BBClass.objects.filter(layerbranch=layerbranch)
 
@@ -172,6 +173,7 @@ def main():
 
         layerrecipes.delete()
         layermachines.delete()
+        layerdistros.delete()
         layerappends.delete()
         layerclasses.delete()
         for root, dirs, files in os.walk(oeclassicpath):

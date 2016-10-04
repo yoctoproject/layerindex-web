@@ -10,7 +10,7 @@ from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidde
 from django.core.urlresolvers import reverse, reverse_lazy, resolve
 from django.core.exceptions import PermissionDenied
 from django.template import RequestContext
-from layerindex.models import Branch, LayerItem, LayerMaintainer, LayerBranch, LayerDependency, LayerNote, Recipe, Machine, BBClass, BBAppend, RecipeChange, RecipeChangeset, ClassicRecipe
+from layerindex.models import Branch, LayerItem, LayerMaintainer, LayerBranch, LayerDependency, LayerNote, Recipe, Machine, Distro, BBClass, BBAppend, RecipeChange, RecipeChangeset, ClassicRecipe
 from datetime import datetime
 from itertools import chain
 from django.views.generic import TemplateView, DetailView, ListView
@@ -326,6 +326,7 @@ class LayerDetailView(DetailView):
         if layerbranch:
             context['layerbranch'] = layerbranch
             context['machines'] = layerbranch.machine_set.order_by('name')
+            context['distros'] = layerbranch.distro_set.order_by('name')
             context['appends'] = layerbranch.bbappend_set.order_by('filename')
             context['classes'] = layerbranch.bbclass_set.order_by('name')
         context['url_branch'] = self.kwargs['branch']
@@ -590,6 +591,32 @@ class MachineSearchView(ListView):
 
     def get_context_data(self, **kwargs):
         context = super(MachineSearchView, self).get_context_data(**kwargs)
+        context['search_keyword'] = self.request.GET.get('q', '')
+        context['url_branch'] = self.kwargs['branch']
+        context['this_url_name'] = resolve(self.request.path_info).url_name
+        return context
+
+
+class DistroSearchView(ListView):
+    context_object_name = 'distro_list'
+    paginate_by = 50
+
+    def get_queryset(self):
+        _check_url_branch(self.kwargs)
+        query_string = self.request.GET.get('q', '')
+        init_qs = Distro.objects.filter(layerbranch__branch__name=self.kwargs['branch'])
+        if query_string.strip():
+            entry_query = simplesearch.get_query(query_string, ['name', 'description'])
+            return init_qs.filter(entry_query).order_by('name', 'layerbranch__layer')
+
+        if 'q' in self.request.GET:
+            return init_qs.order_by('name', 'layerbranch__layer')
+
+        # Be consistent with RecipeSearchView
+        return Distro.objects.none()
+
+    def get_context_data(self, **kwargs):
+        context = super(DistroSearchView, self).get_context_data(**kwargs)
         context['search_keyword'] = self.request.GET.get('q', '')
         context['url_branch'] = self.kwargs['branch']
         context['this_url_name'] = resolve(self.request.path_info).url_name

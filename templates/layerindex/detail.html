@@ -168,6 +168,9 @@
             {% if classes.count > 0 %}
                 <li><a href="#classes" data-toggle="tab">Classes</a></li>
             {% endif %}
+            {% if distros.count > 0 %}
+                <li><a href="#distros" data-toggle="tab">Distros</a></li>
+            {% endif %}
         </ul>
 
         <div class="tab-content">
@@ -259,6 +262,26 @@
                             {% for class in classes %}
                                 <tr>
                                     <td><a href="{{ class.vcs_web_url }}">{{ class.name }}</a></td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endif %}
+            {% if distros.count > 0 %}
+                <div class="tab-pane" id="distros">
+                    <div class="navbar">
+                        <div class="navbar-inner">
+                                <a class="brand pull-left">{{ layeritem.name }} distros</a>
+                        </div>
+                    </div>
+
+                    <table class="table table-bordered">
+                        <tbody>
+                            {% for distro in distros %}
+                                <tr>
+                                    <td><a href="{{ distro.vcs_web_url }}">{{ distro.name }}</a></td>
+                                    <td>{{ distro.description }}</td>
                                 </tr>
                             {% endfor %}
                         </tbody>

@@ -361,6 +361,20 @@ class Machine(models.Model):
     def __str__(self):
         return '%s (%s)' % (self.name, self.layerbranch.layer.name)
 
+class Distro(models.Model):
+    layerbranch = models.ForeignKey(LayerBranch)
+    name = models.CharField(max_length=255)
+    description = models.CharField(max_length=255)
+
+    updated = models.DateTimeField(auto_now=True)
+
+    def vcs_web_url(self):
+        url = self.layerbranch.file_url(os.path.join('conf/distro/%s.conf' % self.name))
+        return url or ''
+
+    def __str__(self):
+        return '%s (%s)' % (self.name, self.layerbranch.layer.name)
+
 
 class BBAppend(models.Model):
     layerbranch = models.ForeignKey(LayerBranch)

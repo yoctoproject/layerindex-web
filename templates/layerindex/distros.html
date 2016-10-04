@@ -3,24 +3,25 @@
 
 {% comment %}
 
-  layerindex-web - machine index page template
+  layerindex-web - distro index page template
 
   Copyright (C) 2013 Intel Corporation
+  Copyright (C) 2016 Wind River Systems
   Licensed under the MIT license, see COPYING.MIT for details
 
 {% endcomment %}
 
 
 <!--
-{% block title_append %} - machines{% endblock %}
+{% block title_append %} - distros{% endblock %}
 -->
 
 {% block navs %}
 {% autoescape on %}
                             <li><a href="{% url 'layer_list' url_branch %}">Layers</a></li>
                             <li><a href="{% url 'recipe_search' url_branch %}">Recipes</a></li>
-                            <li class="active"><a href="{% url 'machine_search' url_branch %}">Machines</a></li>
-                            <li><a href="{% url 'distro_search' url_branch %}">Distros</a></li>
+                            <li><a href="{% url 'machine_search' url_branch %}">Machines</a></li>
+                            <li class="active"><a href="{% url 'distro_search' url_branch %}">Distros</a></li>
 {% endautoescape %}
 {% endblock %}
 
@@ -31,29 +32,29 @@
 
                 <div class="row-fluid">
                     <div class="input-append">
-                        <form id="filter-form" action="{% url 'machine_search' url_branch %}" method="get">
-                            <input type="text" class="input-xxlarge" id="appendedInputButtons" placeholder="Search machines" name="q" value="{{ search_keyword }}" />
+                        <form id="filter-form" action="{% url 'distro_search' url_branch %}" method="get">
+                            <input type="text" class="input-xxlarge" id="appendedInputButtons" placeholder="Search distros" name="q" value="{{ search_keyword }}" />
                             <button class="btn" type="submit">search</button>
                         </form>
                     </div>
                 </div>
 
-{% if machine_list %}
-                <table class="table table-striped table-bordered machinestable">
+{% if distro_list %}
+                <table class="table table-striped table-bordered distrostable">
                     <thead>
                         <tr>
-                            <th>Machine name</th>
+                            <th>Distro name</th>
                             <th class="span9">Description</th>
                             <th>Layer</th>
                         </tr>
                     </thead>
 
                     <tbody>
-                        {% for machine in machine_list %}
+                        {% for distro in distro_list %}
                             <tr>
-                                <td><a href="{{ machine.vcs_web_url }}">{{ machine.name }}</a></td>
-                                <td>{{ machine.description }}</td>
-                                <td><a href="{% url 'layer_item' url_branch machine.layerbranch.layer.name %}">{{ machine.layerbranch.layer.name }}</a></td>
+                                <td><a href="{{ distro.vcs_web_url }}">{{ distro.name }}</a></td>
+                                <td>{{ distro.description }}</td>
+                                <td><a href="{% url 'layer_item' url_branch distro.layerbranch.layer.name %}">{{ distro.layerbranch.layer.name }}</a></td>
                             </tr>
                         {% endfor %}
                     </tbody>
@@ -65,7 +66,7 @@
     {% endif %}
 {% else %}
     {% if search_keyword %}
-    <p>No matching machines in database.</p>
+    <p>No matching distros in database.</p>
     {% endif %}
 {% endif %}
 

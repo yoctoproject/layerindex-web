@@ -115,6 +115,19 @@ def update_machine_conf_file(path, machine):
                 break
     machine.description = desc
 
+def update_distro_conf_file(path, distro):
+    logger.debug('Updating distro %s' % path)
+    desc = ""
+    with open(path, 'r') as f:
+        for line in f:
+            if line.startswith('#@NAME:'):
+                desc = line[7:].strip()
+            if line.startswith('#@DESCRIPTION:'):
+                desc = line[14:].strip()
+                desc = re.sub(r'Distribution configuration for( running)*( an)*( the)*', '', desc)
+                break
+    distro.description = desc
+
 def main():
     if LooseVersion(git.__version__) < '0.3.1':
         logger.error("Version of GitPython is too old, please install GitPython (python-git) 0.3.1 or later in order to use this script")
@@ -161,7 +174,7 @@ def main():
 
     utils.setup_django()
     import settings
-    from layerindex.models import LayerItem, LayerBranch, Recipe, RecipeFileDependency, Machine, BBAppend, BBClass
+    from layerindex.models import LayerItem, LayerBranch, Recipe, RecipeFileDependency, Machine, Distro, BBAppend, BBClass
     from django.db import transaction
 
     logger.setLevel(options.loglevel)
@@ -269,6 +282,7 @@ def main():
             layerdir_start = os.path.normpath(layerdir) + os.sep
             layerrecipes = Recipe.objects.filter(layerbranch=layerbranch)
             layermachines = Machine.objects.filter(layerbranch=layerbranch)
+            layerdistros = Distro.objects.filter(layerbranch=layerbranch)
             layerappends = BBAppend.objects.filter(layerbranch=layerbranch)
             layerclasses = BBClass.objects.filter(layerbranch=layerbranch)
             if layerbranch.vcs_last_rev != topcommit.hexsha or options.reload:
@@ -384,6 +398,15 @@ def main():
                                 else:
                                     logger.warn("Renamed machine %s could not be found" % oldpath)
                                     other_adds.append(diffitem)
+                            elif oldtypename == 'distro':
+                                results = layerdistros.filter(name=oldfilename)
+                                if len(results):
+                                    logger.debug("Rename distro %s to %s" % (results[0], newfilename))
+                                    results[0].name = newfilename
+                                    results[0].save()
+                                else:
+                                    logger.warn("Renamed distro %s could not be found" % oldpath)
+                                    other_adds.append(diffitem)
                             elif oldtypename == 'bbclass':
                                 results = layerclasses.filter(name=oldfilename)
                                 if len(results):
@@ -422,6 +445,8 @@ def main():
                                 layerappends.filter(filepath=filepath).filter(filename=filename).delete()
                             elif typename == 'machine':
                                 layermachines.filter(name=filename).delete()
+                            elif typename == 'distro':
+                                layerdistros.filter(name=filename).delete()
                             elif typename == 'bbclass':
                                 layerclasses.filter(name=filename).delete()
 
@@ -452,6 +477,12 @@ def main():
                                 machine.name = filename
                                 update_machine_conf_file(os.path.join(repodir, path), machine)
                                 machine.save()
+                            elif typename == 'distro':
+                                distro = Distro()
+                                distro.layerbranch = layerbranch
+                                distro.name = filename
+                                update_distro_conf_file(os.path.join(repodir, path), distro)
+                                distro.save()
                             elif typename == 'bbclass':
                                 bbclass = BBClass()
                                 bbclass.layerbranch = layerbranch
@@ -483,6 +514,12 @@ def main():
                                     machine = results[0]
                                     update_machine_conf_file(os.path.join(repodir, path), machine)
                                     machine.save()
+                            elif typename == 'distro':
+                                results = layerdistros.filter(name=filename)
+                                if results:
+                                    distro = results[0]
+                                    update_distro_conf_file(os.path.join(repodir, path), distro)
+                                    distro.save()
 
                             deps = RecipeFileDependency.objects.filter(layerbranch=layerbranch).filter(path=path)
                             for dep in deps:
@@ -523,6 +560,7 @@ def main():
                             layerrecipe_fns.append(fullpath)
 
                     layermachines.delete()
+                    layerdistros.delete()
                     layerappends.delete()
                     layerclasses.delete()
                     for root, dirs, files in os.walk(layerdir):
@@ -550,6 +588,12 @@ def main():
                                 machine.name = filename
                                 update_machine_conf_file(fullpath, machine)
                                 machine.save()
+                            elif typename == 'distro':
+                                distro = Distro()
+                                distro.layerbranch = layerbranch
+                                distro.name = filename
+                                update_distro_conf_file(fullpath, distro)
+                                distro.save()
                             elif typename == 'bbclass':
                                 bbclass = BBClass()
                                 bbclass.layerbranch = layerbranch

@@ -1,4 +1,4 @@
-from layerindex.models import Branch, LayerItem, LayerNote, LayerBranch, LayerDependency, Recipe, Machine
+from layerindex.models import Branch, LayerItem, LayerNote, LayerBranch, LayerDependency, Recipe, Machine, Distro
 from rest_framework import viewsets, serializers
 from layerindex.querysethelper import params_to_queryset, get_search_tuple
 
@@ -56,3 +56,11 @@ class MachineSerializer(serializers.ModelSerializer):
 class MachineViewSet(ParametricSearchableModelViewSet):
     queryset = Machine.objects.all()
     serializer_class = MachineSerializer
+
+class DistroSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Distro
+
+class DistroViewSet(ParametricSearchableModelViewSet):
+    queryset = Distro.objects.all()
+    serializer_class = DistroSerializer

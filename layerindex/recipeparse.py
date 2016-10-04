@@ -152,6 +152,7 @@ def get_var_files(fn, varlist, d):
     return varfiles
 
 machine_conf_re = re.compile(r'conf/machine/([^/.]*).conf$')
+distro_conf_re = re.compile(r'conf/distro/([^/.]*).conf$')
 bbclass_re = re.compile(r'classes/([^/.]*).bbclass$')
 def detect_file_type(path, subdir_start):
     typename = None
@@ -170,6 +171,10 @@ def detect_file_type(path, subdir_start):
             res = bbclass_re.match(subpath)
             if res:
                 typename = 'bbclass'
+                return (typename, None, res.group(1))
+            res = distro_conf_re.match(subpath)
+            if res:
+                typename = 'distro'
                 return (typename, None, res.group(1))
 
     if typename == 'recipe' or typename == 'bbappend':
