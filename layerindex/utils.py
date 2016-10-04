@@ -27,6 +27,54 @@ def get_layer(layername):
         return res[0]
     return None
 
+def setup_tinfoil(bitbakepath, enable_tracking):
+    sys.path.insert(0, bitbakepath + '/lib')
+    import bb.tinfoil
+    import bb.cooker
+    import bb.data
+    try:
+        tinfoil = bb.tinfoil.Tinfoil(tracking=enable_tracking)
+    except TypeError:
+        # old API
+        tinfoil = bb.tinfoil.Tinfoil()
+        if enable_tracking:
+            tinfoil.cooker.enableDataTracking()
+    tinfoil.prepare(config_only = True)
+
+    return tinfoil
+
+def checkout_layer_branch(layerbranch, repodir, logger=None):
+
+    branchname = layerbranch.branch.name
+    if layerbranch.actual_branch:
+        branchname = layerbranch.actual_branch
+
+    out = runcmd("git checkout origin/%s" % branchname, repodir, logger=logger)
+    out = runcmd("git clean -f -x", repodir, logger=logger)
+
+def is_layer_valid(layerdir):
+    conf_file = os.path.join(layerdir, "conf", "layer.conf")
+    if not os.path.isfile(conf_file):
+        return False
+    return True
+
+def parse_layer_conf(layerdir, data, logger=None):
+    conf_file = os.path.join(layerdir, "conf", "layer.conf")
+
+    if not is_layer_valid(layerdir):
+        if logger:
+            logger.error("Cannot find layer.conf: %s"% conf_file)
+        return
+
+    data.setVar('LAYERDIR', str(layerdir))
+    if hasattr(bb, "cookerdata"):
+        # Newer BitBake
+        data = bb.cookerdata.parse_config_file(conf_file, data)
+    else:
+        # Older BitBake (1.18 and below)
+        data = bb.cooker._parse(conf_file, data)
+    data.expandVarref('LAYERDIR')
+
 def runcmd(cmd, destdir=None, printerr=True, logger=None):
     """
         execute command, raise CalledProcessError if fail

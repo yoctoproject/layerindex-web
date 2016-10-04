@@ -42,9 +42,9 @@ def generate_patches(tinfoil, fetchdir, changeset, outputdir):
                     patchname = "%s.patch" % layer.name
                     patches.append(patchname)
                     layerfetchdir = os.path.join(fetchdir, layer.get_fetch_dir())
-                    recipeparse.checkout_layer_branch(layerbranch, layerfetchdir)
+                    utils.checkout_layer_branch(layerbranch, layerfetchdir)
                     layerdir = os.path.join(layerfetchdir, layerbranch.vcs_subdir)
-                    config_data_copy = recipeparse.setup_layer(tinfoil.config_data, fetchdir, layerdir, layer, layerbranch)
+                    config_data_copy = utils.setup_layer(tinfoil.config_data, fetchdir, layerdir, layer, layerbranch)
                     if outfile:
                         outfile.close()
                     outfile = open(os.path.join(tmpoutdir, patchname), 'w')

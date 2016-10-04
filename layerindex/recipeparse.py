@@ -20,31 +20,6 @@ class RecipeParseError(Exception):
     def __str__(self):
         return self.msg
 
-def _setup_tinfoil(bitbakepath, enable_tracking):
-    sys.path.insert(0, bitbakepath + '/lib')
-    import bb.tinfoil
-    import bb.cooker
-    import bb.data
-    try:
-        tinfoil = bb.tinfoil.Tinfoil(tracking=enable_tracking)
-    except TypeError:
-        # old API
-        tinfoil = bb.tinfoil.Tinfoil()
-        if enable_tracking:
-            tinfoil.cooker.enableDataTracking()
-    tinfoil.prepare(config_only = True)
-
-    return tinfoil
-
-def _parse_layer_conf(layerdir, data):
-    data.setVar('LAYERDIR', str(layerdir))
-    if hasattr(bb, "cookerdata"):
-        # Newer BitBake
-        data = bb.cookerdata.parse_config_file(os.path.join(layerdir, "conf", "layer.conf"), data)
-    else:
-        # Older BitBake (1.18 and below)
-        data = bb.cooker._parse(os.path.join(layerdir, "conf", "layer.conf"), data)
-    data.expandVarref('LAYERDIR')
 
 
 def init_parser(settings, branch, bitbakepath, enable_tracking=False, nocheckout=False, classic=False, logger=None):
@@ -97,7 +72,7 @@ def init_parser(settings, branch, bitbakepath, enable_tracking=False, nocheckout
     tempdir = tempfile.mkdtemp(dir=settings.TEMP_BASE_DIR)
     os.chdir(tempdir)
 
-    tinfoil = _setup_tinfoil(bitbakepath, enable_tracking)
+    tinfoil = utils.setup_tinfoil(bitbakepath, enable_tracking)
 
     # Ensure TMPDIR exists (or insane.bbclass will blow up trying to write to the QA log)
     oe_tmpdir = tinfoil.config_data.getVar('TMPDIR', True)
@@ -110,14 +85,6 @@ def init_parser(settings, branch, bitbakepath, enable_tracking=False, nocheckout
 
     return (tinfoil, tempdir)
 
-def checkout_layer_branch(layerbranch, repodir, logger=None):
-    if layerbranch.actual_branch:
-        branchname = layerbranch.actual_branch
-    else:
-        branchname = layerbranch.branch.name
-    out = utils.runcmd("git checkout origin/%s" % branchname, repodir, logger=logger)
-    out = utils.runcmd("git clean -f -x", repodir, logger=logger)
-
 def setup_layer(config_data, fetchdir, layerdir, layer, layerbranch):
     # Parse layer.conf files for this layer and its dependencies
     # This is necessary not just because BBPATH needs to be set in order
@@ -125,7 +92,7 @@ def setup_layer(config_data, fetchdir, layerdir, layer, layerbranch):
     # or across layers, but also because custom variable values might be
     # set in layer.conf.
     config_data_copy = bb.data.createCopy(config_data)
-    _parse_layer_conf(layerdir, config_data_copy)
+    utils.parse_layer_conf(layerdir, config_data_copy)
     for dep in layerbranch.dependencies_set.all():
         depurldir = dep.dependency.get_fetch_dir()
         deprepodir = os.path.join(fetchdir, depurldir)
@@ -133,7 +100,7 @@ def setup_layer(config_data, fetchdir, layerdir, layer, layerbranch):
         if not deplayerbranch:
             raise RecipeParseError('Dependency %s of layer %s does not have branch record for branch %s' % (dep.dependency.name, layer.name, layerbranch.branch.name))
         deplayerdir = os.path.join(deprepodir, deplayerbranch.vcs_subdir)
-        _parse_layer_conf(deplayerdir, config_data_copy)
+        utils.parse_layer_conf(deplayerdir, config_data_copy)
     config_data_copy.delVar('LAYERDIR')
     return config_data_copy
 
