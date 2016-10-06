@@ -235,6 +235,7 @@ def main():
                         continue
 
                     utils.add_dependencies(layerbranch, config_data, logger=logger)
+                    utils.add_recommends(layerbranch, config_data, logger=logger)
             finally:
                 layerconfparser.shutdown()
 

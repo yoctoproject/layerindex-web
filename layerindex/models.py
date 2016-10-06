@@ -211,6 +211,12 @@ class LayerBranch(models.Model):
         return "%s: %s" % (self.layer.name, self.branch.name)
 
 
+    def get_required(self):
+        return self.dependencies_set.filter(required=True)
+
+    def get_recommends(self):
+        return self.dependencies_set.filter(required=False)
+
 class LayerMaintainer(models.Model):
     MAINTAINER_STATUS_CHOICES = (
         ('A', 'Active'),
@@ -232,6 +238,7 @@ class LayerMaintainer(models.Model):
 class LayerDependency(models.Model):
     layerbranch = models.ForeignKey(LayerBranch, related_name='dependencies_set')
     dependency = models.ForeignKey(LayerItem, related_name='dependents_set')
+    required = models.BooleanField(default=True)
 
     class Meta:
         verbose_name_plural = "Layer dependencies"

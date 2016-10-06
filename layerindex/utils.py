@@ -62,9 +62,12 @@ def get_dependency_layer(depname, version_str=None, logger=None):
     return None
 
 def add_dependencies(layerbranch, config_data, logger=None):
-    _add_dependency("LAYERDEPENDS", 'dependency', layerbranch, config_data, logger)
+    _add_dependency("LAYERDEPENDS", 'dependency', layerbranch, config_data, logger=logger)
 
-def _add_dependency(var, name, layerbranch, config_data, logger=None):
+def add_recommends(layerbranch, config_data, logger=None):
+    _add_dependency("LAYERRECOMMENDS", 'recommends', layerbranch, config_data, logger=logger, required=False)
+
+def _add_dependency(var, name, layerbranch, config_data, logger=None, required=True):
     from layerindex.models import LayerBranch, LayerDependency
 
     layer_name = layerbranch.layer.name
@@ -97,6 +100,7 @@ def _add_dependency(var, name, layerbranch, config_data, logger=None):
                 logger.error('Error getting %s %s for %s\n%s' %(name, dep. layer_name, str(vse)))
             continue
 
+        # No layer found.
         if not dep_layer:
             if logger:
                 logger.error('Cannot resolve %s %s (version %s) for %s' % (name, dep, ver_str, layer_name))
@@ -114,6 +118,7 @@ def _add_dependency(var, name, layerbranch, config_data, logger=None):
         layerdep = LayerDependency()
         layerdep.layerbranch = layerbranch
         layerdep.dependency = dep_layer
+        layerdep.required = required
         layerdep.save()
 
 def set_layerbranch_collection_version(layerbranch, config_data, logger=None):

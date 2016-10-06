@@ -382,7 +382,7 @@ def main():
                         layerconfparser.shutdown()
                     if config_data:
                         utils.add_dependencies(layerbranch, config_data, logger=logger)
-
+                        utils.add_recommends(layerbranch, config_data, logger=logger)
 
                 # Get some extra meta-information
                 readme_files = glob.glob(os.path.join(layerdir, 'README*'))

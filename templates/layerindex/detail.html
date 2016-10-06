@@ -139,17 +139,27 @@
 
                 <div class="span4 pull-right description">
                     {% if layerbranch.dependencies_set.count > 0 %}
-                         <div class="well dependency-well">
-                            <h3>Dependencies </h3>
-                            <p>The {{ layeritem.name }} layer depends upon:</p>
-                            <ul>
-                                {% for dep in layerbranch.dependencies_set.all %}
-                                    <li><a href="{% url 'layer_item' url_branch dep.dependency.name %}">{{ dep.dependency.name }}</a></li>
-                                {% endfor %}
-                            </ul>
-                         </div> <!-- end of well -->
-                    {% endif %}
-
+                        <div class="well dependency-well">
+                            {% if layerbranch.get_required.count > 0 %}
+                                <h3>Dependencies </h3>
+                                <p>The {{ layeritem.name }} layer depends upon:</p>
+                                <ul>
+                                    {% for dep in layerbranch.get_required %}
+                                        <li><a href="{% url 'layer_item' url_branch dep.dependency.name %}">{{ dep.dependency.name }}</a></li>
+                                    {% endfor %}
+                                </ul>
+                            {% endif %} <!-- end of layerbranch.get_required.count -->
+                            {% if layerbranch.get_recommends.count > 0 %}
+                                <h3>Recommends </h3>
+                                <p>The {{ layeritem.name }} layer recommends:</p>
+                                <ul>
+                                    {% for rec in layerbranch.get_recommends %}
+                                        <li><a href="{% url 'layer_item' url_branch rec.dependency.name %}">{{ rec.dependency.name }}</a></li>
+                                    {% endfor %}
+                                </ul>
+                            {% endif %} <!-- end of layerbranch.get_recommends.count -->
+                        </div> <!-- end of well -->
+                    {% endif %} <!-- end of layerbranch.dependencies_set.count -->
                 </div> <!-- end of span4 -->
             </div>  <!-- end of row-fluid -->
         </div> <!-- end of container-fluid -->
