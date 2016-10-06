@@ -130,6 +130,8 @@ class LayerItem(models.Model):
 class LayerBranch(models.Model):
     layer = models.ForeignKey(LayerItem)
     branch = models.ForeignKey(Branch)
+    collection = models.CharField('Layer Collection', max_length=40, null=True, help_text='Name of the layer that could be used in the list of dependencies - can only contain letters, numbers and dashes')
+    version = models.CharField('Layer Version', max_length=10, null=True, blank=True, help_text='The layer version for this particular branch.')
     vcs_subdir = models.CharField('Repository subdirectory', max_length=40, blank=True, help_text='Subdirectory within the repository where the layer is located, if not in the root (usually only used if the repository contains more than one layer)')
     vcs_last_fetch = models.DateTimeField('Last successful fetch', blank=True, null=True)
     vcs_last_rev = models.CharField('Last revision fetched', max_length=80, blank=True)

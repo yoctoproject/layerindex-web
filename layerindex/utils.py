@@ -30,8 +30,10 @@ def get_layer(layername):
 def get_dependency_layer(depname, version_str=None, logger=None):
     from layerindex.models import LayerItem, LayerBranch
 
-    # Get any LayerBranch with a layer that has a name that matches the depname
-    res = list(LayerBranch.objects.filter(layer__name=depname))
+    # Get any LayerBranch with a layer that has a name that matches depmod, or
+    # a LayerBranch that has the collection name depmod.
+    res = list(LayerBranch.objects.filter(layer__name=depname)) + \
+          list(LayerBranch.objects.filter(collection=depname))
 
     # Nothing found, return.
     if not res:
@@ -67,6 +69,10 @@ def _add_dependency(var, name, layerbranch, config_data, logger=None):
 
     layer_name = layerbranch.layer.name
     var_name = layer_name
+
+    if layerbranch.collection:
+        var_name = layerbranch.collection
+
 
     dep_list = config_data.getVar("%s_%s" % (var, var_name), True)
 
@@ -104,10 +110,20 @@ def _add_dependency(var, name, layerbranch, config_data, logger=None):
 
         if logger:
             logger.debug('Adding %s %s to %s' % (name, dep_layer.name, layer_name))
+
         layerdep = LayerDependency()
         layerdep.layerbranch = layerbranch
         layerdep.dependency = dep_layer
         layerdep.save()
+
+def set_layerbranch_collection_version(layerbranch, config_data, logger=None):
+
+            layerbranch.collection = config_data.getVar('BBFILE_COLLECTIONS', True)
+            ver_str = "LAYERVERSION_"
+            if layerbranch.collection:
+                layerbranch.collection = layerbranch.collection.strip()
+                ver_str += layerbranch.collection
+                layerbranch.version = config_data.getVar(ver_str, True)
 
 def setup_tinfoil(bitbakepath, enable_tracking):
     sys.path.insert(0, bitbakepath + '/lib')
