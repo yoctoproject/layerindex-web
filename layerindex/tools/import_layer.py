@@ -19,6 +19,7 @@ import glob
 import utils
 import logging
 import subprocess
+from layerconfparse import LayerConfParse
 
 class DryRunRollbackException(Exception):
     pass
@@ -367,11 +368,21 @@ def main():
                 if layer.name != settings.CORE_LAYER_NAME:
                     if not core_layer:
                         core_layer = utils.get_layer(settings.CORE_LAYER_NAME)
+
                     if core_layer:
+                        logger.debug('Adding dep %s to %s' % (core_layer.name, layer.name))
                         layerdep = LayerDependency()
                         layerdep.layerbranch = layerbranch
                         layerdep.dependency = core_layer
                         layerdep.save()
+                    try:
+                        layerconfparser = LayerConfParse(logger=logger)
+                        config_data = layerconfparser.parse_layer(layerbranch, layerdir)
+                    finally:
+                        layerconfparser.shutdown()
+                    if config_data:
+                        utils.add_dependencies(layerbranch, config_data, logger=logger)
+
 
                 # Get some extra meta-information
                 readme_files = glob.glob(os.path.join(layerdir, 'README*'))

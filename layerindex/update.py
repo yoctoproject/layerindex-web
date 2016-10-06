@@ -16,6 +16,7 @@ import subprocess
 import signal
 from distutils.version import LooseVersion
 import utils
+from layerconfparse import LayerConfParse
 
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
@@ -92,7 +93,7 @@ def main():
 
     utils.setup_django()
     import settings
-    from layerindex.models import Branch, LayerItem
+    from layerindex.models import Branch, LayerItem, LayerDependency
 
     logger.setLevel(options.loglevel)
 
@@ -169,6 +170,7 @@ def main():
         # We now do this by calling out to a separate script; doing otherwise turned out to be
         # unreliable due to leaking memory (we're using bitbake internals in a manner in which
         # they never get used during normal operation).
+        last_rev = {}
         for branch in branches:
             for layer in layerquery:
                 if layer.vcs_url in failedrepos:
@@ -178,6 +180,10 @@ def main():
                 repodir = os.path.join(fetchdir, urldir)
 
                 branchobj = utils.get_branch(branch)
+                layerbranch = layer.get_layerbranch(branch)
+                if layerbranch:
+                    last_rev[layerbranch] = layerbranch.vcs_last_rev
+
                 if branchobj.update_environment:
                     cmdprefix = branchobj.update_environment.get_command()
                 else:
@@ -200,6 +206,39 @@ def main():
                 if ret == 254:
                     # Interrupted by user, break out of loop
                     break
+
+        # Since update_layer may not be called in the correct order to have the
+        # dependencies created before trying to link them, we now have to loop
+        # back through all the branches and layers and try to link in the
+        # dependencies that may have been missed.  Note that creating the
+        # dependencies is a best-effort and continues if they are not found.
+        for branch in branches:
+            try:
+                layerconfparser = LayerConfParse(logger=logger, bitbakepath=bitbakepath)
+                for layer in layerquery:
+
+                    layerbranch = layer.get_layerbranch(branch)
+                    # Skip layers that did not change.
+                    if layerbranch and last_rev[layerbranch] == layerbranch.vcs_last_rev:
+                        continue
+
+                    urldir = layer.get_fetch_dir()
+                    repodir = os.path.join(fetchdir, urldir)
+
+                    layerbranch = layer.get_layerbranch(branch)
+                    if not layerbranch:
+                        continue
+
+                    config_data = layerconfparser.parse_layer(layerbranch, repodir)
+                    if not config_data:
+                        logger.debug("Layer %s does not appear to have branch %s" % (layer.name, branch))
+                        continue
+
+                    utils.add_dependencies(layerbranch, config_data, logger=logger)
+            finally:
+                layerconfparser.shutdown()
+
+
 
     finally:
         utils.unlock_file(lockfile)

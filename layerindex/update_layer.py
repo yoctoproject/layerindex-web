@@ -196,7 +196,6 @@ def main():
     except recipeparse.RecipeParseError as e:
         logger.error(str(e))
         sys.exit(1)
-
     # Clear the default value of SUMMARY so that we can use DESCRIPTION instead if it hasn't been set
     tinfoil.config_data.setVar('SUMMARY', '')
     # Clear the default value of DESCRIPTION so that we can see where it's not set
@@ -244,7 +243,7 @@ def main():
                 layerbranch = LayerBranch()
                 layerbranch.layer = layer
                 layerbranch.branch = branch
-                layerbranch_source = layer.get_layerbranch('master')
+                layerbranch_source = layer.get_layerbranch(branch)
                 if not layerbranch_source:
                     layerbranch_source = layer.get_layerbranch(None)
                 if layerbranch_source:
@@ -256,11 +255,6 @@ def main():
                         maintainer.id = None
                         maintainer.layerbranch = layerbranch
                         maintainer.save()
-                    for dep in layerbranch_source.dependencies_set.all():
-                        dep.pk = None
-                        dep.id = None
-                        dep.layerbranch = layerbranch
-                        dep.save()
 
             if layerbranch.vcs_subdir and not options.nocheckout:
                 # Find latest commit in subdirectory
@@ -280,6 +274,17 @@ def main():
 
             layerdir = os.path.join(repodir, layerbranch.vcs_subdir)
             layerdir_start = os.path.normpath(layerdir) + os.sep
+
+            from layerconfparse import LayerConfParse
+            layerconfparser = LayerConfParse(logger=logger, tinfoil=tinfoil)
+            layer_config_data = layerconfparser.parse_layer(layerbranch, layerdir)
+            if not layer_config_data:
+                logger.info("Skipping update of layer %s for branch %s - conf/layer.conf may have parse issues" % (layer.name, branchdesc))
+                layerconfparser.shutdown()
+                sys.exit(1)
+            utils.add_dependencies(layerbranch, layer_config_data, logger=logger)
+            layerbranch.save()
+
             layerrecipes = Recipe.objects.filter(layerbranch=layerbranch)
             layermachines = Machine.objects.filter(layerbranch=layerbranch)
             layerdistros = Distro.objects.filter(layerbranch=layerbranch)
@@ -655,6 +660,7 @@ def main():
         import traceback
         traceback.print_exc()
 
+    tinfoil.shutdown()
     shutil.rmtree(tempdir)
     sys.exit(0)
 

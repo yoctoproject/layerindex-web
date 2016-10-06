@@ -27,6 +27,88 @@ def get_layer(layername):
         return res[0]
     return None
 
+def get_dependency_layer(depname, version_str=None, logger=None):
+    from layerindex.models import LayerItem, LayerBranch
+
+    # Get any LayerBranch with a layer that has a name that matches the depname
+    res = list(LayerBranch.objects.filter(layer__name=depname))
+
+    # Nothing found, return.
+    if not res:
+        return None
+
+    # If there is no version constraint, return the first one found.
+    if not version_str:
+        return res[0].layer
+
+    (operator, dep_version) = version_str.split()
+    for layerbranch in res:
+        layer_ver = layerbranch.version
+
+        # If there is no version in the found layer, then don't use this layer.
+        if not layer_ver:
+            continue
+
+        try:
+            success = bb.utils.vercmp_string_op(layer_ver, version_str, operator)
+        except bb.utils.VersionStringException as vse:
+            raise vse
+
+        if success:
+            return layerbranch.layer
+
+    return None
+
+def add_dependencies(layerbranch, config_data, logger=None):
+    _add_dependency("LAYERDEPENDS", 'dependency', layerbranch, config_data, logger)
+
+def _add_dependency(var, name, layerbranch, config_data, logger=None):
+    from layerindex.models import LayerBranch, LayerDependency
+
+    layer_name = layerbranch.layer.name
+    var_name = layer_name
+
+    dep_list = config_data.getVar("%s_%s" % (var, var_name), True)
+
+    if not dep_list:
+        return
+
+    try:
+        dep_dict = bb.utils.explode_dep_versions2(dep_list)
+    except bb.utils.VersionStringException as vse:
+        logger.debug('Error parsing %s_%s for %s\n%s' % (var, var_name, layer_name, str(vse)))
+        return
+
+    for dep, ver_list in list(dep_dict.items()):
+        ver_str = None
+        if ver_list:
+            ver_str = ver_list[0]
+
+        try:
+            dep_layer = get_dependency_layer(dep, ver_str, logger)
+        except bb.utils.VersionStringException as vse:
+            if logger:
+                logger.error('Error getting %s %s for %s\n%s' %(name, dep. layer_name, str(vse)))
+            continue
+
+        if not dep_layer:
+            if logger:
+                logger.error('Cannot resolve %s %s (version %s) for %s' % (name, dep, ver_str, layer_name))
+                continue
+
+        # Skip existing entries.
+        existing = list(LayerDependency.objects.filter(layerbranch=layerbranch).filter(dependency=dep_layer))
+        if existing:
+            logger.debug('Skipping %s - already a dependency for %s' % (dep, layer_name))
+            continue
+
+        if logger:
+            logger.debug('Adding %s %s to %s' % (name, dep_layer.name, layer_name))
+        layerdep = LayerDependency()
+        layerdep.layerbranch = layerbranch
+        layerdep.dependency = dep_layer
+        layerdep.save()
+
 def setup_tinfoil(bitbakepath, enable_tracking):
     sys.path.insert(0, bitbakepath + '/lib')
     import bb.tinfoil
