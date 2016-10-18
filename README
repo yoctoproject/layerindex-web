@@ -46,10 +46,8 @@ Setup instructions:
 2. Run the following commands within the layerindex-web directory to
    initialise the database:
 
-   python3 manage.py syncdb
    python3 manage.py migrate
-
-   You should answer "yes" when asked to create an admin account.
+   python3 manage.py createsuperuser
 
 3. You can test the web application locally by setting DEBUG = True in
    settings.py and running the following:
@@ -122,6 +120,7 @@ Setup instructions:
    keeping in mind you'll need to set up Docker properly as part of the
    setup process.
 
+
 Usage
 -----
 
@@ -132,6 +131,25 @@ path/to/layerindex/update.py
 This will fetch all of the layer repositories, analyse their contents
 and update the database with the results. Run the script with --help for
 further information on available options.
+
+
+Upgrading from an earlier version
+---------------------------------
+
+This application uses Django's migrations functionality to allow changes
+in the database structure whilst preserving existing data. When upgrading
+with an existing database, you just need to invoke the migration command.
+
+If you're migrating from a version prior to the Django 1.8 upgrade, you
+need to use the following command so that the initial migration (which
+takes care of creating the database structure and initial data) is
+skipped:
+
+python3 manage.py migrate --fake-initial
+
+Otherwise, you can just run the plain migration command:
+
+python3 manage.py migrate
 
 
 Maintenance
