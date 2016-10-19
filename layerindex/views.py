@@ -12,7 +12,6 @@ from django.core.exceptions import PermissionDenied
 from django.template import RequestContext
 from layerindex.models import Branch, LayerItem, LayerMaintainer, LayerBranch, LayerDependency, LayerNote, Recipe, Machine, Distro, BBClass, BBAppend, RecipeChange, RecipeChangeset, ClassicRecipe
 from datetime import datetime
-from itertools import chain
 from django.views.generic import TemplateView, DetailView, ListView
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
 from django.views.generic.base import RedirectView
@@ -27,6 +26,7 @@ from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from reversion.models import Revision
+from . import utils
 from . import simplesearch
 import settings
 from django.dispatch import receiver
@@ -213,12 +213,11 @@ def bulk_change_edit_view(request, template_name, pk):
 def bulk_change_patch_view(request, pk):
     import os
     import os.path
-    from layerindex.utils import runcmd
     changeset = get_object_or_404(RecipeChangeset, pk=pk)
     # FIXME this couples the web server and machine running the update script together,
     # but given that it's a separate script the way is open to decouple them in future
     try:
-        ret = runcmd('%s bulkchange.py %d %s' % (sys.executable, int(pk), settings.TEMP_BASE_DIR), os.path.dirname(__file__))
+        ret = utils.runcmd('%s bulkchange.py %d %s' % (sys.executable, int(pk), settings.TEMP_BASE_DIR), os.path.dirname(__file__))
         if ret:
             fn = ret.splitlines()[-1].decode('utf-8')
             if os.path.exists(fn):
@@ -387,7 +386,7 @@ class RecipeSearchView(ListView):
             qs2 = init_qs.filter(entry_query).order_by(*order_by)
             qs2 = recipes_preferred_count(qs2)
 
-            qs = list(chain(qs1, qs2))
+            qs = list(utils.chain_unique(qs1, qs2))
         else:
             if 'q' in self.request.GET:
                 qs = init_qs.order_by('pn', 'layerbranch__layer')
@@ -739,7 +738,7 @@ class ClassicRecipeSearchView(RecipeSearchView):
             entry_query = simplesearch.get_query(query_string, ['summary', 'description'])
             qs2 = init_qs.filter(entry_query).order_by(*order_by)
 
-            qs = list(chain(qs1, qs2))
+            qs = list(utils.chain_unique(qs1, qs2))
         else:
             if 'q' in self.request.GET:
                 qs = init_qs.order_by('pn', 'layerbranch__layer')

@@ -237,3 +237,13 @@ def lock_file(fn):
 
 def unlock_file(lock):
     fcntl.flock(lock, fcntl.LOCK_UN)
+
+def chain_unique(*iterables):
+    """Chain unique objects in a list of querysets, preserving order"""
+    seen = set()
+    for element in iterables:
+        for item in element:
+            k = item.id
+            if k not in seen:
+                seen.add(k)
+                yield item
