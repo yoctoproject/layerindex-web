@@ -88,6 +88,12 @@ padding: 8px;
     width: 50%;
 }
 
+.formfield-div {
+    width: 50%;
+    display: inline-block;
+    margin-right: 13px;
+}
+
 .checkboxtd input {
     width: 25px;
 }

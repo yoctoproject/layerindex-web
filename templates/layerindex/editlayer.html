@@ -89,6 +89,24 @@
                 </div>
             </div>
             {% endif %}
+            {% if field.name = 'vcs_web_url' %}
+                <div class="control-label">
+                    Web interface type
+                </div>
+                <div class="controls">
+                    <div class="formfield-div">
+                        <select id="idx_vcs_web_type">
+                        <option>(custom)</option>
+                        <option>cgit</option>
+                        <option>gitweb</option>
+                        <option>gitlab</option>
+                        </select>
+                    </div>
+                    <span class="help-inline custom-help">
+                        Type of web interface (helps to auto-determine other URL fields)
+                    </span>
+                </div>
+            {% endif %}
         {% endfor %}
     </div>
     <h3 id="maintainers">Maintainers</h3>
@@ -169,6 +187,7 @@
     }
 
     function AutoWebFields(repoval) {
+        // Auto-determine web interface URLs from repo URL
         if( repoval[repoval.length-1] == '/' )
             repoval = repoval.slice(0, repoval.length-1)
 
@@ -177,12 +196,14 @@
             this.vcs_web_url = 'http://cgit.openembedded.org/cgit.cgi/' + reponame
             this.vcs_web_tree_base_url = 'http://cgit.openembedded.org/cgit.cgi/' + reponame + '/tree/%path%?h=%branch%'
             this.vcs_web_file_base_url = 'http://cgit.openembedded.org/cgit.cgi/' + reponame + '/tree/%path%?h=%branch%'
+            this.vcs_web_type = 'cgit'
         }
         else if( repoval.indexOf('git.yoctoproject.org/') > -1 ) {
             reponame = repoval.replace(/^.*\//, '')
             this.vcs_web_url = 'http://git.yoctoproject.org/cgit/cgit.cgi/' + reponame
             this.vcs_web_tree_base_url = 'http://git.yoctoproject.org/cgit/cgit.cgi/' + reponame + '/tree/%path%?h=%branch%'
             this.vcs_web_file_base_url = 'http://git.yoctoproject.org/cgit/cgit.cgi/' + reponame + '/tree/%path%?h=%branch%'
+            this.vcs_web_type = 'cgit'
         }
         else if( repoval.indexOf('github.com/') > -1 ) {
             reponame = repoval.replace(/^.*github.com\//, '')
@@ -190,13 +211,7 @@
             this.vcs_web_url = 'http://github.com/' + reponame
             this.vcs_web_tree_base_url = 'http://github.com/' + reponame + '/tree/%branch%/'
             this.vcs_web_file_base_url = 'http://github.com/' + reponame + '/blob/%branch%/'
-        }
-        else if( repoval.indexOf('gitorious.org/') > -1 ) {
-            reponame = repoval.replace(/^.*gitorious.org\//, '')
-            reponame = reponame.replace(/.git$/, '')
-            this.vcs_web_url = 'http://gitorious.org/' + reponame
-            this.vcs_web_tree_base_url = 'http://gitorious.org/' + reponame + '/trees/%branch%/'
-            this.vcs_web_file_base_url = 'http://gitorious.org/' + reponame + '/blobs/%branch%/'
+            this.vcs_web_type = '(custom)'
         }
         else if( repoval.indexOf('bitbucket.org/') > -1 ) {
             reponame = repoval.replace(/^.*bitbucket.org\//, '')
@@ -204,13 +219,90 @@
             this.vcs_web_url = 'http://bitbucket.org/' + reponame
             this.vcs_web_tree_base_url = 'http://bitbucket.org/' + reponame + '/src/%branch%/%path%?at=%branch%'
             this.vcs_web_file_base_url = 'http://bitbucket.org/' + reponame + '/src/%branch%/%path%?at=%branch%'
+            this.vcs_web_type = '(custom)'
         }
         else {
             this.vcs_web_url = ''
             this.vcs_web_tree_base_url = ''
             this.vcs_web_file_base_url = ''
+            this.vcs_web_type = '(custom)'
+        }
+    };
+
+    auto_web_url_field = function (e) {
+        // Auto-determine web interface type from URL
+        vcs_web_url = $('#id_vcs_web_url').val()
+        if ( vcs_web_url.indexOf('/cgit.cgi/') > -1 || vcs_web_url.indexOf('/cgit/') > -1 ) {
+            $('#idx_vcs_web_type').val('cgit')
+            auto_web_type_field(e)
+        }
+        else if ( vcs_web_url.indexOf('a=summary') > -1 ) {
+            $('#idx_vcs_web_type').val('gitweb')
+            auto_web_type_field(e)
         }
     }
+
+    auto_web_type_field = function (e) {
+        // Auto-determine web interface tree/file URLs based on type
+        type = $('#idx_vcs_web_type').val()
+        if (type == '(custom)') {
+            readonly = $('#idx_vcs_web_type').prop('disabled')
+            $('#id_vcs_web_tree_base_url').prop('readonly', readonly)
+            $('#id_vcs_web_file_base_url').prop('readonly', readonly)
+        }
+        else {
+            $('#id_vcs_web_tree_base_url').prop('readonly', true)
+            $('#id_vcs_web_file_base_url').prop('readonly', true)
+            vcs_web_url = $('#id_vcs_web_url').val()
+            if (vcs_web_url) {
+                if (vcs_web_url.endsWith('/')) {
+                    vcs_web_url = vcs_web_url.slice(0, -1)
+                }
+                if (type == 'cgit') {
+                    $('#id_vcs_web_tree_base_url').val('readonly', true)
+                    $('#id_vcs_web_file_base_url').prop('readonly', true)
+                    if (e) {
+                        $('#id_vcs_web_tree_base_url').val(vcs_web_url + '/tree/%path%?h=%branch%')
+                        $('#id_vcs_web_file_base_url').val(vcs_web_url + '/tree/%path%?h=%branch%')
+                    }
+                }
+                else if (type == 'gitweb') {
+                    $('#id_vcs_web_tree_base_url').val('readonly', true)
+                    $('#id_vcs_web_file_base_url').prop('readonly', true)
+                    if (e) {
+                        spliturl = vcs_web_url.split('?')
+                        if (spliturl.length > 1) {
+                            params = spliturl[1].split(';')
+                            newparams = []
+                            for (i = 0; i < params.length; i++) {
+                                if (!params[i].startsWith('a=')) {
+                                    newparams.push(params[i])
+                                }
+                            }
+                            newparamsstr = newparams.join(';')
+                            if( newparamsstr ) {
+                                newparamsstr += ';'
+                            }
+                            vcs_web_url = spliturl[0] + '?' + newparamsstr
+                        }
+                        else {
+                            vcs_web_url = spliturl[0] + '?'
+                        }
+                        $('#id_vcs_web_tree_base_url').val(vcs_web_url + 'a=tree;f=%path%;hb=refs/heads/%branch%')
+                        $('#id_vcs_web_file_base_url').val(vcs_web_url + 'a=blob;f=%path%;hb=refs/heads/%branch%')
+                    }
+                }
+                else if (type == 'gitlab') {
+                    $('#id_vcs_web_tree_base_url').val('readonly', true)
+                    $('#id_vcs_web_file_base_url').prop('readonly', true)
+                    if (e) {
+                        $('#id_vcs_web_tree_base_url').val(vcs_web_url + '/tree/%branch%/%path%')
+                        $('#id_vcs_web_file_base_url').val(vcs_web_url + '/blob/%branch%/%path%')
+                    }
+                }
+            }
+        }
+    };
 
     auto_web_fields = function (e) {
         repoval = $('#id_vcs_url').val()
@@ -220,16 +312,17 @@
                 $('#id_vcs_web_url').val(awf.vcs_web_url)
                 $('#id_vcs_web_tree_base_url').val(awf.vcs_web_tree_base_url)
                 $('#id_vcs_web_file_base_url').val(awf.vcs_web_file_base_url)
+                $('#idx_vcs_web_type').val(awf.vcs_web_type)
             }
             $('#id_vcs_web_url').prop('readonly', true);
-            $('#id_vcs_web_tree_base_url').prop('readonly', true);
-            $('#id_vcs_web_file_base_url').prop('readonly', true);
+            $('#idx_vcs_web_type').prop('disabled', true);
         }
         else {
             $('#id_vcs_web_url').prop('readonly', false);
-            $('#id_vcs_web_tree_base_url').prop('readonly', false);
-            $('#id_vcs_web_file_base_url').prop('readonly', false);
+            $('#idx_vcs_web_type').prop('disabled', false);
         }
+
+        auto_web_type_field(e)
     };
 
     split_email = function() {
@@ -280,6 +373,8 @@
         $('#addanothermaintainer').click(expand_maintainer)
 
         $('#id_vcs_url').change(auto_web_fields)
+        $('#id_vcs_web_url').change(auto_web_url_field)
+        $('#idx_vcs_web_type').change(auto_web_type_field)
         auto_web_fields(null)
 
         firstfield = $("#edit_layer_form input:text, #edit_layer_form textarea").first();
