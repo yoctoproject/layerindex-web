@@ -72,7 +72,13 @@
                         </tr>
                         <tr>
                             <th>Homepage</th>
-                            <td>{% if recipe.homepage %}<a href="{{ recipe.homepage }}">{{ recipe.homepage }}</a>{% endif %}</td>
+                            <td>
+                                {% if recipe.homepage_url_only %}
+                                    <a href="{{ recipe.homepage }}">{{ recipe.homepage }}</a>
+                                {% elif recipe.homepage %}
+                                    {{ recipe.homepage }}
+                                {% endif %}
+                            </td>
                         </tr>
                         {% if recipe.bugtracker %}
                         <tr>

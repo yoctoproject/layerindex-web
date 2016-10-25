@@ -292,6 +292,12 @@ class Recipe(models.Model):
         else:
             return self.filename.split('_')[0]
 
+    def homepage_url_only(self):
+        if '://' in self.homepage:
+            return self.homepage
+        else:
+            return None
+
     def __str__(self):
         return os.path.join(self.filepath, self.filename)
 
