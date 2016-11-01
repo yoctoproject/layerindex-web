@@ -17,6 +17,32 @@ class LayerDependencyInline(admin.StackedInline):
 
 class BranchAdmin(CompareVersionAdmin):
     model = Branch
+    actions = ['duplicate']
+
+    def duplicate(self, request, queryset):
+        for branch in queryset:
+            layerbranches = branch.layerbranch_set.all()
+            branch.pk = None
+            branch.name += '-copy'
+            branch.save()
+            for layerbranch in layerbranches:
+                layerbranch_maintainers = layerbranch.layermaintainer_set.all()
+                layerbranch_dependencies = layerbranch.dependencies_set.all()
+                layerbranch.pk = None
+                layerbranch.branch = branch
+                layerbranch.vcs_last_fetch = None
+                layerbranch.vcs_last_rev = ''
+                layerbranch.vcs_last_commit = None
+                layerbranch.save()
+                for layermaintainer in layerbranch_maintainers:
+                    layermaintainer.pk = None
+                    layermaintainer.layerbranch = layerbranch
+                    layermaintainer.save()
+                for layerdependency in layerbranch_dependencies:
+                    layerdependency.pk = None
+                    layerdependency.layerbranch = layerbranch
+                    layerdependency.save()
+    duplicate.short_description = "Duplicate selected Branches"
 
 class LayerItemAdmin(CompareVersionAdmin):
     list_filter = ['status', 'layer_type']
