@@ -10,7 +10,6 @@
 #
 # Licensed under the MIT license, see COPYING.MIT for details
 
-from git import Repo
 from urllib.parse import urlparse
 import logging
 import optparse
@@ -82,11 +81,9 @@ class ImportProject:
             self.logger.error("Cannot get root dir for layer %s: %s - Skipping." % (layer, str(e)))
             return 1
 
-        repo = Repo(git_dir)
-        actual_branch = repo.active_branch.name
-
 
         layer_name = layer.split('/')[-2]
+
 
         layer_subdir = None
         if os.path.basename(git_dir) != layer_name:
@@ -95,17 +92,29 @@ class ImportProject:
         layer_name = self.get_layer_name(layer)
 
         for i in [1, 2, 3]:
+            remote = utils.runcmd("git remote", destdir=git_dir, logger=self.logger)
+            if not remote:
+                self.logger.warning("Cannot find remote git for %s" % layer_name)
+                return 1
+
             try:
-                git_url = utils.runcmd("git config --get remote.origin.url", destdir=git_dir, logger=self.logger)
+                git_url = utils.runcmd("git config --get remote.%s.url" % remote, destdir=git_dir, logger=self.logger)
             except Exception as e:
-                self.logger.info("Cannot get remote.origin.url for git dir %s: %s" % (git_dir, str(e)))
+                self.logger.info("Cannot get remote.%s.url for git dir %s: %s" % (remote, git_dir, str(e)))
 
             if not os.path.exists(git_url):
                 # Assume this is remote.
                 self.logger.debug("Found git url = %s" % git_url)
-                break;
+                remote_branch = utils.runcmd( "git rev-parse --abbrev-ref --symbolic-full-name @\{u\}", destdir=git_dir, logger=self.logger)
+                if remote_branch.startswith(remote):
+                    actual_branch = remote_branch[len(remote) + 1:]
+                break
             self.logger.debug("Iterating to find git url into %s" % git_dir)
             git_dir = git_url
+
+        if not git_url:
+            self.logger.warning("Cannot find layer %s git url" % layer)
+            return 1
 
         cmd = ['import_layer.py']
         if self.options.loglevel == logging.DEBUG:
