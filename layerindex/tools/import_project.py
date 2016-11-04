@@ -30,10 +30,10 @@ class ImportProject:
     logger = utils.logger_create('ProjectIndexImport')
 
     def find_layers(self, path):
-        self.logger.debug("finding layer..");
+        self.logger.debug("finding layer..")
         result = []
-        for root, dirs, files in os.walk(path, followlinks=True):
-            for name in fnmatch.filter(files, 'layer.conf'):
+        for root, _, files in os.walk(path, followlinks=True):
+            for _ in fnmatch.filter(files, 'layer.conf'):
                 if not root.endswith('conf'):
                     continue
 
@@ -44,14 +44,15 @@ class ImportProject:
 
     def main(self):
         parser = optparse.OptionParser(
-            usage = """
+            usage="""
             %prog [options] [directory]""")
 
         parser.add_option("-d", "--debug",
-            help = "Enable debug output",
-            action="store_const", const=logging.DEBUG, dest="loglevel", default=logging.INFO)
+            help="Enable debug output",
+            action="store_const", const=logging.DEBUG,
+            dest="loglevel", default=logging.INFO)
         parser.add_option("-n", "--dry-run",
-            help = "Don't write any data back to the database",
+            help="Don't write any data back to the database",
             action="store_true", dest="dryrun")
 
         self.options, args = parser.parse_args(sys.argv)
@@ -59,7 +60,7 @@ class ImportProject:
         self.logger.setLevel(self.options.loglevel)
 
         if len(args) == 1:
-            print("Please provide a directory.");
+            print("Please provide a directory.")
             sys.exit(1)
 
         install_dir = args[1]
@@ -74,7 +75,7 @@ class ImportProject:
             self.add_layer(layer)
 
     def add_layer(self, layer):
-        self.logger.debug("Processing layer %s" % layer);
+        self.logger.debug("Processing layer %s" % layer)
         try:
             git_dir = utils.runcmd("git rev-parse --show-toplevel", destdir=layer, logger=self.logger)
         except Exception as e:
@@ -138,7 +139,7 @@ class ImportProject:
         sys.argv = cmd
         if not self.options.dryrun:
             try:
-                import_layer.main();
+                import_layer.main()
             except SystemExit as see:
                 return see.code
         return 0
@@ -177,7 +178,7 @@ class ImportProject:
         self.logger.info("update")
         if not self.options.dryrun:
             try:
-                update.main();
+                update.main()
             except SystemExit:
                 return 1
 
