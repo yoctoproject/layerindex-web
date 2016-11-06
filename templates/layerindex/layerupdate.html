@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% comment %}
+
+  layerindex-web - layer update page
+
+  Copyright (C) 2016 Intel Corporation
+  Licensed under the MIT license, see COPYING.MIT for details
+
+{% endcomment %}
+
+<!--
+{% block title_append %} - {{ layerupdate.layerbranch.layer.name }} {{ layerupdate.layerbranch.branch.name }} - {{ layerupdate.started }} {% endblock %}
+-->
+
+{% block content %}
+{% autoescape on %}
+
+<h2>{{ layerupdate.layerbranch.layer.name }} {{ layerupdate.layerbranch.branch.name }} - {{ layerupdate.started }}</h2>
+
+<pre>{{ layerupdate.log }}</pre>
+
+{% endautoescape %}
+
+{% endblock %}
+
+
+{% block scripts %}
+{% endblock %}

@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% comment %}
+
+  layerindex-web - update page
+
+  Copyright (C) 2016 Intel Corporation
+  Licensed under the MIT license, see COPYING.MIT for details
+
+{% endcomment %}
+
+<!--
+{% block title_append %} - {{ update.started }} {% endblock %}
+-->
+
+{% block content %}
+{% autoescape on %}
+
+        <ul class="breadcrumb">
+            <li><a href="{% url 'update_list' %}">Updates</a> <span class="divider">&rarr;</span></li>
+            <li class="active">{{ update.started }}</li>
+        </ul>
+
+
+<h2>{{ update.started }} {% if update.reload %}(reload){% endif %}</h2>
+
+{% if update.log %}
+    <pre>{{ update.log }}</pre>
+{% endif %}
+
+{% for layerupdate in layerupdates %}
+    <a href="{% url 'layer_item' layerupdate.layerbranch.branch.name layerupdate.layerbranch.layer.name %}"><h3>{{ layerupdate.layerbranch.layer.name }} {{ layerupdate.layerbranch.branch.name }}</h3></a>
+    <pre>{{ layerupdate.log }}</pre>
+{% endfor %}
+
+{% if not update.log and not layerupdates %}
+    <p>No messages</p>
+{% endif %}
+
+{% endautoescape %}
+
+{% endblock %}
+
+
+{% block scripts %}
+{% endblock %}

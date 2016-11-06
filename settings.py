@@ -211,6 +211,9 @@ BITBAKE_REPO_URL = "git://git.openembedded.org/bitbake"
 # Core layer to be used by the update script for basic BitBake configuration
 CORE_LAYER_NAME = "openembedded-core"
 
+# Update records older than this number of days will be deleted every update
+UPDATE_PURGE_DAYS = 30
+
 # Settings for layer submission feature
 SUBMIT_EMAIL_FROM = 'noreply@example.com'
 SUBMIT_EMAIL_SUBJECT = 'OE Layerindex layer submission'

@@ -8,7 +8,7 @@ from django.conf.urls import *
 from django.views.generic import TemplateView, DetailView, ListView, RedirectView
 from django.views.defaults import page_not_found
 from django.core.urlresolvers import reverse_lazy
-from layerindex.views import LayerListView, LayerReviewListView, LayerReviewDetailView, RecipeSearchView, MachineSearchView, PlainTextListView, LayerDetailView, edit_layer_view, delete_layer_view, edit_layernote_view, delete_layernote_view, HistoryListView, EditProfileFormView, AdvancedRecipeSearchView, BulkChangeView, BulkChangeSearchView, bulk_change_edit_view, bulk_change_patch_view, BulkChangeDeleteView, RecipeDetailView, RedirectParamsView, ClassicRecipeSearchView, ClassicRecipeDetailView, ClassicRecipeStatsView
+from layerindex.views import LayerListView, LayerReviewListView, LayerReviewDetailView, RecipeSearchView, MachineSearchView, PlainTextListView, LayerDetailView, edit_layer_view, delete_layer_view, edit_layernote_view, delete_layernote_view, HistoryListView, EditProfileFormView, AdvancedRecipeSearchView, BulkChangeView, BulkChangeSearchView, bulk_change_edit_view, bulk_change_patch_view, BulkChangeDeleteView, RecipeDetailView, RedirectParamsView, ClassicRecipeSearchView, ClassicRecipeDetailView, ClassicRecipeStatsView, LayerUpdateDetailView, UpdateListView, UpdateDetailView
 from layerindex.models import LayerItem, Recipe, RecipeChangeset
 from rest_framework import routers
 from . import restviews
@@ -67,6 +67,10 @@ urlpatterns = patterns('',
             template_name='layerindex/recipedetail.html'),
             name='recipe'),
     url(r'^layer/(?P<name>[-\w]+)/publish/$', 'layerindex.views.publish', name="publish"),
+    url(r'^layerupdate/(?P<pk>[-\w]+)/$',
+        LayerUpdateDetailView.as_view(
+            template_name='layerindex/layerupdate.html'),
+            name='layerupdate'),
     url(r'^bulkchange/$',
         BulkChangeView.as_view(
             template_name='layerindex/bulkchange.html'),
@@ -97,6 +101,14 @@ urlpatterns = patterns('',
     #        context_object_name='recipe_list',
     #        template_name='layerindex/rawrecipes.txt'),
     #        name='recipe_list_raw'),
+    url(r'^updates/$',
+        UpdateListView.as_view(
+            template_name='layerindex/updatelist.html'),
+            name='update_list'),
+    url(r'^updates/(?P<pk>[-\w]+)/$',
+        UpdateDetailView.as_view(
+            template_name='layerindex/updatedetail.html'),
+            name='update'),
     url(r'^history/$',
         HistoryListView.as_view(
             template_name='layerindex/history.html'),

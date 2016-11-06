@@ -223,6 +223,19 @@ def logger_create(name):
     logger.setLevel(logging.INFO)
     return logger
 
+class ListHandler(logging.Handler):
+    """Logging handler which accumulates formatted log records in a list, returning the list on demand"""
+    def __init__(self):
+        self.log = []
+        logging.Handler.__init__(self, logging.WARNING)
+    def emit(self, record):
+        self.log.append('%s\n' % self.format(record))
+    def read(self):
+        log = self.log
+        self.log = []
+        return log
+
+
 def lock_file(fn):
     starttime = time.time()
     while True:

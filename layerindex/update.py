@@ -14,6 +14,7 @@ import optparse
 import logging
 import subprocess
 import signal
+from datetime import datetime, timedelta
 from distutils.version import LooseVersion
 import utils
 from layerconfparse import LayerConfParse
@@ -41,10 +42,24 @@ def run_command_interruptible(cmd):
     """
     signal.signal(signal.SIGINT, signal.SIG_IGN)
     try:
-        ret = subprocess.call(cmd, cwd=os.path.dirname(sys.argv[0]), shell=True, preexec_fn=reenable_sigint)
+        process = subprocess.Popen(
+            cmd, cwd=os.path.dirname(sys.argv[0]), shell=True, preexec_fn=reenable_sigint, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
+        )
+
+        buf = ''
+        while True:
+            out = process.stdout.read(1)
+            out = out.decode('utf-8')
+            if out:
+                sys.stdout.write(out)
+                sys.stdout.flush()
+                buf += out
+            elif out == '' and process.poll() != None:
+                break
+
     finally:
         signal.signal(signal.SIGINT, signal.SIG_DFL)
-    return ret
+    return process.returncode, buf
 
 
 def main():
@@ -93,7 +108,7 @@ def main():
 
     utils.setup_django()
     import settings
-    from layerindex.models import Branch, LayerItem, LayerDependency
+    from layerindex.models import Branch, LayerItem, Update, LayerUpdate
 
     logger.setLevel(options.loglevel)
 
@@ -126,130 +141,171 @@ def main():
     if not os.path.exists(fetchdir):
         os.makedirs(fetchdir)
     fetchedrepos = []
-    failedrepos = []
+    failedrepos = {}
 
-    lockfn = os.path.join(fetchdir, "layerindex.lock")
-    lockfile = utils.lock_file(lockfn)
-    if not lockfile:
-        logger.error("Layer index lock timeout expired")
-        sys.exit(1)
+    listhandler = utils.ListHandler()
+    listhandler.setFormatter(logging.Formatter("%(levelname)s: %(message)s"))
+    logger.addHandler(listhandler)
+
+    update = Update()
+    update.started = datetime.now()
+    if options.fullreload or options.reload:
+        update.reload = True
+    else:
+        update.reload = False
+    if not options.dryrun:
+        update.save()
     try:
-        bitbakepath = os.path.join(fetchdir, 'bitbake')
+        lockfn = os.path.join(fetchdir, "layerindex.lock")
+        lockfile = utils.lock_file(lockfn)
+        if not lockfile:
+            logger.error("Layer index lock timeout expired")
+            sys.exit(1)
+        try:
+            bitbakepath = os.path.join(fetchdir, 'bitbake')
 
-        if not options.nofetch:
-            # Fetch latest metadata from repositories
-            for layer in layerquery:
-                # Handle multiple layers in a single repo
-                urldir = layer.get_fetch_dir()
-                repodir = os.path.join(fetchdir, urldir)
-                if not (layer.vcs_url in fetchedrepos or layer.vcs_url in failedrepos):
-                    logger.info("Fetching remote repository %s" % layer.vcs_url)
-                    out = None
-                    try:
-                        if not os.path.exists(repodir):
-                            out = utils.runcmd("git clone %s %s" % (layer.vcs_url, urldir), fetchdir, logger=logger)
-                        else:
-                            out = utils.runcmd("git fetch", repodir, logger=logger)
-                    except Exception as e:
-                        logger.error("Fetch of layer %s failed: %s" % (layer.name, str(e)))
-                        failedrepos.append(layer.vcs_url)
-                        continue
-                    fetchedrepos.append(layer.vcs_url)
-
-            if not fetchedrepos:
-                logger.error("No repositories could be fetched, exiting")
-                sys.exit(1)
-
-            logger.info("Fetching bitbake from remote repository %s" % settings.BITBAKE_REPO_URL)
-            if not os.path.exists(bitbakepath):
-                out = utils.runcmd("git clone %s %s" % (settings.BITBAKE_REPO_URL, 'bitbake'), fetchdir, logger=logger)
-            else:
-                out = utils.runcmd("git fetch", bitbakepath, logger=logger)
-
-        # Process and extract data from each layer
-        # We now do this by calling out to a separate script; doing otherwise turned out to be
-        # unreliable due to leaking memory (we're using bitbake internals in a manner in which
-        # they never get used during normal operation).
-        last_rev = {}
-        for branch in branches:
-            for layer in layerquery:
-                if layer.vcs_url in failedrepos:
-                    logger.info("Skipping update of layer %s as fetch of repository %s failed" % (layer.name, layer.vcs_url))
-                    continue
-
-                urldir = layer.get_fetch_dir()
-                repodir = os.path.join(fetchdir, urldir)
-
-                branchobj = utils.get_branch(branch)
-
-                if branchobj.update_environment:
-                    cmdprefix = branchobj.update_environment.get_command()
-                else:
-                    cmdprefix = 'python3'
-                cmd = '%s update_layer.py -l %s -b %s' % (cmdprefix, layer.name, branch)
-                if options.reload:
-                    cmd += ' --reload'
-                if options.fullreload:
-                    cmd += ' --fullreload'
-                if options.nocheckout:
-                    cmd += ' --nocheckout'
-                if options.dryrun:
-                    cmd += ' -n'
-                if options.loglevel == logging.DEBUG:
-                    cmd += ' -d'
-                elif options.loglevel == logging.ERROR:
-                    cmd += ' -q'
-                logger.debug('Running layer update command: %s' % cmd)
-                ret = run_command_interruptible(cmd)
-
-                # We need to get layerbranch here because it might not have existed until
-                # layer_update.py created it, but it still may not create one (e.g. if subdir
-                # didn't exist) so we still need to check
-                layerbranch = layer.get_layerbranch(branch)
-                if layerbranch:
-                    last_rev[layerbranch] = layerbranch.vcs_last_rev
-
-                if ret == 254:
-                    # Interrupted by user, break out of loop
-                    break
-
-        # Since update_layer may not be called in the correct order to have the
-        # dependencies created before trying to link them, we now have to loop
-        # back through all the branches and layers and try to link in the
-        # dependencies that may have been missed.  Note that creating the
-        # dependencies is a best-effort and continues if they are not found.
-        for branch in branches:
-            try:
-                layerconfparser = LayerConfParse(logger=logger, bitbakepath=bitbakepath)
+            if not options.nofetch:
+                # Fetch latest metadata from repositories
                 for layer in layerquery:
+                    # Handle multiple layers in a single repo
+                    urldir = layer.get_fetch_dir()
+                    repodir = os.path.join(fetchdir, urldir)
+                    if not (layer.vcs_url in fetchedrepos or layer.vcs_url in failedrepos):
+                        logger.info("Fetching remote repository %s" % layer.vcs_url)
+                        out = None
+                        try:
+                            if not os.path.exists(repodir):
+                                out = utils.runcmd("git clone %s %s" % (layer.vcs_url, urldir), fetchdir, logger=logger, printerr=False)
+                            else:
+                                out = utils.runcmd("git fetch", repodir, logger=logger, printerr=False)
+                        except subprocess.CalledProcessError as e:
+                            logger.error("Fetch of layer %s failed: %s" % (layer.name, e.output))
+                            failedrepos[layer.vcs_url] = e.output
+                            continue
+                        fetchedrepos.append(layer.vcs_url)
 
-                    layerbranch = layer.get_layerbranch(branch)
-                    # Skip layers that did not change.
-                    layer_last_rev = None
-                    if layerbranch:
-                        layer_last_rev = last_rev.get(layerbranch, None)
-                    if layer_last_rev is None or layer_last_rev == layerbranch.vcs_last_rev:
+                if not fetchedrepos:
+                    logger.error("No repositories could be fetched, exiting")
+                    sys.exit(1)
+
+                logger.info("Fetching bitbake from remote repository %s" % settings.BITBAKE_REPO_URL)
+                if not os.path.exists(bitbakepath):
+                    out = utils.runcmd("git clone %s %s" % (settings.BITBAKE_REPO_URL, 'bitbake'), fetchdir, logger=logger)
+                else:
+                    out = utils.runcmd("git fetch", bitbakepath, logger=logger)
+
+            # Process and extract data from each layer
+            # We now do this by calling out to a separate script; doing otherwise turned out to be
+            # unreliable due to leaking memory (we're using bitbake internals in a manner in which
+            # they never get used during normal operation).
+            last_rev = {}
+            for branch in branches:
+                for layer in layerquery:
+                    layerupdate = LayerUpdate()
+                    layerupdate.update = update
+
+                    errmsg = failedrepos.get(layer.vcs_url, '')
+                    if errmsg:
+                        logger.info("Skipping update of layer %s as fetch of repository %s failed:\n%s" % (layer.name, layer.vcs_url, errmsg))
+                        layerbranch = layer.get_layerbranch(branch)
+                        if layerbranch:
+                            layerupdate.layerbranch = layerbranch
+                            layerupdate.started = datetime.now()
+                            layerupdate.finished = datetime.now()
+                            layerupdate.log = 'ERROR: fetch failed: %s' % errmsg
+                            if not options.dryrun:
+                                layerupdate.save()
                         continue
 
                     urldir = layer.get_fetch_dir()
                     repodir = os.path.join(fetchdir, urldir)
 
-                    utils.checkout_layer_branch(layerbranch, repodir, logger)
+                    branchobj = utils.get_branch(branch)
 
-                    config_data = layerconfparser.parse_layer(layerbranch, repodir)
-                    if not config_data:
-                        logger.debug("Layer %s does not appear to have branch %s" % (layer.name, branch))
-                        continue
+                    if branchobj.update_environment:
+                        cmdprefix = branchobj.update_environment.get_command()
+                    else:
+                        cmdprefix = 'python3'
+                    cmd = '%s update_layer.py -l %s -b %s' % (cmdprefix, layer.name, branch)
+                    if options.reload:
+                        cmd += ' --reload'
+                    if options.fullreload:
+                        cmd += ' --fullreload'
+                    if options.nocheckout:
+                        cmd += ' --nocheckout'
+                    if options.dryrun:
+                        cmd += ' -n'
+                    if options.loglevel == logging.DEBUG:
+                        cmd += ' -d'
+                    elif options.loglevel == logging.ERROR:
+                        cmd += ' -q'
 
-                    utils.add_dependencies(layerbranch, config_data, logger=logger)
-                    utils.add_recommends(layerbranch, config_data, logger=logger)
-            finally:
-                layerconfparser.shutdown()
+                    logger.debug('Running layer update command: %s' % cmd)
+                    layerupdate.started = datetime.now()
+                    ret, output = run_command_interruptible(cmd)
+                    layerupdate.finished = datetime.now()
 
+                    # We need to get layerbranch here because it might not have existed until
+                    # layer_update.py created it, but it still may not create one (e.g. if subdir
+                    # didn't exist) so we still need to check
+                    layerbranch = layer.get_layerbranch(branch)
+                    if layerbranch:
+                        last_rev[layerbranch] = layerbranch.vcs_last_rev
+                        layerupdate.layerbranch = layerbranch
+                        layerupdate.log = output
+                        if not options.dryrun:
+                            layerupdate.save()
 
+                    if ret == 254:
+                        # Interrupted by user, break out of loop
+                        break
+
+            # Since update_layer may not be called in the correct order to have the
+            # dependencies created before trying to link them, we now have to loop
+            # back through all the branches and layers and try to link in the
+            # dependencies that may have been missed.  Note that creating the
+            # dependencies is a best-effort and continues if they are not found.
+            for branch in branches:
+                try:
+                    layerconfparser = LayerConfParse(logger=logger, bitbakepath=bitbakepath)
+                    for layer in layerquery:
+
+                        layerbranch = layer.get_layerbranch(branch)
+                        # Skip layers that did not change.
+                        layer_last_rev = None
+                        if layerbranch:
+                            layer_last_rev = last_rev.get(layerbranch, None)
+                        if layer_last_rev is None or layer_last_rev == layerbranch.vcs_last_rev:
+                            continue
+
+                        urldir = layer.get_fetch_dir()
+                        repodir = os.path.join(fetchdir, urldir)
+
+                        utils.checkout_layer_branch(layerbranch, repodir, logger)
+
+                        config_data = layerconfparser.parse_layer(layerbranch, repodir)
+                        if not config_data:
+                            logger.debug("Layer %s does not appear to have branch %s" % (layer.name, branch))
+                            continue
+
+                        utils.add_dependencies(layerbranch, config_data, logger=logger)
+                        utils.add_recommends(layerbranch, config_data, logger=logger)
+                finally:
+                    layerconfparser.shutdown()
+
+        finally:
+            utils.unlock_file(lockfile)
 
     finally:
-        utils.unlock_file(lockfile)
+        update.log = ''.join(listhandler.read())
+        update.finished = datetime.now()
+        if not options.dryrun:
+            update.save()
+
+    if not options.dryrun:
+        # Purge old update records
+        update_purge_days = getattr(settings, 'UPDATE_PURGE_DAYS', 30)
+        Update.objects.filter(started__lte=datetime.now()-timedelta(days=update_purge_days)).delete()
 
     sys.exit(0)
 

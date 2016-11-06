@@ -1,6 +1,6 @@
 # layerindex-web - view definitions
 #
-# Copyright (C) 2013-2014 Intel Corporation
+# Copyright (C) 2013-2016 Intel Corporation
 #
 # Licensed under the MIT license, see COPYING.MIT for details
 
@@ -10,7 +10,7 @@ from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidde
 from django.core.urlresolvers import reverse, reverse_lazy, resolve
 from django.core.exceptions import PermissionDenied
 from django.template import RequestContext
-from layerindex.models import Branch, LayerItem, LayerMaintainer, LayerBranch, LayerDependency, LayerNote, Recipe, Machine, Distro, BBClass, BBAppend, RecipeChange, RecipeChangeset, ClassicRecipe
+from layerindex.models import Branch, LayerItem, LayerMaintainer, LayerBranch, LayerDependency, LayerNote, Update, LayerUpdate, Recipe, Machine, Distro, BBClass, BBAppend, RecipeChange, RecipeChangeset, ClassicRecipe
 from datetime import datetime
 from django.views.generic import TemplateView, DetailView, ListView
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
@@ -18,7 +18,7 @@ from django.views.generic.base import RedirectView
 from layerindex.forms import EditLayerForm, LayerMaintainerFormSet, EditNoteForm, EditProfileForm, RecipeChangesetForm, AdvancedRecipeSearchForm, BulkChangeEditFormSet, ClassicRecipeForm, ClassicRecipeSearchForm
 from django.db import transaction
 from django.contrib.auth.models import User, Permission
-from django.db.models import Q, Count
+from django.db.models import Q, Count, Sum
 from django.core.mail import EmailMessage
 from django.template.loader import get_template
 from django.template import Context
@@ -328,6 +328,7 @@ class LayerDetailView(DetailView):
             context['distros'] = layerbranch.distro_set.order_by('name')
             context['appends'] = layerbranch.bbappend_set.order_by('filename')
             context['classes'] = layerbranch.bbclass_set.order_by('name')
+            context['updates'] = layerbranch.layerupdate_set.order_by('-started')
         context['url_branch'] = self.kwargs['branch']
         context['this_url_name'] = resolve(self.request.path_info).url_name
         return context
@@ -597,6 +598,29 @@ class MachineSearchView(ListView):
         context['url_branch'] = self.kwargs['branch']
         context['this_url_name'] = resolve(self.request.path_info).url_name
         return context
+
+
+class UpdateListView(ListView):
+    context_object_name = "updates"
+    paginate_by = 50
+
+    def get_queryset(self):
+        return Update.objects.all().order_by('-started').annotate(errors=Sum('layerupdate__errors'), warnings=Sum('layerupdate__warnings'))
+
+
+class UpdateDetailView(DetailView):
+    model = Update
+
+    def get_context_data(self, **kwargs):
+        context = super(UpdateDetailView, self).get_context_data(**kwargs)
+        update = self.get_object()
+        if update:
+            context['layerupdates'] = update.layerupdate_set.exclude(log__isnull=True).exclude(log__exact='')
+        return context
+
+
+class LayerUpdateDetailView(DetailView):
+    model = LayerUpdate
 
 
 class DistroSearchView(ListView):

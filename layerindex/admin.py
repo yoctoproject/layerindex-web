@@ -74,6 +74,12 @@ class LayerDependencyAdmin(CompareVersionAdmin):
 class LayerNoteAdmin(CompareVersionAdmin):
     list_filter = ['layer__name']
 
+class UpdateAdmin(admin.ModelAdmin):
+    pass
+
+class LayerUpdateAdmin(admin.ModelAdmin):
+    list_filter = ['update__started', 'layerbranch__layer__name', 'layerbranch__branch__name']
+
 class RecipeAdmin(admin.ModelAdmin):
     search_fields = ['filename', 'pn']
     list_filter = ['layerbranch__layer__name', 'layerbranch__branch__name']
@@ -144,6 +150,8 @@ admin.site.register(LayerBranch, LayerBranchAdmin)
 admin.site.register(LayerMaintainer, LayerMaintainerAdmin)
 admin.site.register(LayerDependency, LayerDependencyAdmin)
 admin.site.register(LayerNote, LayerNoteAdmin)
+admin.site.register(Update, UpdateAdmin)
+admin.site.register(LayerUpdate, LayerUpdateAdmin)
 admin.site.register(Recipe, RecipeAdmin)
 admin.site.register(RecipeFileDependency)
 admin.site.register(Machine, MachineAdmin)

@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load static %}
+
+{% comment %}
+
+  layerindex-web - updates list page template
+
+  Copyright (C) 2016 Intel Corporation
+  Licensed under the MIT license, see COPYING.MIT for details
+
+{% endcomment %}
+
+
+<!--
+{% block title_append %} - updates{% endblock %}
+-->
+
+{% block content %}
+{% autoescape on %}
+
+<div class="row-fluid">
+    <div class="span9 offset1">
+
+        <table class="table table-striped table-bordered">
+            <thead>
+                <tr>
+                    <th>Update date</th>
+                    <th>Time</th>
+                    <th>Errors</th>
+                    <th>Warnings</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for update in updates %}
+                <tr>
+                    <td><a href="{% url 'update' update.id %}">{{ update.started }}{% if update.reload %} (reload){% endif %}</a></td>
+                    <td>{% if update.finished %}{{ update.started|timesince:update.finished }}{% else %}(in progress){% endif %}</td>
+                    <td>{% if update.errors %}<span class="badge badge-important">{{ update.errors }}</span>{% endif %}</td>
+                    <td>{% if update.warnings %}<span class="badge badge-warning">{{ update.warnings }}</span>{% endif %}</td>
+                </tr>
+                {% endfor %}
+
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% if is_paginated %}
+    {% load pagination %}
+    {% pagination page_obj %}
+{% endif %}
+
+{% endautoescape %}
+
+{% endblock %}

@@ -35,10 +35,8 @@ Other
 * Create simple script to check for unlisted layer subdirectories in all repos
 * Auto-detect more values from github pages?
 * Ability for submitters to get email notification about publication?
-* Update script still seems not to be always printing layer name on parsing warnings/errors
 * Update script could send warnings when parsing layers to maintainers? (optional)
 * Click on OE-Classic graph element to go to query?
 * Use bar instead of pie graphs for OE-Classic statistics
 * Ensure OE-Core appears before meta-oe in layer list
 * Ability for reviewers to comment before publishing a layer?
-* Record update & parse errors against recipe/layer

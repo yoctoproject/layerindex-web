@@ -31,7 +31,7 @@ class PythonEnvironment(models.Model):
 
 
 class Branch(models.Model):
-    name = models.CharField(max_length=50)
+    name = models.CharField('Branch name', max_length=50)
     bitbake_branch = models.CharField(max_length=50)
     short_description = models.CharField(max_length=50, blank=True)
     sort_priority = models.IntegerField(blank=True, null=True)
@@ -45,6 +45,16 @@ class Branch(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class Update(models.Model):
+    started = models.DateTimeField()
+    finished = models.DateTimeField(blank=True, null=True)
+    log = models.TextField(blank=True)
+    reload = models.BooleanField('Reloaded', default=False, help_text='Was this update a reload?')
+
+    def __str__(self):
+        return '%s' % self.started
 
 
 class LayerItem(models.Model):
@@ -253,6 +263,31 @@ class LayerNote(models.Model):
 
     def __str__(self):
         return "%s: %s" % (self.layer.name, self.text)
+
+
+class LayerUpdate(models.Model):
+    layerbranch = models.ForeignKey(LayerBranch)
+    update = models.ForeignKey(Update)
+    started = models.DateTimeField()
+    finished = models.DateTimeField()
+    errors = models.IntegerField(default=0)
+    warnings = models.IntegerField(default=0)
+    log = models.TextField(blank=True)
+
+    def save(self):
+        warnings = 0
+        errors = 0
+        for line in self.log.splitlines():
+            if line.startswith('WARNING:'):
+                warnings += 1
+            elif line.startswith('ERROR:'):
+                errors += 1
+        self.warnings = warnings
+        self.errors = errors
+        super(LayerUpdate, self).save()
+
+    def __str__(self):
+        return "%s: %s: %s" % (self.layerbranch.layer.name, self.layerbranch.branch.name, self.started)
 
 
 class Recipe(models.Model):
