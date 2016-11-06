@@ -34,9 +34,6 @@ class LayerConfParse:
 
     def parse_layer(self, layerbranch, layerdir):
 
-        utils.checkout_layer_branch(layerbranch, layerdir, self.logger)
-
-
         # This is not a valid layer, parsing will cause exception.
         if not utils.is_layer_valid(layerdir):
             return None

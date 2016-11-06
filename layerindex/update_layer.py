@@ -292,18 +292,6 @@ def main():
             layerdir = os.path.join(repodir, layerbranch.vcs_subdir)
             layerdir_start = os.path.normpath(layerdir) + os.sep
 
-            from layerconfparse import LayerConfParse
-            layerconfparser = LayerConfParse(logger=logger, tinfoil=tinfoil)
-            layer_config_data = layerconfparser.parse_layer(layerbranch, layerdir)
-            if not layer_config_data:
-                logger.info("Skipping update of layer %s for branch %s - conf/layer.conf may have parse issues" % (layer.name, branchdesc))
-                layerconfparser.shutdown()
-                sys.exit(1)
-            utils.add_dependencies(layerbranch, layer_config_data, logger=logger)
-            utils.add_recommends(layerbranch, layer_config_data, logger=logger)
-            utils.set_layerbranch_collection_version(layerbranch, layer_config_data, logger=logger)
-            layerbranch.save()
-
             layerrecipes = Recipe.objects.filter(layerbranch=layerbranch)
             layermachines = Machine.objects.filter(layerbranch=layerbranch)
             layerdistros = Distro.objects.filter(layerbranch=layerbranch)
@@ -327,6 +315,18 @@ def main():
                     sys.exit(1)
 
                 logger.info("Collecting data for layer %s on branch %s" % (layer.name, branchdesc))
+
+                from layerconfparse import LayerConfParse
+                layerconfparser = LayerConfParse(logger=logger, tinfoil=tinfoil)
+                layer_config_data = layerconfparser.parse_layer(layerbranch, layerdir)
+                if not layer_config_data:
+                    logger.info("Skipping update of layer %s for branch %s - conf/layer.conf may have parse issues" % (layer.name, branchdesc))
+                    layerconfparser.shutdown()
+                    sys.exit(1)
+                utils.add_dependencies(layerbranch, layer_config_data, logger=logger)
+                utils.add_recommends(layerbranch, layer_config_data, logger=logger)
+                utils.set_layerbranch_collection_version(layerbranch, layer_config_data, logger=logger)
+                layerbranch.save()
 
                 try:
                     config_data_copy = recipeparse.setup_layer(tinfoil.config_data, fetchdir, layerdir, layer, layerbranch)

@@ -226,9 +226,7 @@ def main():
                     urldir = layer.get_fetch_dir()
                     repodir = os.path.join(fetchdir, urldir)
 
-                    layerbranch = layer.get_layerbranch(branch)
-                    if not layerbranch:
-                        continue
+                    utils.checkout_layer_branch(layerbranch, repodir, logger)
 
                     config_data = layerconfparser.parse_layer(layerbranch, repodir)
                     if not config_data:
