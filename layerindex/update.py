@@ -175,6 +175,7 @@ def main():
             for layer in layerquery:
                 if layer.vcs_url in failedrepos:
                     logger.info("Skipping update of layer %s as fetch of repository %s failed" % (layer.name, layer.vcs_url))
+                    continue
 
                 urldir = layer.get_fetch_dir()
                 repodir = os.path.join(fetchdir, urldir)
