@@ -181,9 +181,6 @@ def main():
                 repodir = os.path.join(fetchdir, urldir)
 
                 branchobj = utils.get_branch(branch)
-                layerbranch = layer.get_layerbranch(branch)
-                if layerbranch:
-                    last_rev[layerbranch] = layerbranch.vcs_last_rev
 
                 if branchobj.update_environment:
                     cmdprefix = branchobj.update_environment.get_command()
@@ -204,6 +201,14 @@ def main():
                     cmd += ' -q'
                 logger.debug('Running layer update command: %s' % cmd)
                 ret = run_command_interruptible(cmd)
+
+                # We need to get layerbranch here because it might not have existed until
+                # layer_update.py created it, but it still may not create one (e.g. if subdir
+                # didn't exist) so we still need to check
+                layerbranch = layer.get_layerbranch(branch)
+                if layerbranch:
+                    last_rev[layerbranch] = layerbranch.vcs_last_rev
+
                 if ret == 254:
                     # Interrupted by user, break out of loop
                     break
@@ -220,7 +225,10 @@ def main():
 
                     layerbranch = layer.get_layerbranch(branch)
                     # Skip layers that did not change.
-                    if layerbranch and last_rev[layerbranch] == layerbranch.vcs_last_rev:
+                    layer_last_rev = None
+                    if layerbranch:
+                        layer_last_rev = last_rev.get(layerbranch, None)
+                    if layer_last_rev is None or layer_last_rev == layerbranch.vcs_last_rev:
                         continue
 
                     urldir = layer.get_fetch_dir()
