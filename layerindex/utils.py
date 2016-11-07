@@ -190,9 +190,9 @@ def runcmd(cmd, destdir=None, printerr=True, logger=None):
         subprocess.check_call(cmd, stdout=out, stderr=out, cwd=destdir, shell=True)
     except subprocess.CalledProcessError as e:
         out.seek(0)
+        output = out.read()
+        output = output.decode('ascii').strip()
         if printerr:
-            output = out.read()
-            output = output.decode('ascii').strip()
             if logger:
                 logger.error("%s" % output)
             else:
