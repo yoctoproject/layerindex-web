@@ -376,6 +376,22 @@ class RecipeSearchView(ListView):
         _check_url_branch(self.kwargs)
         query_string = self.request.GET.get('q', '')
         init_qs = Recipe.objects.filter(layerbranch__branch__name=self.kwargs['branch'])
+
+        # Support slightly crude search on inherits field
+        query_items = query_string.split()
+        inherits = []
+        query_terms = []
+        for item in query_items:
+            if item.startswith('inherits:'):
+                inherits.append(item.split(':')[1])
+            else:
+                query_terms.append(item)
+        if inherits:
+            # FIXME This is a bit ugly, perhaps we should consider having this as a one-many relationship instead
+            for inherit in inherits:
+                init_qs = init_qs.filter(Q(inherits=inherit) | Q(inherits__startswith=inherit + ' ') | Q(inherits__endswith=' ' + inherit) | Q(inherits__contains=' %s ' % inherit))
+            query_string = ' '.join(query_terms)
+
         if query_string.strip():
             order_by = ('pn', 'layerbranch__layer')
 
