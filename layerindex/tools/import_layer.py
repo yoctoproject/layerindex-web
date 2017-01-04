@@ -28,9 +28,9 @@ def set_vcs_fields(layer, repoval):
     layer.vcs_url = repoval
     if repoval.startswith('git://git.openembedded.org/'):
         reponame = re.sub('^.*/', '', repoval)
-        layer.vcs_web_url = 'http://cgit.openembedded.org/cgit.cgi/' + reponame
-        layer.vcs_web_tree_base_url = 'http://cgit.openembedded.org/cgit.cgi/' + reponame + '/tree/%path%?h=%branch%'
-        layer.vcs_web_file_base_url = 'http://cgit.openembedded.org/cgit.cgi/' + reponame + '/tree/%path%?h=%branch%'
+        layer.vcs_web_url = 'http://cgit.openembedded.org/' + reponame
+        layer.vcs_web_tree_base_url = 'http://cgit.openembedded.org/' + reponame + '/tree/%path%?h=%branch%'
+        layer.vcs_web_file_base_url = 'http://cgit.openembedded.org/' + reponame + '/tree/%path%?h=%branch%'
     elif 'git.yoctoproject.org/' in repoval:
         reponame = re.sub('^.*/', '', repoval)
         layer.vcs_web_url = 'http://git.yoctoproject.org/cgit/cgit.cgi/' + reponame
