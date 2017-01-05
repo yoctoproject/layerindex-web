@@ -611,6 +611,7 @@ def main():
         import traceback
         traceback.print_exc()
 
+    tinfoil.shutdown()
     shutil.rmtree(tempdir)
     sys.exit(0)
 

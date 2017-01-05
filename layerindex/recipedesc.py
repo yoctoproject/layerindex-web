@@ -89,6 +89,8 @@ def main():
             except Exception as e:
                 logger.info("Unable to read %s: %s", fullpath, str(e))
 
+    tinfoil.shutdown()
+
     sys.exit(0)
 
 

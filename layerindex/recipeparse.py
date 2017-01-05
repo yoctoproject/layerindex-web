@@ -34,12 +34,6 @@ def _setup_tinfoil(bitbakepath, enable_tracking):
             tinfoil.cooker.enableDataTracking()
     tinfoil.prepare(config_only = True)
 
-    # XXX: Setup databuilder
-    tinfoil.databuilder = bb.cookerdata.CookerDataBuilder(tinfoil.config)
-    tinfoil.databuilder.parseBaseConfiguration()
-
-    tinfoil.cache = bb.cache.NoCache(tinfoil.databuilder)
-
     return tinfoil
 
 def _parse_layer_conf(layerdir, data):
