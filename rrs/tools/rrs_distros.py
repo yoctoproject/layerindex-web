@@ -100,6 +100,7 @@ if __name__=="__main__":
                     fetchdir, settings, logger)
 
             if not recipes:
+                tinfoil.shutdown()
                 continue
 
             from oe import distro_check
@@ -128,3 +129,5 @@ if __name__=="__main__":
                     recipedistro.save()
                     logger.debug('%s: layer branch %s, add distro %s alias %s' % (pn,
                         str(layerbranch), distro, alias))
+
+            tinfoil.shutdown()

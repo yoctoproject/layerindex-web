@@ -162,6 +162,7 @@ if __name__=="__main__":
                     fetchdir, settings, logger,  recipe_files=recipe_files)
 
             if not recipes:
+                tinfoil.shutdown()
                 continue
 
             for recipe_data in recipes:
@@ -194,3 +195,5 @@ if __name__=="__main__":
 
                 logger.debug('%s: layer branch %s, pv %s, upstream (%s)' % (recipe.pn,
                     str(layerbranch), recipe.pv, str(ru)))
+
+            tinfoil.shutdown()
