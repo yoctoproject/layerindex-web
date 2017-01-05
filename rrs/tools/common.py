@@ -117,7 +117,7 @@ def load_recipes(layerbranch, bitbakepath, fetchdir, settings, logger,
         recipe_files = get_recipe_files(layerdir)
 
     recipes = []
-    for rp in recipe_files:
+    for fn in recipe_files:
         try:
             if hasattr(tinfoil, 'parse_recipe_file'):
                 data = tinfoil.parse_recipe_file(fn, appends=False, config_data=d)
@@ -132,7 +132,7 @@ def load_recipes(layerbranch, bitbakepath, fetchdir, settings, logger,
             recipes.append(data)
         except Exception as e:
             logger.error("%s: branch %s couldn't be parsed, %s" \
-                    % (layerbranch, rp, str(e)))
+                    % (layerbranch, fn, str(e)))
             continue
 
     return (tinfoil, d, recipes)
