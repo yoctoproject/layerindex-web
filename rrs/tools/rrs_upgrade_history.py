@@ -41,8 +41,6 @@ sys.path.insert(0, os.path.join(bitbakepath, 'lib'))
 from bb import BBHandledException
 from bb.utils import vercmp_string
 
-import multiprocessing as mp
-
 """
     Store upgrade into RecipeUpgrade model.
 """
@@ -104,19 +102,24 @@ def _create_upgrade(recipe_data, layerbranch, ct, title, info, logger, initial=F
         (npv, _, _) = get_recipe_pv_without_srcpv(pv,
                 get_pv_type(pv))
 
-        if npv == 'git':
-            logger.debug("%s: Avoiding upgrade to unversioned git." % \
-                    (recipe.pn)) 
-        elif ppv == 'git' or vercmp_string(ppv, npv) == -1:
-            if initial is True:
-                logger.debug("%s: Update initial upgrade ( -> %s)." % \
-                        (recipe.pn, pv)) 
-                latest_upgrade.version = pv
-                latest_upgrade.save()
-            else:
-                logger.debug("%s: Detected upgrade (%s -> %s)" \
-                        " in ct %s." % (pn, prev_pv, pv, ct))
-                _save_upgrade(recipe, pv, ct, title, info, logger)
+        try:
+            if npv == 'git':
+                logger.debug("%s: Avoiding upgrade to unversioned git." % \
+                        (recipe.pn)) 
+            elif ppv == 'git' or vercmp_string(ppv, npv) == -1:
+                if initial is True:
+                    logger.debug("%s: Update initial upgrade ( -> %s)." % \
+                            (recipe.pn, pv)) 
+                    latest_upgrade.version = pv
+                    latest_upgrade.save()
+                else:
+                    logger.debug("%s: detected upgrade (%s -> %s)" \
+                            " in ct %s." % (pn, prev_pv, pv, ct))
+                    _save_upgrade(recipe, pv, ct, title, info, logger)
+        except:
+            logger.error("%s: fail to detect upgrade (%s -> %s)" \
+                            " in ct %s." % (pn, prev_pv, pv, ct))
+
 
 """
     Returns a list containing the fullpaths to the recipes from a commit.
@@ -240,22 +243,13 @@ def upgrade_history(options, logger):
             logger.debug("Adding initial upgrade history ....")
 
             ct = commit_list.pop(0)
-
-            # XXX: To avoid cooker parser problems due to load multiple instances
-            # of cooker parser with different metadata revisions.
-            p = mp.Process(target=do_initial, args=(layerbranch, ct, logger,))
-            p.start()
-            p.join()
+            do_initial(layerbranch, ct, logger)
 
         logger.debug("Adding upgrade history from %s to %s ..." % (since, today))
         for ct in commit_list:
             if ct:
                 logger.debug("Analysing commit %s ..." % ct)
-                # XXX: To avoid cooker parser problems due to load multiple instances
-                # of cooker parser with different metadata revisions.
-                p = mp.Process(target=do_loop, args=(layerbranch, ct, logger,))
-                p.start()
-                p.join()
+                do_loop(layerbranch, ct, logger)
 
 if __name__=="__main__":
     parser = optparse.OptionParser(usage = """%prog [options]""")
