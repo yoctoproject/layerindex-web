@@ -164,6 +164,7 @@ def do_initial(layerbranch, ct, logger):
 
     utils.runcmd("git checkout master -f", repodir, logger=logger)
     utils.runcmd("git branch -D %s" % (branch_name_tmp), repodir, logger=logger)
+    tinfoil.shutdown()
 
 def do_loop(layerbranch, ct, logger):
     layer = layerbranch.layer
@@ -196,6 +197,7 @@ def do_loop(layerbranch, ct, logger):
 
     utils.runcmd("git checkout master -f", repodir, logger=logger)
     utils.runcmd("git branch -D %s" % (branch_name_tmp), repodir, logger=logger)
+    tinfoil.shutdown()
 
 
 """

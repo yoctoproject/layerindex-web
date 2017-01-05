@@ -119,7 +119,11 @@ def load_recipes(layerbranch, bitbakepath, fetchdir, settings, logger,
     recipes = []
     for rp in recipe_files:
         try:
-            data = tinfoil.cache.loadDataFull(rp, [])
+            if hasattr(tinfoil, 'parse_recipe_file'):
+                data = tinfoil.parse_recipe_file(fn, appends=False, config_data=d)
+            else:
+                data = bb.cache.Cache.loadDataFull(fn, [], d)
+
             try:
                 pv = data.getVar('PV', True)
             except FetchError:
