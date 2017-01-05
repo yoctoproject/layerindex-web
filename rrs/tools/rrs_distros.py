@@ -94,42 +94,37 @@ if __name__=="__main__":
 
     logger.debug("Starting recipe distros update ...")
 
-    transaction.enter_transaction_management()
-    transaction.managed(True)
+    with transaction.atomic():
+        for layerbranch in LayerBranch.objects.all():
+            (tinfoil, d, recipes) = load_recipes(layerbranch, bitbakepath,
+                    fetchdir, settings, logger)
 
-    for layerbranch in LayerBranch.objects.all():
-        (tinfoil, d, recipes) = load_recipes(layerbranch, bitbakepath,
-                fetchdir, settings, logger)
-
-        if not recipes:
-            continue
-
-        from oe import distro_check
-        logger.debug("Downloading distro's package information ...")
-        distro_check.create_distro_packages_list(fetchdir, d)
-        pkglst_dir = os.path.join(fetchdir, "package_lists")
-
-        RecipeDistro.objects.filter(recipe__layerbranch = layerbranch).delete()
-
-        for recipe_data in recipes:
-            pn = recipe_data.getVar('PN', True)
-
-            try:
-                recipe = Recipe.objects.get(pn = pn, layerbranch = layerbranch)
-            except:
-                logger.warn('%s: layer branch %s, NOT found' % (pn,
-                    str(layerbranch)))
+            if not recipes:
                 continue
 
-            distro_info = search_package_in_distros(pkglst_dir, recipe, recipe_data)
-            for distro, alias in distro_info.items():
-                recipedistro = RecipeDistro()
-                recipedistro.recipe = recipe
-                recipedistro.distro = distro
-                recipedistro.alias = alias
-                recipedistro.save()
-                logger.debug('%s: layer branch %s, add distro %s alias %s' % (pn,
-                    str(layerbranch), distro, alias))
+            from oe import distro_check
+            logger.debug("Downloading distro's package information ...")
+            distro_check.create_distro_packages_list(fetchdir, d)
+            pkglst_dir = os.path.join(fetchdir, "package_lists")
 
-    transaction.commit()
-    transaction.leave_transaction_management()
+            RecipeDistro.objects.filter(recipe__layerbranch = layerbranch).delete()
+
+            for recipe_data in recipes:
+                pn = recipe_data.getVar('PN', True)
+
+                try:
+                    recipe = Recipe.objects.get(pn = pn, layerbranch = layerbranch)
+                except:
+                    logger.warn('%s: layer branch %s, NOT found' % (pn,
+                        str(layerbranch)))
+                    continue
+
+                distro_info = search_package_in_distros(pkglst_dir, recipe, recipe_data)
+                for distro, alias in distro_info.items():
+                    recipedistro = RecipeDistro()
+                    recipedistro.recipe = recipe
+                    recipedistro.distro = distro
+                    recipedistro.alias = alias
+                    recipedistro.save()
+                    logger.debug('%s: layer branch %s, add distro %s alias %s' % (pn,
+                        str(layerbranch), distro, alias))

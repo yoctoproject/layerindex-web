@@ -46,43 +46,37 @@ if __name__=="__main__":
 
     logger.info('Starting unique recipes ...')
 
-    transaction.enter_transaction_management()
-    transaction.managed(True)
-
     # only keep the major version of recipe
     logger.info('Starting remove of duplicate recipes only keep major version ...')
-    for layerbranch in LayerBranch.objects.all():
-        recipes = {}
+    with transaction.atomic():
+        for layerbranch in LayerBranch.objects.all():
+            recipes = {}
 
-        for recipe in Recipe.objects.filter(layerbranch=layerbranch):
-            recipes[recipe.pn] = None
+            for recipe in Recipe.objects.filter(layerbranch=layerbranch):
+                recipes[recipe.pn] = None
 
-        for pn in recipes.keys():
-            for recipe in Recipe.objects.filter(layerbranch=layerbranch,
-                    pn=pn):
+            for pn in recipes.keys():
+                for recipe in Recipe.objects.filter(layerbranch=layerbranch,
+                        pn=pn):
 
-                if recipes[pn] is None:
-                    recipes[pn] = recipe
-                else:
-                    (ppv, _, _) = get_recipe_pv_without_srcpv(recipes[pn].pv,
-                            get_pv_type(recipes[pn].pv))
-                    (npv, _, _) = get_recipe_pv_without_srcpv(recipe.pv,
-                            get_pv_type(recipe.pv))
-
-                    if npv == 'git':
-                        logger.debug("%s: Removed git recipe without version." \
-                                % (recipe.pn))
-                        recipe.delete()
-                    elif ppv == 'git' or vercmp_string(ppv, npv) == -1:
-                        logger.debug("%s: Removed older recipe (%s), new recipe (%s)." \
-                                % (recipes[pn].pn, recipes[pn].pv, recipe.pv))
-                        recipes[pn].delete()
+                    if recipes[pn] is None:
                         recipes[pn] = recipe
                     else:
-                        logger.debug("%s: Removed older recipe (%s), current recipe (%s)." \
-                                % (recipes[pn].pn, recipe.pv, recipes[pn].pv))
-                        recipe.delete()
+                        (ppv, _, _) = get_recipe_pv_without_srcpv(recipes[pn].pv,
+                                get_pv_type(recipes[pn].pv))
+                        (npv, _, _) = get_recipe_pv_without_srcpv(recipe.pv,
+                                get_pv_type(recipe.pv))
 
-
-    transaction.commit()
-    transaction.leave_transaction_management()
+                        if npv == 'git':
+                            logger.debug("%s: Removed git recipe without version." \
+                                    % (recipe.pn))
+                            recipe.delete()
+                        elif ppv == 'git' or vercmp_string(ppv, npv) == -1:
+                            logger.debug("%s: Removed older recipe (%s), new recipe (%s)." \
+                                    % (recipes[pn].pn, recipes[pn].pv, recipe.pv))
+                            recipes[pn].delete()
+                            recipes[pn] = recipe
+                        else:
+                            logger.debug("%s: Removed older recipe (%s), current recipe (%s)." \
+                                    % (recipes[pn].pn, recipe.pv, recipes[pn].pv))
+                            recipe.delete()

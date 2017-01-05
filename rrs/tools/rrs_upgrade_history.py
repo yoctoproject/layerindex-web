@@ -157,9 +157,10 @@ def do_initial(layerbranch, ct, logger):
     (tinfoil, d, recipes) = load_recipes(layerbranch, bitbakepath,
                             fetchdir, settings, logger, nocheckout=True)
 
-    for recipe_data in recipes:
-        _create_upgrade(recipe_data, layerbranch, '', title,
-                info, logger, initial=True)
+    with transaction.atomic():
+        for recipe_data in recipes:
+            _create_upgrade(recipe_data, layerbranch, '', title,
+                    info, logger, initial=True)
 
     utils.runcmd("git checkout master -f", repodir, logger=logger)
     utils.runcmd("git branch -D %s" % (branch_name_tmp), repodir, logger=logger)
@@ -188,9 +189,10 @@ def do_loop(layerbranch, ct, logger):
                                     repodir, logger=logger)
     info = utils.runcmd("git log  --format='%an;%ae;%ad;%cd' --date=rfc -n 1 " \
                     + ct, destdir=repodir, logger=logger)
-    for recipe_data in recipes:
-        _create_upgrade(recipe_data, layerbranch, ct, title,
-                            info, logger)
+    with transaction.atomic():
+        for recipe_data in recipes:
+            _create_upgrade(recipe_data, layerbranch, ct, title,
+                                info, logger)
 
     utils.runcmd("git checkout master -f", repodir, logger=logger)
     utils.runcmd("git branch -D %s" % (branch_name_tmp), repodir, logger=logger)
@@ -232,8 +234,6 @@ def upgrade_history(options, logger):
                                 logger=logger)
         commit_list = commits.split('\n')
 
-        transaction.enter_transaction_management()
-        transaction.managed(True)
         if options.initial:
             logger.debug("Adding initial upgrade history ....")
 
@@ -254,9 +254,6 @@ def upgrade_history(options, logger):
                 p = mp.Process(target=do_loop, args=(layerbranch, ct, logger,))
                 p.start()
                 p.join()
-
-        transaction.commit()
-        transaction.leave_transaction_management()
 
 if __name__=="__main__":
     parser = optparse.OptionParser(usage = """%prog [options]""")
