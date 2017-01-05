@@ -146,55 +146,51 @@ if __name__=="__main__":
 
     logger.debug("Starting upstream history...")
 
-    transaction.enter_transaction_management()
-    transaction.managed(True)
-    for layerbranch in LayerBranch.objects.all():
-        layer = layerbranch.layer
-        urldir = layer.get_fetch_dir()
-        repodir = os.path.join(fetchdir, urldir)
-        layerdir = os.path.join(repodir, layerbranch.vcs_subdir)
+    with transaction.atomic():
+        for layerbranch in LayerBranch.objects.all():
+            layer = layerbranch.layer
+            urldir = layer.get_fetch_dir()
+            repodir = os.path.join(fetchdir, urldir)
+            layerdir = os.path.join(repodir, layerbranch.vcs_subdir)
 
-        recipe_files = []
-        for recipe in Recipe.objects.filter(layerbranch = layerbranch):
-            file = str(os.path.join(layerdir, recipe.full_path()))
-            recipe_files.append(file)
+            recipe_files = []
+            for recipe in Recipe.objects.filter(layerbranch = layerbranch):
+                file = str(os.path.join(layerdir, recipe.full_path()))
+                recipe_files.append(file)
 
-        (tinfoil, d, recipes) = load_recipes(layerbranch, bitbakepath,
-                fetchdir, settings, logger,  recipe_files=recipe_files)
+            (tinfoil, d, recipes) = load_recipes(layerbranch, bitbakepath,
+                    fetchdir, settings, logger,  recipe_files=recipe_files)
 
-        if not recipes:
-            continue
+            if not recipes:
+                continue
 
-        for recipe_data in recipes:
-            set_regexes(recipe_data)
+            for recipe_data in recipes:
+                set_regexes(recipe_data)
 
-        history = RecipeUpstreamHistory(start_date = datetime.now())
+            history = RecipeUpstreamHistory(start_date = datetime.now())
 
-        from oe.utils import ThreadedPool
-        import multiprocessing
+            from oe.utils import ThreadedPool
+            import multiprocessing
 
-        nproc = min(multiprocessing.cpu_count(), len(recipes))
-        pool = ThreadedPool(nproc, len(recipes))
+            nproc = min(multiprocessing.cpu_count(), len(recipes))
+            pool = ThreadedPool(nproc, len(recipes))
 
-        result = []
-        for recipe_data in recipes:
-            pool.add_task(get_upstream_info, (layerbranch,
-                recipe_data, result))
+            result = []
+            for recipe_data in recipes:
+                pool.add_task(get_upstream_info, (layerbranch,
+                    recipe_data, result))
 
-        pool.start()
-        pool.wait_completion()
+            pool.start()
+            pool.wait_completion()
 
-        history.end_date = datetime.now()
-        history.save()
+            history.end_date = datetime.now()
+            history.save()
 
-        for res in result:
-            (recipe, ru) = res
+            for res in result:
+                (recipe, ru) = res
 
-            ru.history = history
-            ru.save()
+                ru.history = history
+                ru.save()
 
-            logger.debug('%s: layer branch %s, pv %s, upstream (%s)' % (recipe.pn,
-                str(layerbranch), recipe.pv, str(ru)))
-
-    transaction.commit()
-    transaction.leave_transaction_management()
+                logger.debug('%s: layer branch %s, pv %s, upstream (%s)' % (recipe.pn,
+                    str(layerbranch), recipe.pv, str(ru)))
