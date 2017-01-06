@@ -173,7 +173,10 @@ if __name__=="__main__":
             from oe.utils import ThreadedPool
             import multiprocessing
 
-            nproc = min(multiprocessing.cpu_count(), len(recipes))
+            #nproc = min(multiprocessing.cpu_count(), len(recipes))
+            # XXX: The new tinfoil API don't support pythreads so
+            # set to 1 while tinfoil have support.
+            nproc = 1
             pool = ThreadedPool(nproc, len(recipes))
 
             result = []
