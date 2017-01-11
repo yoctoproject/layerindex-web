@@ -203,6 +203,7 @@ def main():
         transaction.rollback()
     finally:
         transaction.leave_transaction_management()
+        tinfoil.shutdown()
 
     shutil.rmtree(tempdir)
     sys.exit(0)

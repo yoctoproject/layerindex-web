@@ -231,6 +231,7 @@ def main():
 
         outp = generate_patches(tinfoil, fetchdir, changeset, sys.argv[2])
     finally:
+        tinfoil.shutdown()
         utils.unlock_file(lockfile)
 
     if outp:
