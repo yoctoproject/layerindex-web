@@ -775,7 +775,7 @@ class ClassicRecipeSearchView(RecipeSearchView):
         if query_string.strip():
             order_by = ('pn', 'layerbranch__layer')
 
-            qs0 = init_qs.filter(pn==query_string).order_by(*order_by)
+            qs0 = init_qs.filter(pn=query_string).order_by(*order_by)
 
             entry_query = simplesearch.get_query(query_string, ['pn'])
             qs1 = init_qs.filter(entry_query).order_by(*order_by)
