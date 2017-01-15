@@ -27,6 +27,10 @@ import recipeparse
 logger = utils.logger_create('LayerIndexUpdate')
 
 
+class DryRunRollbackException(Exception):
+    pass
+
+
 def update_recipe_file(tinfoil, data, path, recipe, layerdir_start, repodir):
     fn = str(os.path.join(path, recipe.filename))
     try:
@@ -154,55 +158,51 @@ def main():
     # Clear the default value of HOMEPAGE ('unknown')
     tinfoil.config_data.setVar('HOMEPAGE', '')
 
-    transaction.enter_transaction_management()
-    transaction.managed(True)
     try:
-        layerdir_start = os.path.normpath(oeclassicpath) + os.sep
-        layerrecipes = Recipe.objects.filter(layerbranch=layerbranch)
-        layermachines = Machine.objects.filter(layerbranch=layerbranch)
-        layerdistros = Distro.objects.filter(layerbranch=layerbranch)
-        layerappends = BBAppend.objects.filter(layerbranch=layerbranch)
-        layerclasses = BBClass.objects.filter(layerbranch=layerbranch)
+        with transaction.atomic():
+            layerdir_start = os.path.normpath(oeclassicpath) + os.sep
+            layerrecipes = Recipe.objects.filter(layerbranch=layerbranch)
+            layermachines = Machine.objects.filter(layerbranch=layerbranch)
+            layerdistros = Distro.objects.filter(layerbranch=layerbranch)
+            layerappends = BBAppend.objects.filter(layerbranch=layerbranch)
+            layerclasses = BBClass.objects.filter(layerbranch=layerbranch)
 
-        try:
-            config_data_copy = recipeparse.setup_layer(tinfoil.config_data, fetchdir, oeclassicpath, layer, layerbranch)
-        except recipeparse.RecipeParseError as e:
-            logger.error(str(e))
-            transaction.rollback()
-            sys.exit(1)
+            try:
+                config_data_copy = recipeparse.setup_layer(tinfoil.config_data, fetchdir, oeclassicpath, layer, layerbranch)
+            except recipeparse.RecipeParseError as e:
+                logger.error(str(e))
+                sys.exit(1)
 
-        layerrecipes.delete()
-        layermachines.delete()
-        layerdistros.delete()
-        layerappends.delete()
-        layerclasses.delete()
-        for root, dirs, files in os.walk(oeclassicpath):
-            if '.git' in dirs:
-                dirs.remove('.git')
-            for f in files:
-                fullpath = os.path.join(root, f)
-                (typename, filepath, filename) = recipeparse.detect_file_type(fullpath, layerdir_start)
-                if typename == 'recipe':
-                    recipe = ClassicRecipe()
-                    recipe.layerbranch = layerbranch
-                    recipe.filename = filename
-                    recipe.filepath = filepath
-                    update_recipe_file(tinfoil, config_data_copy, root, recipe, layerdir_start, oeclassicpath)
-                    recipe.save()
+            layerrecipes.delete()
+            layermachines.delete()
+            layerdistros.delete()
+            layerappends.delete()
+            layerclasses.delete()
+            for root, dirs, files in os.walk(oeclassicpath):
+                if '.git' in dirs:
+                    dirs.remove('.git')
+                for f in files:
+                    fullpath = os.path.join(root, f)
+                    (typename, filepath, filename) = recipeparse.detect_file_type(fullpath, layerdir_start)
+                    if typename == 'recipe':
+                        recipe = ClassicRecipe()
+                        recipe.layerbranch = layerbranch
+                        recipe.filename = filename
+                        recipe.filepath = filepath
+                        update_recipe_file(tinfoil, config_data_copy, root, recipe, layerdir_start, oeclassicpath)
+                        recipe.save()
 
-        layerbranch.vcs_last_fetch = datetime.now()
-        layerbranch.save()
+            layerbranch.vcs_last_fetch = datetime.now()
+            layerbranch.save()
 
-        if options.dryrun:
-            transaction.rollback()
-        else:
-            transaction.commit()
+            if options.dryrun:
+                raise DryRunRollbackException()
+    except DryRunRollbackException:
+        pass
     except:
         import traceback
         traceback.print_exc()
-        transaction.rollback()
     finally:
-        transaction.leave_transaction_management()
         tinfoil.shutdown()
 
     shutil.rmtree(tempdir)

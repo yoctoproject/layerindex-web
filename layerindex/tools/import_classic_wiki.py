@@ -21,6 +21,10 @@ import logging
 logger = utils.logger_create('LayerIndexImport')
 
 
+class DryRunRollbackException(Exception):
+    pass
+
+
 def read_page(site, path):
     ret = {}
     import httplib
@@ -98,103 +102,97 @@ def main():
     recipes_ai = read_page("www.openembedded.org", "/wiki/OE-Classic_Recipes_A-I?action=raw")
     recipes_jz = read_page("www.openembedded.org", "/wiki/OE-Classic_Recipes_J-Z?action=raw")
 
-    transaction.enter_transaction_management()
-    transaction.managed(True)
     try:
-        recipes = dict(list(recipes_ai.items()) + list(recipes_jz.items()))
-        for pn, comment in recipes.items():
-            newpn = ''
-            newlayer = ''
-            status = 'U'
-            comment = comment.strip(' -')
-            if 'provided by' in comment:
-                res = re.match(r'[a-zA-Z- ]*provided by ([a-zA-Z0-9-]*) in ([a-zA-Z0-9-]*)(.*)', comment)
-                if res:
-                    newpn = res.group(1)
-                    newlayer = res.group(2)
-                    comment = res.group(3)
-                if pn.endswith('-native') or pn.endswith('-cross'):
-                    status = 'P'
-                else:
+        with transaction.atomic():
+            recipes = dict(list(recipes_ai.items()) + list(recipes_jz.items()))
+            for pn, comment in recipes.items():
+                newpn = ''
+                newlayer = ''
+                status = 'U'
+                comment = comment.strip(' -')
+                if 'provided by' in comment:
+                    res = re.match(r'[a-zA-Z- ]*provided by ([a-zA-Z0-9-]*) in ([a-zA-Z0-9-]*)(.*)', comment)
+                    if res:
+                        newpn = res.group(1)
+                        newlayer = res.group(2)
+                        comment = res.group(3)
+                    if pn.endswith('-native') or pn.endswith('-cross'):
+                        status = 'P'
+                    else:
+                        status = 'R'
+                elif 'replaced by' in comment or 'renamed to' in comment or ' is in ' in comment:
+                    res = re.match(r'.*replaced by ([a-zA-Z0-9-.]*) in ([a-zA-Z0-9-]*)(.*)', comment)
+                    if not res:
+                        res = re.match(r'.*renamed to ([a-zA-Z0-9-.]*) in ([a-zA-Z0-9-]*)(.*)', comment)
+                    if not res:
+                        res = re.match(r'([a-zA-Z0-9-.]*) is in ([a-zA-Z0-9-]*)(.*)', comment)
+                    if res:
+                        newpn = res.group(1)
+                        newlayer = res.group(2)
+                        comment = res.group(3)
                     status = 'R'
-            elif 'replaced by' in comment or 'renamed to' in comment or ' is in ' in comment:
-                res = re.match(r'.*replaced by ([a-zA-Z0-9-.]*) in ([a-zA-Z0-9-]*)(.*)', comment)
-                if not res:
-                    res = re.match(r'.*renamed to ([a-zA-Z0-9-.]*) in ([a-zA-Z0-9-]*)(.*)', comment)
-                if not res:
-                    res = re.match(r'([a-zA-Z0-9-.]*) is in ([a-zA-Z0-9-]*)(.*)', comment)
-                if res:
-                    newpn = res.group(1)
-                    newlayer = res.group(2)
-                    comment = res.group(3)
-                status = 'R'
-            elif 'obsolete' in comment or 'superseded' in comment:
-                res = re.match(r'provided by ([a-zA-Z0-9-]*) in ([a-zA-Z0-9-]*)(.*)', comment)
-                if res:
-                    newpn = res.group(1)
-                    newlayer = res.group(2)
-                    comment = res.group(3)
-                elif comment.startswith('superseded by'):
-                    comment = comment[14:]
-                elif comment.startswith('obsolete'):
-                    comment = comment[9:]
-                status = 'O'
-            elif 'PACKAGECONFIG' in comment:
-                res = re.match(r'[a-zA-Z ]* PACKAGECONFIG [a-zA-Z ]* to ([a-zA-Z0-9-]*) in ([a-zA-Z0-9-]*)(.*)', comment)
-                if res:
-                    newpn = res.group(1)
-                    newlayer = res.group(2)
-                    comment = res.group(3)
-                status = 'C'
+                elif 'obsolete' in comment or 'superseded' in comment:
+                    res = re.match(r'provided by ([a-zA-Z0-9-]*) in ([a-zA-Z0-9-]*)(.*)', comment)
+                    if res:
+                        newpn = res.group(1)
+                        newlayer = res.group(2)
+                        comment = res.group(3)
+                    elif comment.startswith('superseded by'):
+                        comment = comment[14:]
+                    elif comment.startswith('obsolete'):
+                        comment = comment[9:]
+                    status = 'O'
+                elif 'PACKAGECONFIG' in comment:
+                    res = re.match(r'[a-zA-Z ]* PACKAGECONFIG [a-zA-Z ]* to ([a-zA-Z0-9-]*) in ([a-zA-Z0-9-]*)(.*)', comment)
+                    if res:
+                        newpn = res.group(1)
+                        newlayer = res.group(2)
+                        comment = res.group(3)
+                    status = 'C'
 
-            if newlayer:
-                if newlayer.lower() == 'oe-core':
-                    newlayer = 'openembedded-core'
+                if newlayer:
+                    if newlayer.lower() == 'oe-core':
+                        newlayer = 'openembedded-core'
 
-            # Remove all links from comments because they'll be picked up as categories
-            comment = re.sub(r'\[(http[^[]*)\]', r'\1', comment)
-            # Split out categories
-            categories = re.findall(r'\[([^]]*)\]', comment)
-            for cat in categories:
-                comment = comment.replace('[%s]' % cat, '')
-            if '(GPE)' in comment or pn.startswith('gpe'):
-                categories.append('GPE')
-                comment = comment.replace('(GPE)', '')
+                # Remove all links from comments because they'll be picked up as categories
+                comment = re.sub(r'\[(http[^[]*)\]', r'\1', comment)
+                # Split out categories
+                categories = re.findall(r'\[([^]]*)\]', comment)
+                for cat in categories:
+                    comment = comment.replace('[%s]' % cat, '')
+                if '(GPE)' in comment or pn.startswith('gpe'):
+                    categories.append('GPE')
+                    comment = comment.replace('(GPE)', '')
 
-            comment = comment.strip('- ')
+                comment = comment.strip('- ')
 
-            logger.debug("%s|%s|%s|%s|%s|%s" % (pn, status, newpn, newlayer, categories, comment))
+                logger.debug("%s|%s|%s|%s|%s|%s" % (pn, status, newpn, newlayer, categories, comment))
 
-            recipequery = ClassicRecipe.objects.filter(layerbranch=layerbranch).filter(pn=pn)
-            if recipequery:
-                for recipe in recipequery:
-                    recipe.cover_layerbranch = None
-                    if newlayer:
-                        res = list(LayerItem.objects.filter(name=newlayer)[:1])
-                        if res:
-                            newlayeritem = res[0]
-                            recipe.cover_layerbranch = newlayeritem.get_layerbranch('master')
-                        else:
-                            logger.info('Replacement layer "%s" for %s could not be found' % (newlayer, pn))
-                    recipe.cover_pn = newpn
-                    recipe.cover_status = status
-                    recipe.cover_verified = True 
-                    recipe.cover_comment = comment
-                    recipe.classic_category = " ".join(categories)
-                    recipe.save()
-            else:
-                logger.info('No OE-Classic recipe with name "%s" count be found' % pn)
-                sys.exit(1)
+                recipequery = ClassicRecipe.objects.filter(layerbranch=layerbranch).filter(pn=pn)
+                if recipequery:
+                    for recipe in recipequery:
+                        recipe.cover_layerbranch = None
+                        if newlayer:
+                            res = list(LayerItem.objects.filter(name=newlayer)[:1])
+                            if res:
+                                newlayeritem = res[0]
+                                recipe.cover_layerbranch = newlayeritem.get_layerbranch('master')
+                            else:
+                                logger.info('Replacement layer "%s" for %s could not be found' % (newlayer, pn))
+                        recipe.cover_pn = newpn
+                        recipe.cover_status = status
+                        recipe.cover_verified = True
+                        recipe.cover_comment = comment
+                        recipe.classic_category = " ".join(categories)
+                        recipe.save()
+                else:
+                    logger.info('No OE-Classic recipe with name "%s" count be found' % pn)
+                    sys.exit(1)
 
-        if options.dryrun:
-            transaction.rollback()
-        else:
-            transaction.commit()
-    except:
-        transaction.rollback()
-        raise
-    finally:
-        transaction.leave_transaction_management()
+            if options.dryrun:
+                raise DryRunRollbackException()
+    except DryRunRollbackException:
+        pass
 
     sys.exit(0)
 

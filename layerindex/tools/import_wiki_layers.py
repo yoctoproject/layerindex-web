@@ -20,6 +20,10 @@ import utils
 logger = utils.logger_create('LayerIndexImport')
 
 
+class DryRunRollbackException(Exception):
+    pass
+
+
 def main():
 
     parser = optparse.OptionParser(
@@ -45,9 +49,7 @@ def main():
         readme_re = re.compile(r';f=[a-zA-Z0-9/-]*README;')
         master_branch = utils.get_branch('master')
         core_layer = None
-        transaction.enter_transaction_management()
-        transaction.managed(True)
-        try:
+        with transaction.atomic():
             for line in data.splitlines():
                 if line.startswith('{|'):
                     in_table = True
@@ -140,12 +142,6 @@ def main():
                                 layerdep.layerbranch = layerbranch
                                 layerdep.dependency = core_layer
                                 layerdep.save()
-            transaction.commit()
-        except:
-            transaction.rollback()
-            raise
-        finally:
-            transaction.leave_transaction_management()
     else:
         logger.error('Fetch failed: %d: %s' % (resp.status, resp.reason))
 
