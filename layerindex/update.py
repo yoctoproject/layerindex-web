@@ -200,6 +200,7 @@ def main():
             # they never get used during normal operation).
             last_rev = {}
             for branch in branches:
+                branchobj = utils.get_branch(branch)
                 for layer in layerquery:
                     layerupdate = LayerUpdate()
                     layerupdate.update = update
@@ -219,8 +220,6 @@ def main():
 
                     urldir = layer.get_fetch_dir()
                     repodir = os.path.join(fetchdir, urldir)
-
-                    branchobj = utils.get_branch(branch)
 
                     if branchobj.update_environment:
                         cmdprefix = branchobj.update_environment.get_command()
