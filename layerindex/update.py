@@ -17,7 +17,6 @@ import signal
 from datetime import datetime, timedelta
 from distutils.version import LooseVersion
 import utils
-from layerconfparse import LayerConfParse
 
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
@@ -60,6 +59,30 @@ def run_command_interruptible(cmd):
     finally:
         signal.signal(signal.SIGINT, signal.SIG_DFL)
     return process.returncode, buf
+
+
+def prepare_update_layer_command(options, branch, layer, updatedeps=False):
+    """Prepare the update_layer.py command line"""
+    if branch.update_environment:
+        cmdprefix = branch.update_environment.get_command()
+    else:
+        cmdprefix = 'python3'
+    cmd = '%s update_layer.py -l %s -b %s' % (cmdprefix, layer.name, branch.name)
+    if updatedeps:
+        cmd += ' --update-dependencies'
+    if options.reload:
+        cmd += ' --reload'
+    if options.fullreload:
+        cmd += ' --fullreload'
+    if options.nocheckout:
+        cmd += ' --nocheckout'
+    if options.dryrun:
+        cmd += ' -n'
+    if options.loglevel == logging.DEBUG:
+        cmd += ' -d'
+    elif options.loglevel == logging.ERROR:
+        cmd += ' -q'
+    return cmd
 
 
 def main():
@@ -221,24 +244,7 @@ def main():
                     urldir = layer.get_fetch_dir()
                     repodir = os.path.join(fetchdir, urldir)
 
-                    if branchobj.update_environment:
-                        cmdprefix = branchobj.update_environment.get_command()
-                    else:
-                        cmdprefix = 'python3'
-                    cmd = '%s update_layer.py -l %s -b %s' % (cmdprefix, layer.name, branch)
-                    if options.reload:
-                        cmd += ' --reload'
-                    if options.fullreload:
-                        cmd += ' --fullreload'
-                    if options.nocheckout:
-                        cmd += ' --nocheckout'
-                    if options.dryrun:
-                        cmd += ' -n'
-                    if options.loglevel == logging.DEBUG:
-                        cmd += ' -d'
-                    elif options.loglevel == logging.ERROR:
-                        cmd += ' -q'
-
+                    cmd = prepare_update_layer_command(options, branchobj, layer)
                     logger.debug('Running layer update command: %s' % cmd)
                     layerupdate.started = datetime.now()
                     ret, output = run_command_interruptible(cmd)
@@ -265,32 +271,23 @@ def main():
             # dependencies that may have been missed.  Note that creating the
             # dependencies is a best-effort and continues if they are not found.
             for branch in branches:
-                layerconfparser = LayerConfParse(logger=logger, bitbakepath=bitbakepath)
-                try:
-                    for layer in layerquery:
-
-                        layerbranch = layer.get_layerbranch(branch)
-                        # Skip layers that did not change.
-                        layer_last_rev = None
-                        if layerbranch:
+                branchobj = utils.get_branch(branch)
+                for layer in layerquery:
+                    layerbranch = layer.get_layerbranch(branch)
+                    if layerbranch:
+                        if not (options.reload or options.fullreload):
+                            # Skip layers that did not change.
                             layer_last_rev = last_rev.get(layerbranch, None)
-                        if layer_last_rev is None or layer_last_rev == layerbranch.vcs_last_rev:
-                            continue
+                            if layer_last_rev is None or layer_last_rev == layerbranch.vcs_last_rev:
+                                continue
 
-                        urldir = layer.get_fetch_dir()
-                        repodir = os.path.join(fetchdir, urldir)
-
-                        utils.checkout_layer_branch(layerbranch, repodir, logger)
-
-                        config_data = layerconfparser.parse_layer(layerbranch, repodir)
-                        if not config_data:
-                            logger.debug("Layer %s does not appear to have branch %s" % (layer.name, branch))
-                            continue
-
-                        utils.add_dependencies(layerbranch, config_data, logger=logger)
-                        utils.add_recommends(layerbranch, config_data, logger=logger)
-                finally:
-                    layerconfparser.shutdown()
+                        logger.info('Updating layer dependencies for %s on branch %s' % (layer.name, branch))
+                        cmd = prepare_update_layer_command(options, branchobj, layer, updatedeps=True)
+                        logger.debug('Running update dependencies command: %s' % cmd)
+                        ret, output = run_command_interruptible(cmd)
+                        if ret == 254:
+                            # Interrupted by user, break out of loop
+                            break
 
         finally:
             utils.unlock_file(lockfile)
