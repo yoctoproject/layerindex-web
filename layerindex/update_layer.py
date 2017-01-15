@@ -678,8 +678,10 @@ def main():
     except:
         import traceback
         traceback.print_exc()
+    finally:
+        if hasattr(tinfoil, 'shutdown'):
+            tinfoil.shutdown()
 
-    tinfoil.shutdown()
     shutil.rmtree(tempdir)
     sys.exit(0)
 
