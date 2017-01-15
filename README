@@ -152,6 +152,54 @@ Otherwise, you can just run the plain migration command:
 python3 manage.py migrate
 
 
+Support for OE-Classic
+----------------------
+
+The Layer index optionally provides a means to index OE-Classic on a
+one-off import basis and then compare what was there to what you have
+now in the indexed layers (with some graphs showing how much of it has
+been migrated/superseded). If you want to enable this, do the following:
+
+1. From the admin interface, create a Branch record with the following
+   values:
+     - Name: oe-classic
+     - Bitbake branch: 1.12
+     - Enable updates: NOT enabled
+     - Update environment: if you have set up Python environments (for
+       python2 vs python3 across different branches) then you'll need
+       to select the python2 environment that you created here
+
+2. Clone OE-Classic somewhere locally on the machine running the
+   layer index:
+
+   git clone git://git.openembedded.org/openembedded
+
+3. Clone a bitbake somewhere locally and check out the 1.12 branch:
+
+   git clone git://git.openembedded.org/bitbake -b 1.12
+
+4. Run import_classic.py, specifying the path to OE-Classic and
+   the bitbake you checked out:
+
+   layerindex/tools/import_classic.py /path/to/bitbake112 /path/to/oeclassic
+
+5. Update the migration status of OE-Classic recipes based on other
+   layers in the database:
+
+   layerindex/tools/update_classic_status.py
+
+If you refresh the main page of the website, the OE-Classic data should
+now show up at the bottom of the branch drop-down menu. On a periodic
+basis you can repeat the last step to update the migration status in case
+new recipes are brought across (or replacements are created). Users with
+sufficient permissions can also manually update the migration status on
+the OE-Classic recipe detail pages within the website, which is useful
+for example when there's a replacement recipe in another layer that
+doesn't have the same name, so the update_classic_status.py script
+wouldn't be able to pick it up.
+
+
+
 Maintenance
 -----------
 
