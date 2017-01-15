@@ -375,14 +375,14 @@ def main():
                         layerdep.layerbranch = layerbranch
                         layerdep.dependency = core_layer
                         layerdep.save()
+                    layerconfparser = LayerConfParse(logger=logger)
                     try:
-                        layerconfparser = LayerConfParse(logger=logger)
                         config_data = layerconfparser.parse_layer(layerbranch, layerdir)
+                        if config_data:
+                            utils.add_dependencies(layerbranch, config_data, logger=logger)
+                            utils.add_recommends(layerbranch, config_data, logger=logger)
                     finally:
                         layerconfparser.shutdown()
-                    if config_data:
-                        utils.add_dependencies(layerbranch, config_data, logger=logger)
-                        utils.add_recommends(layerbranch, config_data, logger=logger)
 
                 # Get some extra meta-information
                 readme_files = glob.glob(os.path.join(layerdir, 'README*'))

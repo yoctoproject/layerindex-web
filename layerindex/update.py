@@ -266,8 +266,8 @@ def main():
             # dependencies that may have been missed.  Note that creating the
             # dependencies is a best-effort and continues if they are not found.
             for branch in branches:
+                layerconfparser = LayerConfParse(logger=logger, bitbakepath=bitbakepath)
                 try:
-                    layerconfparser = LayerConfParse(logger=logger, bitbakepath=bitbakepath)
                     for layer in layerquery:
 
                         layerbranch = layer.get_layerbranch(branch)
