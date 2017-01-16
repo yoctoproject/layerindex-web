@@ -193,9 +193,9 @@
 
         if( repoval.startsWith('git://git.openembedded.org/') ) {
             reponame = repoval.replace(/^.*\//, '')
-            this.vcs_web_url = 'http://cgit.openembedded.org/cgit.cgi/' + reponame
-            this.vcs_web_tree_base_url = 'http://cgit.openembedded.org/cgit.cgi/' + reponame + '/tree/%path%?h=%branch%'
-            this.vcs_web_file_base_url = 'http://cgit.openembedded.org/cgit.cgi/' + reponame + '/tree/%path%?h=%branch%'
+            this.vcs_web_url = 'http://cgit.openembedded.org/' + reponame
+            this.vcs_web_tree_base_url = 'http://cgit.openembedded.org/' + reponame + '/tree/%path%?h=%branch%'
+            this.vcs_web_file_base_url = 'http://cgit.openembedded.org/' + reponame + '/tree/%path%?h=%branch%'
             this.vcs_web_type = 'cgit'
         }
         else if( repoval.indexOf('git.yoctoproject.org/') > -1 ) {
