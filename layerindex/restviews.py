@@ -5,7 +5,7 @@ from layerindex.querysethelper import params_to_queryset, get_search_tuple
 class ParametricSearchableModelViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         model = self.__class__.serializer_class.Meta.model
-        qs = model.objects.all()
+        qs = self.queryset
         (filter_string, search_term, ordering_string) = get_search_tuple(self.request, model)
         return params_to_queryset(model, qs, filter_string, search_term, ordering_string)
 
@@ -22,7 +22,7 @@ class LayerItemSerializer(serializers.ModelSerializer):
         model = LayerItem
 
 class LayerItemViewSet(ParametricSearchableModelViewSet):
-    queryset = LayerItem.objects.all()
+    queryset = LayerItem.objects.filter(status='P')
     serializer_class = LayerItemSerializer
 
 class LayerBranchSerializer(serializers.ModelSerializer):
@@ -30,7 +30,7 @@ class LayerBranchSerializer(serializers.ModelSerializer):
         model = LayerBranch
 
 class LayerBranchViewSet(ParametricSearchableModelViewSet):
-    queryset = LayerBranch.objects.all()
+    queryset = LayerBranch.objects.filter(layer__status='P')
     serializer_class = LayerBranchSerializer
 
 class LayerDependencySerializer(serializers.ModelSerializer):
@@ -38,7 +38,7 @@ class LayerDependencySerializer(serializers.ModelSerializer):
         model = LayerDependency
 
 class LayerDependencyViewSet(ParametricSearchableModelViewSet):
-    queryset = LayerDependency.objects.all()
+    queryset = LayerDependency.objects.filter(layerbranch__layer__status='P')
     serializer_class = LayerDependencySerializer
 
 class RecipeSerializer(serializers.ModelSerializer):
