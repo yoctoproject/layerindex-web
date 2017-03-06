@@ -42,9 +42,13 @@ class Branch(models.Model):
 
     class Meta:
         verbose_name_plural = "Branches"
+        ordering = ['sort_priority']
 
     def __str__(self):
-        return self.name
+        if self.short_description:
+            return '%s (%s)' % (self.name, self.short_description)
+        else:
+            return self.name
 
 
 class Update(models.Model):
