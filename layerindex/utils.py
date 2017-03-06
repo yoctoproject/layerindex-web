@@ -122,13 +122,12 @@ def _add_dependency(var, name, layerbranch, config_data, logger=None, required=T
         layerdep.save()
 
 def set_layerbranch_collection_version(layerbranch, config_data, logger=None):
-
-            layerbranch.collection = config_data.getVar('BBFILE_COLLECTIONS', True)
-            ver_str = "LAYERVERSION_"
-            if layerbranch.collection:
-                layerbranch.collection = layerbranch.collection.strip()
-                ver_str += layerbranch.collection
-                layerbranch.version = config_data.getVar(ver_str, True)
+    layerbranch.collection = config_data.getVar('BBFILE_COLLECTIONS', True)
+    ver_str = "LAYERVERSION_"
+    if layerbranch.collection:
+        layerbranch.collection = layerbranch.collection.strip()
+        ver_str += layerbranch.collection
+        layerbranch.version = config_data.getVar(ver_str, True)
 
 def setup_tinfoil(bitbakepath, enable_tracking):
     sys.path.insert(0, bitbakepath + '/lib')
