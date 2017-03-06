@@ -11,6 +11,7 @@
 import sys
 import os
 import optparse
+import codecs
 import logging
 import subprocess
 import signal
@@ -45,10 +46,10 @@ def run_command_interruptible(cmd):
             cmd, cwd=os.path.dirname(sys.argv[0]), shell=True, preexec_fn=reenable_sigint, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
         )
 
+        reader = codecs.getreader('utf-8')(process.stdout, errors='surrogateescape')
         buf = ''
         while True:
-            out = process.stdout.read(1)
-            out = out.decode('utf-8')
+            out = reader.read(1, 1)
             if out:
                 sys.stdout.write(out)
                 sys.stdout.flush()
