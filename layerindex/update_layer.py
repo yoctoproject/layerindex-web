@@ -133,7 +133,7 @@ def update_machine_conf_file(path, machine):
                 break
     machine.description = desc
 
-def update_distro_conf_file(path, distro):
+def update_distro_conf_file(path, distro, d):
     logger.debug('Updating distro %s' % path)
     desc = ""
     with open(path, 'r') as f:
@@ -144,7 +144,18 @@ def update_distro_conf_file(path, distro):
                 desc = line[14:].strip()
                 desc = re.sub(r'Distribution configuration for( running)*( an)*( the)*', '', desc)
                 break
-    distro.description = desc
+
+    distro_name = ''
+    try:
+        d = utils.parse_conf(path, d)
+        distro_name = d.getVar('DISTRO_NAME', True)
+    except Exception as e:
+        logger.warn('Error parsing distro configuration file %s: %s' % (path, str(e)))
+
+    if distro_name:
+        distro.description = distro_name
+    else:
+        distro.description = desc
 
 def main():
     if LooseVersion(git.__version__) < '0.3.1':
@@ -531,7 +542,7 @@ def main():
                                 distro = Distro()
                                 distro.layerbranch = layerbranch
                                 distro.name = filename
-                                update_distro_conf_file(os.path.join(repodir, path), distro)
+                                update_distro_conf_file(os.path.join(repodir, path), distro, config_data_copy)
                                 distro.save()
                             elif typename == 'bbclass':
                                 bbclass = BBClass()
@@ -568,7 +579,7 @@ def main():
                                 results = layerdistros.filter(name=filename)
                                 if results:
                                     distro = results[0]
-                                    update_distro_conf_file(os.path.join(repodir, path), distro)
+                                    update_distro_conf_file(os.path.join(repodir, path), distro, config_data_copy)
                                     distro.save()
 
                             deps = RecipeFileDependency.objects.filter(layerbranch=layerbranch).filter(path=path)
@@ -642,7 +653,7 @@ def main():
                                 distro = Distro()
                                 distro.layerbranch = layerbranch
                                 distro.name = filename
-                                update_distro_conf_file(fullpath, distro)
+                                update_distro_conf_file(fullpath, distro, config_data_copy)
                                 distro.save()
                             elif typename == 'bbclass':
                                 bbclass = BBClass()
