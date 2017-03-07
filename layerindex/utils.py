@@ -160,6 +160,15 @@ def is_layer_valid(layerdir):
         return False
     return True
 
+def parse_conf(conf_file, d):
+    if hasattr(bb.parse, "handle"):
+        # Newer BitBake
+        data = bb.parse.handle(conf_file, d, include=True)
+    else:
+        # Older BitBake (1.18 and below)
+        data = bb.cooker._parse(conf_file, d)
+    return data
+
 def parse_layer_conf(layerdir, data, logger=None):
     conf_file = os.path.join(layerdir, "conf", "layer.conf")
 
@@ -169,12 +178,7 @@ def parse_layer_conf(layerdir, data, logger=None):
         return
 
     data.setVar('LAYERDIR', str(layerdir))
-    if hasattr(bb, "cookerdata"):
-        # Newer BitBake
-        data = bb.cookerdata.parse_config_file(conf_file, data)
-    else:
-        # Older BitBake (1.18 and below)
-        data = bb.cooker._parse(conf_file, data)
+    data = parse_conf(conf_file, data)
     data.expandVarref('LAYERDIR')
 
 def runcmd(cmd, destdir=None, printerr=True, logger=None):
