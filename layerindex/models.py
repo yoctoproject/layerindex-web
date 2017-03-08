@@ -65,6 +65,7 @@ class LayerItem(models.Model):
     LAYER_STATUS_CHOICES = (
         ('N', 'New'),
         ('P', 'Published'),
+        ('X', 'No update'),
     )
     LAYER_TYPE_CHOICES = (
         ('A', 'Base'),

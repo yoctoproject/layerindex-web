@@ -179,7 +179,7 @@ class AdvancedRecipeSearchForm(forms.Form):
     field = forms.ChoiceField(choices=FIELD_CHOICES)
     match_type = forms.ChoiceField(choices=MATCH_TYPE_CHOICES)
     value = forms.CharField(max_length=255, required=False)
-    layer = forms.ModelChoiceField(queryset=LayerItem.objects.filter(classic=False).filter(status='P').order_by('name'), empty_label="(any)", required=False)
+    layer = forms.ModelChoiceField(queryset=LayerItem.objects.filter(classic=False).filter(status__in=['P', 'X']).order_by('name'), empty_label="(any)", required=False)
 
 
 class RecipeChangesetForm(forms.ModelForm):

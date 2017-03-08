@@ -157,6 +157,7 @@ def main():
             logger.error('No layers matching specified query "%s"' % options.layers)
             sys.exit(1)
     else:
+        # We deliberately exclude status == 'X' ("no update") here
         layerquery = LayerItem.objects.filter(classic=False).filter(status='P')
         if layerquery.count() == 0:
             logger.info("No published layers to update")

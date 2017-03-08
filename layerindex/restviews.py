@@ -22,7 +22,7 @@ class LayerItemSerializer(serializers.ModelSerializer):
         model = LayerItem
 
 class LayerItemViewSet(ParametricSearchableModelViewSet):
-    queryset = LayerItem.objects.filter(status='P')
+    queryset = LayerItem.objects.filter(status__in=['P', 'X'])
     serializer_class = LayerItemSerializer
 
 class LayerBranchSerializer(serializers.ModelSerializer):
@@ -30,7 +30,7 @@ class LayerBranchSerializer(serializers.ModelSerializer):
         model = LayerBranch
 
 class LayerBranchViewSet(ParametricSearchableModelViewSet):
-    queryset = LayerBranch.objects.filter(layer__status='P')
+    queryset = LayerBranch.objects.filter(layer__status__in=['P', 'X'])
     serializer_class = LayerBranchSerializer
 
 class LayerDependencySerializer(serializers.ModelSerializer):
@@ -38,7 +38,7 @@ class LayerDependencySerializer(serializers.ModelSerializer):
         model = LayerDependency
 
 class LayerDependencyViewSet(ParametricSearchableModelViewSet):
-    queryset = LayerDependency.objects.filter(layerbranch__layer__status='P')
+    queryset = LayerDependency.objects.filter(layerbranch__layer__status__in=['P', 'X'])
     serializer_class = LayerDependencySerializer
 
 class RecipeSerializer(serializers.ModelSerializer):

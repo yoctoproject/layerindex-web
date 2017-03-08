@@ -279,7 +279,7 @@ class LayerListView(ListView):
 
     def get_queryset(self):
         _check_url_branch(self.kwargs)
-        return LayerBranch.objects.filter(branch__name=self.kwargs['branch']).filter(layer__status='P').order_by('layer__layer_type', '-layer__index_preference', 'layer__name')
+        return LayerBranch.objects.filter(branch__name=self.kwargs['branch']).filter(layer__status__in=['P', 'X']).order_by('layer__layer_type', '-layer__index_preference', 'layer__name')
 
     def get_context_data(self, **kwargs):
         context = super(LayerListView, self).get_context_data(**kwargs)
@@ -459,7 +459,7 @@ class DuplicatesView(TemplateView):
         context['classes'] = self.get_classes(layer_ids)
         context['url_branch'] = self.kwargs['branch']
         context['this_url_name'] = resolve(self.request.path_info).url_name
-        context['layers'] = LayerBranch.objects.filter(branch__name=self.kwargs['branch']).filter(layer__status='P').order_by( 'layer__name')
+        context['layers'] = LayerBranch.objects.filter(branch__name=self.kwargs['branch']).filter(layer__status__in=['P', 'X']).order_by( 'layer__name')
         context['showlayers'] = layer_ids
         return context
 
