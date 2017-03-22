@@ -3,7 +3,6 @@ TODO:
 * Auto-detect dead layers and visually mark
   * Formal deprecation process?
   * Email people when status will change?
-* Sync dependencies with layer.conf
 * Show other branches when looking at layer - maybe change the focus to show all layers rather than layers at a selected branch? 
 * Allow users to make a comment sent to admins/maintainers?
 * Marking for recipes with ptest enabled
@@ -19,7 +18,6 @@ Other
 * Collect interesting news (layer add/delete, recipe add/delete/upgrade) and provide RSS feed
 * "Split layer" tool for when a layer is split out of another? (Saves time adding records everywhere)
 * Search for bbclasses?
-* Search for recipes inheriting specific classes
 * All-branch search/results so you can see version availability of recipes in all branches at once?
 * Show OE-Classic search results in OE-Core search? (with appropriate disclaimers)
 * Display no-results found message when search does not return any results in layer search
