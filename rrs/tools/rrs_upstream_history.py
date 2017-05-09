@@ -48,7 +48,7 @@ def set_regexes(d):
         one set it.
     """
 
-    variables = ['REGEX', 'REGEX_URI', 'GITTAGREGEX']
+    variables = ('REGEX', 'REGEX_URI', 'GITTAGREGEX')
 
     if any(d.getVar(var, True) for var in variables):
         return
