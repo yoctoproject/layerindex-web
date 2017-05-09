@@ -337,7 +337,8 @@ def recipes_report(request, release_name, milestone_name):
     recipe_list = _get_recipe_list(milestone)
 
     response = HttpResponse(mimetype='text/csv')
-    response['Content-Disposition'] = 'attachment; filename="%s.csv"' % (milestone_name)
+    response['Content-Disposition'] = 'attachment; filename="%s_%s.csv"' % (
+           release_name , milestone_name)
 
     writer = csv.writer(response)
     writer.writerow(['Upstream status', 'Name', 'Version',
