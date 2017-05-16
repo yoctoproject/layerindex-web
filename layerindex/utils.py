@@ -160,6 +160,17 @@ def is_layer_valid(layerdir):
         return False
     return True
 
+def is_branch_valid(layerdir, branch):
+    import git
+
+    g = git.cmd.Git(layerdir)
+    assert g.rev_parse('--is-bare-repository') == 'false'
+    try:
+        g.rev_parse('--verify', 'origin/%s' % branch)
+    except git.exc.GitCommandError:
+        return False
+    return True
+
 def parse_conf(conf_file, d):
     if hasattr(bb.parse, "handle"):
         # Newer BitBake
