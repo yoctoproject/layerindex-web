@@ -360,9 +360,9 @@ def main():
                     logger.info("Skipping update of layer %s for branch %s - conf/layer.conf may have parse issues" % (layer.name, branchdesc))
                     layerconfparser.shutdown()
                     sys.exit(1)
+                utils.set_layerbranch_collection_version(layerbranch, layer_config_data, logger=logger)
                 utils.add_dependencies(layerbranch, layer_config_data, logger=logger)
                 utils.add_recommends(layerbranch, layer_config_data, logger=logger)
-                utils.set_layerbranch_collection_version(layerbranch, layer_config_data, logger=logger)
                 layerbranch.save()
 
                 try:
