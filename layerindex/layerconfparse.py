@@ -32,7 +32,7 @@ class LayerConfParse:
 
         self.config_data_copy = bb.data.createCopy(self.tinfoil.config_data)
 
-    def parse_layer(self, layerbranch, layerdir):
+    def parse_layer(self, layerdir):
 
         # This is not a valid layer, parsing will cause exception.
         if not utils.is_layer_valid(layerdir):

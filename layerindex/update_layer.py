@@ -267,7 +267,7 @@ def main():
                     sys.exit(0)
 
                 layerconfparser = layerconfparse.LayerConfParse(logger=logger, bitbakepath=bitbakepath, tinfoil=tinfoil)
-                config_data = layerconfparser.parse_layer(layerbranch, layerdir)
+                config_data = layerconfparser.parse_layer(layerdir)
                 if not config_data:
                     logger.debug("Layer %s does not appear to be valid for branch %s" % (layer.name, branchdesc))
                     sys.exit(0)
@@ -355,7 +355,7 @@ def main():
                 logger.info("Collecting data for layer %s on branch %s" % (layer.name, branchdesc))
 
                 layerconfparser = layerconfparse.LayerConfParse(logger=logger, tinfoil=tinfoil)
-                layer_config_data = layerconfparser.parse_layer(layerbranch, layerdir)
+                layer_config_data = layerconfparser.parse_layer(layerdir)
                 if not layer_config_data:
                     logger.info("Skipping update of layer %s for branch %s - conf/layer.conf may have parse issues" % (layer.name, branchdesc))
                     layerconfparser.shutdown()

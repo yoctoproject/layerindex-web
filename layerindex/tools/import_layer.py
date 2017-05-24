@@ -377,7 +377,7 @@ def main():
                         layerdep.save()
                     layerconfparser = LayerConfParse(logger=logger)
                     try:
-                        config_data = layerconfparser.parse_layer(layerbranch, layerdir)
+                        config_data = layerconfparser.parse_layer(layerdir)
                         if config_data:
                             utils.add_dependencies(layerbranch, config_data, logger=logger)
                             utils.add_recommends(layerbranch, config_data, logger=logger)
