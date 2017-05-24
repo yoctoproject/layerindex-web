@@ -18,6 +18,8 @@ import signal
 from datetime import datetime, timedelta
 from distutils.version import LooseVersion
 import utils
+import operator
+import re
 
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
@@ -62,15 +64,13 @@ def run_command_interruptible(cmd):
     return process.returncode, buf
 
 
-def prepare_update_layer_command(options, branch, layer, updatedeps=False):
+def prepare_update_layer_command(options, branch, layer, initial=False):
     """Prepare the update_layer.py command line"""
     if branch.update_environment:
         cmdprefix = branch.update_environment.get_command()
     else:
         cmdprefix = 'python3'
     cmd = '%s update_layer.py -l %s -b %s' % (cmdprefix, layer.name, branch.name)
-    if updatedeps:
-        cmd += ' --update-dependencies'
     if options.reload:
         cmd += ' --reload'
     if options.fullreload:
@@ -79,6 +79,8 @@ def prepare_update_layer_command(options, branch, layer, updatedeps=False):
         cmd += ' --nocheckout'
     if options.dryrun:
         cmd += ' -n'
+    if initial:
+        cmd += ' -i'
     if options.loglevel == logging.DEBUG:
         cmd += ' -d'
     elif options.loglevel == logging.ERROR:
@@ -191,6 +193,13 @@ def main():
         logger.error("Please set LAYER_FETCH_DIR in settings.py")
         sys.exit(1)
 
+
+    # We deliberately exclude status == 'X' ("no update") here
+    layerquery_all = LayerItem.objects.filter(classic=False).filter(status='P')
+    if layerquery_all.count() == 0:
+        logger.info("No published layers to update")
+        sys.exit(1)
+
     # For -a option to update bitbake branch
     update_bitbake = False
     if options.layers:
@@ -205,11 +214,7 @@ def main():
                 sys.exit(1)
         layerquery = LayerItem.objects.filter(classic=False).filter(name__in=layers)
     else:
-        # We deliberately exclude status == 'X' ("no update") here
-        layerquery = LayerItem.objects.filter(classic=False).filter(status='P')
-        if layerquery.count() == 0:
-            logger.info("No published layers to update")
-            sys.exit(1)
+        layerquery = layerquery_all
         update_bitbake = True
 
     if options.actual_branch:
@@ -286,8 +291,72 @@ def main():
             # they never get used during normal operation).
             last_rev = {}
             for branch in branches:
+                # If layer_A depends(or recommends) on layer_B, add layer_B before layer_A
+                deps_dict_all = {}
+                layerquery_sorted = []
+                collections_done = set()
                 branchobj = utils.get_branch(branch)
+                for layer in layerquery_all:
+                    # Get all collections from database, but we can't trust the
+                    # one which will be updated since its collections maybe
+                    # changed (different from database).
+                    if layer in layerquery:
+                        continue
+                    layerbranch = layer.get_layerbranch(branch)
+                    if layerbranch:
+                        collections_done.add((layerbranch.collection, layerbranch.version))
+
                 for layer in layerquery:
+                    cmd = prepare_update_layer_command(options, branchobj, layer, initial=True)
+                    logger.debug('Running layer update command: %s' % cmd)
+                    ret, output = run_command_interruptible(cmd)
+                    logger.debug('output: %s' % output)
+                    if ret != 0:
+                        continue
+                    col = re.search("^BBFILE_COLLECTIONS = \"(.*)\"", output, re.M).group(1) or ''
+                    ver = re.search("^LAYERVERSION = \"(.*)\"", output, re.M).group(1) or ''
+                    deps = re.search("^LAYERDEPENDS = \"(.*)\"", output, re.M).group(1) or ''
+                    recs = re.search("^LAYERRECOMMENDS = \"(.*)\"", output, re.M).group(1) or ''
+
+                    deps_dict = utils.explode_dep_versions2(bitbakepath, deps + ' ' + recs)
+                    if len(deps_dict) == 0:
+                        # No depends, add it firstly
+                        layerquery_sorted.append(layer)
+                        collections_done.add((col, ver))
+                        continue
+                    deps_dict_all[layer] = {'requires': deps_dict, 'collection': col, 'version': ver}
+
+                # Move deps_dict_all to layerquery_sorted orderly
+                logger.info("Sorting layers for branch %s" % branch)
+                while True:
+                    deps_dict_all_copy = deps_dict_all.copy()
+                    for layer, value in deps_dict_all_copy.items():
+                        for req_col, req_ver_list in value['requires'].copy().items():
+                            matched = False
+                            if req_ver_list:
+                                req_ver = req_ver_list[0]
+                            else:
+                                req_ver = None
+                            if utils.is_deps_satisfied(req_col, req_ver, collections_done):
+                                del(value['requires'][req_col])
+                        if not value['requires']:
+                            # All the depends are in collections_done:
+                            del(deps_dict_all[layer])
+                            layerquery_sorted.append(layer)
+                            collections_done.add((value['collection'], value['version']))
+
+                    if not len(deps_dict_all):
+                        break
+
+                    # Something is wrong if nothing changed after a run
+                    if operator.eq(deps_dict_all_copy, deps_dict_all):
+                        logger.error("Cannot find required collections on branch %s:" % branch)
+                        for layer, value in deps_dict_all.items():
+                            logger.error('%s: %s' % (layer.name, value['requires']))
+                        logger.error("Known collections: %s" % collections_done)
+                        sys.exit(1)
+
+                for layer in layerquery_sorted:
                     layerupdate = LayerUpdate()
                     layerupdate.update = update
 
@@ -303,9 +372,6 @@ def main():
                             if not options.dryrun:
                                 layerupdate.save()
                         continue
-
-                    urldir = layer.get_fetch_dir()
-                    repodir = os.path.join(fetchdir, urldir)
 
                     cmd = prepare_update_layer_command(options, branchobj, layer)
                     logger.debug('Running layer update command: %s' % cmd)
@@ -327,31 +393,6 @@ def main():
                     if ret == 254:
                         # Interrupted by user, break out of loop
                         break
-
-            # Since update_layer may not be called in the correct order to have the
-            # dependencies created before trying to link them, we now have to loop
-            # back through all the branches and layers and try to link in the
-            # dependencies that may have been missed.  Note that creating the
-            # dependencies is a best-effort and continues if they are not found.
-            for branch in branches:
-                branchobj = utils.get_branch(branch)
-                for layer in layerquery:
-                    layerbranch = layer.get_layerbranch(branch)
-                    if layerbranch:
-                        if not (options.reload or options.fullreload):
-                            # Skip layers that did not change.
-                            layer_last_rev = last_rev.get(layerbranch, None)
-                            if layer_last_rev is None or layer_last_rev == layerbranch.vcs_last_rev:
-                                continue
-
-                        logger.info('Updating layer dependencies for %s on branch %s' % (layer.name, branch))
-                        cmd = prepare_update_layer_command(options, branchobj, layer, updatedeps=True)
-                        logger.debug('Running update dependencies command: %s' % cmd)
-                        ret, output = run_command_interruptible(cmd)
-                        if ret == 254:
-                            # Interrupted by user, break out of loop
-                            break
-
         finally:
             utils.unlock_file(lockfile)
 

@@ -188,6 +188,9 @@ def main():
     parser.add_option("", "--nocheckout",
             help = "Don't check out branches",
             action="store_true", dest="nocheckout")
+    parser.add_option("-i", "--initial",
+            help = "Print initial values parsed from layer.conf only",
+            action="store_true")
     parser.add_option("-d", "--debug",
             help = "Enable debug output",
             action="store_const", const=logging.DEBUG, dest="loglevel", default=logging.INFO)
@@ -336,7 +339,7 @@ def main():
             layerdistros = Distro.objects.filter(layerbranch=layerbranch)
             layerappends = BBAppend.objects.filter(layerbranch=layerbranch)
             layerclasses = BBClass.objects.filter(layerbranch=layerbranch)
-            if layerbranch.vcs_last_rev != topcommit.hexsha or options.reload:
+            if layerbranch.vcs_last_rev != topcommit.hexsha or options.reload or options.initial:
                 # Check out appropriate branch
                 if not options.nocheckout:
                     utils.checkout_layer_branch(layerbranch, repodir, logger=logger)
@@ -361,6 +364,11 @@ def main():
                     layerconfparser.shutdown()
                     sys.exit(1)
                 utils.set_layerbranch_collection_version(layerbranch, layer_config_data, logger=logger)
+                if options.initial:
+                    # Use print() rather than logger.info() since "-q" makes it print nothing.
+                    for i in ["BBFILE_COLLECTIONS", "LAYERVERSION", "LAYERDEPENDS", "LAYERRECOMMENDS"]:
+                        print('%s = "%s"' % (i, utils.get_layer_var(layer_config_data, i, logger)))
+                    sys.exit(0)
                 utils.add_dependencies(layerbranch, layer_config_data, logger=logger)
                 utils.add_recommends(layerbranch, layer_config_data, logger=logger)
                 layerbranch.save()

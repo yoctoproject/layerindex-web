@@ -27,6 +27,40 @@ def get_layer(layername):
         return res[0]
     return None
 
+def get_layer_var(config_data, var, logger):
+    collection = config_data.getVar('BBFILE_COLLECTIONS', True)
+    if collection:
+        collection = collection.strip()
+        collection_list = collection.split()
+        collection = collection_list[0]
+        layerdir = config_data.getVar('LAYERDIR', True)
+        if len(collection_list) > 1:
+            logger.warn('%s: multiple collections found, handling first one (%s) only' % (layerdir, collection))
+        if var == 'BBFILE_COLLECTIONS':
+            return collection
+    value = config_data.getVar('%s_%s' % (var, collection), True)
+    if not value:
+        value = config_data.getVar(var, True)
+    return value or ''
+
+def is_deps_satisfied(req_col, req_ver, collections):
+    """ Check whether required collection and version are in collections"""
+    for existed_col, existed_ver in collections:
+        if req_col == existed_col:
+            # If there is no version constraint, return True when collection matches
+            if not req_ver:
+                return True
+            else:
+                # If there is no version in the found layer, then don't use this layer.
+                if not existed_ver:
+                    continue
+                (op, dep_version) = req_ver.split()
+                success = bb.utils.vercmp_string_op(existed_ver, dep_version, op)
+                if success:
+                    return True
+    # Return False when not found
+    return False
+
 def get_dependency_layer(depname, version_str=None, logger=None):
     from layerindex.models import LayerItem, LayerBranch
 
@@ -161,6 +195,13 @@ def setup_tinfoil(bitbakepath, enable_tracking):
     tinfoil.prepare(config_only = True)
 
     return tinfoil
+
+def explode_dep_versions2(bitbakepath, deps):
+    bblib = bitbakepath + '/lib'
+    if not bblib in sys.path:
+        sys.path.insert(0, bblib)
+    import bb.utils
+    return bb.utils.explode_dep_versions2(deps)
 
 def checkout_layer_branch(layerbranch, repodir, logger=None):
 
