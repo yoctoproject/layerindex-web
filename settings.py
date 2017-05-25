@@ -214,6 +214,9 @@ CORE_LAYER_NAME = "openembedded-core"
 # Update records older than this number of days will be deleted every update
 UPDATE_PURGE_DAYS = 30
 
+# Remove layer dependencies that are not specified in conf/layer.conf
+REMOVE_LAYER_DEPENDENCIES = False
+
 # Settings for layer submission feature
 SUBMIT_EMAIL_FROM = 'noreply@example.com'
 SUBMIT_EMAIL_SUBJECT = 'OE Layerindex layer submission'
