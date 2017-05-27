@@ -70,9 +70,12 @@ def init_parser(settings, branch, bitbakepath, enable_tracking=False, nocheckout
     if not os.path.exists(settings.TEMP_BASE_DIR):
         os.makedirs(settings.TEMP_BASE_DIR)
     tempdir = tempfile.mkdtemp(dir=settings.TEMP_BASE_DIR)
+    saved_cwd = os.getcwd()
     os.chdir(tempdir)
 
     tinfoil = utils.setup_tinfoil(bitbakepath, enable_tracking)
+
+    os.chdir(saved_cwd)
 
     # Ensure TMPDIR exists (or insane.bbclass will blow up trying to write to the QA log)
     oe_tmpdir = tinfoil.config_data.getVar('TMPDIR', True)
