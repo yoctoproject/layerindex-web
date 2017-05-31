@@ -390,13 +390,29 @@ class RecipeSearchView(ListView):
         for item in query_items:
             if item.startswith('inherits:'):
                 inherits.append(item.split(':')[1])
+            # support searches by layer name
+            elif item.startswith('layer:'):
+                query_layername = item.split(':')[1].strip().lower()
+                if not query_layername:
+                    messages.add_message(self.request, messages.ERROR, 'The \
+layer name is expected to follow the \"layer:\" prefix without any spaces.')
+                else:
+                    query_layer = LayerBranch.objects.filter(
+                        layer__name=query_layername)
+                    if query_layer:
+                        init_qs = init_qs.filter(
+                            layerbranch__layer__id=query_layer[0].id)
+                    else:
+                        messages.add_message(self.request, messages.ERROR,
+                                            'No layer \"%s\" was found.'
+                                            % query_layername)
             else:
                 query_terms.append(item)
         if inherits:
             # FIXME This is a bit ugly, perhaps we should consider having this as a one-many relationship instead
             for inherit in inherits:
                 init_qs = init_qs.filter(Q(inherits=inherit) | Q(inherits__startswith=inherit + ' ') | Q(inherits__endswith=' ' + inherit) | Q(inherits__contains=' %s ' % inherit))
-            query_string = ' '.join(query_terms)
+        query_string = ' '.join(query_terms)
 
         if query_string.strip():
             order_by = ('pn', 'layerbranch__layer')
