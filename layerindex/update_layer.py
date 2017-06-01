@@ -223,21 +223,6 @@ def main():
 
     bitbakepath = os.path.join(fetchdir, 'bitbake')
 
-    try:
-        (tinfoil, tempdir) = recipeparse.init_parser(settings, branch, bitbakepath, nocheckout=options.nocheckout, logger=logger)
-    except recipeparse.RecipeParseError as e:
-        logger.error(str(e))
-        sys.exit(1)
-    # Clear the default value of SUMMARY so that we can use DESCRIPTION instead if it hasn't been set
-    tinfoil.config_data.setVar('SUMMARY', '')
-    # Clear the default value of DESCRIPTION so that we can see where it's not set
-    tinfoil.config_data.setVar('DESCRIPTION', '')
-    # Clear the default value of HOMEPAGE ('unknown')
-    tinfoil.config_data.setVar('HOMEPAGE', '')
-    # Set a blank value for LICENSE so that it doesn't cause the parser to die (e.g. with meta-ti -
-    # why won't they just fix that?!)
-    tinfoil.config_data.setVar('LICENSE', '')
-
     layer = utils.get_layer(options.layer)
     urldir = layer.get_fetch_dir()
     repodir = os.path.join(fetchdir, urldir)
@@ -261,10 +246,27 @@ def main():
             topcommit = repo.commit('origin/%s' % branchname)
     except:
         if layerbranch:
-            logger.error("Failed update of layer %s - branch %s no longer exists" % (layer.name, branchdesc))
+            logger.info("layer %s - branch %s no longer exists, removing it from database" % (layer.name, branchdesc))
+            if not options.dryrun:
+                layerbranch.delete()
         else:
             logger.info("Skipping update of layer %s - branch %s doesn't exist" % (layer.name, branchdesc))
         sys.exit(1)
+
+    try:
+        (tinfoil, tempdir) = recipeparse.init_parser(settings, branch, bitbakepath, nocheckout=options.nocheckout, logger=logger)
+    except recipeparse.RecipeParseError as e:
+        logger.error(str(e))
+        sys.exit(1)
+    # Clear the default value of SUMMARY so that we can use DESCRIPTION instead if it hasn't been set
+    tinfoil.config_data.setVar('SUMMARY', '')
+    # Clear the default value of DESCRIPTION so that we can see where it's not set
+    tinfoil.config_data.setVar('DESCRIPTION', '')
+    # Clear the default value of HOMEPAGE ('unknown')
+    tinfoil.config_data.setVar('HOMEPAGE', '')
+    # Set a blank value for LICENSE so that it doesn't cause the parser to die (e.g. with meta-ti -
+    # why won't they just fix that?!)
+    tinfoil.config_data.setVar('LICENSE', '')
 
     try:
         with transaction.atomic():
