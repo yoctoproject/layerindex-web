@@ -182,9 +182,6 @@ def main():
     parser.add_option("-n", "--dry-run",
             help = "Don't write any data back to the database",
             action="store_true", dest="dryrun")
-    parser.add_option("", "--update-dependencies",
-            help = "Update layer dependencies only",
-            action="store_true", dest="updatedeps")
     parser.add_option("", "--nocheckout",
             help = "Don't check out branches",
             action="store_true", dest="nocheckout")
@@ -255,30 +252,6 @@ def main():
                 if layerbranch.actual_branch:
                     branchname = layerbranch.actual_branch
                     branchdesc = "%s (%s)" % (options.branch, branchname)
-
-            if options.updatedeps:
-                # Update layer dependencies only
-                if not layerbranch:
-                    logger.debug('Skipping dependency update for layer %s on branch %s - no layerbranch record' % (layer, branchdesc))
-                    sys.exit(0)
-                if not options.nocheckout:
-                    utils.checkout_layer_branch(layerbranch, repodir, logger=logger)
-                layerdir = os.path.join(repodir, layerbranch.vcs_subdir)
-                if not os.path.exists(layerdir):
-                    # If this happens it was already flagged during the main update, so ignore it
-                    logger.debug('Skipping dependency update for layer %s on branch %s - layer directory not found' % (layer, branchdesc))
-                    sys.exit(0)
-
-                layerconfparser = layerconfparse.LayerConfParse(logger=logger, bitbakepath=bitbakepath, tinfoil=tinfoil)
-                config_data = layerconfparser.parse_layer(layerdir)
-                if not config_data:
-                    logger.debug("Layer %s does not appear to be valid for branch %s" % (layer.name, branchdesc))
-                    sys.exit(0)
-
-                utils.add_dependencies(layerbranch, config_data, logger=logger)
-                utils.add_recommends(layerbranch, config_data, logger=logger)
-
-                sys.exit(0)
 
             # Collect repo info
             repo = git.Repo(repodir)
