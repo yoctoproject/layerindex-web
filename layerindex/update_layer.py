@@ -238,36 +238,36 @@ def main():
     # why won't they just fix that?!)
     tinfoil.config_data.setVar('LICENSE', '')
 
+    layer = utils.get_layer(options.layer)
+    urldir = layer.get_fetch_dir()
+    repodir = os.path.join(fetchdir, urldir)
+
+    layerbranch = layer.get_layerbranch(options.branch)
+
+    branchname = options.branch
+    branchdesc = options.branch
+    if layerbranch:
+        if layerbranch.actual_branch:
+            branchname = layerbranch.actual_branch
+            branchdesc = "%s (%s)" % (options.branch, branchname)
+
+    # Collect repo info
+    repo = git.Repo(repodir)
+    assert repo.bare == False
+    try:
+        if options.nocheckout:
+            topcommit = repo.commit('HEAD')
+        else:
+            topcommit = repo.commit('origin/%s' % branchname)
+    except:
+        if layerbranch:
+            logger.error("Failed update of layer %s - branch %s no longer exists" % (layer.name, branchdesc))
+        else:
+            logger.info("Skipping update of layer %s - branch %s doesn't exist" % (layer.name, branchdesc))
+        sys.exit(1)
+
     try:
         with transaction.atomic():
-            layer = utils.get_layer(options.layer)
-            urldir = layer.get_fetch_dir()
-            repodir = os.path.join(fetchdir, urldir)
-
-            layerbranch = layer.get_layerbranch(options.branch)
-
-            branchname = options.branch
-            branchdesc = options.branch
-            if layerbranch:
-                if layerbranch.actual_branch:
-                    branchname = layerbranch.actual_branch
-                    branchdesc = "%s (%s)" % (options.branch, branchname)
-
-            # Collect repo info
-            repo = git.Repo(repodir)
-            assert repo.bare == False
-            try:
-                if options.nocheckout:
-                    topcommit = repo.commit('HEAD')
-                else:
-                    topcommit = repo.commit('origin/%s' % branchname)
-            except:
-                if layerbranch:
-                    logger.error("Failed update of layer %s - branch %s no longer exists" % (layer.name, branchdesc))
-                else:
-                    logger.info("Skipping update of layer %s - branch %s doesn't exist" % (layer.name, branchdesc))
-                sys.exit(1)
-
             newbranch = False
             if not layerbranch:
                 # LayerBranch doesn't exist for this branch, create it
