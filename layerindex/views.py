@@ -169,10 +169,13 @@ def edit_layer_view(request, template_name, branch='master', slug=None):
                             user_name = user.first_name
                         else:
                             user_name = user.username
+                        layer_url = request.build_absolute_uri(reverse('layer_review', args=(layeritem.name,)))
+                        if getattr(settings, 'FORCE_REVIEW_HTTPS', False) and layer_url.startswith('http:'):
+                            layer_url = 'https:' + layer_url.split(':', 1)[1]
                         d = Context({
                             'user_name': user_name,
                             'layer_name': layeritem.name,
-                            'layer_url': request.build_absolute_uri(reverse('layer_review', args=(layeritem.name,))),
+                            'layer_url': layer_url,
                         })
                         subject = '%s - %s' % (settings.SUBMIT_EMAIL_SUBJECT, layeritem.name)
                         from_email = settings.SUBMIT_EMAIL_FROM
