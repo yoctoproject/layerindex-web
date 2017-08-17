@@ -73,6 +73,7 @@ def update_recipe_file(tinfoil, data, path, recipe, layerdir_start, repodir):
         recipe.bugtracker = envdata.getVar("BUGTRACKER", True) or ""
         recipe.provides = envdata.getVar("PROVIDES", True) or ""
         recipe.bbclassextend = envdata.getVar("BBCLASSEXTEND", True) or ""
+        recipe.src_uri = envdata.getVar("SRC_URI", True) or ""
         # Handle recipe inherits for this recipe
         gr = set(data.getVar("__inherit_cache", True) or [])
         lr = set(envdata.getVar("__inherit_cache", True) or [])
