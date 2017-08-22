@@ -36,6 +36,10 @@ update_repo(settings.LAYER_FETCH_DIR, 'poky', settings.POKY_REPO_URL,
 bitbakepath = os.path.join(fetchdir, 'bitbake')
 sys.path.insert(0, os.path.join(bitbakepath, 'lib'))
 
+# setup poky path
+pokypath = os.path.join(fetchdir, 'poky')
+sys.path.insert(0, os.path.join(pokypath, 'meta', 'lib'))
+
 from layerindex.models import Recipe, LayerBranch
 from rrs.models import RecipeUpstream, RecipeUpstreamHistory
 
