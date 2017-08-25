@@ -13,11 +13,13 @@ RUN apt-get install -y --no-install-recommends \
 	python-mysqldb \
 	python-dev \
 	python-imaging \
-    netcat-openbsd \
-    vim \
+	rabbitmq-server \
+	netcat-openbsd \
+	vim \
 	&& rm -rf /var/lib/apt/lists/*
 RUN pip install --upgrade pip
 RUN pip install gunicorn
+RUN pip install setuptools
 CMD mkdir /opt/workdir
 ADD . /opt/layerindex
 RUN pip install -r /opt/layerindex/requirements.txt
@@ -31,4 +33,8 @@ ADD docker/migrate.sh /opt/migrate.sh
 ## do so, you will also have to edit .gitconfig appropriately
 #ADD docker/git-proxy /opt/bin/git-proxy
 
+# Start Gunicorn
 CMD ["/usr/local/bin/gunicorn", "wsgi:application", "--workers=4", "--bind=:5000", "--log-level=debug", "--chdir=/opt/layerindex"]
+
+# Start Celery
+CMD ["/usr/local/bin/celery", "-A", "layerindex.tasks", "worker", "--loglevel=info", "--workdir=/opt/layerindex"]

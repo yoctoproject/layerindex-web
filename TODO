@@ -27,7 +27,6 @@ Other
 * Show layer type in layer detail?
 * Usage links in list page?
 * Subdirs in list page?
-* Prevent SMTP failures from breaking submission process
 * Query backend service i.e. special URL to query information for external apps/scripts
 * Add comparison to duplicates page
 * Create simple script to check for unlisted layer subdirectories in all repos

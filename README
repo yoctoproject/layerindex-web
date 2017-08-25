@@ -14,6 +14,7 @@ In order to make use of this application you will need:
 * Python 3.4+
 * Django 1.8.x - tested with 1.8.17; newer versions may work, but
   the application has not been tested with 1.9 or newer.
+* RabbitMQ 3.6.x - tested with 3.6.10.
 * For production usage, a web server set up to host Django applications
   (not needed for local-only testing)
 * A database supported by Django (SQLite, MySQL, etc.). Django takes
@@ -41,7 +42,9 @@ Setup instructions:
 1. Edit settings.py to specify a database, EMAIL_HOST, SECRET_KEY and
    other settings specific to your installation. Ensure you set
    LAYER_FETCH_DIR to an absolute path to a location with sufficient
-   space for fetching layer repositories.
+   space for fetching layer repositories. Modify RABBIT_BROKER
+   and RABBIT_BACKEND to reflect the settings used by your RabbitMQ
+   server.
 
 2. Run the following commands within the layerindex-web directory to
    initialise the database:
@@ -63,6 +66,11 @@ Setup instructions:
    NOTE: This local server should only be used for testing - for
    production you need to use a proper web server and have DEBUG set
    to False.
+
+   3.1. In order to process asynchronous tasks like sending email,
+        you will need to run a Celery worker:
+
+        celery -A layerindex.tasks worker --loglevel=info
 
 4. You'll need to add at least the openembedded-core layer to the
    database, or some equivalent that contains conf/bitbake.conf for
