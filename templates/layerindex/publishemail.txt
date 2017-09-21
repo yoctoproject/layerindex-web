@@ -1,0 +1,9 @@
+Hi {{ maintainers|slice:":-1"|join:", "}}{% if maintainers|length > 2 %},{% endif %}{% if maintainers|length > 1 %} and {% endif %}{{ maintainers|last }},
+
+You are listed as the {% if maintainers|length > 1 %}maintainers{% else %}maintainer{% endif %} for the new layer, {{ layer_name }}. This layer has now been published. You can view it at the following URL:
+
+ {{ layer_url }}
+
+If you need to make changes to this layer's entry in the index in the future, create an account (using this email address) if you haven't already, and you should then be able to click on "Edit layer" on the layer's detail page and make the desired changes. If you need any assistance please contact {% if help_contact.first_name and help_contact.last_name %}{{ help_contact.first_name }} {{ help_contact.last_name}}{% else %}{{ help_contact.username }}{% endif %} <{{ help_contact.email }}>.
+
+Thanks!
