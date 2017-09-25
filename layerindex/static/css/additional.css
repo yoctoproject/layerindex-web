@@ -232,3 +232,8 @@ blockquote.span7.warn {
 .valign-middle {
     vertical-align: middle;
 }
+
+.yp-icon {
+    width: auto;
+    height: 1em;
+}

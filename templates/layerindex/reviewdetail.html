@@ -27,6 +27,9 @@
             <div class="row-fluid">
                 <div class="page-header">
                     <h1>{{ layeritem.name }}
+                        {% if layerbranch.yp_compatible_version %}
+                        <a href="{{layerbranch.yp_compatible_version.link_url }}"><img src="{{layerbranch.yp_compatible_version.image_url}}" alt="{{layerbranch.yp_compatible_version.description}}" class="yp-icon" title="{{layerbranch.yp_compatible_version.description}}"></a>
+                        {% endif %}
                         {% if layeritem.status = "N" %}
                             <span class="label label-warning">Unpublished</span>
                         {% else %}

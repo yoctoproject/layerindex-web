@@ -72,7 +72,11 @@
                 <tbody>
                     {% for layerbranch in layerbranch_list %}
                     <tr class="layertype_{{ layerbranch.layer.layer_type }}">
-                        <td><a href="{% url 'layer_item' url_branch layerbranch.layer.name %}">{{ layerbranch.layer.name }}</a></td>
+                        <td><a href="{% url 'layer_item' url_branch layerbranch.layer.name %}">{{ layerbranch.layer.name }}</a>
+                            {% if layerbranch.yp_compatible_version %}
+                            <a href="{{layerbranch.yp_compatible_version.link_url}}"><img src="{{layerbranch.yp_compatible_version.image_url}}" alt="{{layerbranch.yp_compatible_version.description}}" class="yp-icon" title="{{layerbranch.yp_compatible_version.description}}" ></a>
+                            {% endif %}
+                        </td>
                         <td>{{ layerbranch.layer.summary }}</td>
                         <td>{{ layerbranch.layer.get_layer_type_display }}</td>
                         <td class="showRollie">

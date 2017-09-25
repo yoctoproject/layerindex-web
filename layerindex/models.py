@@ -141,6 +141,18 @@ class LayerItem(models.Model):
     def __str__(self):
         return self.name
 
+class YPCompatibleVersion(models.Model):
+    name = models.CharField('Yocto Project Version', max_length=25, unique=True, help_text='Name of this Yocto Project compatible version (e.g. "2.0")')
+    description = models.TextField(blank=True)
+    image_url = models.CharField('Image URL', max_length=300, blank=True)
+    link_url = models.CharField('Link URL', max_length=100, blank=True)
+
+    class Meta:
+        verbose_name = 'Yocto Project Compatible version'
+        ordering = ('name',)
+
+    def __str__(self):
+        return self.name
 
 class LayerBranch(models.Model):
     layer = models.ForeignKey(LayerItem)
@@ -152,11 +164,15 @@ class LayerBranch(models.Model):
     vcs_last_rev = models.CharField('Last revision fetched', max_length=80, blank=True)
     vcs_last_commit = models.DateTimeField('Last commit date', blank=True, null=True)
     actual_branch = models.CharField('Actual Branch', max_length=80, blank=True, help_text='Name of the actual branch in the repository matching the core branch')
+    yp_compatible_version = models.ForeignKey(YPCompatibleVersion, verbose_name='Yocto Project Compatible version', null=True, blank=True, on_delete=models.SET_NULL, help_text='Which version of the Yocto Project Compatible program has this layer been approved for for?')
 
     updated = models.DateTimeField(auto_now=True)
 
     class Meta:
         verbose_name_plural = "Layer branches"
+        permissions = (
+            ("set_yp_compatibility", "Can set YP compatibility"),
+        )
 
     def sorted_recipes(self):
         return self.recipe_set.order_by('pn', '-pv')

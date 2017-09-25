@@ -44,6 +44,9 @@ class BranchAdmin(CompareVersionAdmin):
                     layerdependency.save()
     duplicate.short_description = "Duplicate selected Branches"
 
+class YPCompatibleVersionAdmin(CompareVersionAdmin):
+    pass
+
 class LayerItemAdmin(CompareVersionAdmin):
     list_filter = ['status', 'layer_type']
     save_as = True
@@ -61,9 +64,12 @@ class LayerBranchAdmin(CompareVersionAdmin):
         LayerMaintainerInline,
     ]
     def get_readonly_fields(self, request, obj=None):
+        readonly_fields = self.readonly_fields
         if obj:
-            return self.readonly_fields + ('layer', 'branch')
-        return self.readonly_fields
+            readonly_fields += ('layer', 'branch')
+        if not request.user.has_perm('layerindex.set_yp_compatibility'):
+            readonly_fields += ('yp_compatible_version',)
+        return readonly_fields
 
 class LayerMaintainerAdmin(CompareVersionAdmin):
     list_filter = ['status', 'layerbranch__layer__name']
@@ -145,6 +151,7 @@ class RecipeChangesetAdmin(admin.ModelAdmin):
     ]
 
 admin.site.register(Branch, BranchAdmin)
+admin.site.register(YPCompatibleVersion, YPCompatibleVersionAdmin)
 admin.site.register(LayerItem, LayerItemAdmin)
 admin.site.register(LayerBranch, LayerBranchAdmin)
 admin.site.register(LayerMaintainer, LayerMaintainerAdmin)
