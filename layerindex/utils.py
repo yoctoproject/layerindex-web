@@ -180,7 +180,7 @@ def set_layerbranch_collection_version(layerbranch, config_data, logger=None):
         ver_str += layerbranch.collection
         layerbranch.version = config_data.getVar(ver_str, True)
 
-def setup_tinfoil(bitbakepath, enable_tracking):
+def setup_tinfoil(bitbakepath, enable_tracking, loglevel=None):
     sys.path.insert(0, bitbakepath + '/lib')
     import bb.tinfoil
     import bb.cooker
@@ -192,6 +192,9 @@ def setup_tinfoil(bitbakepath, enable_tracking):
         tinfoil = bb.tinfoil.Tinfoil()
         if enable_tracking:
             tinfoil.cooker.enableDataTracking()
+    tinfoil.logger.setLevel(logging.WARNING)
+    if loglevel:
+        tinfoil.logger.setLevel(loglevel)
     tinfoil.prepare(config_only = True)
 
     return tinfoil

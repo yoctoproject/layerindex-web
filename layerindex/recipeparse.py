@@ -73,7 +73,10 @@ def init_parser(settings, branch, bitbakepath, enable_tracking=False, nocheckout
     saved_cwd = os.getcwd()
     os.chdir(tempdir)
 
-    tinfoil = utils.setup_tinfoil(bitbakepath, enable_tracking)
+    if logger:
+        tinfoil = utils.setup_tinfoil(bitbakepath, enable_tracking, loglevel=logger.getEffectiveLevel())
+    else:
+        tinfoil = utils.setup_tinfoil(bitbakepath, enable_tracking)
 
     os.chdir(saved_cwd)
 
