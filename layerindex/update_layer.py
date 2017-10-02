@@ -194,6 +194,9 @@ def main():
     parser.add_option("-q", "--quiet",
             help = "Hide all output except error messages",
             action="store_const", const=logging.ERROR, dest="loglevel")
+    parser.add_option("", "--keep-temp",
+            help = "Preserve temporary directory at the end instead of deleting it",
+            action="store_true")
 
     options, args = parser.parse_args(sys.argv)
     if len(args) > 1:
@@ -258,6 +261,7 @@ def main():
     except recipeparse.RecipeParseError as e:
         logger.error(str(e))
         sys.exit(1)
+    logger.debug('Using temp directory %s' % tempdir)
     # Clear the default value of SUMMARY so that we can use DESCRIPTION instead if it hasn't been set
     tinfoil.config_data.setVar('SUMMARY', '')
     # Clear the default value of DESCRIPTION so that we can see where it's not set
@@ -702,7 +706,11 @@ def main():
         if LooseVersion(bb.__version__) > LooseVersion("1.27"):
             tinfoil.shutdown()
 
-    shutil.rmtree(tempdir)
+    if options.keep_temp:
+        logger.debug('Preserving temp directory %s' % tempdir)
+    else:
+        logger.debug('Deleting temp directory')
+        shutil.rmtree(tempdir)
     sys.exit(0)
 
 

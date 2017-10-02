@@ -85,6 +85,8 @@ def prepare_update_layer_command(options, branch, layer, initial=False):
         cmd += ' -d'
     elif options.loglevel == logging.ERROR:
         cmd += ' -q'
+    if options.keep_temp:
+        cmd += ' --keep-temp'
     return cmd
 
 def update_actual_branch(layerquery, fetchdir, branch, options, update_bitbake, bitbakepath):
@@ -165,6 +167,9 @@ def main():
     parser.add_option("-q", "--quiet",
             help = "Hide all output except error messages",
             action="store_const", const=logging.ERROR, dest="loglevel")
+    parser.add_option("", "--keep-temp",
+            help = "Preserve temporary directory at the end instead of deleting it",
+            action="store_true")
 
     options, args = parser.parse_args(sys.argv)
     if len(args) > 1:
