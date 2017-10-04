@@ -167,6 +167,11 @@
             </div>  <!-- end of row-fluid -->
         </div> <!-- end of container-fluid -->
 
+        {% if not layerbranch.vcs_last_commit %}
+        <div class="alert alert-info">
+            <b>Note:</b> The content of this layer on branch {{ url_branch }} has not yet been indexed. Indexing should take place within a few hours.
+        </div>
+        {% endif %}
 
         <ul class="nav nav-tabs" id="layertabbar">
             {% if layerbranch.recipe_set.count > 0 %}
