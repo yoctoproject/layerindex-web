@@ -34,7 +34,8 @@
                     <div class="input-append">
                         <form id="filter-form" action="{% url 'machine_search' url_branch %}" method="get">
                             <input type="text" class="input-xxlarge" id="appendedInputButtons" placeholder="Search machines" name="q" value="{{ search_keyword }}" />
-                            <button class="btn" type="submit">search</button>
+                            <button class="btn" type="submit" name="search" value="1">search</button>
+                            <button class="btn" type="submit" name="browse" value="1">browse</button>
                         </form>
                     </div>
                 </div>

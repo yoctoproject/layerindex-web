@@ -35,7 +35,8 @@
                     <div class="input-append">
                         <form id="filter-form" action="{% url 'distro_search' url_branch %}" method="get">
                             <input type="text" class="input-xxlarge" id="appendedInputButtons" placeholder="Search distros" name="q" value="{{ search_keyword }}" />
-                            <button class="btn" type="submit">search</button>
+                            <button class="btn" type="submit" name="search" value="1">search</button>
+                            <button class="btn" type="submit" name="browse" value="1">browse</button>
                         </form>
                     </div>
                 </div>
