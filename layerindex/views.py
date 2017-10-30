@@ -724,6 +724,30 @@ class DistroSearchView(ListView):
         context['this_url_name'] = resolve(self.request.path_info).url_name
         return context
 
+class ClassSearchView(ListView):
+    context_object_name = 'class_list'
+    paginate_by = 50
+
+    def get_queryset(self):
+        _check_url_branch(self.kwargs)
+        query_string = self.request.GET.get('q', '')
+        init_qs = BBClass.objects.filter(layerbranch__branch__name=self.kwargs['branch'])
+        if query_string.strip():
+            entry_query = simplesearch.get_query(query_string, ['name'])
+            return init_qs.filter(entry_query).order_by('name', 'layerbranch__layer')
+
+        if 'q' in self.request.GET:
+            return init_qs.order_by('name', 'layerbranch__layer')
+
+        # Be consistent with RecipeSearchView
+        return Distro.objects.none()
+
+    def get_context_data(self, **kwargs):
+        context = super(ClassSearchView, self).get_context_data(**kwargs)
+        context['search_keyword'] = self.request.GET.get('q', '')
+        context['url_branch'] = self.kwargs['branch']
+        context['this_url_name'] = resolve(self.request.path_info).url_name
+        return context
 
 class PlainTextListView(ListView):
     def render_to_response(self, context):
