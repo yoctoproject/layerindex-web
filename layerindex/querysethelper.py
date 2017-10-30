@@ -1,6 +1,6 @@
 import operator
 import functools
-from django.db.models import Q
+from django.db.models import Q, CharField
 
 def _verify_parameters(g, mandatory_parameters):
     miss = []
@@ -79,8 +79,12 @@ def _validate_input(input, model):
 def _get_search_results(search_term, queryset, model):
     search_objects = []
     for st in search_term.split(" "):
+        if hasattr(model, 'search_allowed_fields'):
+            fieldlist = model.search_allowed_fields
+        else:
+            fieldlist = [f.name for f in model._meta.get_fields() if isinstance(f, CharField)]
         q_map = map(lambda x: Q(**{x+'__icontains': st}),
-                model.search_allowed_fields)
+                fieldlist)
 
         search_objects.append(functools.reduce(operator.or_, q_map))
     search_object = functools.reduce(operator.and_, search_objects)
