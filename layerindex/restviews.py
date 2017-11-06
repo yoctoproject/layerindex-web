@@ -1,4 +1,4 @@
-from layerindex.models import Branch, LayerItem, LayerNote, LayerBranch, LayerDependency, Recipe, Machine, Distro
+from layerindex.models import Branch, LayerItem, LayerNote, LayerBranch, LayerDependency, Recipe, Machine, Distro, BBClass
 from rest_framework import viewsets, serializers
 from layerindex.querysethelper import params_to_queryset, get_search_tuple
 
@@ -64,3 +64,11 @@ class DistroSerializer(serializers.ModelSerializer):
 class DistroViewSet(ParametricSearchableModelViewSet):
     queryset = Distro.objects.all()
     serializer_class = DistroSerializer
+
+class ClassSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BBClass
+
+class ClassViewSet(ParametricSearchableModelViewSet):
+    queryset = BBClass.objects.all()
+    serializer_class = ClassSerializer

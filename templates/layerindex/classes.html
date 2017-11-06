@@ -3,9 +3,9 @@
 
 {% comment %}
 
-  layerindex-web - distro index page template
+  layerindex-web - class index page template
 
-  Copyright (C) 2013 Intel Corporation
+  Copyright (C) 2013, 2017 Intel Corporation
   Copyright (C) 2016 Wind River Systems
   Licensed under the MIT license, see COPYING.MIT for details
 
@@ -13,7 +13,7 @@
 
 
 <!--
-{% block title_append %} - distros{% endblock %}
+{% block title_append %} - classes{% endblock %}
 -->
 
 {% block navs %}
@@ -21,8 +21,8 @@
                             <li><a href="{% url 'layer_list' url_branch %}">Layers</a></li>
                             <li><a href="{% url 'recipe_search' url_branch %}">Recipes</a></li>
                             <li><a href="{% url 'machine_search' url_branch %}">Machines</a></li>
-                            <li><a href="{% url 'class_search' url_branch %}">Classes</a></li>
-                            <li class="active"><a href="{% url 'distro_search' url_branch %}">Distros</a></li>
+                            <li class="active"><a href="{% url 'class_search' url_branch %}">Classes</a></li>
+                            <li><a href="{% url 'distro_search' url_branch %}">Distros</a></li>
 {% endautoescape %}
 {% endblock %}
 
@@ -33,29 +33,27 @@
 
                 <div class="row-fluid">
                     <div class="input-append">
-                        <form id="filter-form" action="{% url 'distro_search' url_branch %}" method="get">
-                            <input type="text" class="input-xxlarge" id="appendedInputButtons" placeholder="Search distros" name="q" value="{{ search_keyword }}" />
+                        <form id="filter-form" action="{% url 'class_search' url_branch %}" method="get">
+                            <input type="text" class="input-xxlarge" id="appendedInputButtons" placeholder="Search classes" name="q" value="{{ search_keyword }}" />
                             <button class="btn" type="submit">search</button>
                         </form>
                     </div>
                 </div>
 
-{% if distro_list %}
-                <table class="table table-striped table-bordered distrostable">
+{% if class_list %}
+                <table class="table table-striped table-bordered classestable">
                     <thead>
                         <tr>
-                            <th>Distro name</th>
-                            <th class="span9">Description</th>
+                            <th>Class Name</th>
                             <th>Layer</th>
                         </tr>
                     </thead>
 
                     <tbody>
-                        {% for distro in distro_list %}
+                        {% for class in class_list %}
                             <tr>
-                                <td><a href="{{ distro.vcs_web_url }}">{{ distro.name }}</a></td>
-                                <td>{{ distro.description }}</td>
-                                <td><a href="{% url 'layer_item' url_branch distro.layerbranch.layer.name %}">{{ distro.layerbranch.layer.name }}</a></td>
+                                <td><a href="{{ class.vcs_web_url }}">{{ class.name }}</a></td>
+                                <td><a href="{% url 'layer_item' url_branch class.layerbranch.layer.name %}">{{ class.layerbranch.layer.name }}</a></td>
                             </tr>
                         {% endfor %}
                     </tbody>
@@ -67,7 +65,7 @@
     {% endif %}
 {% else %}
     {% if search_keyword %}
-    <p>No matching distros in database.</p>
+    <p>No matching classes in database.</p>
     {% endif %}
 {% endif %}
 

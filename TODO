@@ -17,7 +17,6 @@ Other
 * Add log in again link to logout page.
 * Collect interesting news (layer add/delete, recipe add/delete/upgrade) and provide RSS feed
 * "Split layer" tool for when a layer is split out of another? (Saves time adding records everywhere)
-* Search for bbclasses?
 * All-branch search/results so you can see version availability of recipes in all branches at once?
 * Show OE-Classic search results in OE-Core search? (with appropriate disclaimers)
 * Display no-results found message when search does not return any results in layer search
