@@ -32,14 +32,20 @@
 
 
                 <div class="row-fluid">
-                    <div class="input-append">
-                        <form id="filter-form" action="{% url 'recipe_search' url_branch %}" method="get">
-                            <input type="text" class="input-xxlarge" id="appendedInputButtons" placeholder="Search recipes" name="q" value="{{ search_keyword }}" />
-                            <button class="btn" type="submit">search</button>
-                        </form>
-                    </div>
+                    <form id="filter-form" action="{% url 'recipe_search' url_branch %}" method="get" onsubmit="return validate()">
+                        <div class="control-group"  id="searchfield">
+                            <div class="controls">
+                                <div class="input-append">
+                                    <input type="text" class="input-xxlarge" id="appendedInputButtons" placeholder="Search recipes" name="q" value="{{ search_keyword }}" />
+                                    <button class="btn" type="submit">search</button>
+                                </div>
+                                <span class="help-inline" id="errortext"></span>
+                            </div>
+                        </div>
+                    </form>
                 </div>
 
+                <div id="error"> </div>
 {% if recipe_list %}
                 <table class="table table-striped table-bordered recipestable">
                     <thead>
@@ -88,5 +94,14 @@
         $('.icon-hdd').tooltip({title:"Inherits image"});
         $('.label-inverse').tooltip();
     });
+
+    function validate(){
+        if (!$("#appendedInputButtons").val()){
+            $("#errortext").html("<p>Please specify search text</p>");
+            $("#searchfield").addClass("error");
+            return false;
+        }
+    }
+
 </script>
 {% endblock %}

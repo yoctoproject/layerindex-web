@@ -656,7 +656,10 @@ class MachineSearchView(ListView):
 
     def get_queryset(self):
         _check_url_branch(self.kwargs)
-        query_string = self.request.GET.get('q', '')
+        if self.request.GET.get('search', ''):
+            query_string = self.request.GET.get('q', '')
+        else:
+            query_string = ""
         init_qs = Machine.objects.filter(layerbranch__branch__name=self.kwargs['branch'])
         if query_string.strip():
             entry_query = simplesearch.get_query(query_string, ['name', 'description'])
@@ -705,7 +708,10 @@ class DistroSearchView(ListView):
 
     def get_queryset(self):
         _check_url_branch(self.kwargs)
-        query_string = self.request.GET.get('q', '')
+        if self.request.GET.get('search', ''):
+            query_string = self.request.GET.get('q', '')
+        else:
+            query_string = ""
         init_qs = Distro.objects.filter(layerbranch__branch__name=self.kwargs['branch'])
         if query_string.strip():
             entry_query = simplesearch.get_query(query_string, ['name', 'description'])
@@ -730,7 +736,10 @@ class ClassSearchView(ListView):
 
     def get_queryset(self):
         _check_url_branch(self.kwargs)
-        query_string = self.request.GET.get('q', '')
+        if self.request.GET.get('search', ''):
+            query_string = self.request.GET.get('q', '')
+        else:
+            query_string = ""
         init_qs = BBClass.objects.filter(layerbranch__branch__name=self.kwargs['branch'])
         if query_string.strip():
             entry_query = simplesearch.get_query(query_string, ['name'])
