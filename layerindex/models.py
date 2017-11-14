@@ -357,6 +357,30 @@ class Recipe(models.Model):
     def __str__(self):
         return os.path.join(self.filepath, self.filename)
 
+class PackageConfig(models.Model):
+    recipe = models.ForeignKey(Recipe)
+    feature = models.CharField(max_length=255)
+    with_option = models.CharField(max_length=255, blank=True)
+    without_option = models.CharField(max_length=255, blank=True)
+    build_deps = models.CharField(max_length=255, blank=True)
+
+    def __str__(self):
+        return "%s - %s" % (self.recipe, self.feature)
+
+class StaticBuildDep(models.Model):
+    recipes = models.ManyToManyField(Recipe)
+    name = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.name
+
+class DynamicBuildDep(models.Model):
+    package_configs = models.ManyToManyField(PackageConfig)
+    recipes = models.ManyToManyField(Recipe)
+    name = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.name
 
 class RecipeFileDependency(models.Model):
     recipe = models.ForeignKey(Recipe)

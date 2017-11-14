@@ -57,6 +57,7 @@ def split_recipe_fn(path):
 
 def update_recipe_file(tinfoil, data, path, recipe, layerdir_start, repodir):
     fn = str(os.path.join(path, recipe.filename))
+    from layerindex.models import PackageConfig, StaticBuildDep, DynamicBuildDep
     try:
         logger.debug('Updating recipe %s' % fn)
         if hasattr(tinfoil, 'parse_recipe_file'):
@@ -80,6 +81,43 @@ def update_recipe_file(tinfoil, data, path, recipe, layerdir_start, repodir):
         recipe.inherits = ' '.join(sorted({os.path.splitext(os.path.basename(r))[0] for r in lr if r not in gr}))
         recipe.blacklisted = envdata.getVarFlag('PNBLACKLIST', recipe.pn, True) or ""
         recipe.save()
+
+        # Handle static build dependencies for this recipe
+        static_dependencies = envdata.getVar("DEPENDS", True) or ""
+        for dep in static_dependencies.split():
+            static_build_dependency = StaticBuildDep.objects.get_or_create(name=dep)
+            static_build_dependency[0].save()
+            static_build_dependency[0].recipes.add(recipe)
+
+        # Handle the PACKAGECONFIG variables for this recipe
+        package_config_VarFlags = envdata.getVarFlags("PACKAGECONFIG")
+        for key, value in package_config_VarFlags.items():
+            if key == "doc":
+                continue
+            package_config = PackageConfig()
+            package_config.feature = key
+            package_config.recipe = recipe
+            package_config_vals = value.split(",")
+            try:
+                package_config.build_deps = package_config_vals[2]
+            except IndexError:
+                pass
+            try:
+                package_config.with_option = package_config_vals[0]
+            except IndexError:
+                pass
+            try:
+                package_config.without_option = package_config_vals[1]
+            except IndexError:
+                pass
+            package_config.save()
+            # Handle the dynamic dependencies for the PACKAGECONFIG variable
+            if package_config.build_deps:
+                for dep in package_config.build_deps.split():
+                    dynamic_build_dependency = DynamicBuildDep.objects.get_or_create(name=dep)
+                    dynamic_build_dependency[0].save()
+                    dynamic_build_dependency[0].package_configs.add(package_config)
+                    dynamic_build_dependency[0].recipes.add(recipe)
 
         # Get file dependencies within this layer
         deps = envdata.getVar('__depends', True)

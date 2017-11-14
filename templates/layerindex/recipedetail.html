@@ -112,6 +112,39 @@
                                 {% endif %}
                             </td>
                         </tr>
+                        <tr>
+                            <th>Dependencies <i class="icon-exclamation-sign" data-toggle="tooltip" title="NOTE: Dependencies may vary based on configuration"></i></th>
+                            <td>
+                                {% if staticdependencies %}
+                                    <ul class="unstyled">
+                                        {% for dep in staticdependencies %}
+                                            <li> {{dep.name}} </li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                                {% if packageconfigs %}
+                                    <ul class="unstyled">
+                                        {% for pc in packageconfigs %}
+                                            {% for dep in pc.dynamicbuilddep_set.all %}
+                                            <li> {{dep.name}}<i class="icon-cog" data-toggle="tooltip" title="If &quot;{{pc.feature}}&quot; is set in PACKAGECONFIG"></i></li>
+                                            {% endfor %}
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>PACKAGECONFIG options</th>
+                            <td>
+                                {% if packageconfigs %}
+                                    <ul class="unstyled">
+                                        {% for pc in packageconfigs %}
+                                            <li> {{ pc.feature }} </li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </td>
+                        </tr>
                     </tbody>
                 </table>
 
@@ -148,4 +181,12 @@
 
 {% endautoescape %}
 
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        $(document).ready(function() {
+            $('[data-toggle="tooltip"]').tooltip();
+        });
+    </script>
 {% endblock %}
