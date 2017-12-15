@@ -89,11 +89,26 @@ class LayerUpdateAdmin(admin.ModelAdmin):
 class RecipeAdmin(admin.ModelAdmin):
     search_fields = ['filename', 'pn']
     list_filter = ['layerbranch__layer__name', 'layerbranch__branch__name']
-    readonly_fields = [fieldname for fieldname in Recipe._meta.get_all_field_names() if fieldname not in  ['recipefiledependency', 'classicrecipe']]
+    readonly_fields = [fieldname for fieldname in Recipe._meta.get_all_field_names() if fieldname not in  ['recipefiledependency', 'classicrecipe', 'packageconfig']]
     def has_add_permission(self, request, obj=None):
         return False
     def has_delete_permission(self, request, obj=None):
         return False
+
+class PackageConfigAdmin(admin.ModelAdmin):
+    search_fields = ['feature']
+    list_display = ('feature',)
+    ordering = ('feature',)
+
+class StaticBuildDepAdmin(admin.ModelAdmin):
+    search_fields = ['name']
+    list_display = ('name',)
+    filter_horizontal = ('recipes',)
+
+class DynamicBuildDepAdmin(admin.ModelAdmin):
+    search_fields = ['name']
+    list_display = ('name',)
+    filter_horizontal = ('package_configs',)
 
 class ClassicRecipeAdmin(admin.ModelAdmin):
     search_fields = ['filename', 'pn']
@@ -159,6 +174,9 @@ admin.site.register(LayerDependency, LayerDependencyAdmin)
 admin.site.register(LayerNote, LayerNoteAdmin)
 admin.site.register(Update, UpdateAdmin)
 admin.site.register(LayerUpdate, LayerUpdateAdmin)
+admin.site.register(PackageConfig, PackageConfigAdmin)
+admin.site.register(StaticBuildDep, StaticBuildDepAdmin)
+admin.site.register(DynamicBuildDep, DynamicBuildDepAdmin)
 admin.site.register(Recipe, RecipeAdmin)
 admin.site.register(RecipeFileDependency)
 admin.site.register(Machine, MachineAdmin)

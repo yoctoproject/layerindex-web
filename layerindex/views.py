@@ -10,7 +10,7 @@ from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidde
 from django.core.urlresolvers import reverse, reverse_lazy, resolve
 from django.core.exceptions import PermissionDenied
 from django.template import RequestContext
-from layerindex.models import Branch, LayerItem, LayerMaintainer, LayerBranch, LayerDependency, LayerNote, Update, LayerUpdate, Recipe, Machine, Distro, BBClass, BBAppend, RecipeChange, RecipeChangeset, ClassicRecipe
+from layerindex.models import Branch, LayerItem, LayerMaintainer, LayerBranch, LayerDependency, LayerNote, Update, LayerUpdate, Recipe, Machine, Distro, BBClass, BBAppend, RecipeChange, RecipeChangeset, ClassicRecipe, StaticBuildDep, DynamicBuildDep
 from datetime import datetime
 from django.views.generic import TemplateView, DetailView, ListView
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
@@ -428,6 +428,19 @@ class RecipeSearchView(ListView):
         for item in query_items:
             if item.startswith('inherits:'):
                 inherits.append(item.split(':')[1])
+
+            # support searches by build dependencies
+            elif item.startswith('depends:'):
+                depsearch = item.split(':')[1]
+                qobj = Q(pk__in=[])
+                static_build_dependencies = StaticBuildDep.objects.filter(name=depsearch).first()
+                dynamic_build_dependencies = DynamicBuildDep.objects.filter(name=depsearch).first()
+                if static_build_dependencies:
+                    qobj |= Q(staticbuilddep=static_build_dependencies)
+                if dynamic_build_dependencies:
+                    qobj |= Q(dynamicbuilddep=dynamic_build_dependencies)
+                init_qs = init_qs.filter(qobj).distinct()
+
             # support searches by layer name
             elif item.startswith('layer:'):
                 query_layername = item.split(':')[1].strip().lower()
@@ -845,6 +858,8 @@ class RecipeDetailView(DetailView):
                 if append.matches_recipe(recipe):
                     verappends.append(append)
             context['verappends'] = verappends
+            context['packageconfigs'] = recipe.packageconfig_set.order_by('feature')
+            context['staticdependencies'] = recipe.staticbuilddep_set.order_by('name')
         return context
 
 
