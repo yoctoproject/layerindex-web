@@ -407,12 +407,41 @@ class Recipe(models.Model):
     def __str__(self):
         return os.path.join(self.filepath, self.filename)
 
+
 class Source(models.Model):
     recipe = models.ForeignKey(Recipe)
     url = models.CharField(max_length=255)
 
     def __str__(self):
         return '%s - %s' % (self.recipe.pn, self.url)
+
+
+class Patch(models.Model):
+    PATCH_STATUS_CHOICES = [
+        ('U', 'Unknown'),
+        ('A', 'Accepted'),
+        ('P', 'Pending'),
+        ('I', 'Inappropriate'),
+        ('B', 'Backport'),
+        ('S', 'Submitted'),
+        ('D', 'Denied'),
+        ]
+    recipe = models.ForeignKey(Recipe)
+    path = models.CharField(max_length=255)
+    src_path = models.CharField(max_length=255)
+    status = models.CharField(max_length=1, choices=PATCH_STATUS_CHOICES, default='U')
+    status_extra = models.CharField(max_length=255, blank=True)
+
+    class Meta:
+        verbose_name_plural = 'Patches'
+
+    def vcs_web_url(self):
+        url = self.recipe.layerbranch.file_url(self.path)
+        return url or ''
+
+    def __str__(self):
+        return "%s - %s" % (self.recipe, self.src_path)
+
 
 class PackageConfig(models.Model):
     recipe = models.ForeignKey(Recipe)

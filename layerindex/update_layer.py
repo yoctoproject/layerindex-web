@@ -55,11 +55,69 @@ def split_recipe_fn(path):
         pv = "1.0"
     return (pn, pv)
 
-def update_recipe_file(tinfoil, data, path, recipe, layerdir_start, repodir):
+patch_status_re = re.compile(r"^[\t ]*(Upstream[-_ ]Status:?)[\t ]*(\w+)([\t ]+.*)?", re.IGNORECASE | re.MULTILINE)
+
+def collect_patch(recipe, patchfn, layerdir_start):
+    from django.db import DatabaseError
+    from layerindex.models import Patch
+
+    patchrec = Patch()
+    patchrec.recipe = recipe
+    patchrec.path = os.path.relpath(patchfn, layerdir_start)
+    patchrec.src_path = os.path.relpath(patchrec.path, recipe.filepath)
+    try:
+        for encoding in ['utf-8', 'latin-1']:
+            try:
+                with open(patchfn, 'r', encoding=encoding) as f:
+                    for line in f:
+                        line = line.rstrip()
+                        if line.startswith('Index: ') or line.startswith('diff -') or line.startswith('+++ '):
+                            break
+                        res = patch_status_re.match(line)
+                        if res:
+                            status = res.group(2).lower()
+                            for key, value in dict(Patch.PATCH_STATUS_CHOICES).items():
+                                if status == value.lower():
+                                    patchrec.status = key
+                                    if res.group(3):
+                                        patchrec.status_extra = res.group(3).strip()
+                                    break
+                            else:
+                                logger.warn('Invalid upstream status in %s: %s' % (patchfn, line))
+            except UnicodeDecodeError:
+                continue
+            break
+        else:
+            logger.error('Unable to find suitable encoding to read patch %s' % patchfn)
+        patchrec.save()
+    except DatabaseError:
+        raise
+    except Exception as e:
+        logger.error("Unable to read patch %s: %s", patchfn, str(e))
+        patchrec.save()
+
+def collect_patches(recipe, envdata, layerdir_start):
+    from layerindex.models import Patch
+
+    try:
+        import oe.recipeutils
+    except ImportError:
+        logger.warn('Failed to find lib/oe/recipeutils.py in layers - patches will not be imported')
+        return
+
+    Patch.objects.filter(recipe=recipe).delete()
+    patches = oe.recipeutils.get_recipe_patches(envdata)
+    for patch in patches:
+        if not patch.startswith(layerdir_start):
+            # Likely a remote patch, skip it
+            continue
+        collect_patch(recipe, patch, layerdir_start)
+
+def update_recipe_file(tinfoil, data, path, recipe, layerdir_start, repodir, skip_patches=False):
     from django.db import DatabaseError
 
     fn = str(os.path.join(path, recipe.filename))
-    from layerindex.models import PackageConfig, StaticBuildDep, DynamicBuildDep, Source
+    from layerindex.models import PackageConfig, StaticBuildDep, DynamicBuildDep, Source, Patch
     try:
         logger.debug('Updating recipe %s' % fn)
         if hasattr(tinfoil, 'parse_recipe_file'):
@@ -136,6 +194,10 @@ def update_recipe_file(tinfoil, data, path, recipe, layerdir_start, repodir):
                         dynamic_build_dependency.save()
                     dynamic_build_dependency.package_configs.add(package_config)
                     dynamic_build_dependency.recipes.add(recipe)
+
+        if not skip_patches:
+            # Handle patches
+            collect_patches(recipe, envdata, layerdir_start)
 
         # Get file dependencies within this layer
         deps = envdata.getVar('__depends', True)
@@ -364,6 +426,15 @@ def main():
                 # why won't they just fix that?!)
                 tinfoil.config_data.setVar('LICENSE', '')
 
+                # Set up for recording patch info
+                utils.setup_core_layer_sys_path(settings, branch.name)
+                skip_patches = False
+                try:
+                    import oe.recipeutils
+                except ImportError:
+                    logger.warn('Failed to find lib/oe/recipeutils.py in layers - patch information will not be collected')
+                    skip_patches = True
+
                 layerconfparser = layerconfparse.LayerConfParse(logger=logger, tinfoil=tinfoil)
                 layer_config_data = layerconfparser.parse_layer(layerdir)
                 if not layer_config_data:
@@ -449,7 +520,7 @@ def main():
                                     recipe.filepath = newfilepath
                                     recipe.filename = newfilename
                                     recipe.save()
-                                    update_recipe_file(tinfoil, config_data_copy, os.path.join(layerdir, newfilepath), recipe, layerdir_start, repodir)
+                                    update_recipe_file(tinfoil, config_data_copy, os.path.join(layerdir, newfilepath), recipe, layerdir_start, repodir, skip_patches)
                                     updatedrecipes.add(os.path.join(oldfilepath, oldfilename))
                                     updatedrecipes.add(os.path.join(newfilepath, newfilename))
                                 else:
@@ -581,7 +652,7 @@ def main():
                                 results = layerrecipes.filter(filepath=filepath).filter(filename=filename)[:1]
                                 if results:
                                     recipe = results[0]
-                                    update_recipe_file(tinfoil, config_data_copy, os.path.join(layerdir, filepath), recipe, layerdir_start, repodir)
+                                    update_recipe_file(tinfoil, config_data_copy, os.path.join(layerdir, filepath), recipe, layerdir_start, repodir, skip_patches)
                                     recipe.save()
                                     updatedrecipes.add(recipe.full_path())
                             elif typename == 'machine':
@@ -603,7 +674,7 @@ def main():
 
                     for recipe in dirtyrecipes:
                         if not recipe.full_path() in updatedrecipes:
-                            update_recipe_file(tinfoil, config_data_copy, os.path.join(layerdir, recipe.filepath), recipe, layerdir_start, repodir)
+                            update_recipe_file(tinfoil, config_data_copy, os.path.join(layerdir, recipe.filepath), recipe, layerdir_start, repodir, skip_patches)
                 else:
                     # Collect recipe data from scratch
 
@@ -629,7 +700,7 @@ def main():
                                 # Recipe still exists, update it
                                 results = layerrecipes.filter(id=v['id'])[:1]
                                 recipe = results[0]
-                                update_recipe_file(tinfoil, config_data_copy, root, recipe, layerdir_start, repodir)
+                                update_recipe_file(tinfoil, config_data_copy, root, recipe, layerdir_start, repodir, skip_patches)
                             else:
                                 # Recipe no longer exists, mark it for later on
                                 layerrecipes_delete.append(v)
@@ -698,7 +769,7 @@ def main():
                     recipe.filename = os.path.basename(added)
                     root = os.path.dirname(added)
                     recipe.filepath = os.path.relpath(root, layerdir)
-                    update_recipe_file(tinfoil, config_data_copy, root, recipe, layerdir_start, repodir)
+                    update_recipe_file(tinfoil, config_data_copy, root, recipe, layerdir_start, repodir, skip_patches)
                     recipe.save()
 
                 for deleted in layerrecipes_delete:
