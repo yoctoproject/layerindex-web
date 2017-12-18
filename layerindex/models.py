@@ -236,12 +236,28 @@ class LayerBranch(models.Model):
             else:
                 branchname = self.branch.name
             url = base_url.replace('%branch%', branchname)
+            if path:
+                splitpath = path.split('/')
+                for match in re.findall('(%pathelement\[([0-9]*)(:[0-9]*)?\]%)', url):
+                    if match[1] == '':
+                        start = None
+                    else:
+                        start = int(match[1])
+                    if ':' in match[2]:
+                        stopstr = match[2][1:]
+                        if stopstr == '':
+                            stop = None
+                        else:
+                            stop = int(stopstr)
+                        url = url.replace(match[0], '/'.join(splitpath[start:stop]))
+                    else:
+                        url = url.replace(match[0], splitpath[start])
 
             # If there's a % in the path (e.g. a wildcard bbappend) we need to encode it
             if extra_path:
                 extra_path = extra_path.replace('%', '%25')
 
-            if '%path%' in base_url:
+            if '%path%' in base_url or '%pathelement[' in base_url:
                 if extra_path:
                     url = re.sub(r'\[([^\]]*%path%[^\]]*)\]', '\\1', url)
                 else:
