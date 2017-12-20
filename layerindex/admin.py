@@ -113,7 +113,7 @@ class DynamicBuildDepAdmin(admin.ModelAdmin):
 class ClassicRecipeAdmin(admin.ModelAdmin):
     search_fields = ['filename', 'pn']
     list_filter = ['layerbranch__layer__name', 'layerbranch__branch__name']
-    readonly_fields = [fieldname for fieldname in Recipe._meta.get_all_field_names() if fieldname != 'recipefiledependency']
+    readonly_fields = [fieldname for fieldname in Recipe._meta.get_all_field_names() if fieldname not in ['recipefiledependency', 'packageconfig']]
     def has_add_permission(self, request, obj=None):
         return False
     def has_delete_permission(self, request, obj=None):
