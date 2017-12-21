@@ -96,18 +96,15 @@ class RecipeAdmin(admin.ModelAdmin):
         return False
 
 class PackageConfigAdmin(admin.ModelAdmin):
-    search_fields = ['feature']
-    list_display = ('feature',)
+    search_fields = ['feature', 'recipe__pn']
     ordering = ('feature',)
 
 class StaticBuildDepAdmin(admin.ModelAdmin):
     search_fields = ['name']
-    list_display = ('name',)
     filter_horizontal = ('recipes',)
 
 class DynamicBuildDepAdmin(admin.ModelAdmin):
     search_fields = ['name']
-    list_display = ('name',)
     filter_horizontal = ('package_configs',)
 
 class ClassicRecipeAdmin(admin.ModelAdmin):
