@@ -85,9 +85,10 @@ def update_recipe_file(tinfoil, data, path, recipe, layerdir_start, repodir):
         # Handle static build dependencies for this recipe
         static_dependencies = envdata.getVar("DEPENDS", True) or ""
         for dep in static_dependencies.split():
-            static_build_dependency = StaticBuildDep.objects.get_or_create(name=dep)
-            static_build_dependency[0].save()
-            static_build_dependency[0].recipes.add(recipe)
+            static_build_dependency, created = StaticBuildDep.objects.get_or_create(name=dep)
+            if created:
+                static_build_dependency.save()
+            static_build_dependency.recipes.add(recipe)
 
         # Handle the PACKAGECONFIG variables for this recipe
         PackageConfig.objects.filter(recipe=recipe).delete()
@@ -115,10 +116,11 @@ def update_recipe_file(tinfoil, data, path, recipe, layerdir_start, repodir):
             # Handle the dynamic dependencies for the PACKAGECONFIG variable
             if package_config.build_deps:
                 for dep in package_config.build_deps.split():
-                    dynamic_build_dependency = DynamicBuildDep.objects.get_or_create(name=dep)
-                    dynamic_build_dependency[0].save()
-                    dynamic_build_dependency[0].package_configs.add(package_config)
-                    dynamic_build_dependency[0].recipes.add(recipe)
+                    dynamic_build_dependency, created = DynamicBuildDep.objects.get_or_create(name=dep)
+                    if created:
+                        dynamic_build_dependency.save()
+                    dynamic_build_dependency.package_configs.add(package_config)
+                    dynamic_build_dependency.recipes.add(recipe)
 
         # Get file dependencies within this layer
         deps = envdata.getVar('__depends', True)
