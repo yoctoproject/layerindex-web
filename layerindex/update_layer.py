@@ -90,6 +90,7 @@ def update_recipe_file(tinfoil, data, path, recipe, layerdir_start, repodir):
             static_build_dependency[0].recipes.add(recipe)
 
         # Handle the PACKAGECONFIG variables for this recipe
+        PackageConfig.objects.filter(recipe=recipe).delete()
         package_config_VarFlags = envdata.getVarFlags("PACKAGECONFIG")
         for key, value in package_config_VarFlags.items():
             if key == "doc":
