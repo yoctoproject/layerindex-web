@@ -227,6 +227,9 @@ FORCE_REVIEW_HTTPS = False
 SUBMIT_EMAIL_FROM = 'noreply@example.com'
 SUBMIT_EMAIL_SUBJECT = 'OE Layerindex layer submission'
 
+# Send email to maintainer(s) when their layer is published
+SEND_PUBLISH_EMAIL = True
+
 # RabbitMQ settings
 RABBIT_BROKER = 'amqp://'
 RABBIT_BACKEND = 'rpc://'

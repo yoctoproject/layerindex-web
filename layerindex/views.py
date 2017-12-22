@@ -259,38 +259,40 @@ def _check_url_branch(kwargs):
 def publish_view(request, name):
     if not (request.user.is_authenticated() and request.user.has_perm('layerindex.publish_layer')):
         raise PermissionDenied
-    layeritem = get_object_or_404(LayerItem, name=name)
-    layerbranch = get_object_or_404(LayerBranch, layer=layeritem)
-    layer_url = request.build_absolute_uri(reverse('layer_item', args=(layerbranch.branch, layeritem.name)))
-    maintainers = get_list_or_404(LayerMaintainer, layerbranch=layerbranch)
-    from_email = settings.SUBMIT_EMAIL_FROM
-    subjecttext = get_template('layerindex/publishemailsubject.txt')
-    bodytext = get_template('layerindex/publishemail.txt')
-    maintainer_names = [m.name for m in maintainers]
-    # find appropriate help contact
-    help_contact = None
-    for user in User.objects.all():
-        if user.username != 'root' and (user.is_staff or user.is_superuser) and user.is_active:
-            help_contact = user
-            break
 
-    # create subject from subject template
-    d = {
-        'layer_name': layeritem.name,
-        'site_name': request.META['HTTP_HOST'],
-    }
-    subject = subjecttext.render(d).rstrip()
+    if getattr(settings, 'SEND_PUBLISH_EMAIL', True):
+        layeritem = get_object_or_404(LayerItem, name=name)
+        layerbranch = get_object_or_404(LayerBranch, layer=layeritem)
+        layer_url = request.build_absolute_uri(reverse('layer_item', args=(layerbranch.branch, layeritem.name)))
+        maintainers = get_list_or_404(LayerMaintainer, layerbranch=layerbranch)
+        from_email = settings.SUBMIT_EMAIL_FROM
+        subjecttext = get_template('layerindex/publishemailsubject.txt')
+        bodytext = get_template('layerindex/publishemail.txt')
+        maintainer_names = [m.name for m in maintainers]
+        # find appropriate help contact
+        help_contact = None
+        for user in User.objects.all():
+            if user.username != 'root' and (user.is_staff or user.is_superuser) and user.is_active:
+                help_contact = user
+                break
 
-    #create body from body template
-    d = {
-        'maintainers': maintainer_names,
-        'layer_name': layeritem.name,
-        'layer_url': layer_url,
-        'help_contact': help_contact,
-    }
-    body = bodytext.render(d)
+        # create subject from subject template
+        d = {
+            'layer_name': layeritem.name,
+            'site_name': request.META['HTTP_HOST'],
+        }
+        subject = subjecttext.render(d).rstrip()
 
-    tasks.send_email.apply_async((subject, body, from_email, [m.email for m in maintainers]))
+        #create body from body template
+        d = {
+            'maintainers': maintainer_names,
+            'layer_name': layeritem.name,
+            'layer_url': layer_url,
+            'help_contact': help_contact,
+        }
+        body = bodytext.render(d)
+
+        tasks.send_email.apply_async((subject, body, from_email, [m.email for m in maintainers]))
 
     return _statuschange(request, name, 'P')
 
