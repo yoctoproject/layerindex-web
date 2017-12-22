@@ -270,6 +270,7 @@ def publish(request, name):
     bodytext = get_template('layerindex/publishemail.txt')
     maintainer_names = [m.name for m in maintainers]
     # find appropriate help contact
+    help_contact = None
     for user in User.objects.all():
         if user.username != 'root' and (user.is_staff or user.is_superuser) and user.is_active:
             help_contact = user
