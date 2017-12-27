@@ -122,7 +122,7 @@ def _add_dependency(var, name, layerbranch, config_data, logger=None, required=T
         logger.debug('Error parsing %s_%s for %s\n%s' % (var, var_name, layer_name, str(vse)))
         return
 
-    need_remove = None
+    need_remove = LayerDependency.objects.filter(layerbranch=layerbranch).filter(required=required)
     for dep, ver_list in list(dep_dict.items()):
         ver_str = None
         if ver_list:
@@ -142,9 +142,7 @@ def _add_dependency(var, name, layerbranch, config_data, logger=None, required=T
                 continue
 
         # Preparing to remove obsolete ones
-        if not need_remove:
-            need_remove = LayerDependency.objects.filter(layerbranch=layerbranch).filter(required=required).exclude(dependency=dep_layer)
-        else:
+        if need_remove:
             need_remove = need_remove.exclude(dependency=dep_layer)
 
         # Skip existing entries.
