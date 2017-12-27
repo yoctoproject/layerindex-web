@@ -20,6 +20,7 @@ from distutils.version import LooseVersion
 import utils
 import operator
 import re
+import multiprocessing
 
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
@@ -127,6 +128,18 @@ def update_actual_branch(layerquery, fetchdir, branch, options, update_bitbake, 
         for s in to_save:
             s.save()
 
+def fetch_repo(vcs_url, repodir, urldir, fetchdir, layer_name):
+    logger.info("Fetching remote repository %s" % vcs_url)
+    try:
+        if not os.path.exists(repodir):
+            utils.runcmd("git clone %s %s" % (vcs_url, urldir), fetchdir, logger=logger, printerr=False)
+        else:
+            utils.runcmd("git fetch -p", repodir, logger=logger, printerr=False)
+        return (vcs_url, None)
+    except subprocess.CalledProcessError as e:
+        logger.error("Fetch of layer %s failed: %s" % (layer_name, e.output))
+        return (vcs_url, e.output)
+
 def main():
     if LooseVersion(git.__version__) < '0.3.1':
         logger.error("Version of GitPython is too old, please install GitPython (python-git) 0.3.1 or later in order to use this script")
@@ -232,6 +245,9 @@ def main():
 
     if not os.path.exists(fetchdir):
         os.makedirs(fetchdir)
+
+    allrepos = {}
+    fetchedresult = []
     fetchedrepos = []
     failedrepos = {}
 
@@ -268,29 +284,28 @@ def main():
                     # Handle multiple layers in a single repo
                     urldir = layer.get_fetch_dir()
                     repodir = os.path.join(fetchdir, urldir)
-                    if not (layer.vcs_url in fetchedrepos or layer.vcs_url in failedrepos):
-                        logger.info("Fetching remote repository %s" % layer.vcs_url)
-                        out = None
-                        try:
-                            if not os.path.exists(repodir):
-                                out = utils.runcmd("git clone %s %s" % (layer.vcs_url, urldir), fetchdir, logger=logger, printerr=False)
-                            else:
-                                out = utils.runcmd("git fetch -p", repodir, logger=logger, printerr=False)
-                        except subprocess.CalledProcessError as e:
-                            logger.error("Fetch of layer %s failed: %s" % (layer.name, e.output))
-                            failedrepos[layer.vcs_url] = e.output
-                            continue
-                        fetchedrepos.append(layer.vcs_url)
+                    if layer.vcs_url not in allrepos:
+                        allrepos[layer.vcs_url] = (repodir, urldir, fetchdir, layer.name)
+                # Add bitbake
+                allrepos[settings.BITBAKE_REPO_URL] = (bitbakepath, "bitbake", fetchdir, "bitbake")
+                # Parallel fetching
+                pool = multiprocessing.Pool(int(settings.PARALLEL_JOBS))
+                for url in allrepos:
+                    fetchedresult.append(pool.apply_async(fetch_repo, \
+                        (url, allrepos[url][0], allrepos[url][1], allrepos[url][2], allrepos[url][3],)))
+                pool.close()
+                pool.join()
+
+                for url in fetchedresult[:]:
+                    # The format is (url, error), the error is None when succeed.
+                    if url.get()[1]:
+                        failedrepos[url.get()[0]] = url.get()[1]
+                    else:
+                        fetchedrepos.append(url.get()[0])
 
                 if not (fetchedrepos or update_bitbake):
                     logger.error("No repositories could be fetched, exiting")
                     sys.exit(1)
-
-                logger.info("Fetching bitbake from remote repository %s" % settings.BITBAKE_REPO_URL)
-                if not os.path.exists(bitbakepath):
-                    out = utils.runcmd("git clone %s %s" % (settings.BITBAKE_REPO_URL, 'bitbake'), fetchdir, logger=logger)
-                else:
-                    out = utils.runcmd("git fetch -p", bitbakepath, logger=logger)
 
             if options.actual_branch:
                 update_actual_branch(layerquery, fetchdir, branches[0], options, update_bitbake, bitbakepath)

@@ -228,3 +228,6 @@ SUBMIT_EMAIL_SUBJECT = 'OE Layerindex layer submission'
 # RabbitMQ settings
 RABBIT_BROKER = 'amqp://'
 RABBIT_BACKEND = 'rpc://'
+
+# Used for fetching repo
+PARALLEL_JOBS = "4"
