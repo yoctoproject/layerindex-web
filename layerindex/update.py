@@ -257,8 +257,14 @@ def main():
             bitbakepath = os.path.join(fetchdir, 'bitbake')
 
             if not options.nofetch:
+                # Make sure oe-core is fetched since recipe parsing requires it
+                layerquery_core = LayerItem.objects.filter(classic=False).filter(name=settings.CORE_LAYER_NAME)
+                if layerquery_core in layerquery:
+                    layerquery_fetch = list(layerquery)
+                else:
+                    layerquery_fetch = list(layerquery) + list(layerquery_core)
                 # Fetch latest metadata from repositories
-                for layer in layerquery:
+                for layer in layerquery_fetch:
                     # Handle multiple layers in a single repo
                     urldir = layer.get_fetch_dir()
                     repodir = os.path.join(fetchdir, urldir)
