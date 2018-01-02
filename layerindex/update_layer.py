@@ -301,22 +301,8 @@ def main():
             logger.info("Skipping update of layer %s - branch %s doesn't exist" % (layer.name, branchdesc))
         sys.exit(1)
 
-    try:
-        (tinfoil, tempdir) = recipeparse.init_parser(settings, branch, bitbakepath, nocheckout=options.nocheckout, logger=logger)
-    except recipeparse.RecipeParseError as e:
-        logger.error(str(e))
-        sys.exit(1)
-    logger.debug('Using temp directory %s' % tempdir)
-    # Clear the default value of SUMMARY so that we can use DESCRIPTION instead if it hasn't been set
-    tinfoil.config_data.setVar('SUMMARY', '')
-    # Clear the default value of DESCRIPTION so that we can see where it's not set
-    tinfoil.config_data.setVar('DESCRIPTION', '')
-    # Clear the default value of HOMEPAGE ('unknown')
-    tinfoil.config_data.setVar('HOMEPAGE', '')
-    # Set a blank value for LICENSE so that it doesn't cause the parser to die (e.g. with meta-ti -
-    # why won't they just fix that?!)
-    tinfoil.config_data.setVar('LICENSE', '')
-
+    tinfoil = None
+    tempdir = None
     try:
         with transaction.atomic():
             newbranch = False
@@ -380,6 +366,21 @@ def main():
                     sys.exit(1)
 
                 logger.info("Collecting data for layer %s on branch %s" % (layer.name, branchdesc))
+                try:
+                    (tinfoil, tempdir) = recipeparse.init_parser(settings, branch, bitbakepath, nocheckout=options.nocheckout, logger=logger)
+                except recipeparse.RecipeParseError as e:
+                    logger.error(str(e))
+                    sys.exit(1)
+                logger.debug('Using temp directory %s' % tempdir)
+                # Clear the default value of SUMMARY so that we can use DESCRIPTION instead if it hasn't been set
+                tinfoil.config_data.setVar('SUMMARY', '')
+                # Clear the default value of DESCRIPTION so that we can see where it's not set
+                tinfoil.config_data.setVar('DESCRIPTION', '')
+                # Clear the default value of HOMEPAGE ('unknown')
+                tinfoil.config_data.setVar('HOMEPAGE', '')
+                # Set a blank value for LICENSE so that it doesn't cause the parser to die (e.g. with meta-ti -
+                # why won't they just fix that?!)
+                tinfoil.config_data.setVar('LICENSE', '')
 
                 layerconfparser = layerconfparse.LayerConfParse(logger=logger, tinfoil=tinfoil)
                 layer_config_data = layerconfparser.parse_layer(layerdir)
@@ -748,14 +749,15 @@ def main():
         import traceback
         traceback.print_exc()
     finally:
-        if LooseVersion(bb.__version__) > LooseVersion("1.27"):
+        if tinfoil and (LooseVersion(bb.__version__) > LooseVersion("1.27")):
             tinfoil.shutdown()
 
-    if options.keep_temp:
-        logger.debug('Preserving temp directory %s' % tempdir)
-    else:
-        logger.debug('Deleting temp directory')
-        shutil.rmtree(tempdir)
+    if tempdir:
+        if options.keep_temp:
+            logger.debug('Preserving temp directory %s' % tempdir)
+        else:
+            logger.debug('Deleting temp directory')
+            shutil.rmtree(tempdir)
     sys.exit(0)
 
 
