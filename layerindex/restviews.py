@@ -1,4 +1,4 @@
-from layerindex.models import Branch, LayerItem, LayerNote, LayerBranch, LayerDependency, Recipe, Machine, Distro, BBClass
+from layerindex.models import Branch, LayerItem, LayerMaintainer, LayerNote, LayerBranch, LayerDependency, Recipe, Machine, Distro, BBClass
 from rest_framework import viewsets, serializers
 from layerindex.querysethelper import params_to_queryset, get_search_tuple
 
@@ -40,6 +40,22 @@ class LayerDependencySerializer(serializers.ModelSerializer):
 class LayerDependencyViewSet(ParametricSearchableModelViewSet):
     queryset = LayerDependency.objects.filter(layerbranch__layer__status__in=['P', 'X'])
     serializer_class = LayerDependencySerializer
+
+class LayerMaintainerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LayerMaintainer
+
+class LayerMaintainerViewSet(ParametricSearchableModelViewSet):
+    queryset = LayerMaintainer.objects.filter(layerbranch__layer__status__in=['P', 'X'])
+    serializer_class = LayerMaintainerSerializer
+
+class LayerNoteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LayerNote
+
+class LayerNoteViewSet(ParametricSearchableModelViewSet):
+    queryset = LayerNote.objects.filter(layer__status__in=['P', 'X'])
+    serializer_class = LayerNoteSerializer
 
 class RecipeSerializer(serializers.ModelSerializer):
     class Meta:
