@@ -89,6 +89,11 @@
     {% endblock %}
 
 {% block contenttag %}<div id="content" class="container top-padded">{% endblock %}
+        {% if notices %}
+            {% for notice in notices %}
+            <div class="alert {% if notice.level == 'I' %}alert-info{% elif notice.level == 'S' %}alert-success{% elif notice.level == 'W' %}{% elif notice.level == 'E' %}alert-error{% endif %}">{{ notice.text_sanitised|safe|urlize }}</div>
+            {% endfor %}
+        {% endif %}
         {% if messages %}
             {% for message in messages %}
             <div{% if message.tags %} class="alert {{ message.tags }}"{% endif %}>{{ message }}</div>

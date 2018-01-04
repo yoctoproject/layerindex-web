@@ -1,11 +1,13 @@
 # layerindex-web - custom context processor
 #
-# Copyright (C) 2013 Intel Corporation
+# Copyright (C) 2013, 2018 Intel Corporation
 #
 # Licensed under the MIT license, see COPYING.MIT for details
 
-from layerindex.models import Branch, LayerItem
+from layerindex.models import Branch, LayerItem, SiteNotice
 from django.contrib.sites.models import Site
+from django.db.models import Q
+from datetime import datetime
 
 def layerindex_context(request):
     import settings
@@ -20,4 +22,5 @@ def layerindex_context(request):
         'oe_classic': Branch.objects.filter(name='oe-classic'),
         'site_name': site_name,
         'rrs_enabled': 'rrs' in settings.INSTALLED_APPS,
+        'notices': SiteNotice.objects.filter(disabled=False).filter(Q(expires__isnull=True) | Q(expires__gte=datetime.now())),
     }

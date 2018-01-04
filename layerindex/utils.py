@@ -14,6 +14,7 @@ import time
 import fcntl
 import signal
 import codecs
+from bs4 import BeautifulSoup
 
 def get_branch(branchname):
     from layerindex.models import Branch
@@ -388,6 +389,7 @@ def setup_core_layer_sys_path(settings, branchname):
         core_layerdir = os.path.join(core_repodir, core_layerbranch.vcs_subdir)
         sys.path.insert(0, os.path.join(core_layerdir, 'lib'))
 
+
 def run_command_interruptible(cmd):
     """
     Run a command with output displayed on the console, but ensure any Ctrl+C is
@@ -416,3 +418,15 @@ def run_command_interruptible(cmd):
     finally:
         signal.signal(signal.SIGINT, signal.SIG_DFL)
     return process.returncode, buf
+
+
+def sanitise_html(html):
+    soup = BeautifulSoup(html, "html.parser")
+    for tag in soup.findAll(True):
+        if tag.name not in ['strong', 'em', 'b', 'i', 'p', 'ul', 'ol', 'li', 'br', 'p']:
+            tag.hidden = True
+        elif tag.attrs:
+            tag.attrs = []
+
+    return soup.renderContents()
+

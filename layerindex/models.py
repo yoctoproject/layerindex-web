@@ -1,6 +1,6 @@
 # layerindex-web - model definitions
 #
-# Copyright (C) 2013-2016 Intel Corporation
+# Copyright (C) 2013-2018 Intel Corporation
 #
 # Licensed under the MIT license, see COPYING.MIT for details
 
@@ -658,3 +658,26 @@ class RecipeChange(models.Model):
     def reset_fields(self):
         for fieldname in self.RECIPE_VARIABLE_MAP:
             setattr(self, fieldname, getattr(self.recipe, fieldname))
+
+class SiteNotice(models.Model):
+    NOTICE_LEVEL_CHOICES = [
+        ('I', 'Info'),
+        ('S', 'Success'),
+        ('W', 'Warning'),
+        ('E', 'Error'),
+    ]
+    text = models.TextField(help_text='Text to show in the notice. A limited subset of HTML is supported for formatting.')
+    level = models.CharField(max_length=1, choices=NOTICE_LEVEL_CHOICES, default='I', help_text='Level of notice to display')
+    disabled = models.BooleanField('Disabled', default=False, help_text='Use to temporarily disable this notice')
+    expires = models.DateTimeField(blank=True, null=True, help_text='Optional date/time when this notice will stop showing')
+
+    def __str__(self):
+        prefix = ''
+        if self.expires and datetime.now() >= self.expires:
+            prefix = '[expired] '
+        elif self.disabled:
+            prefix = '[disabled] '
+        return '%s%s' % (prefix, self.text)
+
+    def text_sanitised(self):
+        return utils.sanitise_html(self.text)
