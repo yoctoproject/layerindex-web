@@ -56,6 +56,8 @@ def split_recipe_fn(path):
     return (pn, pv)
 
 def update_recipe_file(tinfoil, data, path, recipe, layerdir_start, repodir):
+    from django.db import DatabaseError
+
     fn = str(os.path.join(path, recipe.filename))
     from layerindex.models import PackageConfig, StaticBuildDep, DynamicBuildDep
     try:
@@ -155,6 +157,8 @@ def update_recipe_file(tinfoil, data, path, recipe, layerdir_start, repodir):
             recipedeps.filter(path=filedep).delete()
 
     except KeyboardInterrupt:
+        raise
+    except DatabaseError:
         raise
     except BaseException as e:
         if not recipe.pn:
