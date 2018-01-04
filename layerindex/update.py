@@ -299,7 +299,7 @@ def main():
                 # If layer_A depends(or recommends) on layer_B, add layer_B before layer_A
                 deps_dict_all = {}
                 layerquery_sorted = []
-                collections_done = set()
+                collections = set()
                 branchobj = utils.get_branch(branch)
                 for layer in layerquery_all:
                     # Get all collections from database, but we can't trust the
@@ -309,7 +309,7 @@ def main():
                         continue
                     layerbranch = layer.get_layerbranch(branch)
                     if layerbranch:
-                        collections_done.add((layerbranch.collection, layerbranch.version))
+                        collections.add((layerbranch.collection, layerbranch.version))
 
                 for layer in layerquery:
                     cmd = prepare_update_layer_command(options, branchobj, layer, initial=True)
@@ -323,11 +323,12 @@ def main():
                     deps = re.search("^LAYERDEPENDS = \"(.*)\"", output, re.M).group(1) or ''
                     recs = re.search("^LAYERRECOMMENDS = \"(.*)\"", output, re.M).group(1) or ''
 
+                    collections.add((col, ver))
+
                     deps_dict = utils.explode_dep_versions2(bitbakepath, deps + ' ' + recs)
                     if len(deps_dict) == 0:
                         # No depends, add it firstly
                         layerquery_sorted.append(layer)
-                        collections_done.add((col, ver))
                         continue
                     deps_dict_all[layer] = {'requires': deps_dict, 'collection': col, 'version': ver}
 
@@ -342,24 +343,23 @@ def main():
                                 req_ver = req_ver_list[0]
                             else:
                                 req_ver = None
-                            if utils.is_deps_satisfied(req_col, req_ver, collections_done):
+                            if utils.is_deps_satisfied(req_col, req_ver, collections):
                                 del(value['requires'][req_col])
                         if not value['requires']:
-                            # All the depends are in collections_done:
+                            # All the depends are in collections:
                             del(deps_dict_all[layer])
                             layerquery_sorted.append(layer)
-                            collections_done.add((value['collection'], value['version']))
 
                     if not len(deps_dict_all):
                         break
 
-                    # Something is wrong if nothing changed after a run
+                    # If nothing changed after a run then some dependencies couldn't be resolved
                     if operator.eq(deps_dict_all_copy, deps_dict_all):
-                        logger.error("Cannot find required collections on branch %s:" % branch)
+                        logger.warning("Cannot find required collections on branch %s:" % branch)
                         for layer, value in deps_dict_all.items():
                             logger.error('%s: %s' % (layer.name, value['requires']))
-                        logger.error("Known collections: %s" % collections_done)
-                        sys.exit(1)
+                        logger.warning("Known collections on branch %s: %s" % (branch, collections))
+                        break
 
                 for layer in layerquery_sorted:
                     layerupdate = LayerUpdate()
