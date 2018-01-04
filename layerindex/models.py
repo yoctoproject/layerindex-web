@@ -9,9 +9,30 @@ from datetime import datetime
 from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
 from django.core.validators import URLValidator
+from django.db.models.signals import pre_save
+from django.dispatch import receiver
 import os.path
 import re
 import posixpath
+
+from . import utils
+
+
+logger = utils.logger_create('LayerIndexModels')
+
+
+@receiver(pre_save)
+def truncate_charfield_values(sender, instance, *args, **kwargs):
+    # Instead of leaving this up to the database, check and handle it
+    # ourselves to avoid nasty exceptions; as a bonus we won't miss when
+    # the max length is too short with databases that don't enforce
+    # the limits (e.g. sqlite)
+    for field in instance._meta.get_fields():
+        if isinstance(field, models.CharField):
+            value = getattr(instance, field.name)
+            if value and len(value) > field.max_length:
+                logger.warning('%s.%s: length %s exceeds maximum (%s), truncating' % (instance.__class__.__name__, field.name, len(value), field.max_length))
+                setattr(instance, field.name, value[:field.max_length])
 
 
 class PythonEnvironment(models.Model):
