@@ -72,7 +72,8 @@ def main():
 
             recipequery = ClassicRecipe.objects.filter(layerbranch=layerbranch).filter(deleted=False).filter(cover_status__in=['U', 'N'])
             for recipe in recipequery:
-                replquery = recipe_pn_query(recipe.pn)
+                sanepn = recipe.pn.lower().replace('_', '-')
+                replquery = recipe_pn_query(sanepn)
                 found = False
                 for replrecipe in replquery:
                     logger.debug('Matched %s in layer %s' % (recipe.pn, replrecipe.layerbranch.layer.name))
@@ -110,6 +111,48 @@ def main():
                                     recipe.save()
                                     found = True
                                     break
+                    else:
+                        if recipe.source_set.exists():
+                            source0 = recipe.source_set.first()
+                            if 'pypi.' in source0.url:
+                                attempts = ['python3-%s' % sanepn, 'python-%s' % sanepn]
+                                if sanepn.startswith('py'):
+                                    attempts.extend(['python3-%s' % sanepn[2:], 'python-%s' % sanepn[2:]])
+                                for attempt in attempts:
+                                    replquery = recipe_pn_query(attempt)
+                                    for replrecipe in replquery:
+                                        logger.debug('Found match %s to cover %s in layer %s' % (replrecipe.pn, recipe.pn, replrecipe.layerbranch.layer.name))
+                                        recipe.cover_layerbranch = replrecipe.layerbranch
+                                        recipe.cover_pn = replrecipe.pn
+                                        recipe.cover_status = 'D'
+                                        recipe.cover_verified = False
+                                        recipe.save()
+                                        found = True
+                                        break
+                                    if found:
+                                        break
+                                if not found:
+                                    recipe.classic_category = 'python'
+                                    recipe.save()
+                            elif 'cpan.org' in source0.url:
+                                perlpn = sanepn
+                                if perlpn.startswith('perl-'):
+                                    perlpn = perlpn[5:]
+                                if not (perlpn.startswith('lib') and perlpn.endswith('-perl')):
+                                    perlpn = 'lib%s-perl' % perlpn
+                                replquery = recipe_pn_query(perlpn)
+                                for replrecipe in replquery:
+                                    logger.debug('Found match %s to cover %s in layer %s' % (replrecipe.pn, recipe.pn, replrecipe.layerbranch.layer.name))
+                                    recipe.cover_layerbranch = replrecipe.layerbranch
+                                    recipe.cover_pn = replrecipe.pn
+                                    recipe.cover_status = 'D'
+                                    recipe.cover_verified = False
+                                    recipe.save()
+                                    found = True
+                                    break
+                                if not found:
+                                    recipe.classic_category = 'perl'
+                                    recipe.save()
 
 
             if options.dryrun:
