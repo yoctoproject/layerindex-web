@@ -112,6 +112,9 @@ class DynamicBuildDepAdmin(admin.ModelAdmin):
     search_fields = ['name']
     filter_horizontal = ('package_configs',)
 
+class SourceAdmin(admin.ModelAdmin):
+    pass
+
 class ClassicRecipeAdmin(admin.ModelAdmin):
     search_fields = ['filename', 'pn']
     list_filter = ['layerbranch__layer__name', 'layerbranch__branch__name']
@@ -184,6 +187,7 @@ admin.site.register(LayerUpdate, LayerUpdateAdmin)
 admin.site.register(PackageConfig, PackageConfigAdmin)
 admin.site.register(StaticBuildDep, StaticBuildDepAdmin)
 admin.site.register(DynamicBuildDep, DynamicBuildDepAdmin)
+admin.site.register(Source, SourceAdmin)
 admin.site.register(Recipe, RecipeAdmin)
 admin.site.register(RecipeFileDependency)
 admin.site.register(Machine, MachineAdmin)

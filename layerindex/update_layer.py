@@ -59,7 +59,7 @@ def update_recipe_file(tinfoil, data, path, recipe, layerdir_start, repodir):
     from django.db import DatabaseError
 
     fn = str(os.path.join(path, recipe.filename))
-    from layerindex.models import PackageConfig, StaticBuildDep, DynamicBuildDep
+    from layerindex.models import PackageConfig, StaticBuildDep, DynamicBuildDep, Source
     try:
         logger.debug('Updating recipe %s' % fn)
         if hasattr(tinfoil, 'parse_recipe_file'):
@@ -91,6 +91,19 @@ def update_recipe_file(tinfoil, data, path, recipe, layerdir_start, repodir):
             if created:
                 static_build_dependency.save()
             static_build_dependency.recipes.add(recipe)
+
+        # Handle sources
+        old_urls = list(recipe.source_set.values_list('url', flat=True))
+        for url in (envdata.getVar('SRC_URI', True) or '').split():
+            if not url.startswith('file://'):
+                url = url.split(';')[0]
+                if url in old_urls:
+                    old_urls.remove(url)
+                else:
+                    src = Source(recipe=recipe, url=url)
+                    src.save()
+        for url in old_urls:
+            recipe.source_set.filter(url=url).delete()
 
         # Handle the PACKAGECONFIG variables for this recipe
         PackageConfig.objects.filter(recipe=recipe).delete()

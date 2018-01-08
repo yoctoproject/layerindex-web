@@ -378,6 +378,13 @@ class Recipe(models.Model):
     def __str__(self):
         return os.path.join(self.filepath, self.filename)
 
+class Source(models.Model):
+    recipe = models.ForeignKey(Recipe)
+    url = models.CharField(max_length=255)
+
+    def __str__(self):
+        return '%s - %s' % (self.recipe.pn, self.url)
+
 class PackageConfig(models.Model):
     recipe = models.ForeignKey(Recipe)
     feature = models.CharField(max_length=255)
