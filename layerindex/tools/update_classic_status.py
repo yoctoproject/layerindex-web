@@ -77,6 +77,7 @@ def main():
                 for replrecipe in replquery:
                     logger.debug('Matched %s in layer %s' % (recipe.pn, replrecipe.layerbranch.layer.name))
                     recipe.cover_layerbranch = replrecipe.layerbranch
+                    recipe.cover_pn = replrecipe.pn
                     recipe.cover_status = 'D'
                     recipe.cover_verified = False
                     recipe.save()
