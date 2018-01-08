@@ -936,7 +936,10 @@ class ClassicRecipeSearchView(RecipeSearchView):
         if cover_verified:
             init_qs = init_qs.filter(cover_verified=(cover_verified=='1'))
         if category:
-            init_qs = init_qs.filter(classic_category__icontains=category)
+            if category == "''" or category == '""':
+                init_qs = init_qs.filter(classic_category='')
+            else:
+                init_qs = init_qs.filter(classic_category__icontains=category)
         if query_string.strip():
             order_by = (Lower('pn'), 'layerbranch__layer')
 
