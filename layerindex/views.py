@@ -449,11 +449,11 @@ class RecipeSearchView(ListView):
                     messages.add_message(self.request, messages.ERROR, 'The \
 layer name is expected to follow the \"layer:\" prefix without any spaces.')
                 else:
-                    query_layer = LayerBranch.objects.filter(
-                        layer__name=query_layername)
+                    query_layer = LayerItem.objects.filter(
+                        name=query_layername)
                     if query_layer:
                         init_qs = init_qs.filter(
-                            layerbranch__layer__id=query_layer[0].id)
+                            layerbranch__layer=query_layer[0])
                     else:
                         messages.add_message(self.request, messages.ERROR,
                                             'No layer \"%s\" was found.'
