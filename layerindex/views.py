@@ -865,6 +865,10 @@ class RecipeDetailView(DetailView):
 
 
 class ClassicRecipeSearchView(RecipeSearchView):
+    def render_to_response(self, context, **kwargs):
+        # Bypass the redirect-to-single-instance behaviour of RecipeSearchView
+        return super(ListView, self).render_to_response(context, **kwargs)
+
     def get_queryset(self):
         self.kwargs['branch'] = 'oe-classic'
         query_string = self.request.GET.get('q', '')
