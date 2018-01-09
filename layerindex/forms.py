@@ -215,15 +215,22 @@ BulkChangeEditFormSet = modelformset_factory(RecipeChange, form=BulkChangeEditFo
 
 
 class ClassicRecipeSearchForm(forms.Form):
-    COVER_STATUS_CHOICES = [('','(any)'), ('!','(unknown / not available)')] + ClassicRecipe.COVER_STATUS_CHOICES
+    COVER_STATUS_CHOICES = [('','(any)'), ('!','(unknown / not available)'), ('#','(available)')] + ClassicRecipe.COVER_STATUS_CHOICES
     VERIFIED_CHOICES = [
         ('', '(any)'),
         ('1', 'Verified'),
         ('0', 'Unverified'),
         ]
+    PATCH_CHOICES = [
+        ('', '(any)'),
+        ('1', 'Has patches'),
+        ('0', 'No patches'),
+        ]
 
     q = forms.CharField(label='Keyword', max_length=255, required=False)
     category = forms.CharField(max_length=255, required=False)
+    oe_layer = forms.ModelChoiceField(label='OE Layer', queryset=LayerItem.objects.filter(classic=False).filter(status__in=['P', 'X']).order_by('name'), empty_label="(any)", required=False)
+    has_patches = forms.ChoiceField(label='Patches', choices=PATCH_CHOICES, required=False)
     cover_status = forms.ChoiceField(label='Status', choices=COVER_STATUS_CHOICES, required=False)
     cover_verified = forms.ChoiceField(label='Verified', choices=VERIFIED_CHOICES, required=False)
 

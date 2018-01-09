@@ -927,10 +927,14 @@ class ClassicRecipeSearchView(RecipeSearchView):
         cover_status = self.request.GET.get('cover_status', None)
         cover_verified = self.request.GET.get('cover_verified', None)
         category = self.request.GET.get('category', None)
+        oe_layer = self.request.GET.get('oe_layer', None)
+        has_patches = self.request.GET.get('has_patches', '')
         init_qs = ClassicRecipe.objects.filter(layerbranch__branch__name=self.kwargs['branch']).filter(deleted=False)
         if cover_status:
             if cover_status == '!':
                 init_qs = init_qs.filter(cover_status__in=['U', 'N', 'S'])
+            elif cover_status == '#':
+                init_qs = init_qs.exclude(cover_status__in=['U', 'N', 'S'])
             else:
                 init_qs = init_qs.filter(cover_status=cover_status)
         if cover_verified:
@@ -940,6 +944,13 @@ class ClassicRecipeSearchView(RecipeSearchView):
                 init_qs = init_qs.filter(classic_category='')
             else:
                 init_qs = init_qs.filter(classic_category__icontains=category)
+        if oe_layer:
+            init_qs = init_qs.filter(cover_layerbranch__layer=oe_layer)
+        if has_patches.strip():
+            if has_patches == '1':
+                init_qs = init_qs.filter(patch__isnull=False).distinct()
+            else:
+                init_qs = init_qs.filter(patch__isnull=True)
         if query_string.strip():
             order_by = (Lower('pn'), 'layerbranch__layer')
 
