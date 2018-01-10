@@ -1067,7 +1067,7 @@ class ClassicRecipeStatsView(TemplateView):
                     categories.append(cat)
         categories.append('none')
         catcounts = dict.fromkeys(categories, 0)
-        unmigrated = recipes.filter(cover_status='U')
+        unmigrated = recipes.filter(cover_status__in=['U', 'N'])
         catcounts['none'] = unmigrated.filter(classic_category='').count()
         values = unmigrated.exclude(classic_category='').values_list('classic_category', flat=True)
         # We gather data this way because an item might be in more than one category, thus
