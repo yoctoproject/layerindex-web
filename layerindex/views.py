@@ -1007,3 +1007,20 @@ class ClassicRecipeStatsView(TemplateView):
             'jquery_on_ready': False,
         }
         return context
+
+
+class StatsView(TemplateView):
+    def get_context_data(self, **kwargs):
+        context = super(StatsView, self).get_context_data(**kwargs)
+        context['layercount'] = LayerItem.objects.count()
+        context['recipe_count_distinct'] = Recipe.objects.values('pn').distinct().count()
+        context['class_count_distinct'] = BBClass.objects.values('name').distinct().count()
+        context['machine_count_distinct'] = Machine.objects.values('name').distinct().count()
+        context['distro_count_distinct'] = Distro.objects.values('name').distinct().count()
+        context['perbranch'] = Branch.objects.order_by('sort_priority').annotate(
+                layer_count=Count('layerbranch', distinct=True),
+                recipe_count=Count('layerbranch__recipe', distinct=True),
+                class_count=Count('layerbranch__bbclass', distinct=True),
+                machine_count=Count('layerbranch__machine', distinct=True),
+                distro_count=Count('layerbranch__distro', distinct=True))
+        return context

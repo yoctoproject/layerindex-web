@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load static %}
+
+{% comment %}
+
+  layerindex-web - statistics page template
+
+  Copyright (C) 2018 Intel Corporation
+  Licensed under the MIT license, see COPYING.MIT for details
+
+{% endcomment %}
+
+
+<!--
+{% block title_append %} - statistics{% endblock %}
+-->
+
+{% block content %}
+{% autoescape on %}
+
+<h2>Statistics</h2>
+
+<h3>Overall</h3>
+<dl class="dl-horizontal">
+    <dt>Layers</dt><dd>{{ layercount }}</dd>
+    <dt>Recipes</dt><dd>{{ recipe_count_distinct }} (distinct names)</dd>
+    <dt>Machines</dt><dd>{{ machine_count_distinct }} (distinct names)</dd>
+    <dt>Classes</dt><dd>{{ class_count_distinct }} (distinct names)</dd>
+    <dt>Distros</dt><dd>{{ distro_count_distinct }} (distinct names)</dd>
+</dl>
+
+<h3>Per branch</h3>
+
+<table class="table">
+    <thead>
+        <th>Branch</th>
+        <th style="text-align: right">Layers</th>
+        <th style="text-align: right">Recipes</th>
+        <th style="text-align: right">Machines</th>
+        <th style="text-align: right">Classes</th>
+        <th style="text-align: right">Distros</th>
+    </thead>
+    <tbody>
+        {% for branch in perbranch %}
+        <tr {% if not branch.updates_enabled %}class="muted"{% endif %}>
+            <td>{{ branch.name }}</td>
+            <td style="text-align: right">{{ branch.layer_count }}</td>
+            <td style="text-align: right">{{ branch.recipe_count }}</td>
+            <td style="text-align: right">{{ branch.machine_count }}</td>
+            <td style="text-align: right">{{ branch.class_count }}</td>
+            <td style="text-align: right">{{ branch.distro_count }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endautoescape %}
+{% endblock %}
+
