@@ -929,6 +929,7 @@ class ClassicRecipeSearchView(RecipeSearchView):
         category = self.request.GET.get('category', None)
         oe_layer = self.request.GET.get('oe_layer', None)
         has_patches = self.request.GET.get('has_patches', '')
+        needs_attention = self.request.GET.get('needs_attention', '')
         init_qs = ClassicRecipe.objects.filter(layerbranch__branch__name=self.kwargs['branch']).filter(deleted=False)
         if cover_status:
             if cover_status == '!':
@@ -951,6 +952,11 @@ class ClassicRecipeSearchView(RecipeSearchView):
                 init_qs = init_qs.filter(patch__isnull=False).distinct()
             else:
                 init_qs = init_qs.filter(patch__isnull=True)
+        if needs_attention.strip():
+            if needs_attention == '1':
+                init_qs = init_qs.filter(needs_attention=True)
+            else:
+                init_qs = init_qs.filter(needs_attention=False)
         if query_string.strip():
             order_by = (Lower('pn'), 'layerbranch__layer')
 

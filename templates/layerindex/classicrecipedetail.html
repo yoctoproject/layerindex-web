@@ -141,8 +141,14 @@
                     <label>
                     Category
                     {{ form.classic_category }}
-                    </p>
                     </label>
+                    </p>
+                    <p>
+                    <label class="checkbox" id="id_label_needs_attention">
+                    {{ form.needs_attention }}
+                    Needs attention
+                    </label>
+                    </p>
                 <input type="submit" value="Save" class='btn' />
                 </form>
                 {% else %}

@@ -96,11 +96,7 @@
                         {% for recipe in recipe_list %}
                             <tr {% if recipe.preferred_count > 0 %}class="muted"{% endif %}>
                             {% if compare %}
-                                {% if branch.name == 'oe-classic' %}
-                                <td><a href="{% url 'classic_recipe' recipe.id %}">{{ recipe.name }}</a></td>
-                                {% else %}
-                                <td><a href="{% url 'comparison_recipe' recipe.id %}">{{ recipe.name }}</a></td>
-                                {% endif %}
+                                <td><a href="{% url 'comparison_recipe' recipe.id %}">{{ recipe.name }}{% if recipe.needs_attention %} <i class="icon-exclamation-sign" data-toggle="tooltip" title="Needs attention"></i>{% endif %}</a></td>
                                 <td>{{ recipe.pv|truncatechars:10 }}</td>
                                 <td>{% if recipe.patch_set.exists %}{{ recipe.patch_set.count }}{% endif %}</td>
                                 <td>{{ recipe.get_cover_status_display }}{% if recipe.cover_comment %} <a href="{% url 'classic_recipe' recipe.id %}"><i class="icon-comment" data-toggle="tooltip" title="{{ recipe.cover_comment }}"></i></a>{% endif %}</td>
@@ -115,11 +111,7 @@
                                 <td></td>
                                 {% endif %}
                             {% else %}
-                                {% if branch.name == 'oe-classic' %}
-                                <td><a href="{% url 'classic_recipe' recipe.id %}">{{ recipe.name }}</a></td>
-                                {% else %}
-                                <td><a href="{% url 'comparison_recipe' recipe.id %}">{{ recipe.name }}</a></td>
-                                {% endif %}
+                                <td><a href="{% url 'comparison_recipe' recipe.id %}">{{ recipe.name }}{% if recipe.needs_attention %} <i class="icon-exclamation-sign" data-toggle="tooltip" title="Needs attention"></i>{% endif %}</a></td>
                                 <td>{{ recipe.pv }}</td>
                                 <td>{{ recipe.short_desc }}</td>
                                 <td>{{ recipe.get_cover_desc }}</td>
