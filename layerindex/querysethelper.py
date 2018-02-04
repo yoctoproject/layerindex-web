@@ -28,16 +28,16 @@ VALUE_SEPARATOR = "!"
 DESCENDING = "-"
 
 def __get_q_for_val(name, value):
-    if "OR" in value:
-        return functools.reduce(operator.or_, map(lambda x: __get_q_for_val(name, x), [ x for x in value.split("OR") ]))
-    if "AND" in value:
-        return functools.reduce(operator.and_, map(lambda x: __get_q_for_val(name, x), [ x for x in value.split("AND") ]))
-    if value.startswith("NOT"):
-        kwargs = { name : value.strip("NOT") }
-        return ~Q(**kwargs)
-    else:
-        kwargs = { name : value }
-        return Q(**kwargs)
+    if isinstance(value, str):
+        if "OR" in value:
+            return functools.reduce(operator.or_, map(lambda x: __get_q_for_val(name, x), [ x for x in value.split("OR") ]))
+        if "AND" in value:
+            return functools.reduce(operator.and_, map(lambda x: __get_q_for_val(name, x), [ x for x in value.split("AND") ]))
+        if value.startswith("NOT"):
+            kwargs = { name : value.strip("NOT") }
+            return ~Q(**kwargs)
+    kwargs = { name : value }
+    return Q(**kwargs)
 
 def _get_filtering_query(filter_string):
 
@@ -46,6 +46,10 @@ def _get_filtering_query(filter_string):
     values = search_terms[1].split(VALUE_SEPARATOR)
 
     querydict = dict(zip(keys, values))
+    for key in keys:
+        if key.endswith('__isnull'):
+            querydict[key] = (querydict[key].lower() == 'true')
+
     return functools.reduce(operator.and_, map(lambda x: __get_q_for_val(x, querydict[x]), [k for k in querydict]))
 
 # we check that the input comes in a valid form that we can recognize
