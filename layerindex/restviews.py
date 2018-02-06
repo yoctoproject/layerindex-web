@@ -2,7 +2,7 @@ from layerindex.models import Branch, LayerItem, LayerNote, LayerBranch, LayerDe
 from rest_framework import viewsets, serializers
 from layerindex.querysethelper import params_to_queryset, get_search_tuple
 
-class ParametricSearchableModelViewSet(viewsets.ModelViewSet):
+class ParametricSearchableModelViewSet(viewsets.ReadOnlyModelViewSet):
     def get_queryset(self):
         model = self.__class__.serializer_class.Meta.model
         qs = self.queryset
