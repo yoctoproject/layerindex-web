@@ -12,6 +12,7 @@ class ParametricSearchableModelViewSet(viewsets.ReadOnlyModelViewSet):
 class BranchSerializer(serializers.ModelSerializer):
     class Meta:
         model = Branch
+        fields = '__all__'
 
 class BranchViewSet(ParametricSearchableModelViewSet):
     queryset = Branch.objects.all()
@@ -20,6 +21,7 @@ class BranchViewSet(ParametricSearchableModelViewSet):
 class LayerItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = LayerItem
+        fields = '__all__'
 
 class LayerItemViewSet(ParametricSearchableModelViewSet):
     queryset = LayerItem.objects.filter(status__in=['P', 'X'])
@@ -28,6 +30,7 @@ class LayerItemViewSet(ParametricSearchableModelViewSet):
 class LayerBranchSerializer(serializers.ModelSerializer):
     class Meta:
         model = LayerBranch
+        fields = '__all__'
 
 class LayerBranchViewSet(ParametricSearchableModelViewSet):
     queryset = LayerBranch.objects.filter(layer__status__in=['P', 'X'])
@@ -36,6 +39,7 @@ class LayerBranchViewSet(ParametricSearchableModelViewSet):
 class LayerDependencySerializer(serializers.ModelSerializer):
     class Meta:
         model = LayerDependency
+        fields = '__all__'
 
 class LayerDependencyViewSet(ParametricSearchableModelViewSet):
     queryset = LayerDependency.objects.filter(layerbranch__layer__status__in=['P', 'X'])
@@ -44,6 +48,7 @@ class LayerDependencyViewSet(ParametricSearchableModelViewSet):
 class LayerMaintainerSerializer(serializers.ModelSerializer):
     class Meta:
         model = LayerMaintainer
+        fields = '__all__'
 
 class LayerMaintainerViewSet(ParametricSearchableModelViewSet):
     queryset = LayerMaintainer.objects.filter(layerbranch__layer__status__in=['P', 'X'])
@@ -52,6 +57,7 @@ class LayerMaintainerViewSet(ParametricSearchableModelViewSet):
 class LayerNoteSerializer(serializers.ModelSerializer):
     class Meta:
         model = LayerNote
+        fields = '__all__'
 
 class LayerNoteViewSet(ParametricSearchableModelViewSet):
     queryset = LayerNote.objects.filter(layer__status__in=['P', 'X'])
@@ -60,6 +66,7 @@ class LayerNoteViewSet(ParametricSearchableModelViewSet):
 class RecipeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Recipe
+        fields = '__all__'
 
 class RecipeViewSet(ParametricSearchableModelViewSet):
     queryset = Recipe.objects.all()
@@ -68,6 +75,7 @@ class RecipeViewSet(ParametricSearchableModelViewSet):
 class MachineSerializer(serializers.ModelSerializer):
     class Meta:
         model = Machine
+        fields = '__all__'
 
 class MachineViewSet(ParametricSearchableModelViewSet):
     queryset = Machine.objects.all()
@@ -76,6 +84,7 @@ class MachineViewSet(ParametricSearchableModelViewSet):
 class DistroSerializer(serializers.ModelSerializer):
     class Meta:
         model = Distro
+        fields = '__all__'
 
 class DistroViewSet(ParametricSearchableModelViewSet):
     queryset = Distro.objects.all()
@@ -84,6 +93,7 @@ class DistroViewSet(ParametricSearchableModelViewSet):
 class ClassSerializer(serializers.ModelSerializer):
     class Meta:
         model = BBClass
+        fields = '__all__'
 
 class ClassViewSet(ParametricSearchableModelViewSet):
     queryset = BBClass.objects.all()
