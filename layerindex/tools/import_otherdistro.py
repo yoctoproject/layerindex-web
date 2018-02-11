@@ -442,6 +442,92 @@ def try_specfile(args):
     return 0
 
 
+def import_deblist(args):
+    utils.setup_django()
+    import settings
+    from layerindex.models import LayerItem, LayerBranch, Recipe, ClassicRecipe, Machine, BBAppend, BBClass
+    from django.db import transaction
+
+    ret, layerbranch = check_branch_layer(args)
+    if ret:
+        return ret
+
+    try:
+        with transaction.atomic():
+            layerrecipes = ClassicRecipe.objects.filter(layerbranch=layerbranch)
+            existing = list(layerrecipes.filter(deleted=False).values_list('pn', flat=True))
+
+            def handle_pkg(pkg):
+                pkgname = pkg['Package']
+                recipe, created = ClassicRecipe.objects.get_or_create(layerbranch=layerbranch, pn=pkgname)
+                if created:
+                    logger.info('Importing %s' % pkgname)
+                elif recipe.deleted:
+                    logger.info('Restoring and updating %s' % pkgname)
+                    recipe.deleted = False
+                else:
+                    logger.info('Updating %s' % pkgname)
+                filename = pkg.get('Filename', '')
+                if filename:
+                    recipe.filename = os.path.basename(filename)
+                    recipe.filepath = os.path.dirname(filename)
+                recipe.section = pkg.get('Section', '')
+                description = pkg.get('Description', '')
+                if description:
+                    description = description.splitlines()
+                    recipe.summary = description.pop(0)
+                    recipe.description = ' '.join(description)
+                recipe.pv = pkg.get('Version', '')
+                recipe.homepage = pkg.get('Homepage', '')
+                recipe.license = pkg.get('License', '')
+                recipe.save()
+                if pkgname in existing:
+                    existing.remove(pkgname)
+
+            pkgs = []
+            pkginfo = {}
+            lastfield = ''
+            with open(args.pkglistfile, 'r') as f:
+                for line in f:
+                    linesplit = line.split()
+                    if line.startswith('Package:'):
+                        # Next package starting, deal with the last one (unless this is the first)
+                        if pkginfo:
+                            handle_pkg(pkginfo)
+
+                        pkginfo = {}
+                        lastfield = 'Package'
+
+                    if line.startswith(' '):
+                        if lastfield:
+                            pkginfo[lastfield] += '\n' + line.strip()
+                    elif ':' in line:
+                        field, value = line.split(':', 1)
+                        pkginfo[field] = value.strip()
+                        lastfield = field
+                    else:
+                        lastfield = ''
+                if pkginfo:
+                    # Handle last package
+                    handle_pkg(pkginfo)
+
+                if existing:
+                    logger.info('Marking as deleted: %s' % ', '.join(existing))
+                    layerrecipes.filter(pn__in=existing).update(deleted=True)
+
+                layerbranch.vcs_last_fetch = datetime.now()
+                layerbranch.save()
+
+                if args.dry_run:
+                    raise DryRunRollbackException()
+    except DryRunRollbackException:
+        pass
+    except:
+        import traceback
+        traceback.print_exc()
+        return 1
+
+
 def main():
 
     parser = argparse.ArgumentParser(description='OE Layer Index other distro comparison import tool',
@@ -470,6 +556,16 @@ def main():
     parser_tryspecfile.add_argument('layer', help='Layer to import into')
     parser_tryspecfile.add_argument('specfile', help='Spec file to try importing')
     parser_tryspecfile.set_defaults(func=try_specfile)
+
+
+    parser_deblist = subparsers.add_parser('import-deblist',
+                                           help='Import from a list of Debian packages',
+                                           description='Imports from a list of Debian packages')
+    parser_deblist.add_argument('branch', help='Branch to import into')
+    parser_deblist.add_argument('layer', help='Layer to import into')
+    parser_deblist.add_argument('pkglistfile', help='File containing a list of packages, as produced by: apt-cache show "*"')
+    parser_deblist.add_argument('-n', '--dry-run', help='Don\'t write any data back to the database', action='store_true')
+    parser_deblist.set_defaults(func=import_deblist)
 
 
     args = parser.parse_args()
