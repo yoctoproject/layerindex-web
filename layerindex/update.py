@@ -337,7 +337,11 @@ def main():
                     logger.debug('Running layer update command: %s' % cmd)
                     ret, output = run_command_interruptible(cmd)
                     logger.debug('output: %s' % output)
-                    if ret != 0:
+                    if ret == 254:
+                        # Interrupted by user, break out of loop
+                        logger.info('Update interrupted, exiting')
+                        sys.exit(254)
+                    elif ret != 0:
                         continue
                     col = re.search("^BBFILE_COLLECTIONS = \"(.*)\"", output, re.M).group(1) or ''
                     ver = re.search("^LAYERVERSION = \"(.*)\"", output, re.M).group(1) or ''
@@ -418,10 +422,14 @@ def main():
 
                     if ret == 254:
                         # Interrupted by user, break out of loop
-                        break
+                        logger.info('Update interrupted, exiting')
+                        sys.exit(254)
         finally:
             utils.unlock_file(lockfile)
 
+    except KeyboardInterrupt:
+        logger.info('Update interrupted, exiting')
+        sys.exit(254)
     finally:
         update.log = ''.join(listhandler.read())
         update.finished = datetime.now()
