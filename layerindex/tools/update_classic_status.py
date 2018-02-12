@@ -68,7 +68,7 @@ def main():
     try:
         with transaction.atomic():
             def recipe_pn_query(pn):
-                return Recipe.objects.filter(layerbranch__branch__name='master').filter(pn=pn).order_by('layerbranch__layer__index_preference')
+                return Recipe.objects.filter(layerbranch__branch__name='master').filter(pn=pn).order_by('-layerbranch__layer__index_preference')
 
             recipequery = ClassicRecipe.objects.filter(layerbranch=layerbranch).filter(cover_status__in=['U', 'N'])
             for recipe in recipequery:
