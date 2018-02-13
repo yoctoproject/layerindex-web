@@ -872,27 +872,9 @@ class RecipeDetailView(DetailView):
         return context
 
 
-class ClassicRecipeLinkWrapper:
+class LinkWrapper:
     def __init__(self, queryset):
         self.queryset = queryset
-
-    # This function is required by generic views, create another proxy
-    def _clone(self):
-        return ClassicRecipeLinkIterator(self.queryset._clone(), **self.kwargs)
-
-    def _annotate(self, obj):
-        recipe = None
-        vercmp = 0
-        if obj.cover_layerbranch and obj.cover_pn:
-            rq = Recipe.objects.filter(layerbranch=obj.cover_layerbranch).filter(pn=obj.cover_pn)
-            if rq:
-                recipe = rq.first()
-                if obj.pv and recipe.pv:
-                    obj_ver = parse_version(obj.pv)
-                    recipe_ver = parse_version(recipe.pv)
-                    vercmp = ((recipe_ver > obj_ver) - (recipe_ver < obj_ver))
-        setattr(obj, 'cover_recipe', recipe)
-        setattr(obj, 'cover_vercmp', vercmp)
 
     def __iter__(self):
         for obj in self.queryset:
@@ -916,6 +898,49 @@ class ClassicRecipeLinkWrapper:
         else:
             return len(self.queryset)
 
+class ClassicRecipeLinkWrapper(LinkWrapper):
+    # This function is required by generic views, create another proxy
+    def _clone(self):
+        return ClassicRecipeLinkWrapper(self.queryset._clone(), **self.kwargs)
+
+    def _annotate(self, obj):
+        recipe = None
+        vercmp = 0
+        if obj.cover_layerbranch and obj.cover_pn:
+            rq = Recipe.objects.filter(layerbranch=obj.cover_layerbranch).filter(pn=obj.cover_pn)
+            if rq:
+                recipe = rq.first()
+                if obj.pv and recipe.pv:
+                    obj_ver = parse_version(obj.pv)
+                    recipe_ver = parse_version(recipe.pv)
+                    vercmp = ((recipe_ver > obj_ver) - (recipe_ver < obj_ver))
+        setattr(obj, 'cover_recipe', recipe)
+        setattr(obj, 'cover_vercmp', vercmp)
+
+class ClassicRecipeReverseLinkWrapper(LinkWrapper):
+    def __init__(self, queryset, branch):
+        self.queryset = queryset
+        self.branch = branch
+
+    # This function is required by generic views, create another proxy
+    def _clone(self):
+        return ClassicRecipeReverseLinkWrapper(self.queryset._clone(), **self.kwargs)
+
+    def _annotate(self, obj):
+        recipe = None
+        vercmp = 0
+        rq = ClassicRecipe.objects.filter(layerbranch__branch__name=self.branch).filter(cover_layerbranch=obj.layerbranch).filter(cover_pn=obj.pn)
+        if rq:
+            recipe = rq.first()
+            if obj.pv and recipe.pv:
+                obj_ver = parse_version(obj.pv)
+                recipe_ver = parse_version(recipe.pv)
+                vercmp = ((recipe_ver > obj_ver) - (recipe_ver < obj_ver))
+        setattr(obj, 'cover_recipe', recipe)
+        setattr(obj, 'cover_vercmp', vercmp)
+
+
+
 class ClassicRecipeSearchView(RecipeSearchView):
     def render_to_response(self, context, **kwargs):
         # Bypass the redirect-to-single-instance behaviour of RecipeSearchView
@@ -930,7 +955,10 @@ class ClassicRecipeSearchView(RecipeSearchView):
         oe_layer = self.request.GET.get('oe_layer', None)
         has_patches = self.request.GET.get('has_patches', '')
         needs_attention = self.request.GET.get('needs_attention', '')
+        qreversed = self.request.GET.get('reversed', '')
         init_qs = ClassicRecipe.objects.filter(layerbranch__branch__name=self.kwargs['branch']).filter(deleted=False)
+        filtered = False
+        cover_null = False
         if cover_status:
             if cover_status == '!':
                 init_qs = init_qs.filter(cover_status__in=['U', 'N', 'S'])
@@ -938,13 +966,18 @@ class ClassicRecipeSearchView(RecipeSearchView):
                 init_qs = init_qs.exclude(cover_status__in=['U', 'N', 'S'])
             else:
                 init_qs = init_qs.filter(cover_status=cover_status)
+            filtered = True
+            if cover_status in ['U', '!']:
+                cover_null = True
         if cover_verified:
             init_qs = init_qs.filter(cover_verified=(cover_verified=='1'))
+            filtered = True
         if category:
             if category == "''" or category == '""':
                 init_qs = init_qs.filter(classic_category='')
             else:
                 init_qs = init_qs.filter(classic_category__icontains=category)
+            filtered = True
         if oe_layer:
             init_qs = init_qs.filter(cover_layerbranch__layer=oe_layer)
         if has_patches.strip():
@@ -952,11 +985,13 @@ class ClassicRecipeSearchView(RecipeSearchView):
                 init_qs = init_qs.filter(patch__isnull=False).distinct()
             else:
                 init_qs = init_qs.filter(patch__isnull=True)
+            filtered = True
         if needs_attention.strip():
             if needs_attention == '1':
                 init_qs = init_qs.filter(needs_attention=True)
             else:
                 init_qs = init_qs.filter(needs_attention=False)
+            filtered = True
         if query_string.strip():
             order_by = (Lower('pn'), 'layerbranch__layer')
 
@@ -969,6 +1004,7 @@ class ClassicRecipeSearchView(RecipeSearchView):
             qs2 = init_qs.filter(entry_query).order_by(*order_by)
 
             qs = list(utils.chain_unique(qs0, qs1, qs2))
+            filtered = True
         else:
             if 'q' in self.request.GET:
                 qs = init_qs.order_by(Lower('pn'), 'layerbranch__layer')
@@ -977,7 +1013,34 @@ class ClassicRecipeSearchView(RecipeSearchView):
                 # won't actually want that (if they do they can just hit the search button
                 # with no query string)
                 return Recipe.objects.none()
-        return ClassicRecipeLinkWrapper(qs)
+        if qreversed:
+            init_rqs = Recipe.objects.filter(layerbranch__branch__name='master')
+            if oe_layer:
+                init_rqs = init_rqs.filter(layerbranch__layer=oe_layer)
+            all_values = []
+            if filtered:
+                if isinstance(qs, list):
+                    values = []
+                    for item in qs:
+                        if item.cover_layerbranch and item.cover_pn:
+                            values.append((item.cover_layerbranch.id, item.cover_pn))
+                else:
+                    values = qs.filter(cover_layerbranch__isnull=False).filter(cover_pn__isnull=False).values_list('cover_layerbranch__id', 'cover_pn').distinct()
+                if cover_null:
+                    all_values = ClassicRecipe.objects.filter(layerbranch__branch__name=self.kwargs['branch']).filter(deleted=False).filter(cover_layerbranch__isnull=False).filter(cover_pn__isnull=False).values_list('cover_layerbranch__id', 'cover_pn').distinct()
+            else:
+                values = None
+            rqs = init_rqs.order_by(Lower('pn'), 'layerbranch__layer')
+            if filtered:
+                items = []
+                for item in rqs:
+                    recipe_values = (item.layerbranch.id, item.pn)
+                    if (cover_null and recipe_values not in all_values) or (recipe_values in values):
+                        items.append(item)
+                return ClassicRecipeReverseLinkWrapper(items, self.kwargs['branch'])
+            return ClassicRecipeReverseLinkWrapper(rqs, self.kwargs['branch'])
+        else:
+            return ClassicRecipeLinkWrapper(qs)
 
     def get_context_data(self, **kwargs):
         context = super(ClassicRecipeSearchView, self).get_context_data(**kwargs)
@@ -991,6 +1054,7 @@ class ClassicRecipeSearchView(RecipeSearchView):
             searched = False
             search_form = ClassicRecipeSearchForm()
         context['compare'] = self.request.GET.get('compare', False)
+        context['reversed'] = self.request.GET.get('reversed', False)
         context['search_form'] = search_form
         context['searched'] = searched
         return context
