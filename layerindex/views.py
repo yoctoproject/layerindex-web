@@ -947,6 +947,98 @@ class LayerCheckListView(ListView):
         _check_url_branch(self.kwargs)
         return LayerBranch.objects.filter(branch__name=self.kwargs['branch']).filter(layer__status__in=['P', 'X']).order_by('layer__name')
 
+class BBClassCheckListView(ListView):
+    context_object_name = 'classes'
+
+    def get_queryset(self):
+        _check_url_branch(self.kwargs)
+        nonrecipe_classes = ['archiver',
+                             'base',
+                             'buildhistory',
+                             'bugzilla',
+                             'buildstats',
+                             'buildstats-summary',
+                             'ccache',
+                             'chrpath',
+                             'copyleft_compliance',
+                             'copyleft_filter',
+                             'cve-check',
+                             'debian',
+                             'devshell',
+                             'devtool-source',
+                             'distrodata',
+                             'extrausers',
+                             'icecc',
+                             'image-buildinfo',
+                             'image-container',
+                             'image-combined-dbg',
+                             'image-live',
+                             'image-mklibs',
+                             'image-prelink',
+                             'image_types',
+                             'image_types_wic',
+                             'insane',
+                             'license',
+                             'license_image',
+                             'live-vm-common',
+                             'logging',
+                             'metadata_scm',
+                             'migrate_localcount',
+                             'mirrors',
+                             'multilib',
+                             'multilib_global',
+                             'multilib_header',
+                             'oelint',
+                             'own-mirrors',
+                             'package',
+                             'package_deb',
+                             'package_ipk',
+                             'package_rpm',
+                             'package_tar',
+                             'packagedata',
+                             'packagefeed-stability',
+                             'patch',
+                             'primport',
+                             'prexport',
+                             'recipe_sanity',
+                             'remove-libtool',
+                             'report-error',
+                             'reproducible_build',
+                             'reproducible_build_simple',
+                             'rm_work',
+                             'rm_work_and_downloads',
+                             'rootfs-postcommands',
+                             'rootfs_deb',
+                             'rootfs_ipk',
+                             'rootfs_rpm',
+                             'rootfsdebugfiles',
+                             'sanity',
+                             'sign_ipk',
+                             'sign_package_feed',
+                             'sign_rpm',
+                             'siteconfig',
+                             'siteinfo',
+                             'spdx',
+                             'sstate',
+                             'staging',
+                             'syslinux',
+                             'systemd-boot',
+                             'terminal',
+                             'testexport',
+                             'testimage',
+                             'testimage-auto',
+                             'testsdk',
+                             'tinderclient',
+                             'toaster',
+                             'toolchain-scripts',
+                             'toolchain-scripts-base',
+                             'uninative',
+                             'useradd-staticids',
+                             'utility-tasks',
+                             'utils',
+                             ]
+        return BBClass.objects.filter(layerbranch__branch__name=self.kwargs['branch']).filter(layerbranch__layer__name=settings.CORE_LAYER_NAME).exclude(name__in=nonrecipe_classes).order_by('name')
+
 
 class ClassicRecipeSearchView(RecipeSearchView):
     def render_to_response(self, context, **kwargs):
@@ -1028,6 +1120,10 @@ class ClassicRecipeSearchView(RecipeSearchView):
             init_rqs = Recipe.objects.filter(layerbranch__branch__name='master')
             if layer_ids:
                 init_rqs = init_rqs.filter(layerbranch__layer__id__in=layer_ids)
+            excludeclasses_param = self.request.GET.get('excludeclasses', '')
+            if excludeclasses_param:
+                for inherit in excludeclasses_param.split(','):
+                    init_rqs = init_rqs.exclude(inherits=inherit).exclude(inherits__startswith=inherit + ' ').exclude(inherits__endswith=' ' + inherit).exclude(inherits__contains=' %s ' % inherit)
             all_values = []
             if filtered:
                 if isinstance(qs, list):
@@ -1078,6 +1174,14 @@ class ClassicRecipeSearchView(RecipeSearchView):
             layer_ids = []
             context['selectedlayers_display'] = ' (any)'
         context['selectedlayers'] = layer_ids
+
+        excludeclasses_param = self.request.GET.get('excludeclasses', '')
+        if excludeclasses_param:
+            context['excludeclasses_display'] = excludeclasses_param
+            context['excludeclasses'] = excludeclasses_param.split(',')
+        else:
+            context['excludeclasses_display'] = ' (none)'
+            context['excludeclasses'] = []
         return context
 
 

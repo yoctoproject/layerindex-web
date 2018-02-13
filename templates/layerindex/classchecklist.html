@@ -1,0 +1,21 @@
+{% comment %}
+
+  layerindex-web - class check list AJAX template
+
+  Copyright (C) 2018 Intel Corporation
+  Licensed under the MIT license, see COPYING.MIT for details
+
+{% endcomment %}
+
+{% autoescape on %}
+                                                    <table><tbody>
+                                                        {% for classitem in classes %}
+                                                            <tr>
+                                                                <td class="checkboxtd">
+                                                                    <input type="checkbox" class="filterclasscheckbox" value="{{ classitem.name }}" id="id_classcheckbox_{{classitem.name}}"                                                                />
+                                                                </td>
+                                                                <td><label for="id_classcheckbox_{{classitem.name}}">{{ classitem.name }}</label></td>
+                                                            </tr>
+                                                        {% endfor %}
+                                                    </tbody></table>
+{% endautoescape %}

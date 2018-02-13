@@ -87,7 +87,39 @@
                                 </tr>
                                 {% endfor %}
                                 <tr><td><label class="checkbox"><input type="checkbox" name="compare" {% if compare %}checked{% endif %}></input>Show comparison</label></td></tr>
-                                <tr><td><label class="checkbox"><input type="checkbox" name="reversed" {% if reversed %}checked{% endif %}></input>Reversed</label></td></tr>
+                                <tr><td><label class="checkbox"><input type="checkbox" name="reversed" id="id_reversed" {% if reversed %}checked{% endif %}></input>Reversed</label></td></tr>
+
+                                <tr id="id_reversed_fields">
+                                    <td>
+                                        Exclude classes
+                                    </td>
+                                    <td>
+                                        <div class="input-append">
+                                            <input class="input-large" id="id_excludeclasses_display" type="text" value="{{ excludeclasses_display }}" />
+                                            <a href="#excludeclassDialog" id="id_select_excludeclasses" role="button" class="btn" data-toggle="modal">...</a>
+                                        </div>
+                                        <input type="hidden" id="id_excludeclasses" name="excludeclasses" value="{{ excludeclasses|join:"," }}" />
+
+                                        <div id="excludeclassDialog" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="excludeclassDialogLabel" aria-hidden="true">
+                                            <div class="modal-header">
+                                                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+                                                <h3 id="excludeclassDialogLabel">Select classes to exclude</h3>
+                                            </div>
+                                            <div class="modal-body">
+                                                <div class="scrolling" id="id_excludeclassdialog_list">
+                                                </div>
+                                                <div class="buttonblock">
+                                                    <button type="button" class="btn buttonblock-btn" id="id_excludeclassdialog_select_none">Select none</button>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button class="btn btn-primary" id="id_excludeclassdialog_ok" data-dismiss="modal" aria-hidden="true">OK</button>
+                                                <button class="btn" id="id_excludeclassdialog_cancel" data-dismiss="modal" aria-hidden="true">Cancel</button>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+
                             </tbody>
                         </table>
                          <button class="btn" type="submit">Search</button>
@@ -215,6 +247,17 @@
         else
             $('#id_selectedlayers_display').val(' (any)')
     }
+    update_excludeclasses_display = function() {
+        classnames = [];
+        $('.filterclasscheckbox:checked').each(function() {
+            classnames.push($(this).attr('value'));
+        });
+        if(classnames.length)
+            $('#id_excludeclasses_display').val(classnames)
+        else
+            $('#id_excludeclasses_display').val(' (none)');
+        $('#id_excludeclasses').val(classnames)
+    }
     update_filters_enabled = function() {
         if( $('#id_reversed').is(":checked") ) {
             $('#id_reversed_fields').show()
@@ -254,8 +297,40 @@
             });
         }
     }
+    select_excludeclass_checkboxes = function() {
+        $('.filterclasscheckbox').attr('checked', false);
+        excludeclasses = $('#id_excludeclasses').val().split(',');
+        for(i in excludeclasses) {
+            $('#id_classcheckbox_' + excludeclasses[i]).attr('checked', true);
+        }
+    }
+    setup_excludeclass_list = function() {
+        if( $.trim($('#id_excludeclassdialog_list').html()) ) {
+            select_excludeclass_checkboxes()
+        }
+        else {
+            $('#id_excludeclassdialog_list').html('Loading...');
+            $('#id_excludeclassdialog_ok').prop('disabled', true)
+            $('#id_excludeclassdialog_ok').addClass('disabled')
+            $.ajax({
+                url: '{% url 'class_checklist' 'master' %}',
+                dataType: 'html',
+                success: function( resp ) {
+                    $('#id_excludeclassdialog_list').html(resp);
+                    select_excludeclass_checkboxes()
+                    $('#id_excludeclassdialog_ok').prop('disabled', false)
+                    $('#id_excludeclassdialog_ok').removeClass('disabled')
+                },
+                error: function( req, status, err ) {
+                    $('#id_excludeclassdialog_list').html(err);
+                    console.log( 'something went wrong', status, err );
+                }
+            });
+        }
+    }
     $(document).ready(function() {
         $('#id_selectedlayers_display').prop('readonly', true)
+        $('#id_excludeclasses_display').prop('readonly', true)
         update_filters_enabled()
         $('[data-toggle="tooltip"]').tooltip();
         firstfield = $("#search-form input:text").first()
@@ -273,6 +348,15 @@
     });
     $('#id_select_layers').click(function (e) {
         setup_layer_list()
+    });
+    $('#id_excludeclassdialog_select_none').click(function (e) {
+        $('.filterclasscheckbox').attr('checked', false);
+    });
+    $('#id_excludeclassdialog_ok').click(function (e) {
+        update_excludeclasses_display()
+    });
+    $('#id_select_excludeclasses').click(function (e) {
+        setup_excludeclass_list()
     });
     $('#id_reversed').click(function (e) {
         update_filters_enabled()
