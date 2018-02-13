@@ -1,0 +1,21 @@
+{% comment %}
+
+  layerindex-web - layer check list AJAX template
+
+  Copyright (C) 2018 Intel Corporation
+  Licensed under the MIT license, see COPYING.MIT for details
+
+{% endcomment %}
+
+{% autoescape on %}
+                                                    <table><tbody>
+                                                        {% for layerbranch in layerbranches %}
+                                                            <tr>
+                                                                <td class="checkboxtd">
+                                                                    <input type="checkbox" class="filterlayercheckbox" value="{{ layerbranch.layer.id }}" id="id_layercheckbox_{{layerbranch.layer.id}}" />
+                                                                </td>
+                                                                <td><label for="id_layercheckbox_{{layerbranch.layer.id}}">{{ layerbranch.layer.name }}</label></td>
+                                                            </tr>
+                                                        {% endfor %}
+                                                    </tbody></table>
+{% endautoescape %}

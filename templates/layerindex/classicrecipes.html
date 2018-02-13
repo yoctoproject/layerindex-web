@@ -45,12 +45,45 @@
                             <tbody>
                                 {% for field in search_form.visible_fields %}
                                 <tr>
+                                    {% if field.name == 'oe_layer' %}
+                                    <td>
+                                        {{ field.label }}
+                                    </td>
+                                    <td>
+                                        <div class="input-append">
+                                            <input type="text" class="input-large" id="id_selectedlayers_display" value="{{ selectedlayers_display }}" />
+                                            <a href="#layerDialog" id="id_select_layers" role="button" class="btn" data-toggle="modal">...</a>
+                                        </div>
+                                        <input type="hidden" id="id_selectedlayers" name="selectedlayers" value="{{ selectedlayers|join:"," }}" />
+
+                                        <div id="layerDialog" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="layerDialogLabel" aria-hidden="true">
+                                            <div class="modal-header">
+                                                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+                                                <h3 id="layerDialogLabel">Select layers to include</h3>
+                                            </div>
+                                            <div class="modal-body">
+                                                <div class="scrolling" id="id_layerdialog_list">
+                                                </div>
+                                                <div class="buttonblock">
+                                                <button type="button" class="btn" id="id_layerdialog_select_all">Select all</button>
+                                                <button type="button" class="btn buttonblock-btn" id="id_layerdialog_select_none">Select none</button>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button class="btn btn-primary" id="id_layerdialog_ok" data-dismiss="modal" aria-hidden="true">OK</button>
+                                                <button class="btn" id="id_layerdialog_cancel" data-dismiss="modal" aria-hidden="true">Cancel</button>
+                                            </div>
+                                        </div>
+
+                                    </td>
+                                    {% else %}
                                     <td>
                                         {{ field.label }}
                                     </td>
                                     <td>
                                         {{ field }}
                                     </td>
+                                    {% endif %}
                                 </tr>
                                 {% endfor %}
                                 <tr><td><label class="checkbox"><input type="checkbox" name="compare" {% if compare %}checked{% endif %}></input>Show comparison</label></td></tr>
@@ -169,11 +202,80 @@
 
 {% block scripts %}
 <script>
+    update_selected_layer_display = function() {
+        layernames = [];
+        layerids = [];
+        $('.filterlayercheckbox:checked').each(function() {
+            layernames.push($("label[for="+$(this).attr('id')+"]").html());
+            layerids.push($(this).attr('value'))
+        });
+        $('#id_selectedlayers').val(layerids)
+        if(layernames.length)
+            $('#id_selectedlayers_display').val(layernames)
+        else
+            $('#id_selectedlayers_display').val(' (any)')
+    }
+    update_filters_enabled = function() {
+        if( $('#id_reversed').is(":checked") ) {
+            $('#id_reversed_fields').show()
+        }
+        else {
+            $('#id_reversed_fields').hide()
+        }
+    }
+    select_layer_checkboxes = function() {
+        $('.filterlayercheckbox').attr('checked', false);
+        selectedlayers = $('#id_selectedlayers').val().split(',');
+        for(i in selectedlayers) {
+            $('#id_layercheckbox_' + selectedlayers[i]).attr('checked', true);
+        }
+    }
+    setup_layer_list = function() {
+        if( $.trim($('#id_layerdialog_list').html()) ) {
+            select_layer_checkboxes()
+        }
+        else {
+            $('#id_layerdialog_list').html('Loading...');
+            $('#id_layerdialog_ok').prop('disabled', true)
+            $('#id_layerdialog_ok').addClass('disabled')
+            $.ajax({
+                url: '{% url 'layer_checklist' 'master' %}',
+                dataType: 'html',
+                success: function( resp ) {
+                    $('#id_layerdialog_list').html(resp);
+                    select_layer_checkboxes()
+                    $('#id_layerdialog_ok').prop('disabled', false)
+                    $('#id_layerdialog_ok').removeClass('disabled')
+                },
+                error: function( req, status, err ) {
+                    $('#id_layerdialog_list').html(err);
+                    console.log( 'something went wrong', status, err );
+                }
+            });
+        }
+    }
     $(document).ready(function() {
+        $('#id_selectedlayers_display').prop('readonly', true)
+        update_filters_enabled()
         $('[data-toggle="tooltip"]').tooltip();
         firstfield = $("#search-form input:text").first()
         if( ! firstfield.val() )
             firstfield.focus()
+    });
+    $('#id_layerdialog_select_all').click(function (e) {
+        $('.filterlayercheckbox').attr('checked', true);
+    });
+    $('#id_layerdialog_select_none').click(function (e) {
+        $('.filterlayercheckbox').attr('checked', false);
+    });
+    $('#id_layerdialog_ok').click(function (e) {
+        update_selected_layer_display()
+    });
+    $('#id_select_layers').click(function (e) {
+        setup_layer_list()
+    });
+    $('#id_reversed').click(function (e) {
+        update_filters_enabled()
     });
 </script>
 {% endblock %}

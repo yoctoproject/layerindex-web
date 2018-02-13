@@ -940,6 +940,13 @@ class ClassicRecipeReverseLinkWrapper(LinkWrapper):
         setattr(obj, 'cover_vercmp', vercmp)
 
 
+class LayerCheckListView(ListView):
+    context_object_name = 'layerbranches'
+
+    def get_queryset(self):
+        _check_url_branch(self.kwargs)
+        return LayerBranch.objects.filter(branch__name=self.kwargs['branch']).filter(layer__status__in=['P', 'X']).order_by('layer__name')
+
 
 class ClassicRecipeSearchView(RecipeSearchView):
     def render_to_response(self, context, **kwargs):
@@ -952,7 +959,11 @@ class ClassicRecipeSearchView(RecipeSearchView):
         cover_status = self.request.GET.get('cover_status', None)
         cover_verified = self.request.GET.get('cover_verified', None)
         category = self.request.GET.get('category', None)
-        oe_layer = self.request.GET.get('oe_layer', None)
+        selectedlayers_param = self.request.GET.get('selectedlayers', '')
+        if selectedlayers_param:
+            layer_ids = [int(i) for i in selectedlayers_param.split(',')]
+        else:
+            layer_ids = []
         has_patches = self.request.GET.get('has_patches', '')
         needs_attention = self.request.GET.get('needs_attention', '')
         qreversed = self.request.GET.get('reversed', '')
@@ -978,8 +989,8 @@ class ClassicRecipeSearchView(RecipeSearchView):
             else:
                 init_qs = init_qs.filter(classic_category__icontains=category)
             filtered = True
-        if oe_layer:
-            init_qs = init_qs.filter(cover_layerbranch__layer=oe_layer)
+        if layer_ids:
+            init_qs = init_qs.filter(cover_layerbranch__layer__in=layer_ids)
         if has_patches.strip():
             if has_patches == '1':
                 init_qs = init_qs.filter(patch__isnull=False).distinct()
@@ -1015,8 +1026,8 @@ class ClassicRecipeSearchView(RecipeSearchView):
                 return Recipe.objects.none()
         if qreversed:
             init_rqs = Recipe.objects.filter(layerbranch__branch__name='master')
-            if oe_layer:
-                init_rqs = init_rqs.filter(layerbranch__layer=oe_layer)
+            if layer_ids:
+                init_rqs = init_rqs.filter(layerbranch__layer__id__in=layer_ids)
             all_values = []
             if filtered:
                 if isinstance(qs, list):
@@ -1057,6 +1068,16 @@ class ClassicRecipeSearchView(RecipeSearchView):
         context['reversed'] = self.request.GET.get('reversed', False)
         context['search_form'] = search_form
         context['searched'] = searched
+        selectedlayers_param = self.request.GET.get('selectedlayers', '')
+        if selectedlayers_param:
+            all_layer_names = dict(LayerItem.objects.all().values_list('id', 'name'))
+            layer_ids = [int(i) for i in selectedlayers_param.split(',')]
+            layer_names = [all_layer_names[i] for i in layer_ids]
+            context['selectedlayers_display'] = ','.join(layer_names)
+        else:
+            layer_ids = []
+            context['selectedlayers_display'] = ' (any)'
+        context['selectedlayers'] = layer_ids
         return context
 
 
