@@ -142,6 +142,12 @@ urlpatterns = [
         ClassicRecipeSearchView.as_view(
             template_name='layerindex/classicrecipes.html'),
             name='comparison_recipe_search'),
+    url(r'^comparison/search-csv/(?P<branch>[-\w]+)/$',
+        ClassicRecipeSearchView.as_view(
+            template_name='layerindex/classicrecipes_csv.txt',
+            paginate_by=0,
+            content_type='text/csv'),
+            name='comparison_recipe_search_csv'),
     url(r'^comparison/stats/(?P<branch>[-\w]+)/$',
         ClassicRecipeStatsView.as_view(
             template_name='layerindex/classicstats.html'),

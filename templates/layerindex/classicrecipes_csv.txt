@@ -1,0 +1,2 @@
+{% load extrafilters %}{% for recipe in recipe_list %}{{ recipe.name }},{{ recipe.layerbranch.layer.name }},{{ recipe.short_desc|replace_commas|squashspaces }},{{ recipe.section }},{% if recipe.cover_recipe %}{{ recipe.cover_recipe.get_cover_status_display }}{% endif %},{% if recipe.cover_recipe %}{{ recipe.cover_recipe.pn }}{% endif %}
+{% endfor %}

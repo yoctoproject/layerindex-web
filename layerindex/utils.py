@@ -14,6 +14,7 @@ import time
 import fcntl
 import signal
 import codecs
+import re
 from bs4 import BeautifulSoup
 
 def get_branch(branchname):
@@ -430,3 +431,5 @@ def sanitise_html(html):
 
     return soup.renderContents()
 
+def squashspaces(string):
+    return re.sub("\s+", " ", string).strip()
