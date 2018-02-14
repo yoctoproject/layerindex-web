@@ -38,6 +38,9 @@ def main():
     parser.add_option("-n", "--dry-run",
             help = "Don't write any data back to the database",
             action="store_true", dest="dryrun")
+    parser.add_option("-s", "--skip",
+            help = "Skip specified packages (comma-separated list, no spaces)",
+            action="store", dest="skip")
     parser.add_option("-d", "--debug",
             help = "Enable debug output",
             action="store_const", const=logging.DEBUG, dest="loglevel", default=logging.INFO)
@@ -65,6 +68,10 @@ def main():
         logger.error("Specified branch %s does not exist in database" % options.branch)
         sys.exit(1)
 
+    if options.skip:
+        skiplist = options.skip.split(',')
+    else:
+        skiplist = []
     try:
         with transaction.atomic():
             def recipe_pn_query(pn):
@@ -72,6 +79,9 @@ def main():
 
             recipequery = ClassicRecipe.objects.filter(layerbranch=layerbranch).filter(deleted=False).filter(cover_status__in=['U', 'N'])
             for recipe in recipequery:
+                if recipe.pn in skiplist:
+                    logger.debug('Skipping %s' % recipe.pn)
+                    continue
                 sanepn = recipe.pn.lower().replace('_', '-')
                 replquery = recipe_pn_query(sanepn)
                 found = False
