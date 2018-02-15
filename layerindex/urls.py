@@ -25,7 +25,7 @@ router.register(r'recipes', restviews.RecipeViewSet)
 router.register(r'machines', restviews.MachineViewSet)
 router.register(r'distros', restviews.DistroViewSet)
 router.register(r'classes', restviews.ClassViewSet)
-router.register(r'layers', restviews.LayerViewSet)
+router.register(r'layers', restviews.LayerViewSet, 'layers')
 
 urlpatterns = patterns('',
     url(r'^$',
