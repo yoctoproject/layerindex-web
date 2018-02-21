@@ -1,5 +1,15 @@
 TODO:
 
+Bugs
+* Duplication of first maintainer when editing to add a second?
+* meta-tizen gives PathError in initial info gathering step
+ * If a layer has not yet been fetched and it can't be then it still tries to parse it and blows up when querying git revision
+* meta-debian seems to be prompting for github credentials during recipe parsing?
+* Remote patches in SRC_URI trigger errors
+* We're wasting time gathering layer info at the start for layers that have not changed
+* import_layer on OE-Core then a layer that depends on core does not work
+
+Features
 * Auto-detect dead layers and visually mark
   * Formal deprecation process?
   * Email people when status will change?
@@ -7,11 +17,9 @@ TODO:
 * Allow users to make a comment sent to admins/maintainers?
 * Marking for recipes with ptest enabled
 * Make it easy to update people's email addresses
-
-Bugs
-* Duplication of first maintainer when editing to add a second?
-
-Other
+* Prevent selection of "Base" layer type for layer unless you have admin access (or layer is already of that type)
+* Use proper model to store inherits
+* Make dependency and inherits list items into search links
 * Full-text search on layer contents
 * Handle layers that have branch (e.g. master) that is empty
 * Add log in again link to logout page.
@@ -26,7 +34,6 @@ Other
 * Show layer type in layer detail?
 * Usage links in list page?
 * Subdirs in list page?
-* Query backend service i.e. special URL to query information for external apps/scripts
 * Add comparison to duplicates page
 * Create simple script to check for unlisted layer subdirectories in all repos
 * Auto-detect more values from github pages?
@@ -36,6 +43,9 @@ Other
 * Use bar instead of pie graphs for OE-Classic statistics
 * Ability for reviewers to comment before publishing a layer?
 * Show a note at the top of the layer edit form if there's a validation error
+* Record layer update start/end revisions
+* Show count in duplicates page
+* Search on layer selection dialogs
 
 
 RRS:
