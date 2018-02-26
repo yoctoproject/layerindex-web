@@ -8,11 +8,14 @@ from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.views.generic import ListView, DetailView, RedirectView
 from django.core.urlresolvers import resolve, reverse
+from django.db import connection
 
 from layerindex.models import Recipe
 from rrs.models import Release, Milestone, Maintainer, RecipeMaintainerHistory, \
         RecipeMaintainer, RecipeUpstreamHistory, RecipeUpstream, \
-        RecipeDistro, RecipeUpgrade, Raw
+        RecipeDistro, RecipeUpgrade
+
+
 
 class FrontPageRedirect(RedirectView):
     permanent = False
@@ -40,6 +43,215 @@ def _check_url_params(upstream_status, maintainer_name):
 def _get_layer_branch_url(branch, layer_name):
     return ("http://layers.openembedded.org/layerindex/branch/%s/layer/%s/"\
                 % (branch, layer_name))
+
+class Raw():
+    """ Raw SQL call to improve performance
+
+        Table abbrevations:
+        re:     Recipe
+        ma:     Maintainer
+        reup:   Recipe Upstream
+        reupg:  Recipe Ugrade
+        rema:   Recipe Maintainer
+        remahi: Recipe Maintainer History
+    """
+
+    @staticmethod
+    def get_re_all():
+        """ Get all Recipes """
+        cur = connection.cursor()
+        cur.execute("""SELECT id, pn, pv, summary
+                        FROM layerindex_Recipe;
+                    """)
+        return Raw.dictfetchall(cur)
+
+    @staticmethod
+    def get_re_by_mantainer_and_date(maintainer, date_id):
+        """ Get Recipes based on Maintainer and Recipe Maintainer History """
+        recipes = []
+        cur = connection.cursor()
+
+        cur.execute("""SELECT DISTINCT rema.recipe_id
+                        FROM rrs_RecipeMaintainer AS rema
+                        INNER JOIN rrs_maintainer AS ma
+                        ON rema.maintainer_id = ma.id
+                        WHERE rema.history_id = %s 
+                        AND ma.name = %s;
+                    """, [date_id, maintainer])
+
+        for re in cur.fetchall():
+            recipes.append(re[0])
+        return recipes
+
+    @staticmethod
+    def get_ma_by_recipes_and_date(recipes_id, date_id=None):
+        """ Get Maintainer based on Recipes and Recipe Upstream History """
+        stats = []
+        recipes = str(recipes_id).strip('[]')
+
+        if date_id:
+            qry = """SELECT rema.recipe_id, ma.name
+                    FROM rrs_RecipeMaintainer AS rema
+                    INNER JOIN rrs_Maintainer AS ma
+                    ON rema.maintainer_id = ma.id"""
+            qry += "\nWHERE rema.history_id = '%s'" % str(date_id)
+            qry += "\nAND rema.recipe_id IN (%s);" % recipes
+            cur = connection.cursor()
+            cur.execute(qry)
+            stats = Raw.dictfetchall(cur)
+
+        return stats
+
+    @staticmethod
+    def get_reup_statistics(date, date_id):
+        """ Special case to get recipes statistics removing gcc-source duplicates """
+        recipes = []
+        updated = 0
+        not_updated = 0
+        cant = 0
+        unknown = 0
+
+        all_recipes = Raw.get_reupg_by_date(date)
+        for re in all_recipes:
+            recipes.append(re["id"])
+
+        if date_id:
+            recipes = str(recipes).strip('[]')
+            qry = """SELECT id, status, no_update_reason
+                    FROM rrs_RecipeUpstream"""
+            qry += "\nWHERE history_id = '%s'" % str(date_id.id)
+            qry += "\nAND recipe_id IN (%s);" % recipes
+            cur = connection.cursor()
+            cur.execute(qry)
+
+            for re in Raw.dictfetchall(cur):
+                if re["status"] == "Y":
+                    updated += 1
+                elif re["status"]  == "N" and re["no_update_reason"] == "":
+                    not_updated += 1
+                elif re["status"] == "N":
+                    cant += 1
+                # We count downgrade as unknown
+                else:
+                    unknown += 1
+
+        return (updated, not_updated, cant, unknown)
+
+    @staticmethod
+    def get_reup_by_recipes_and_date(recipes_id, date_id=None):
+        """ Get Recipe Upstream based on Recipes and Recipe Upstream History """
+        stats = []
+        recipes = str(recipes_id).strip('[]')
+
+        if date_id:
+            qry = """SELECT recipe_id, status, no_update_reason, version
+                    FROM rrs_RecipeUpstream"""
+            qry += "\nWHERE history_id = '%s'" % str(date_id)
+            qry += "\nAND recipe_id IN (%s);" % recipes
+            cur = connection.cursor()
+            cur.execute(qry)
+            stats = Raw.dictfetchall(cur)
+
+        return stats
+
+    @staticmethod
+    def get_reup_by_last_updated(date):
+        """ Get last time the Recipes were upgraded """
+        cur = connection.cursor()
+        cur.execute("""SELECT recipe_id, MAX(commit_date) AS date
+                       FROM rrs_recipeupgrade
+                       GROUP BY recipe_id;
+                    """, [date])
+        return Raw.dictfetchall(cur)
+
+    @staticmethod
+    def get_reup_by_date(date_id):
+        """ Get Recipes not up to date based on Recipe Upstream History """
+        cur = connection.cursor()
+        cur.execute("""SELECT DISTINCT recipe_id
+                        FROM rrs_RecipeUpstream
+                        WHERE status = 'N'
+                        AND history_id = %s
+                    """, [date_id])
+        return [i[0] for i in cur.fetchall()]
+
+    @staticmethod
+    def get_reupg_by_date(date):
+        """ Get info for Recipes for the milestone """
+        cur = connection.cursor()
+        cur.execute("""SELECT re.id, re.pn, re.summary, te.version, rownum FROM (
+                            SELECT recipe_id, version, commit_date, ROW_NUMBER() OVER(
+                                PARTITION BY recipe_id
+                                ORDER BY commit_date DESC
+                            ) AS rownum
+                        FROM rrs_RecipeUpgrade
+                        WHERE commit_date <= %s) AS te
+                        INNER JOIN layerindex_Recipe AS re
+                        ON te.recipe_id = re.id
+                        WHERE rownum = 1
+                        ORDER BY re.pn;
+                        """, [date])
+        return Raw.dictfetchall(cur)
+
+    @staticmethod
+    def get_reupg_by_dates(start_date, end_date):
+        """ Get Recipe Upgrade for the milestone """
+        cur = connection.cursor()
+        cur.execute("""SELECT id, recipe_id, maintainer_id, author_date, commit_date
+                        FROM rrs_RecipeUpgrade
+                        WHERE commit_date >= %s
+                        AND commit_date <= %s
+                        ORDER BY commit_date DESC;
+                    """, [start_date, end_date])
+        return Raw.dictfetchall(cur)
+
+    @staticmethod
+    def get_reupg_by_dates_and_recipes(start_date, end_date, recipes_id):
+        """  Get Recipe Upgrade for the milestone based on Recipes """
+        recipes = str(recipes_id).strip('[]')
+
+        cur = connection.cursor()
+        qry = """SELECT DISTINCT recipe_id
+                FROM rrs_RecipeUpgrade"""
+        qry += "\nWHERE commit_date >= '%s'" % str(start_date)
+        qry += "\nAND commit_date <= '%s'" % str(end_date)
+        qry += "\nAND recipe_id IN (%s);" % recipes
+        cur.execute(qry)
+        return Raw.dictfetchall(cur)
+
+    @staticmethod
+    def get_remahi_by_end_date(date):
+        """ Get the latest Recipe Maintainer History for the milestone """
+        cur = connection.cursor()
+
+        cur.execute("""SELECT id
+                        FROM rrs_RecipeMaintainerHistory
+                        WHERE date <= %s
+                        ORDER BY date DESC
+                        LIMIT 1;
+                    """, [str(date)])
+
+        ret = cur.fetchone()
+
+        if not ret:
+            cur.execute("""SELECT id
+                        FROM rrs_RecipeMaintainerHistory
+                        ORDER BY date
+                        LIMIT 1;
+                        """)
+            ret = cur.fetchone()
+
+        return ret
+
+    @staticmethod
+    def dictfetchall(cursor):
+        "Returns all rows from a cursor as a dict"
+        desc = cursor.description
+        return [
+            dict(zip([col[0] for col in desc], row))
+            for row in cursor.fetchall()
+        ]
+
 
 def _get_milestone_statistics(milestone, maintainer_name=None):
     milestone_statistics = {}
