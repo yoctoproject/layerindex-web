@@ -7,7 +7,7 @@ from datetime import date, datetime
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.views.generic import ListView, DetailView, RedirectView
-from django.core.urlresolvers import resolve, reverse
+from django.core.urlresolvers import resolve, reverse, reverse_lazy
 from django.db import connection
 
 from layerindex.models import Recipe
@@ -41,8 +41,7 @@ def _check_url_params(upstream_status, maintainer_name):
         raise Http404
 
 def _get_layer_branch_url(branch, layer_name):
-    return ("http://layers.openembedded.org/layerindex/branch/%s/layer/%s/"\
-                % (branch, layer_name))
+    return reverse_lazy('layer_item', args=(branch, layer_name))
 
 class Raw():
     """ Raw SQL call to improve performance
