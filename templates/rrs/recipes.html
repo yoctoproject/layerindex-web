@@ -83,7 +83,7 @@
 <tbody>
 {% for r in recipe_list %}
 <tr>
-    <td class="recipe_column"><a href="{% url "recipedetail" r.pk %}">{{ r.name }}</a></td>
+    <td class="recipe_column"><a href="{% url "rrs_recipedetail" r.pk %}">{{ r.name }}</a></td>
     <td class="version_column">{{ r.version }}</td>
     <td class="upstream_version_column">{{ r.upstream_version }}</td>
     {% if r.upstream_status == "Up-to-date" %}

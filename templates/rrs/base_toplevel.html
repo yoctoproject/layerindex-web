@@ -49,7 +49,7 @@
     </li>
 {% endblock %}
 </ul>
-                    <a href="{% url 'recipesreport' release_name milestone_name %}" class="btn pull-right">Export recipe list</a>
+                    <a href="{% url 'rrs_recipesreport' release_name milestone_name %}" class="btn pull-right">Export recipe list</a>
 {% endblock %}
 
 {% block content %}
@@ -93,22 +93,22 @@
 
             {% block content_top %}
             <ul class="nav nav-pills">
-                {% if this_url_name == 'recipes' %}
+                {% if this_url_name == 'rrs_recipes' %}
                 <li class="active">
                 <a href="#">
 		{% else %}
                 <li>
-                <a href="{% url 'recipes' release_name milestone_name %}{{ extra_url_param }}">
+                <a href="{% url 'rrs_recipes' release_name milestone_name %}{{ extra_url_param }}">
 		{% endif %}
                 Recipes upstream status</a>
                 </li>
 
-                {% if this_url_name == 'maintainers' %}
+                {% if this_url_name == 'rrs_maintainers' %}
                 <li class="active">
                 <a href="#">
 		{% else %}
                 <li>
-                <a href="{% url 'maintainers' release_name milestone_name %}">
+                <a href="{% url 'rrs_maintainers' release_name milestone_name %}">
 		{% endif %}
                 Maintainer statistics</a>
                 </li>

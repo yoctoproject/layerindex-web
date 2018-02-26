@@ -64,27 +64,27 @@
             {{ ml.name }}
         </td>
         <td>
-            <a class="rowData" href="{% url 'recipes' release_name milestone_name %}?maintainer_name={{ ml.name|urlencode }}">
+            <a class="rowData" href="{% url 'rrs_recipes' release_name milestone_name %}?maintainer_name={{ ml.name|urlencode }}">
                 {{ ml.recipes_all }}
             </a>
         </td>
         <td>
-            <a class="rowData" href="{% url 'recipes' release_name milestone_name %}?upstream_status={{ "Up-to-date"|urlencode }}&maintainer_name={{ ml.name|urlencode }}">
+            <a class="rowData" href="{% url 'rrs_recipes' release_name milestone_name %}?upstream_status={{ "Up-to-date"|urlencode }}&maintainer_name={{ ml.name|urlencode }}">
                 {{ ml.recipes_up_to_date }}
             </a>
         </td>
         <td>
-            <a class="rowData" href="{% url 'recipes' release_name milestone_name %}?upstream_status={{ "Not updated"|urlencode }}&maintainer_name={{ ml.name|urlencode }}">
+            <a class="rowData" href="{% url 'rrs_recipes' release_name milestone_name %}?upstream_status={{ "Not updated"|urlencode }}&maintainer_name={{ ml.name|urlencode }}">
                 {{ ml.recipes_not_updated }}
             </a>
         </td>
         <td>
-            <a class="rowData" href="{% url 'recipes' release_name milestone_name %}?upstream_status={{ "Can't be updated"|urlencode }}&maintainer_name={{ ml.name|urlencode }}">
+            <a class="rowData" href="{% url 'rrs_recipes' release_name milestone_name %}?upstream_status={{ "Can't be updated"|urlencode }}&maintainer_name={{ ml.name|urlencode }}">
                 {{ ml.recipes_cant_be_updated }}
             </a>
         </td>
         <td>
-            <a class="rowData" href="{% url 'recipes' release_name milestone_name %}?upstream_status={{ "Unknown"|urlencode }}&maintainer_name={{ ml.name|urlencode }}">
+            <a class="rowData" href="{% url 'rrs_recipes' release_name milestone_name %}?upstream_status={{ "Unknown"|urlencode }}&maintainer_name={{ ml.name|urlencode }}">
                 {{ ml.recipes_unknown }}
             </a>
         </td>
@@ -105,23 +105,23 @@
    <tr class="totalRow">
         <td id="totalCell">Total</td>
         <td>
-            <a id="totalAssigned" class="totalCol" href="{% url 'recipes' release_name milestone_name %}">
+            <a id="totalAssigned" class="totalCol" href="{% url 'rrs_recipes' release_name milestone_name %}">
             </a>
        </td>
         <td> 
-            <a id="totalUptoDate" class="totalCol" href="{% url 'recipes' release_name milestone_name %}?upstream_status={{ "Up-to-date"|urlencode }}">
+            <a id="totalUptoDate" class="totalCol" href="{% url 'rrs_recipes' release_name milestone_name %}?upstream_status={{ "Up-to-date"|urlencode }}">
             </a>
         </td>
         <td>
-            <a class="totalCol"  href="{% url 'recipes' release_name milestone_name %}?upstream_status={{ "Not updated"|urlencode }}">
+            <a class="totalCol"  href="{% url 'rrs_recipes' release_name milestone_name %}?upstream_status={{ "Not updated"|urlencode }}">
             </a>
         </td>
         <td>
-            <a class="totalCol" href="{% url 'recipes' release_name milestone_name %}?upstream_status={{ "Can't be updated"|urlencode }}">
+            <a class="totalCol" href="{% url 'rrs_recipes' release_name milestone_name %}?upstream_status={{ "Can't be updated"|urlencode }}">
             </a>
         </td>
         <td> 
-            <a class="totalCol" href="{% url 'recipes' release_name milestone_name %}?upstream_status={{ "Unknown"|urlencode }}">
+            <a class="totalCol" href="{% url 'rrs_recipes' release_name milestone_name %}?upstream_status={{ "Unknown"|urlencode }}">
             </a>
         </td>
         <td id="totalPercentage"></td>

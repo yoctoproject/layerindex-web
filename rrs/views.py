@@ -23,7 +23,7 @@ class FrontPageRedirect(RedirectView):
     def get_redirect_url(self):
         release_name = Release.get_current().name
         milestone_name = Milestone.get_current(Release.get_current()).name
-        return reverse('recipes', args=(release_name, milestone_name))
+        return reverse('rrs_recipes', args=(release_name, milestone_name))
 
 def _check_url_params(upstream_status, maintainer_name):
     get_object_or_404(Maintainer, name=maintainer_name)
