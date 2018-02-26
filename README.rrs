@@ -33,7 +33,6 @@ $ ./scripts/tools/import_layer.py  -s meta git://git.openembedded.org/openembedd
 8. In the first run should regenerate Recipe upgrade information,
 
 $ ./layerindex/update.py
-$ ./rrs/tools/rrs_unique_recipes.py -d
 $ ./rrs/tools/rrs_maintainer_history.py -d
 $ ./rrs/tools/rrs_upgrade_history.py -d --initial
 $ ./rrs/tools/rrs_upstream_history.py -d
