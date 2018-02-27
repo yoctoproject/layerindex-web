@@ -34,7 +34,6 @@ fetchdir = settings.LAYER_FETCH_DIR
 if not fetchdir:
     logger.error("Please set LAYER_FETCH_DIR in settings.py")
     sys.exit(1)
-branch_name_tmp = "recipe_upgrades"
 
 # setup bitbake
 bitbakepath = os.path.join(fetchdir, 'bitbake')
@@ -151,7 +150,7 @@ def do_initial(layerbranch, ct, logger, dry_run):
     repodir = os.path.join(fetchdir, urldir)
     layerdir = os.path.join(repodir, str(layerbranch.vcs_subdir))
 
-    utils.runcmd("git checkout %s -b %s -f" % (ct, branch_name_tmp),
+    utils.runcmd("git checkout %s" % ct,
                     repodir, logger=logger)
     utils.runcmd("git clean -dfx", repodir, logger=logger)
 
@@ -171,8 +170,6 @@ def do_initial(layerbranch, ct, logger, dry_run):
     except DryRunRollbackException:
         pass
 
-    utils.runcmd("git checkout master -f", repodir, logger=logger)
-    utils.runcmd("git branch -D %s" % (branch_name_tmp), repodir, logger=logger)
     tinfoil.shutdown()
 
 def do_loop(layerbranch, ct, logger, dry_run):
@@ -181,14 +178,12 @@ def do_loop(layerbranch, ct, logger, dry_run):
     repodir = os.path.join(fetchdir, urldir)
     layerdir = os.path.join(repodir, str(layerbranch.vcs_subdir))
 
-    utils.runcmd("git checkout %s -b %s -f" % (ct, branch_name_tmp),
+    utils.runcmd("git checkout %s" % ct,
             repodir, logger=logger)
     utils.runcmd("git clean -dfx", repodir, logger=logger)
 
     fns = _get_recipes_filenames(ct, repodir, layerdir, logger)
     if not fns:
-        utils.runcmd("git checkout master -f", repodir, logger=logger)
-        utils.runcmd("git branch -D %s" % (branch_name_tmp), repodir, logger=logger)
         return
 
     (tinfoil, d, recipes) = load_recipes(layerbranch, bitbakepath,
@@ -209,8 +204,6 @@ def do_loop(layerbranch, ct, logger, dry_run):
     except DryRunRollbackException:
         pass
 
-    utils.runcmd("git checkout master -f", repodir, logger=logger)
-    utils.runcmd("git branch -D %s" % (branch_name_tmp), repodir, logger=logger)
     tinfoil.shutdown()
 
 
@@ -237,14 +230,6 @@ def upgrade_history(options, logger):
         repodir = os.path.join(fetchdir, urldir)
         layerdir = os.path.join(repodir, layerbranch.vcs_subdir)
 
-        ## try to delete temp_branch if exists
-        try:
-            utils.runcmd("git checkout origin/master -f", repodir)
-            utils.runcmd("git branch -D %s" % (branch_name_tmp), repodir,
-                    logger=logger)
-        except:
-            pass
-
         commits = utils.runcmd("git log --since='" + since + 
                                  "' --format='%H' --reverse", repodir,
                                 logger=logger)
@@ -261,6 +246,9 @@ def upgrade_history(options, logger):
             if ct:
                 logger.debug("Analysing commit %s ..." % ct)
                 do_loop(layerbranch, ct, logger, options.dry_run)
+
+        if commit_list:
+            utils.runcmd("git clean -dfx", repodir, logger=logger)
 
 if __name__=="__main__":
     parser = optparse.OptionParser(usage = """%prog [options]""")

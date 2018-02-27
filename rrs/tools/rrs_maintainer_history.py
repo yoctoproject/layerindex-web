@@ -107,8 +107,7 @@ def maintainer_history(options, logger):
                         sha1=commit)
                 rms.save()
 
-                branchname = 'maintainer' + commit 
-                utils.runcmd("git checkout %s -b %s -f" % (commit, branchname),
+                utils.runcmd("git checkout %s -f" % commit,
                         pokypath, logger=logger)
 
                 lines = [line.strip() for line in open(maintainers_full_path)]
@@ -144,9 +143,6 @@ def maintainer_history(options, logger):
                         rm.save()
                         logger.debug("%s: Not found maintainer in commit %s set to 'No maintainer'." % \
                                         (recipe.pn, rms.sha1))
-
-                utils.runcmd("git checkout master -f", pokypath, logger=logger)
-                utils.runcmd("git branch -D %s" % (branchname), pokypath, logger=logger)
 
             # set new recipes to no maintainer if don't have one
             m = Maintainer.objects.get(id = 0) # No Maintainer
