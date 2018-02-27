@@ -18,8 +18,9 @@ import optparse
 import logging
 
 sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__))))
-from common import common_setup, update_repo, get_pv_type, load_recipes, \
-        get_logger
+from common import common_setup, get_pv_type, load_recipes, \
+        get_logger, DryRunRollbackException
+
 common_setup()
 from layerindex import utils, recipeparse
 from layerindex.update_layer import split_recipe_fn
@@ -144,7 +145,7 @@ def _get_recipes_filenames(ct, repodir, layerdir, logger):
 
     return ct_files
 
-def do_initial(layerbranch, ct, logger):
+def do_initial(layerbranch, ct, logger, dry_run):
     layer = layerbranch.layer
     urldir = str(layer.get_fetch_dir())
     repodir = os.path.join(fetchdir, urldir)
@@ -160,16 +161,21 @@ def do_initial(layerbranch, ct, logger):
     (tinfoil, d, recipes) = load_recipes(layerbranch, bitbakepath,
                             fetchdir, settings, logger, nocheckout=True)
 
-    with transaction.atomic():
-        for recipe_data in recipes:
-            _create_upgrade(recipe_data, layerbranch, '', title,
-                    info, logger, initial=True)
+    try:
+        with transaction.atomic():
+            for recipe_data in recipes:
+                _create_upgrade(recipe_data, layerbranch, '', title,
+                        info, logger, initial=True)
+            if dry_run:
+                raise DryRunRollbackException
+    except DryRunRollbackException:
+        pass
 
     utils.runcmd("git checkout master -f", repodir, logger=logger)
     utils.runcmd("git branch -D %s" % (branch_name_tmp), repodir, logger=logger)
     tinfoil.shutdown()
 
-def do_loop(layerbranch, ct, logger):
+def do_loop(layerbranch, ct, logger, dry_run):
     layer = layerbranch.layer
     urldir = str(layer.get_fetch_dir())
     repodir = os.path.join(fetchdir, urldir)
@@ -193,10 +199,15 @@ def do_loop(layerbranch, ct, logger):
                                     repodir, logger=logger)
     info = utils.runcmd("git log  --format='%an;%ae;%ad;%cd' --date=rfc -n 1 " \
                     + ct, destdir=repodir, logger=logger)
-    with transaction.atomic():
-        for recipe_data in recipes:
-            _create_upgrade(recipe_data, layerbranch, ct, title,
-                                info, logger)
+    try:
+        with transaction.atomic():
+            for recipe_data in recipes:
+                _create_upgrade(recipe_data, layerbranch, ct, title,
+                                    info, logger)
+            if dry_run:
+                raise DryRunRollbackException
+    except DryRunRollbackException:
+        pass
 
     utils.runcmd("git checkout master -f", repodir, logger=logger)
     utils.runcmd("git branch -D %s" % (branch_name_tmp), repodir, logger=logger)
@@ -243,13 +254,13 @@ def upgrade_history(options, logger):
             logger.debug("Adding initial upgrade history ....")
 
             ct = commit_list.pop(0)
-            do_initial(layerbranch, ct, logger)
+            do_initial(layerbranch, ct, logger, options.dry_run)
 
         logger.debug("Adding upgrade history from %s to %s ..." % (since, today))
         for ct in commit_list:
             if ct:
                 logger.debug("Analysing commit %s ..." % ct)
-                do_loop(layerbranch, ct, logger)
+                do_loop(layerbranch, ct, logger, options.dry_run)
 
 if __name__=="__main__":
     parser = optparse.OptionParser(usage = """%prog [options]""")
@@ -261,7 +272,11 @@ if __name__=="__main__":
     parser.add_option("-d", "--debug",
             help = "Enable debug output",
             action="store_const", const=logging.DEBUG, dest="loglevel", default=logging.INFO)
-    
+
+    parser.add_option("--dry-run",
+            help = "Do not write any data back to the database",
+            action="store_true", dest="dry_run", default=False)
+
     options, args = parser.parse_args(sys.argv)
     logger.setLevel(options.loglevel)
 

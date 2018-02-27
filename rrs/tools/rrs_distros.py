@@ -15,7 +15,7 @@ from datetime import datetime
 
 sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__))))
 from common import common_setup, update_repo, load_recipes, \
-        get_pv_type, get_logger
+        get_pv_type, get_logger, DryRunRollbackException
 common_setup()
 from layerindex import utils
 
@@ -94,45 +94,54 @@ if __name__=="__main__":
             help = "Enable debug output",
             action="store_const", const=logging.DEBUG, dest="loglevel", default=logging.INFO)
     
+    parser.add_option("--dry-run",
+            help = "Do not write any data back to the database",
+            action="store_true", dest="dry_run", default=False)
+
     options, args = parser.parse_args(sys.argv)
     logger.setLevel(options.loglevel)
 
     logger.debug("Starting recipe distros update ...")
 
-    with transaction.atomic():
-        for layerbranch in LayerBranch.objects.all():
-            (tinfoil, d, recipes) = load_recipes(layerbranch, bitbakepath,
-                    fetchdir, settings, logger)
+    try:
+        with transaction.atomic():
+            for layerbranch in LayerBranch.objects.all():
+                (tinfoil, d, recipes) = load_recipes(layerbranch, bitbakepath,
+                        fetchdir, settings, logger)
 
-            if not recipes:
-                tinfoil.shutdown()
-                continue
-
-            from oe import distro_check
-            logger.debug("Downloading distro's package information ...")
-            distro_check.create_distro_packages_list(fetchdir, d)
-            pkglst_dir = os.path.join(fetchdir, "package_lists")
-
-            RecipeDistro.objects.filter(recipe__layerbranch = layerbranch).delete()
-
-            for recipe_data in recipes:
-                pn = recipe_data.getVar('PN', True)
-
-                try:
-                    recipe = Recipe.objects.get(pn = pn, layerbranch = layerbranch)
-                except:
-                    logger.warn('%s: layer branch %s, NOT found' % (pn,
-                        str(layerbranch)))
+                if not recipes:
+                    tinfoil.shutdown()
                     continue
 
-                distro_info = search_package_in_distros(pkglst_dir, recipe, recipe_data)
-                for distro, alias in distro_info.items():
-                    recipedistro = RecipeDistro()
-                    recipedistro.recipe = recipe
-                    recipedistro.distro = distro
-                    recipedistro.alias = alias
-                    recipedistro.save()
-                    logger.debug('%s: layer branch %s, add distro %s alias %s' % (pn,
-                        str(layerbranch), distro, alias))
+                from oe import distro_check
+                logger.debug("Downloading distro's package information ...")
+                distro_check.create_distro_packages_list(fetchdir, d)
+                pkglst_dir = os.path.join(fetchdir, "package_lists")
 
-            tinfoil.shutdown()
+                RecipeDistro.objects.filter(recipe__layerbranch = layerbranch).delete()
+
+                for recipe_data in recipes:
+                    pn = recipe_data.getVar('PN', True)
+
+                    try:
+                        recipe = Recipe.objects.get(pn = pn, layerbranch = layerbranch)
+                    except:
+                        logger.warn('%s: layer branch %s, NOT found' % (pn,
+                            str(layerbranch)))
+                        continue
+
+                    distro_info = search_package_in_distros(pkglst_dir, recipe, recipe_data)
+                    for distro, alias in distro_info.items():
+                        recipedistro = RecipeDistro()
+                        recipedistro.recipe = recipe
+                        recipedistro.distro = distro
+                        recipedistro.alias = alias
+                        recipedistro.save()
+                        logger.debug('%s: layer branch %s, add distro %s alias %s' % (pn,
+                            str(layerbranch), distro, alias))
+
+                tinfoil.shutdown()
+            if options.dry_run:
+                raise DryRunRollbackException
+    except DryRunRollbackException:
+        pass
