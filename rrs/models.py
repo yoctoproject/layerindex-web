@@ -12,7 +12,23 @@ sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__), '../
 from datetime import date
 
 from django.db import models
-from layerindex.models import Recipe
+from layerindex.models import Recipe, LayerBranch
+
+
+class MaintenancePlan(models.Model):
+    name = models.CharField(max_length=50, unique=True)
+    description = models.TextField(blank=True)
+    updates_enabled = models.BooleanField('Enable updates', default=True, help_text='Enable automatically updating metadata for this plan via the update scripts')
+
+    def __str__(self):
+        return '%s' % (self.name)
+
+class MaintenancePlanLayerBranch(models.Model):
+    plan = models.ForeignKey(MaintenancePlan)
+    layerbranch = models.ForeignKey(LayerBranch)
+
+    class Meta:
+        verbose_name_plural = "Maintenance plan layer branches"
 
 class Release(models.Model):
     name = models.CharField(max_length=100, unique=True)
