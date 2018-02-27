@@ -53,7 +53,7 @@ class Release(models.Model):
 
         return current_release or Release.objects.filter().order_by('-end_date')[0]
 
-    def __unicode__(self):
+    def __str__(self):
         return '%s' % (self.name)
 
 class Milestone(models.Model):
@@ -152,7 +152,7 @@ class Milestone(models.Model):
 
         return weeks
 
-    def __unicode__(self):
+    def __str__(self):
         return '%s%s' % (self.release.name, self.name)
 
 class Maintainer(models.Model):
@@ -180,7 +180,7 @@ class Maintainer(models.Model):
     class Meta:
         ordering = ["name"]
 
-    def __unicode__(self):
+    def __str__(self):
         return "%s <%s>" % (self.name, self.email)
 
 class RecipeMaintainerHistory(models.Model):
@@ -213,7 +213,7 @@ class RecipeMaintainerHistory(models.Model):
         else:
             return None
 
-    def __unicode__(self):
+    def __str__(self):
         return "%s: %s, %s" % (self.date, self.author.name, self.sha1[:10])
 
 class RecipeMaintainer(models.Model):
@@ -231,7 +231,7 @@ class RecipeMaintainer(models.Model):
         else:
             return None
 
-    def __unicode__(self):
+    def __str__(self):
         return "%s: %s <%s>" % (self.recipe.pn, self.maintainer.name,
                                 self.maintainer.email)
 
@@ -268,7 +268,7 @@ class RecipeUpstreamHistory(models.Model):
         else:
             return None
 
-    def __unicode__(self):
+    def __str__(self):
         return '%s: %s' % (self.id, self.start_date)
 
 class RecipeUpstream(models.Model):
@@ -336,7 +336,7 @@ class RecipeUpstream(models.Model):
         else:
             return False
 
-    def __unicode__(self):
+    def __str__(self):
         return '%s: (%s, %s, %s)' % (self.recipe.pn, self.status,
                 self.version, self.date)
 
@@ -345,7 +345,7 @@ class RecipeDistro(models.Model):
     distro = models.CharField(max_length=100, blank=True)
     alias = models.CharField(max_length=100, blank=True)
 
-    def __unicode__(self):
+    def __str__(self):
         return '%s: %s' % (self.recipe.pn, self.distro)
 
     @staticmethod
@@ -381,7 +381,7 @@ class RecipeUpgrade(models.Model):
         web_interface_url = self.recipe.layerbranch.layer.vcs_web_url
         return web_interface_url + "/commit/?id=" + self.sha1
 
-    def __unicode__(self):
+    def __str__(self):
         return '%s: (%s, %s)' % (self.recipe.pn, self.version,
                         self.commit_date)
 
