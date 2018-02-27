@@ -212,6 +212,7 @@ def do_loop(layerbranch, ct, logger, dry_run):
 """
 def upgrade_history(options, logger):
     from layerindex.models import LayerBranch
+    from rrs.models import MaintenancePlan
 
     # start date
     now = datetime.today()
@@ -223,32 +224,37 @@ def upgrade_history(options, logger):
     else:
         since = (now - timedelta(days=8)).strftime("%Y-%m-%d")
 
-    # do
-    for layerbranch in LayerBranch.objects.all():
-        layer = layerbranch.layer
-        urldir = layer.get_fetch_dir()
-        repodir = os.path.join(fetchdir, urldir)
-        layerdir = os.path.join(repodir, layerbranch.vcs_subdir)
+    maintplans = MaintenancePlan.objects.filter(updates_enabled=True)
+    if not maintplans.exists():
+        logger.error('No enabled maintenance plans found')
+        sys.exit(1)
+    for maintplan in maintplans:
+        for maintplanbranch in maintplan.maintenanceplanlayerbranch_set.all():
+            layerbranch = maintplanbranch.layerbranch
+            layer = layerbranch.layer
+            urldir = layer.get_fetch_dir()
+            repodir = os.path.join(fetchdir, urldir)
+            layerdir = os.path.join(repodir, layerbranch.vcs_subdir)
 
-        commits = utils.runcmd("git log --since='" + since + 
-                                 "' --format='%H' --reverse", repodir,
-                                logger=logger)
-        commit_list = commits.split('\n')
+            commits = utils.runcmd("git log --since='" + since +
+                                    "' --format='%H' --reverse", repodir,
+                                    logger=logger)
+            commit_list = commits.split('\n')
 
-        if options.initial:
-            logger.debug("Adding initial upgrade history ....")
+            if options.initial:
+                logger.debug("Adding initial upgrade history ....")
 
-            ct = commit_list.pop(0)
-            do_initial(layerbranch, ct, logger, options.dry_run)
+                ct = commit_list.pop(0)
+                do_initial(layerbranch, ct, logger, options.dry_run)
 
-        logger.debug("Adding upgrade history from %s to %s ..." % (since, today))
-        for ct in commit_list:
-            if ct:
-                logger.debug("Analysing commit %s ..." % ct)
-                do_loop(layerbranch, ct, logger, options.dry_run)
+            logger.debug("Adding upgrade history from %s to %s ..." % (since, today))
+            for ct in commit_list:
+                if ct:
+                    logger.debug("Analysing commit %s ..." % ct)
+                    do_loop(layerbranch, ct, logger, options.dry_run)
 
-        if commit_list:
-            utils.runcmd("git clean -dfx", repodir, logger=logger)
+            if commit_list:
+                utils.runcmd("git clean -dfx", repodir, logger=logger)
 
 if __name__=="__main__":
     parser = optparse.OptionParser(usage = """%prog [options]""")
