@@ -31,6 +31,7 @@ class MaintenancePlanLayerBranch(models.Model):
         verbose_name_plural = "Maintenance plan layer branches"
 
 class Release(models.Model):
+    plan = models.ForeignKey(MaintenancePlan)
     name = models.CharField(max_length=100, unique=True)
     start_date = models.DateField(db_index=True)
     end_date = models.DateField(db_index=True)
