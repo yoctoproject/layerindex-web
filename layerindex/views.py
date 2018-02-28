@@ -224,7 +224,7 @@ def bulk_change_patch_view(request, pk):
     try:
         ret = utils.runcmd('%s bulkchange.py %d %s' % (sys.executable, int(pk), settings.TEMP_BASE_DIR), os.path.dirname(__file__))
         if ret:
-            fn = ret.splitlines()[-1].decode('utf-8')
+            fn = ret.splitlines()[-1]
             if os.path.exists(fn):
                 if fn.endswith('.tar.gz'):
                     mimetype = 'application/x-gzip'
@@ -241,7 +241,6 @@ def bulk_change_patch_view(request, pk):
     except Exception as e:
         output = getattr(e, 'output', None)
         if output:
-            output = output.decode('utf-8', errors="ignore")
             if 'timeout' in output:
                 return HttpResponse('Failed to generate patches: timed out waiting for lock. Please try again shortly.', content_type='text/plain')
             else:

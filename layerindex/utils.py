@@ -264,7 +264,7 @@ def runcmd(cmd, destdir=None, printerr=True, logger=None):
     except subprocess.CalledProcessError as e:
         out.seek(0)
         output = out.read()
-        output = output.decode('ascii').strip()
+        output = output.decode('utf-8', errors='replace').strip()
         if printerr:
             if logger:
                 logger.error("%s" % output)
@@ -275,7 +275,7 @@ def runcmd(cmd, destdir=None, printerr=True, logger=None):
 
     out.seek(0)
     output = out.read()
-    output = output.decode('ascii').strip()
+    output = output.decode('utf-8', errors='replace').strip()
     if logger:
         logger.debug("output: %s" % output.rstrip() )
     return output
