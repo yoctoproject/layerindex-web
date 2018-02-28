@@ -14,7 +14,7 @@ import logging
 from datetime import datetime
 
 sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__))))
-from common import common_setup, update_repo, load_recipes, \
+from common import common_setup, load_recipes, \
         get_pv_type, get_logger, DryRunRollbackException
 common_setup()
 from layerindex import utils
@@ -29,19 +29,12 @@ if not fetchdir:
     logger.error("Please set LAYER_FETCH_DIR in settings.py")
     sys.exit(1)
 
-update_repo(settings.LAYER_FETCH_DIR, 'poky', settings.POKY_REPO_URL,
-                True, logger)
-
 # setup bitbake path
 bitbakepath = os.path.join(fetchdir, 'bitbake')
 sys.path.insert(0, os.path.join(bitbakepath, 'lib'))
 
-# setup poky path
-pokypath = os.path.join(fetchdir, 'poky')
-sys.path.insert(0, os.path.join(pokypath, 'meta', 'lib'))
-
 from layerindex.models import Recipe, LayerBranch
-from rrs.models import RecipeUpstream, RecipeUpstreamHistory
+from rrs.models import RecipeUpstream, RecipeUpstreamHistory, MaintenancePlan
 
 def set_regexes(d):
     """
@@ -153,48 +146,61 @@ if __name__=="__main__":
     logger.debug("Starting upstream history...")
 
     try:
-        with transaction.atomic():
-            for layerbranch in LayerBranch.objects.all():
-                layer = layerbranch.layer
-                urldir = layer.get_fetch_dir()
-                repodir = os.path.join(fetchdir, urldir)
-                layerdir = os.path.join(repodir, layerbranch.vcs_subdir)
+        maintplans = MaintenancePlan.objects.filter(updates_enabled=True)
+        if not maintplans.exists():
+            logger.error('No enabled maintenance plans found')
+            sys.exit(1)
 
-                recipe_files = []
-                for recipe in Recipe.objects.filter(layerbranch = layerbranch):
-                    file = str(os.path.join(layerdir, recipe.full_path()))
-                    recipe_files.append(file)
+        origsyspath = sys.path
 
-                (tinfoil, d, recipes) = load_recipes(layerbranch, bitbakepath,
-                        fetchdir, settings, logger,  recipe_files=recipe_files)
+        for maintplan in maintplans:
+            for item in maintplan.maintenanceplanlayerbranch_set.all():
+                layerbranch = item.layerbranch
+                with transaction.atomic():
+                    sys.path = origsyspath
 
-                if not recipes:
+                    layer = layerbranch.layer
+                    urldir = layer.get_fetch_dir()
+                    repodir = os.path.join(fetchdir, urldir)
+                    layerdir = os.path.join(repodir, layerbranch.vcs_subdir)
+
+                    recipe_files = []
+                    for recipe in layerbranch.recipe_set.all():
+                        file = str(os.path.join(layerdir, recipe.full_path()))
+                        recipe_files.append(file)
+
+                    (tinfoil, d, recipes) = load_recipes(layerbranch, bitbakepath,
+                            fetchdir, settings, logger,  recipe_files=recipe_files)
+
+                    if not recipes:
+                        tinfoil.shutdown()
+                        continue
+
+                    utils.setup_core_layer_sys_path(settings, layerbranch.branch.name)
+
+                    for recipe_data in recipes:
+                        set_regexes(recipe_data)
+
+                    history = RecipeUpstreamHistory(start_date = datetime.now())
+
+                    result = []
+                    for recipe_data in recipes:
+                        get_upstream_info(layerbranch, recipe_data, result)
+
+                    history.end_date = datetime.now()
+                    history.save()
+
+                    for res in result:
+                        (recipe, ru) = res
+
+                        ru.history = history
+                        ru.save()
+
+                        logger.debug('%s: layer branch %s, pv %s, upstream (%s)' % (recipe.pn,
+                            str(layerbranch), recipe.pv, str(ru)))
+
                     tinfoil.shutdown()
-                    continue
-
-                for recipe_data in recipes:
-                    set_regexes(recipe_data)
-
-                history = RecipeUpstreamHistory(start_date = datetime.now())
-
-                result = []
-                for recipe_data in recipes:
-                    get_upstream_info(layerbranch, recipe_data, result)
-
-                history.end_date = datetime.now()
-                history.save()
-
-                for res in result:
-                    (recipe, ru) = res
-
-                    ru.history = history
-                    ru.save()
-
-                    logger.debug('%s: layer branch %s, pv %s, upstream (%s)' % (recipe.pn,
-                        str(layerbranch), recipe.pv, str(ru)))
-
-                tinfoil.shutdown()
-            if options.dry_run:
-                raise DryRunRollbackException
+                    if options.dry_run:
+                        raise DryRunRollbackException
     except DryRunRollbackException:
         pass
