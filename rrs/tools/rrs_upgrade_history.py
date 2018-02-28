@@ -38,7 +38,6 @@ if not fetchdir:
 # setup bitbake
 bitbakepath = os.path.join(fetchdir, 'bitbake')
 sys.path.insert(0, os.path.join(bitbakepath, 'lib'))
-from bb import BBHandledException
 from bb.utils import vercmp_string
 
 """
