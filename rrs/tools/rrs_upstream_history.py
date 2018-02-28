@@ -21,6 +21,7 @@ from layerindex import utils
 
 utils.setup_django()
 from django.db import transaction
+from django.core.exceptions import ObjectDoesNotExist
 import settings
 
 logger = get_logger("UpstreamHistory", settings)
@@ -85,11 +86,12 @@ def get_upstream_info(layerbranch, recipe_data, result):
             get_recipe_pv_without_srcpv
 
     pn = recipe_data.getVar('PN', True)
-    recipe = Recipe.objects.get(layerbranch=layerbranch, pn=pn)
-    if not recipe:
-        logger.info("%s: in layer branch %s not found." % \
+    recipes = Recipe.objects.filter(layerbranch=layerbranch, pn=pn)
+    if not recipes:
+        logger.warning("%s: in layer branch %s not found." % \
                 (pn, str(layerbranch)))
         return
+    recipe = recipes[0]
 
     ru = RecipeUpstream()
     ru.recipe = recipe
