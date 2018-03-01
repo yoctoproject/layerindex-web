@@ -38,23 +38,6 @@ def get_logger(name, settings):
 
     return logger
 
-def update_repo(fetchdir, repo_name, repo_url, pull, logger):
-    from layerindex import utils, recipeparse
-
-    path = os.path.join(fetchdir, repo_name)
-
-    logger.info("Fetching %s from remote repository %s"
-                    % (repo_name, repo_url))
-    if not os.path.exists(path):
-        out = utils.runcmd("git clone %s %s" % (repo_url, repo_name),
-                fetchdir, logger = logger)
-    elif pull == True:
-        out = utils.runcmd("git pull", path, logger = logger)
-    else:
-        out = utils.runcmd("git fetch", path, logger = logger)
-
-    return path
-
 def get_pv_type(pv):
     pv_type = ''
     if '+git' in pv:

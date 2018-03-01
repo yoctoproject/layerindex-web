@@ -15,7 +15,7 @@ import logging
 from tabulate import tabulate
 
 sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__))))
-from common import common_setup, update_repo, get_pv_type, get_logger
+from common import common_setup, get_pv_type, get_logger
 common_setup()
 from layerindex import utils
 
