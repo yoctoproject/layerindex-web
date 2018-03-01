@@ -5,6 +5,8 @@
 #
 # Licensed under the MIT license, see COPYING.MIT for details
 
+import sys
+import os
 import logging
 
 class DryRunRollbackException(Exception):
@@ -12,12 +14,10 @@ class DryRunRollbackException(Exception):
 
 
 def common_setup():
-    import sys, os
     sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__), '../../')))
     sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__), '../../layerindex')))
 
 def get_logger(name, settings):
-    import os
     from logging.handlers import RotatingFileHandler
 
     logger = logging.getLogger(name)
@@ -39,7 +39,6 @@ def get_logger(name, settings):
     return logger
 
 def update_repo(fetchdir, repo_name, repo_url, pull, logger):
-    import os
     from layerindex import utils, recipeparse
 
     path = os.path.join(fetchdir, repo_name)
@@ -69,7 +68,6 @@ def get_pv_type(pv):
 
 def get_recipe_files(layerdir):
     from layerindex import recipeparse
-    import os
 
     sublayer_dirs = []
     for root, dirs, files in os.walk(layerdir):
