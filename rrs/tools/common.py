@@ -121,6 +121,7 @@ def load_recipes(layerbranch, bitbakepath, fetchdir, settings, logger,
     recipes = []
     for fn in recipe_files:
         try:
+            logger.debug('Parsing %s' % fn)
             if hasattr(tinfoil, 'parse_recipe_file'):
                 data = tinfoil.parse_recipe_file(fn, appends=False, config_data=d)
             else:
