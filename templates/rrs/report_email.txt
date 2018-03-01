@@ -1,0 +1,26 @@
+This is an automated message from the Recipe Reporting System.
+
+Listed below are recipes which need to be upgraded based on the versions
+available upstream. If a maintainer believes some of them cannot be upgraded
+at this time, they can set RECIPE_NO_UPDATE_REASON in the recipe file(s) as
+a reminder of why not.
+
+Example:
+RECIPE_NO_UPDATE_REASON = "Version 2.0 is unstable"
+
+For further details please visit:
+
+  {{ site_url }}
+
+Package               Version          Upstream version      Maintainer            No upgrade reason
+--------------------  ---------------  --------------------  --------------------  ------------------------------
+{% for line in recipelines %}{{ line.pn|truncatechars:20|ljust:20 }}  {{ line.pv|truncatechars:15|ljust:15 }}  {{ line.pv_upstream|truncatechars:20|ljust:20 }}  {{ line.maintainer|truncatechars:20|ljust:20 }}  {{ line.noupgradereason|truncatechars:30 }}
+{% endfor %}
+Upgradable count: {{ upgradable_count }}
+Upgradable total count: {{ total_upgradable_count }}
+
+Based upon current {{ commits|length|pluralize:"commit,commits" }}:
+
+{% for commit in commits %}  {{ commit }}
+{% endfor %}
+{% if maintplan.admin %}If there are any problems with the above, please contact: {{ maintplan.admin.first_name }} {{ maintplan.admin.last_name }} <{{ maintplan.admin.email }}>{% endif %}
