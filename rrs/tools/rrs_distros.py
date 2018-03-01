@@ -14,7 +14,7 @@ import logging
 from datetime import datetime
 
 sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__))))
-from common import common_setup, update_repo, load_recipes, \
+from common import common_setup, load_recipes, \
         get_pv_type, get_logger, DryRunRollbackException
 common_setup()
 from layerindex import utils
@@ -29,20 +29,13 @@ if not fetchdir:
     logger.error("Please set LAYER_FETCH_DIR in settings.py")
     sys.exit(1)
 
-update_repo(settings.LAYER_FETCH_DIR, 'poky', settings.POKY_REPO_URL,
-                True, logger)
-
 # setup bitbake path
 bitbakepath = os.path.join(fetchdir, 'bitbake')
 sys.path.insert(0, os.path.join(bitbakepath, 'lib'))
 
-# setup poky path
-pokypath = os.path.join(fetchdir, 'poky')
-sys.path.insert(0, os.path.join(pokypath, 'meta', 'lib'))
-
 
 from layerindex.models import Recipe, LayerBranch
-from rrs.models import RecipeDistro
+from rrs.models import RecipeDistro, MaintenancePlan
 
 """
     Searches the recipe's package in major distributions.
@@ -101,46 +94,56 @@ if __name__=="__main__":
     options, args = parser.parse_args(sys.argv)
     logger.setLevel(options.loglevel)
 
+    maintplans = MaintenancePlan.objects.filter(updates_enabled=True)
+    if not maintplans.exists():
+        logger.error('No enabled maintenance plans found')
+        sys.exit(1)
+
     logger.debug("Starting recipe distros update ...")
 
     try:
+        origsyspath = sys.path
         with transaction.atomic():
-            for layerbranch in LayerBranch.objects.all():
-                (tinfoil, d, recipes) = load_recipes(layerbranch, bitbakepath,
-                        fetchdir, settings, logger)
-
-                if not recipes:
-                    tinfoil.shutdown()
-                    continue
-
-                from oe import distro_check
-                logger.debug("Downloading distro's package information ...")
-                distro_check.create_distro_packages_list(fetchdir, d)
-                pkglst_dir = os.path.join(fetchdir, "package_lists")
-
-                RecipeDistro.objects.filter(recipe__layerbranch = layerbranch).delete()
-
-                for recipe_data in recipes:
-                    pn = recipe_data.getVar('PN', True)
-
+            for maintplan in maintplans:
+                for item in maintplan.maintenanceplanlayerbranch_set.all():
+                    layerbranch = item.layerbranch
+                    sys.path = origsyspath
+                    (tinfoil, d, recipes) = load_recipes(layerbranch, bitbakepath,
+                            fetchdir, settings, logger)
                     try:
-                        recipe = Recipe.objects.get(pn = pn, layerbranch = layerbranch)
-                    except:
-                        logger.warn('%s: layer branch %s, NOT found' % (pn,
-                            str(layerbranch)))
-                        continue
+                        if not recipes:
+                            continue
 
-                    distro_info = search_package_in_distros(pkglst_dir, recipe, recipe_data)
-                    for distro, alias in distro_info.items():
-                        recipedistro = RecipeDistro()
-                        recipedistro.recipe = recipe
-                        recipedistro.distro = distro
-                        recipedistro.alias = alias
-                        recipedistro.save()
-                        logger.debug('%s: layer branch %s, add distro %s alias %s' % (pn,
-                            str(layerbranch), distro, alias))
+                        utils.setup_core_layer_sys_path(settings, layerbranch.branch.name)
 
-                tinfoil.shutdown()
+                        from oe import distro_check
+                        logger.debug("Downloading distro's package information ...")
+                        distro_check.create_distro_packages_list(fetchdir, d)
+                        pkglst_dir = os.path.join(fetchdir, "package_lists")
+
+                        RecipeDistro.objects.filter(recipe__layerbranch = layerbranch).delete()
+
+                        for recipe_data in recipes:
+                            pn = recipe_data.getVar('PN', True)
+
+                            try:
+                                recipe = Recipe.objects.get(pn = pn, layerbranch = layerbranch)
+                            except:
+                                logger.warn('%s: layer branch %s, NOT found' % (pn,
+                                    str(layerbranch)))
+                                continue
+
+                            distro_info = search_package_in_distros(pkglst_dir, recipe, recipe_data)
+                            for distro, alias in distro_info.items():
+                                recipedistro = RecipeDistro()
+                                recipedistro.recipe = recipe
+                                recipedistro.distro = distro
+                                recipedistro.alias = alias
+                                recipedistro.save()
+                                logger.debug('%s: layer branch %s, add distro %s alias %s' % (pn,
+                                    str(layerbranch), distro, alias))
+                    finally:
+                        tinfoil.shutdown()
             if options.dry_run:
                 raise DryRunRollbackException
     except DryRunRollbackException:
