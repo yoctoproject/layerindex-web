@@ -86,12 +86,10 @@ def set_regexes(d):
                     d.getVar(var, True)))
             break
 
-def get_upstream_info(thread_worker, arg):
+def get_upstream_info(layerbranch, recipe_data, result):
     from bb.utils import vercmp_string
     from oe.recipeutils import get_recipe_upstream_version, \
             get_recipe_pv_without_srcpv
-
-    (layerbranch, recipe_data, result) = arg
 
     pn = recipe_data.getVar('PN', True)
     recipe = Recipe.objects.get(layerbranch=layerbranch, pn=pn)
@@ -179,22 +177,9 @@ if __name__=="__main__":
 
                 history = RecipeUpstreamHistory(start_date = datetime.now())
 
-                from oe.utils import ThreadedPool
-                import multiprocessing
-
-                #nproc = min(multiprocessing.cpu_count(), len(recipes))
-                # XXX: The new tinfoil API don't support pythreads so
-                # set to 1 while tinfoil have support.
-                nproc = 1
-                pool = ThreadedPool(nproc, len(recipes))
-
                 result = []
                 for recipe_data in recipes:
-                    pool.add_task(get_upstream_info, (layerbranch,
-                        recipe_data, result))
-
-                pool.start()
-                pool.wait_completion()
+                    get_upstream_info(layerbranch, recipe_data, result)
 
                 history.end_date = datetime.now()
                 history.save()
