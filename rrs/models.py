@@ -43,8 +43,9 @@ class Release(models.Model):
     end_date = models.DateField(db_index=True)
 
     @staticmethod
-    def get_by_date(date):
-        release_qry = Release.objects.filter(start_date__lte = date, 
+    def get_by_date(maintplan, date):
+        release_qry = Release.objects.filter(plan=maintplan,
+                start_date__lte = date,
                 end_date__gte = date).order_by('-end_date')
 
         if release_qry:
@@ -53,11 +54,11 @@ class Release(models.Model):
             return None
 
     @staticmethod
-    def get_current():
+    def get_current(maintplan):
         current = date.today()
-        current_release = Release.get_by_date(current)
+        current_release = Release.get_by_date(maintplan, current)
 
-        return current_release or Release.objects.filter().order_by('-end_date')[0]
+        return current_release or Release.objects.filter(plan=maintplan).order_by('-end_date')[0]
 
     def __str__(self):
         return '%s' % (self.name)
@@ -73,15 +74,15 @@ class Milestone(models.Model):
 
     """ Get milestones, filtering don't exist yet and ordering """
     @staticmethod
-    def get_by_release_name(release_name):
+    def get_by_release_name(maintplan, release_name):
         milestones = []
         today = date.today()
 
-        mall = Milestone.objects.get(release__name = release_name, name = 'All')
+        mall = Milestone.objects.get(release__plan=maintplan, release__name=release_name, name='All')
         if mall:
             milestones.append(mall)
 
-        mqry = Milestone.objects.filter(release__name = release_name).order_by('-end_date')
+        mqry = Milestone.objects.filter(release__plan=maintplan, release__name=release_name).order_by('-end_date')
         for m in mqry:
             if m.name == 'All':
                 continue

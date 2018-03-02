@@ -13,7 +13,7 @@ from django.db import connection
 from layerindex.models import Recipe
 from rrs.models import Release, Milestone, Maintainer, RecipeMaintainerHistory, \
         RecipeMaintainer, RecipeUpstreamHistory, RecipeUpstream, \
-        RecipeDistro, RecipeUpgrade
+        RecipeDistro, RecipeUpgrade, MaintenancePlan
 
 
 
@@ -21,9 +21,16 @@ class FrontPageRedirect(RedirectView):
     permanent = False
 
     def get_redirect_url(self):
-        release_name = Release.get_current().name
-        milestone_name = Milestone.get_current(Release.get_current()).name
-        return reverse('rrs_recipes', args=(release_name, milestone_name))
+        maintplan = MaintenancePlan.objects.first()
+        if not maintplan:
+            raise Exception('No maintenance plans defined')
+        release = Release.get_current(maintplan)
+        if not release:
+            raise Exception('No releases defined for maintenance plan %s' % maintplan.name)
+        milestone = Milestone.get_current(release)
+        if not milestone:
+            raise Exception('No milestones defined for release %s' % release.name)
+        return reverse('rrs_recipes', args=(maintplan.name, release.name, milestone.name))
 
 def _check_url_params(upstream_status, maintainer_name):
     get_object_or_404(Maintainer, name=maintainer_name)
@@ -456,8 +463,10 @@ class RecipeListView(ListView):
     context_object_name = 'recipe_list'
 
     def get_queryset(self):
+        self.maintplan_name = self.kwargs['maintplan_name']
+        maintplan = get_object_or_404(MaintenancePlan, name=self.maintplan_name)
         self.release_name = self.kwargs['release_name']
-        release = get_object_or_404(Release, name=self.release_name)
+        release = get_object_or_404(Release, plan=maintplan, name=self.release_name)
 
         self.milestone_name = self.kwargs['milestone_name']
         milestone = get_object_or_404(Milestone, release = release, name=self.milestone_name)
@@ -498,10 +507,12 @@ class RecipeListView(ListView):
 
         context['this_url_name'] = resolve(self.request.path_info).url_name
 
+        context['maintplan_name'] = self.maintplan_name
+        maintplan = get_object_or_404(MaintenancePlan, name=self.maintplan_name)
         context['release_name'] = self.release_name
-        context['all_releases'] = Release.objects.filter().order_by('-end_date')
+        context['all_releases'] = Release.objects.filter(plan=maintplan).order_by('-end_date')
         context['milestone_name'] = self.milestone_name
-        context['all_milestones'] = Milestone.get_by_release_name(self.release_name)
+        context['all_milestones'] = Milestone.get_by_release_name(maintplan, self.release_name)
 
         context['recipes_percentage'] = self.milestone_statistics['percentage']
         context['recipes_all_upgraded'] = self.milestone_statistics['all_upgraded']
@@ -541,8 +552,9 @@ class RecipeListView(ListView):
 
         return context
 
-def recipes_report(request, release_name, milestone_name):
-    release = get_object_or_404(Release, name=release_name)
+def recipes_report(request, maintplan_name, release_name, milestone_name):
+    maintplan = get_object_or_404(MaintenancePlan, name=maintplan_name)
+    release = get_object_or_404(Release, plan=maintplan, name=release_name)
     milestone = get_object_or_404(Milestone, release = release, name=milestone_name)
 
     recipe_list = _get_recipe_list(milestone)
@@ -563,6 +575,7 @@ def recipes_report(request, release_name, milestone_name):
 class RecipeUpgradeDetail():
     title = None
     version = None
+    maintplan_name = None
     release_name = None
     milestone_name = None
     date = None
@@ -571,10 +584,11 @@ class RecipeUpgradeDetail():
     commit = None
     commit_url = None
 
-    def __init__(self, title, version, release_name, milestone_name, date, 
+    def __init__(self, title, version, maintplan_name, release_name, milestone_name, date, 
             maintainer_name, is_recipe_maintainer, commit, commit_url):
         self.title = title
         self.version = version
+        self.maintplan_name = maintplan_name
         self.release_name = release_name
         self.milestone_name = milestone_name
         self.date = date
@@ -583,12 +597,12 @@ class RecipeUpgradeDetail():
         self.commit = commit
         self.commit_url = commit_url
 
-def _get_recipe_upgrade_detail(recipe_upgrade):
+def _get_recipe_upgrade_detail(maintplan, recipe_upgrade):
     release_name = ''
     milestone_name = ''
     recipe_maintainer_history = None
 
-    release = Release.get_by_date(recipe_upgrade.commit_date)
+    release = Release.get_by_date(maintplan, recipe_upgrade.commit_date)
     if release:
         release_name = release.name
         milestone = Milestone.get_by_release_and_date(release,
@@ -615,7 +629,7 @@ def _get_recipe_upgrade_detail(recipe_upgrade):
         '/commit/?id=' + recipe_upgrade.sha1
 
     rud = RecipeUpgradeDetail(recipe_upgrade.title, recipe_upgrade.version, \
-            release_name, milestone_name, commit_date, maintainer_name, \
+            maintplan.name, release_name, milestone_name, commit_date, maintainer_name, \
             is_recipe_maintainer, commit, commit_url)
 
     return rud
@@ -623,13 +637,18 @@ def _get_recipe_upgrade_detail(recipe_upgrade):
 class RecipeDetailView(DetailView):
     model = Recipe
 
+    def get_queryset(self):
+        self.maintplan_name = self.kwargs['maintplan_name']
+        return super(RecipeDetailView, self).get_queryset()
+
     def get_context_data(self, **kwargs):
         context = super(RecipeDetailView, self).get_context_data(**kwargs)
         recipe = self.get_object()
         if not recipe:
             raise django.http.Http404
 
-        release = Release.get_current()
+        maintplan = get_object_or_404(MaintenancePlan, name=self.maintplan_name)
+        release = Release.get_current(maintplan)
         context['release_name'] = release.name
         milestone = Milestone.get_current(release)
         context['milestone_name'] = milestone.name
@@ -666,7 +685,7 @@ class RecipeDetailView(DetailView):
         context['recipe_upgrade_details'] = []
         for ru in RecipeUpgrade.objects.filter(recipe =
                 recipe).order_by('-commit_date'): 
-            context['recipe_upgrade_details'].append(_get_recipe_upgrade_detail(ru))
+            context['recipe_upgrade_details'].append(_get_recipe_upgrade_detail(maintplan, ru))
         context['recipe_upgrade_detail_count'] = len(context['recipe_upgrade_details'])
 
         context['recipe_layer_branch_url'] = _get_layer_branch_url(
@@ -705,8 +724,10 @@ class MaintainerListView(ListView):
         maintainer_list = []
         self.maintainer_count = 0
 
+        self.maintplan_name = self.kwargs['maintplan_name']
+        maintplan = get_object_or_404(MaintenancePlan, name=self.maintplan_name)
         self.release_name = self.kwargs['release_name']
-        release = get_object_or_404(Release, name=self.release_name)
+        release = get_object_or_404(Release, plan=maintplan, name=self.release_name)
         self.milestone_name = self.kwargs['milestone_name']
         milestone = get_object_or_404(Milestone, release = release,
                 name=self.milestone_name)
@@ -771,10 +792,12 @@ class MaintainerListView(ListView):
 
         context['this_url_name'] = resolve(self.request.path_info).url_name
 
+        context['maintplan_name'] = self.maintplan_name
+        maintplan = get_object_or_404(MaintenancePlan, name=self.maintplan_name)
         context['release_name'] = self.release_name
-        context['all_releases'] = Release.objects.filter().order_by('-end_date')
+        context['all_releases'] = Release.objects.filter(plan=maintplan).order_by('-end_date')
         context['milestone_name'] = self.milestone_name
-        context['all_milestones'] = Milestone.get_by_release_name(self.release_name)
+        context['all_milestones'] = Milestone.get_by_release_name(maintplan, self.release_name)
 
         context['recipes_percentage'] = self.milestone_statistics['percentage']
         context['recipes_all_upgraded'] = self.milestone_statistics['all_upgraded']
