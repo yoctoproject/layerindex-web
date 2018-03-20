@@ -67,7 +67,7 @@ class Raw():
         """ Get all Recipes """
         cur = connection.cursor()
         cur.execute("""SELECT id, pn, pv, summary
-                        FROM layerindex_Recipe;
+                        FROM layerindex_recipe;
                     """)
         return Raw.dictfetchall(cur)
 
@@ -78,7 +78,7 @@ class Raw():
         cur = connection.cursor()
 
         cur.execute("""SELECT DISTINCT rema.recipe_id
-                        FROM rrs_RecipeMaintainer AS rema
+                        FROM rrs_recipemaintainer AS rema
                         INNER JOIN rrs_maintainer AS ma
                         ON rema.maintainer_id = ma.id
                         WHERE rema.history_id = %s 
@@ -97,8 +97,8 @@ class Raw():
 
         if date_id:
             qry = """SELECT rema.recipe_id, ma.name
-                    FROM rrs_RecipeMaintainer AS rema
-                    INNER JOIN rrs_Maintainer AS ma
+                    FROM rrs_recipemaintainer AS rema
+                    INNER JOIN rrs_maintainer AS ma
                     ON rema.maintainer_id = ma.id"""
             qry += "\nWHERE rema.history_id = '%s'" % str(date_id)
             qry += "\nAND rema.recipe_id IN (%s);" % recipes
@@ -124,7 +124,7 @@ class Raw():
         if date_id:
             recipes = str(recipes).strip('[]')
             qry = """SELECT id, status, no_update_reason
-                    FROM rrs_RecipeUpstream"""
+                    FROM rrs_recipeupstream"""
             qry += "\nWHERE history_id = '%s'" % str(date_id.id)
             qry += "\nAND recipe_id IN (%s);" % recipes
             cur = connection.cursor()
@@ -151,7 +151,7 @@ class Raw():
 
         if date_id:
             qry = """SELECT recipe_id, status, no_update_reason, version
-                    FROM rrs_RecipeUpstream"""
+                    FROM rrs_recipeupstream"""
             qry += "\nWHERE history_id = '%s'" % str(date_id)
             qry += "\nAND recipe_id IN (%s);" % recipes
             cur = connection.cursor()
@@ -175,7 +175,7 @@ class Raw():
         """ Get Recipes not up to date based on Recipe Upstream History """
         cur = connection.cursor()
         cur.execute("""SELECT DISTINCT recipe_id
-                        FROM rrs_RecipeUpstream
+                        FROM rrs_recipeupstream
                         WHERE status = 'N'
                         AND history_id = %s
                     """, [date_id])
@@ -190,9 +190,9 @@ class Raw():
                                 PARTITION BY recipe_id
                                 ORDER BY commit_date DESC
                             ) AS rownum
-                        FROM rrs_RecipeUpgrade
+                        FROM rrs_recipeupgrade
                         WHERE commit_date <= %s) AS te
-                        INNER JOIN layerindex_Recipe AS re
+                        INNER JOIN layerindex_recipe AS re
                         ON te.recipe_id = re.id
                         WHERE rownum = 1
                         ORDER BY re.pn;
@@ -204,7 +204,7 @@ class Raw():
         """ Get Recipe Upgrade for the milestone """
         cur = connection.cursor()
         cur.execute("""SELECT id, recipe_id, maintainer_id, author_date, commit_date
-                        FROM rrs_RecipeUpgrade
+                        FROM rrs_recipeupgrade
                         WHERE commit_date >= %s
                         AND commit_date <= %s
                         ORDER BY commit_date DESC;
@@ -218,7 +218,7 @@ class Raw():
 
         cur = connection.cursor()
         qry = """SELECT DISTINCT recipe_id
-                FROM rrs_RecipeUpgrade"""
+                FROM rrs_recipeupgrade"""
         qry += "\nWHERE commit_date >= '%s'" % str(start_date)
         qry += "\nAND commit_date <= '%s'" % str(end_date)
         qry += "\nAND recipe_id IN (%s);" % recipes
@@ -231,7 +231,7 @@ class Raw():
         cur = connection.cursor()
 
         cur.execute("""SELECT id
-                        FROM rrs_RecipeMaintainerHistory
+                        FROM rrs_recipemaintainerhistory
                         WHERE date <= %s
                         ORDER BY date DESC
                         LIMIT 1;
@@ -241,7 +241,7 @@ class Raw():
 
         if not ret:
             cur.execute("""SELECT id
-                        FROM rrs_RecipeMaintainerHistory
+                        FROM rrs_recipemaintainerhistory
                         ORDER BY date
                         LIMIT 1;
                         """)
