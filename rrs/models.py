@@ -14,6 +14,7 @@ from datetime import date
 from django.db import models
 from django.contrib.auth.models import User
 from layerindex.models import Recipe, LayerBranch
+from django.core.exceptions import ObjectDoesNotExist
 
 
 class MaintenancePlan(models.Model):
@@ -78,7 +79,10 @@ class Milestone(models.Model):
         milestones = []
         today = date.today()
 
-        mall = Milestone.objects.get(release__plan=maintplan, release__name=release_name, name='All')
+        try:
+            mall = Milestone.objects.get(release__plan=maintplan, release__name=release_name, name='All')
+        except ObjectDoesNotExist:
+            mall = None
         if mall:
             milestones.append(mall)
 
