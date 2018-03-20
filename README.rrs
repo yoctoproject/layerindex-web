@@ -1,36 +1,56 @@
-Recipe reporting system WEB interface
-=====================================
+Recipe Reporting System
+=======================
 
-Recipe reporting system is a small applcation that provides information
-about Recipes in Openembedded-core layer.
+Recipe reporting system is a web-based application that provides information
+about recipe maintenance for OpenEmbedded layers, tracking how up-to-date each
+recipe is per recipe. It is an add-on for the OpenEmbedded layer index
+application.
 
 Setup
 -----
 
-You need to follow the instructions in README with the following changes in
-Setup instructions,
+NOTE: Currently the only supported database backend is MySQL (or MariaDB)
+version 10.2 or newer, due to some raw SQL usage for performance reasons.
+This requirement may be removed in future.
 
-1. Edit settings.py,
+Setup procedure:
 
-Set:
+1. Follow the layer index setup instructions in the README file first.
+   The openembedded-core layer (or whatever replacement you have pointed
+   CORE_LAYER_NAME to in settings.py) must be present in order to run the
+   Recipe Reporting System database migrations.
 
-	APPLICATION = 'rrs'
-	LOGIN_REDIRECT_URL = '/rrs'
+2. Edit settings.py:
 
-Uncomment the 'rrs' line in INSTALLED_APPS.
+   * Add 'rrs' to INSTALLED_APPS
 
-Configure RRS_EMAIL_TO used for sending Recipe upgrade name list report.
+   * Configure TOOLS_LOG_DIR if you wish the logs to be written somewhere
+     other than the current directory when the scripts are run
 
-If you are running in development mode you need to set DEBUG=True in settings.py
-in order to serve static content using django.
+3. Uncomment the include lines in conf/local.conf.
 
-4. To add openembedded-core layer you need to run:
+4. Run database migrations:
 
-$ ./scripts/tools/import_layer.py  -s meta git://git.openembedded.org/openembedded-core openembedded-core
+$ python3 manage.py migrate rrs
 
-7. Uncomment include files in conf/local.conf.
+5. Set up the maintenance plan. A "default" plan will likely have been
+   created during upgrade, you can use this if it's there, otherwise create
+   one. Ensure that you set the following:
 
-8. In the first run should regenerate Recipe upgrade information,
+   * "Enable updates" should be ticked
+
+   * Have at least one layer branch against the plan (lower part of the admin
+     page for the plan). You should select the master or equivalent branch
+     for each layer.
+
+   * If you are importing history earlier than the Python 3 switchover, and
+     you are using virtualenv or have some other environmental requirement
+     for different python versions, you'll need to set up a Python Environment
+     record for Python 2 and Python 3 (or reuse the ones you've set up for
+     the normal layer index update) and select these on each layer branch in
+     the maintenance plan.
+
+6. For the first run, regenerate recipe upgrade information:
 
 $ ./layerindex/update.py
 $ ./rrs/tools/rrs_maintainer_history.py -d
@@ -38,16 +58,5 @@ $ ./rrs/tools/rrs_upgrade_history.py -d
 $ ./rrs/tools/rrs_upstream_history.py -d
 $ ./rrs/tools/rrs_distros.py -d
 
-9. Configure cron to run daily update, set rrs_dir and venv_activate into rrs/tools/daily_run.sh.
-
-Maintenance
------------
-
-The code for this application is maintained by the Yocto Project.
-
-The latest version of the code can always be found here:
-
-  http://git.yoctoproject.org/cgit/cgit.cgi/layerindex-web/log/?h=rrs
-
-Contributions are welcome. Please send patches / pull requests to
-yocto@yoctoproject.org with '[rrs]' in the subject.
+7. Configure cron to run daily update, set rrs_dir and venv_activate in
+   rrs/tools/daily_run.sh.
