@@ -166,6 +166,7 @@ class Raw():
         cur = connection.cursor()
         cur.execute("""SELECT recipe_id, MAX(commit_date) AS date
                        FROM rrs_recipeupgrade
+                       WHERE commit_date <= %s
                        GROUP BY recipe_id;
                     """, [date])
         return Raw.dictfetchall(cur)
