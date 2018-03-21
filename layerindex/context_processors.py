@@ -12,7 +12,7 @@ def layerindex_context(request):
     if site and site.name and site.name != 'example.com':
         site_name = site.name
     else:
-        site_name = 'OpenEmbedded metadata index'
+        site_name = 'OpenEmbedded Layer Index'
     return {
         'all_branches': Branch.objects.exclude(name='oe-classic').order_by('sort_priority'),
         'unpublished_count': LayerItem.objects.filter(status='N').count(),
