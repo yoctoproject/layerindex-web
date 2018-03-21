@@ -388,6 +388,9 @@ class PackageConfig(models.Model):
     def __str__(self):
         return "%s - %s" % (self.recipe, self.feature)
 
+    def get_deps_list(self):
+        return self.build_deps.split()
+
 class StaticBuildDep(models.Model):
     recipes = models.ManyToManyField(Recipe)
     name = models.CharField(max_length=255)

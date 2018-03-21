@@ -156,12 +156,17 @@
                 </dd>
                 {% endif %}
 
-                {% if recipe_depends %}
+                {% if recipe_depends or recipe.packageconfig_set %}
                 <dt>Depends</dt>
                 <dd>
                     <ul class="unstyled">
                         {% for d in recipe_depends %}
                         <li>{{ d }}</li>
+                        {% endfor %}
+                        {% for pkc in recipe.packageconfig_set.all %}
+                            {% for dep in pkc.get_deps_list %}
+                        <li>{{ dep }} (optional)</li>
+                            {% endfor %}
                         {% endfor %}
                     </ul>
                 </dd>

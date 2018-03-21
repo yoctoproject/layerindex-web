@@ -10,7 +10,7 @@ from django.views.generic import ListView, DetailView, RedirectView
 from django.core.urlresolvers import resolve, reverse, reverse_lazy
 from django.db import connection
 
-from layerindex.models import Recipe
+from layerindex.models import Recipe, StaticBuildDep
 from rrs.models import Release, Milestone, Maintainer, RecipeMaintainerHistory, \
         RecipeMaintainer, RecipeUpstreamHistory, RecipeUpstream, \
         RecipeDistro, RecipeUpgrade, MaintenancePlan
@@ -711,9 +711,7 @@ class RecipeDetailView(DetailView):
         for p in recipe.provides.split():
             context['recipe_provides'].append(p)
 
-        context['recipe_depends'] = []
-        for d in recipe.depends.split():
-            context['recipe_depends'].append(d)
+        context['recipe_depends'] = StaticBuildDep.objects.filter(recipes__id=recipe.id).values_list('name', flat=True)
 
         context['recipe_distros'] = RecipeDistro.get_distros_by_recipe(recipe)
 
