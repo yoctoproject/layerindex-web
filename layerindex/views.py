@@ -368,6 +368,10 @@ class LayerDetailView(DetailView):
             context['updates'] = layerbranch.layerupdate_set.order_by('-started')
         context['url_branch'] = self.kwargs['branch']
         context['this_url_name'] = resolve(self.request.path_info).url_name
+        if 'rrs' in settings.INSTALLED_APPS:
+            from rrs.models import MaintenancePlanLayerBranch
+            # We don't care about branch, only that the layer is included
+            context['rrs_maintplans'] = [m.plan for m in MaintenancePlanLayerBranch.objects.filter(layerbranch__layer=layer)]
         return context
 
 class LayerReviewDetailView(LayerDetailView):

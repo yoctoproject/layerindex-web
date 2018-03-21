@@ -136,6 +136,17 @@
                     </ul>
                     {% endif %}
 
+                    {% if rrs_maintplans %}
+                    <h3>{{ rrs_maintplans|pluralize:"Maintenance Plan,Maintenance Plans" }}</h3>
+                    <ul>
+                        {% for maintplan in rrs_maintplans %}
+                        <li>
+                            <a href="{% url 'rrs_maintplan' maintplan.name %}">{{ maintplan.name }}</a>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+
                 </div> <!-- end of span7 -->
 
                 <div class="span4 pull-right description">

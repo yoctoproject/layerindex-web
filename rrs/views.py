@@ -32,6 +32,20 @@ class FrontPageRedirect(RedirectView):
             raise Exception('No milestones defined for release %s' % release.name)
         return reverse('rrs_recipes', args=(maintplan.name, release.name, milestone.name))
 
+class MaintenancePlanRedirect(RedirectView):
+    permanent = False
+
+    def get_redirect_url(self, maintplan_name):
+        maintplan = get_object_or_404(MaintenancePlan, name=maintplan_name)
+        release = Release.get_current(maintplan)
+        if not release:
+            raise Exception('No releases defined for maintenance plan %s' % maintplan.name)
+        milestone = Milestone.get_current(release)
+        if not milestone:
+            raise Exception('No milestones defined for release %s' % release.name)
+        return reverse('rrs_recipes', args=(maintplan.name, release.name, milestone.name))
+
+
 def _check_url_params(upstream_status, maintainer_name):
     get_object_or_404(Maintainer, name=maintainer_name)
 
