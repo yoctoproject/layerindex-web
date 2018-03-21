@@ -664,6 +664,7 @@ class RecipeDetailView(DetailView):
             raise django.http.Http404
 
         maintplan = get_object_or_404(MaintenancePlan, name=self.maintplan_name)
+        context['maintplan_name'] = maintplan.name
         release = Release.get_current(maintplan)
         context['release_name'] = release.name
         milestone = Milestone.get_current(release)

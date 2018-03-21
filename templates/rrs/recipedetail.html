@@ -21,6 +21,12 @@
 {% block content %}
 <link rel="stylesheet" href="{% static "css/rrs-additional.css" %}" />
 {% autoescape on %}
+
+<ul class="breadcrumb">
+    <li><a href="{% url 'rrs_maintplan' maintplan_name %}">{{ maintplan_name }}</a> <span class="divider">&rarr;</span></li>
+    <li class="active">{{ recipe.name }}</li>
+</ul>
+
 <div class="page-header">
     <h1>
         {{ recipe.name }} {{ recipe.pv }}
