@@ -508,6 +508,7 @@ class RecipeListView(ListView):
 
         context['this_url_name'] = resolve(self.request.path_info).url_name
 
+        context['all_maintplans'] = MaintenancePlan.objects.all()
         context['maintplan_name'] = self.maintplan_name
         maintplan = get_object_or_404(MaintenancePlan, name=self.maintplan_name)
         context['release_name'] = self.release_name
@@ -793,6 +794,7 @@ class MaintainerListView(ListView):
 
         context['this_url_name'] = resolve(self.request.path_info).url_name
 
+        context['all_maintplans'] = MaintenancePlan.objects.all()
         context['maintplan_name'] = self.maintplan_name
         maintplan = get_object_or_404(MaintenancePlan, name=self.maintplan_name)
         context['release_name'] = self.release_name

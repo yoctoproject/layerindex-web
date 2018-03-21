@@ -14,6 +14,23 @@
 {% block topfunctions %}
 <ul class="nav">
 <li class="divider-vertical" style="display; list-item;"/>
+{% block maintplan_selector %}
+    <li class="dropdown">
+        <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+        Maintenance Plan: <b>{{ maintplan_name }}</b>
+        <b class="caret"></b>
+        </a>
+        <ul class="dropdown-menu">
+            {% for plan in all_maintplans %}
+                <li><a href="{% url this_url_name plan plan.get_default_release.name plan.get_default_release.get_default_milestone.name %}{{ extra_url_param }}">
+                    {% if plan.name = maintplan_name %}<b>{% endif %}
+                    {{ plan.name }}
+                    {% if plan.name = maintplan_name %}</b>{% endif %}
+                </a></li>
+            {% endfor %}
+        </ul>
+    </li>
+{% endblock %}
 {% block release_selector %}
     <li class="dropdown">
         <a href="#" class="dropdown-toggle" data-toggle="dropdown">

@@ -27,6 +27,9 @@ class MaintenancePlan(models.Model):
     email_to = models.CharField(max_length=255, blank=True, help_text='Recipient for automated emails (separate multiple addresses with ;)')
     admin = models.ForeignKey(User, blank=True, null=True, help_text='Plan administrator')
 
+    def get_default_release(self):
+        return self.release_set.last()
+
     def __str__(self):
         return '%s' % (self.name)
 
@@ -42,6 +45,9 @@ class Release(models.Model):
     name = models.CharField(max_length=100, unique=True)
     start_date = models.DateField(db_index=True)
     end_date = models.DateField(db_index=True)
+
+    def get_default_milestone(self):
+        return self.milestone_set.last()
 
     @staticmethod
     def get_by_date(maintplan, date):
