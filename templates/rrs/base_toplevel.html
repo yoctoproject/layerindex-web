@@ -39,7 +39,7 @@
         </a>
         <ul class="dropdown-menu">
             {% for r in all_releases %}
-                <li><a href="{% url this_url_name maintplan_name r.name "All" %}{{ extra_url_param }}">
+                <li><a href="{% url this_url_name maintplan_name r.name r.get_default_milestone.name %}{{ extra_url_param }}">
                     {% if r.name = release_name %}<b>{% endif %}
                     {{ r.name }}
                     {% if r.name = release_name %}</b>{% endif %}
