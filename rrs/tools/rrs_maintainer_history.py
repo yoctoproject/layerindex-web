@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Standalone script which rebuilds the history of maintainership
 #
