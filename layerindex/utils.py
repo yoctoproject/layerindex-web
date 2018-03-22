@@ -12,6 +12,8 @@ import subprocess
 import logging
 import time
 import fcntl
+import signal
+import codecs
 
 def get_branch(branchname):
     from layerindex.models import Branch
@@ -353,3 +355,32 @@ def setup_core_layer_sys_path(settings, branchname):
     core_repodir = os.path.join(settings.LAYER_FETCH_DIR, core_urldir)
     core_layerdir = os.path.join(core_repodir, core_layerbranch.vcs_subdir)
     sys.path.insert(0, os.path.join(core_layerdir, 'lib'))
+
+def run_command_interruptible(cmd):
+    """
+    Run a command with output displayed on the console, but ensure any Ctrl+C is
+    processed only by the child process.
+    """
+    def reenable_sigint():
+        signal.signal(signal.SIGINT, signal.SIG_DFL)
+
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
+    try:
+        process = subprocess.Popen(
+            cmd, cwd=os.path.dirname(sys.argv[0]), shell=True, preexec_fn=reenable_sigint, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
+        )
+
+        reader = codecs.getreader('utf-8')(process.stdout, errors='surrogateescape')
+        buf = ''
+        while True:
+            out = reader.read(1, 1)
+            if out:
+                sys.stdout.write(out)
+                sys.stdout.flush()
+                buf += out
+            elif out == '' and process.poll() != None:
+                break
+
+    finally:
+        signal.signal(signal.SIGINT, signal.SIG_DFL)
+    return process.returncode, buf

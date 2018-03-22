@@ -14,7 +14,6 @@ import optparse
 import codecs
 import logging
 import subprocess
-import signal
 from datetime import datetime, timedelta
 from distutils.version import LooseVersion
 import utils
@@ -33,36 +32,6 @@ try:
 except ImportError:
     logger.error("Please install PythonGit 0.3.1 or later in order to use this script")
     sys.exit(1)
-
-
-def reenable_sigint():
-    signal.signal(signal.SIGINT, signal.SIG_DFL)
-
-def run_command_interruptible(cmd):
-    """
-    Run a command with output displayed on the console, but ensure any Ctrl+C is
-    processed only by the child process.
-    """
-    signal.signal(signal.SIGINT, signal.SIG_IGN)
-    try:
-        process = subprocess.Popen(
-            cmd, cwd=os.path.dirname(sys.argv[0]), shell=True, preexec_fn=reenable_sigint, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
-        )
-
-        reader = codecs.getreader('utf-8')(process.stdout, errors='surrogateescape')
-        buf = ''
-        while True:
-            out = reader.read(1, 1)
-            if out:
-                sys.stdout.write(out)
-                sys.stdout.flush()
-                buf += out
-            elif out == '' and process.poll() != None:
-                break
-
-    finally:
-        signal.signal(signal.SIGINT, signal.SIG_DFL)
-    return process.returncode, buf
 
 
 def prepare_update_layer_command(options, branch, layer, initial=False):
@@ -417,7 +386,7 @@ def main():
 
                     cmd = prepare_update_layer_command(options, branchobj, layer, initial=True)
                     logger.debug('Running layer update command: %s' % cmd)
-                    ret, output = run_command_interruptible(cmd)
+                    ret, output = utils.run_command_interruptible(cmd)
                     logger.debug('output: %s' % output)
                     if ret == 254:
                         # Interrupted by user, break out of loop
@@ -491,7 +460,7 @@ def main():
                     cmd = prepare_update_layer_command(options, branchobj, layer)
                     logger.debug('Running layer update command: %s' % cmd)
                     layerupdate.started = datetime.now()
-                    ret, output = run_command_interruptible(cmd)
+                    ret, output = utils.run_command_interruptible(cmd)
                     layerupdate.finished = datetime.now()
 
                     # We need to get layerbranch here because it might not have existed until
