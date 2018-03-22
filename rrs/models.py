@@ -9,11 +9,11 @@ import os
 import os.path
 sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__), '../')))
 
-from datetime import date
+from datetime import date, datetime
 
 from django.db import models
 from django.contrib.auth.models import User
-from layerindex.models import Recipe, LayerBranch
+from layerindex.models import Recipe, LayerBranch, PythonEnvironment
 from django.core.exceptions import ObjectDoesNotExist
 
 
@@ -36,6 +36,9 @@ class MaintenancePlan(models.Model):
 class MaintenancePlanLayerBranch(models.Model):
     plan = models.ForeignKey(MaintenancePlan)
     layerbranch = models.ForeignKey(LayerBranch)
+    python3_switch_date = models.DateTimeField('Commit date to switch to Python 3', default=datetime(2016, 6, 2))
+    python2_environment = models.ForeignKey(PythonEnvironment, related_name='maintplan_layerbranch_python2_set', blank=True, null=True, help_text='Environment to use for Python 2 commits')
+    python3_environment = models.ForeignKey(PythonEnvironment, related_name='maintplan_layerbranch_python3_set', blank=True, null=True, help_text='Environment to use for Python 3 commits')
 
     class Meta:
         verbose_name_plural = "Maintenance plan layer branches"
