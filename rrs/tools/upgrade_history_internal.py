@@ -62,12 +62,12 @@ def _create_upgrade(recipe_data, layerbranch, ct, title, info, logger, initial=F
     pn = recipe_data.getVar('PN', True)
     pv = recipe_data.getVar('PV', True)
 
-    try:
-        recipe = Recipe.objects.get(pn=pn, layerbranch=layerbranch)
-    except Exception as e:
+    recipes = Recipe.objects.filter(pn=pn, layerbranch=layerbranch).order_by('id')
+    if not recipes:
         logger.warn("%s: Not found in Layer branch %s." %
                     (pn, str(layerbranch)))
         return
+    recipe = recipes[0]
 
     try:
         latest_upgrade = RecipeUpgrade.objects.filter(
