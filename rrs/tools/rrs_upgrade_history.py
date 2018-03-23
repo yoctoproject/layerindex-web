@@ -85,7 +85,7 @@ def run_internal(maintplanlayerbranch, commit, commitdate, options, logger, bitb
     Upgrade history handler.
 """
 def upgrade_history(options, logger):
-    from rrs.models import MaintenancePlan
+    from rrs.models import MaintenancePlan, RecipeUpgrade
 
     # start date
     now = datetime.today()
@@ -93,7 +93,6 @@ def upgrade_history(options, logger):
     if options.initial:
         # starting date of the yocto project 1.6 release
         since = "2013-11-11"
-        #RecipeUpgrade.objects.all().delete()
     else:
         # FIXME this is awful - we should be storing the last commit somewhere
         since = (now - timedelta(days=8)).strftime("%Y-%m-%d")
@@ -105,6 +104,8 @@ def upgrade_history(options, logger):
     for maintplan in maintplans:
         for maintplanbranch in maintplan.maintenanceplanlayerbranch_set.all():
             layerbranch = maintplanbranch.layerbranch
+            if options.initial and options.fullreload and not options.dry_run:
+                RecipeUpgrade.objects.filter(recipe__layerbranch=layerbranch).delete()
             layer = layerbranch.layer
             urldir = layer.get_fetch_dir()
             repodir = os.path.join(fetchdir, urldir)
@@ -157,7 +158,15 @@ if __name__=="__main__":
             help = "Do not write any data back to the database",
             action="store_true", dest="dry_run", default=False)
 
+    parser.add_option("--fullreload",
+            help="Reload upgrade data from scratch (requires -i/--initial)",
+            action="store_true", dest="fullreload", default=False)
+
     options, args = parser.parse_args(sys.argv)
     logger.setLevel(options.loglevel)
+
+    if options.fullreload and not options.initial:
+        logger.error('--fullreload requires -i/--initial')
+        sys.exit(1)
 
     upgrade_history(options, logger)
