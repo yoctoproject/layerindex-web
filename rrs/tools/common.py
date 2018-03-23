@@ -108,7 +108,7 @@ def load_recipes(layerbranch, bitbakepath, fetchdir, settings, logger,
             if hasattr(tinfoil, 'parse_recipe_file'):
                 data = tinfoil.parse_recipe_file(fn, appends=False, config_data=d)
             else:
-                data = bb.cache.Cache.loadDataFull(fn, [], d)
+                data = bb.cache.Cache.loadDataFull(str(fn), [], d)
 
             try:
                 pv = data.getVar('PV', True)
