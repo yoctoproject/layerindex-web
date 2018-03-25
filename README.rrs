@@ -34,7 +34,7 @@ $ ./scripts/tools/import_layer.py  -s meta git://git.openembedded.org/openembedd
 
 $ ./layerindex/update.py
 $ ./rrs/tools/rrs_maintainer_history.py -d
-$ ./rrs/tools/rrs_upgrade_history.py -d --initial
+$ ./rrs/tools/rrs_upgrade_history.py -d
 $ ./rrs/tools/rrs_upstream_history.py -d
 $ ./rrs/tools/rrs_distros.py -d
 

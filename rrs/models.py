@@ -39,6 +39,8 @@ class MaintenancePlanLayerBranch(models.Model):
     python3_switch_date = models.DateTimeField('Commit date to switch to Python 3', default=datetime(2016, 6, 2))
     python2_environment = models.ForeignKey(PythonEnvironment, related_name='maintplan_layerbranch_python2_set', blank=True, null=True, help_text='Environment to use for Python 2 commits')
     python3_environment = models.ForeignKey(PythonEnvironment, related_name='maintplan_layerbranch_python3_set', blank=True, null=True, help_text='Environment to use for Python 3 commits')
+    upgrade_date = models.DateTimeField('Recipe upgrade date', blank=True, null=True)
+    upgrade_rev = models.CharField('Recipe upgrade revision ', max_length=80, blank=True)
 
     class Meta:
         verbose_name_plural = "Maintenance plan layer branches"

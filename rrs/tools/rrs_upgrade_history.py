@@ -87,16 +87,6 @@ def run_internal(maintplanlayerbranch, commit, commitdate, options, logger, bitb
 def upgrade_history(options, logger):
     from rrs.models import MaintenancePlan, RecipeUpgrade
 
-    # start date
-    now = datetime.today()
-    today = now.strftime("%Y-%m-%d")
-    if options.initial:
-        # starting date of the yocto project 1.6 release
-        since = "2013-11-11"
-    else:
-        # FIXME this is awful - we should be storing the last commit somewhere
-        since = (now - timedelta(days=8)).strftime("%Y-%m-%d")
-
     maintplans = MaintenancePlan.objects.filter(updates_enabled=True)
     if not maintplans.exists():
         logger.error('No enabled maintenance plans found')
@@ -104,16 +94,25 @@ def upgrade_history(options, logger):
     for maintplan in maintplans:
         for maintplanbranch in maintplan.maintenanceplanlayerbranch_set.all():
             layerbranch = maintplanbranch.layerbranch
-            if options.initial and options.fullreload and not options.dry_run:
+            if options.fullreload and not options.dry_run:
                 RecipeUpgrade.objects.filter(recipe__layerbranch=layerbranch).delete()
             layer = layerbranch.layer
             urldir = layer.get_fetch_dir()
             repodir = os.path.join(fetchdir, urldir)
             layerdir = os.path.join(repodir, layerbranch.vcs_subdir)
 
-            commits = utils.runcmd("git log --since='" + since +
-                                    "' --format='%H %ct' --reverse origin/master", repodir,
-                                    logger=logger)
+            if maintplanbranch.upgrade_rev and not options.fullreload:
+                initial = False
+                since = maintplanbranch.upgrade_date
+                since_option = '%s..origin/master' % maintplanbranch.upgrade_rev
+            else:
+                initial = True
+                since = options.since
+                since_option = '--since="%s" origin/master' % since
+
+            commits = utils.runcmd("git log %s --format='%%H %%ct' --reverse" % since_option,
+                                   repodir,
+                                   logger=logger)
             commit_list = commits.split('\n')
 
             bitbake_map = {}
@@ -125,30 +124,36 @@ def upgrade_history(options, logger):
             for commit in bitbake_commit_list:
                 bitbake_map[commit] = '39780b1ccbd76579db0fc6fb9369c848a3bafa9d'
 
-            if options.initial:
+            if initial:
                 logger.debug("Adding initial upgrade history ....")
 
                 ct, ctepoch = commit_list.pop(0).split()
                 ctdate = datetime.fromtimestamp(int(ctepoch))
                 run_internal(maintplanbranch, ct, ctdate, options, logger, bitbake_map, initial=True)
 
-            logger.debug("Adding upgrade history from %s to %s ..." % (since, today))
+            logger.debug("Adding upgrade history from %s to %s ..." % (since, datetime.today().strftime("%Y-%m-%d")))
             for item in commit_list:
                 if item:
                     ct, ctepoch = item.split()
                     ctdate = datetime.fromtimestamp(int(ctepoch))
                     logger.debug("Analysing commit %s ..." % ct)
                     run_internal(maintplanbranch, ct, ctdate, options, logger, bitbake_map)
+                    if not options.dry_run:
+                        maintplanbranch.upgrade_rev = ct
+                        maintplanbranch.upgrade_date = ctdate
+                        maintplanbranch.save()
 
             if commit_list:
                 utils.runcmd("git clean -dfx", repodir, logger=logger)
 
 if __name__=="__main__":
     parser = optparse.OptionParser(usage = """%prog [options]""")
-    
-    parser.add_option("-i", "--initial",
-            help = "Do initial population of upgrade histories",
-            action="store_true", dest="initial", default=False)
+
+    # Starting date of the yocto project 1.6 release
+    DEFAULT_SINCE_DATE = '2013-11-11'
+    parser.add_option("-s", "--since",
+            help="Specify initial date for importing recipe upgrades (default '%s')" % DEFAULT_SINCE_DATE,
+            action="store", dest="since", default=DEFAULT_SINCE_DATE)
 
     parser.add_option("-d", "--debug",
             help = "Enable debug output",
@@ -159,14 +164,10 @@ if __name__=="__main__":
             action="store_true", dest="dry_run", default=False)
 
     parser.add_option("--fullreload",
-            help="Reload upgrade data from scratch (requires -i/--initial)",
+            help="Reload upgrade data from scratch",
             action="store_true", dest="fullreload", default=False)
 
     options, args = parser.parse_args(sys.argv)
     logger.setLevel(options.loglevel)
-
-    if options.fullreload and not options.initial:
-        logger.error('--fullreload requires -i/--initial')
-        sys.exit(1)
 
     upgrade_history(options, logger)

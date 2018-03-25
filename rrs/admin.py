@@ -13,6 +13,7 @@ from rrs.models import Release, Milestone, Maintainer, RecipeMaintainerHistory, 
 
 class MaintenancePlanLayerBranchInline(admin.StackedInline):
     model = MaintenancePlanLayerBranch
+    readonly_fields = ['upgrade_date', 'upgrade_rev']
     min_num = 1
     extra = 0
 
