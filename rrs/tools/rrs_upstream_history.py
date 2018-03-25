@@ -173,35 +173,36 @@ if __name__=="__main__":
 
                     (tinfoil, d, recipes) = load_recipes(layerbranch, bitbakepath,
                             fetchdir, settings, logger,  recipe_files=recipe_files)
+                    try:
 
-                    if not recipes:
+                        if not recipes:
+                            continue
+
+                        utils.setup_core_layer_sys_path(settings, layerbranch.branch.name)
+
+                        for recipe_data in recipes:
+                            set_regexes(recipe_data)
+
+                        history = RecipeUpstreamHistory(start_date = datetime.now())
+
+                        result = []
+                        for recipe_data in recipes:
+                            get_upstream_info(layerbranch, recipe_data, result)
+
+                        history.end_date = datetime.now()
+                        history.save()
+
+                        for res in result:
+                            (recipe, ru) = res
+
+                            ru.history = history
+                            ru.save()
+
+                            logger.debug('%s: layer branch %s, pv %s, upstream (%s)' % (recipe.pn,
+                                str(layerbranch), recipe.pv, str(ru)))
+
+                    finally:
                         tinfoil.shutdown()
-                        continue
-
-                    utils.setup_core_layer_sys_path(settings, layerbranch.branch.name)
-
-                    for recipe_data in recipes:
-                        set_regexes(recipe_data)
-
-                    history = RecipeUpstreamHistory(start_date = datetime.now())
-
-                    result = []
-                    for recipe_data in recipes:
-                        get_upstream_info(layerbranch, recipe_data, result)
-
-                    history.end_date = datetime.now()
-                    history.save()
-
-                    for res in result:
-                        (recipe, ru) = res
-
-                        ru.history = history
-                        ru.save()
-
-                        logger.debug('%s: layer branch %s, pv %s, upstream (%s)' % (recipe.pn,
-                            str(layerbranch), recipe.pv, str(ru)))
-
-                    tinfoil.shutdown()
                     if options.dry_run:
                         raise DryRunRollbackException
     except DryRunRollbackException:
