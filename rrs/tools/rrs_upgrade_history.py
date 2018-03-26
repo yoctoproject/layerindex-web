@@ -23,6 +23,8 @@ from common import common_setup, get_logger
 common_setup()
 from layerindex import utils
 
+import git
+
 utils.setup_django()
 import settings
 
@@ -110,6 +112,9 @@ def upgrade_history(options, logger):
                 since = options.since
                 since_option = '--since="%s" origin/master' % since
 
+            repo = git.Repo(repodir)
+            assert repo.bare == False
+
             commits = utils.runcmd("git log %s --format='%%H %%ct' --reverse" % since_option,
                                    repodir,
                                    logger=logger)
@@ -136,6 +141,25 @@ def upgrade_history(options, logger):
                 if item:
                     ct, ctepoch = item.split()
                     ctdate = datetime.fromtimestamp(int(ctepoch))
+                    commitobj = repo.commit(ct)
+                    touches_recipe = False
+                    for parent in commitobj.parents:
+                        diff = parent.diff(commitobj)
+                        for diffitem in diff:
+                            if diffitem.a_path.endswith(('.bb', '.inc')) or diffitem.b_path.endswith(('.bb', '.inc')):
+                                # We need to look at this commit
+                                touches_recipe = True
+                                break
+                        if touches_recipe:
+                            break
+                    if not touches_recipe:
+                        # No recipes changed in this commit
+                        # NOTE: Whilst it's possible that a change to a class might alter what's
+                        # in the recipe, we can ignore that since we are only concerned with actual
+                        # upgrades which would always require some sort of change to the recipe
+                        # or an include file, so we can safely skip commits that don't do that
+                        logger.debug("Skipping commit %s" % ct)
+                        continue
                     logger.debug("Analysing commit %s ..." % ct)
                     run_internal(maintplanbranch, ct, ctdate, options, logger, bitbake_map)
                     if not options.dry_run:
