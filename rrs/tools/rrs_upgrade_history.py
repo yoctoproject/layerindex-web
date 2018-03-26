@@ -93,82 +93,91 @@ def upgrade_history(options, logger):
     if not maintplans.exists():
         logger.error('No enabled maintenance plans found')
         sys.exit(1)
-    for maintplan in maintplans:
-        for maintplanbranch in maintplan.maintenanceplanlayerbranch_set.all():
-            layerbranch = maintplanbranch.layerbranch
-            if options.fullreload and not options.dry_run:
-                RecipeUpgrade.objects.filter(recipe__layerbranch=layerbranch).delete()
-            layer = layerbranch.layer
-            urldir = layer.get_fetch_dir()
-            repodir = os.path.join(fetchdir, urldir)
-            layerdir = os.path.join(repodir, layerbranch.vcs_subdir)
 
-            if maintplanbranch.upgrade_rev and not options.fullreload:
-                initial = False
-                since = maintplanbranch.upgrade_date
-                since_option = '%s..origin/master' % maintplanbranch.upgrade_rev
-            else:
-                initial = True
-                since = options.since
-                since_option = '--since="%s" origin/master' % since
+    lockfn = os.path.join(fetchdir, "layerindex.lock")
+    lockfile = utils.lock_file(lockfn)
+    if not lockfile:
+        logger.error("Layer index lock timeout expired")
+        sys.exit(1)
+    try:
+        for maintplan in maintplans:
+            for maintplanbranch in maintplan.maintenanceplanlayerbranch_set.all():
+                layerbranch = maintplanbranch.layerbranch
+                if options.fullreload and not options.dry_run:
+                    RecipeUpgrade.objects.filter(recipe__layerbranch=layerbranch).delete()
+                layer = layerbranch.layer
+                urldir = layer.get_fetch_dir()
+                repodir = os.path.join(fetchdir, urldir)
+                layerdir = os.path.join(repodir, layerbranch.vcs_subdir)
 
-            repo = git.Repo(repodir)
-            assert repo.bare == False
+                if maintplanbranch.upgrade_rev and not options.fullreload:
+                    initial = False
+                    since = maintplanbranch.upgrade_date
+                    since_option = '%s..origin/master' % maintplanbranch.upgrade_rev
+                else:
+                    initial = True
+                    since = options.since
+                    since_option = '--since="%s" origin/master' % since
 
-            commits = utils.runcmd("git log %s --format='%%H %%ct' --reverse" % since_option,
-                                   repodir,
-                                   logger=logger)
-            commit_list = commits.split('\n')
+                repo = git.Repo(repodir)
+                assert repo.bare == False
 
-            bitbake_map = {}
-            # Filter out some bad commits
-            bitbake_commits = utils.runcmd("git rev-list fef18b445c0cb6b266cd939b9c78d7cbce38663f^..39780b1ccbd76579db0fc6fb9369c848a3bafa9d^",
-                                bitbakepath,
-                                logger=logger)
-            bitbake_commit_list = bitbake_commits.splitlines()
-            for commit in bitbake_commit_list:
-                bitbake_map[commit] = '39780b1ccbd76579db0fc6fb9369c848a3bafa9d'
+                commits = utils.runcmd("git log %s --format='%%H %%ct' --reverse" % since_option,
+                                    repodir,
+                                    logger=logger)
+                commit_list = commits.split('\n')
 
-            if initial:
-                logger.debug("Adding initial upgrade history ....")
+                bitbake_map = {}
+                # Filter out some bad commits
+                bitbake_commits = utils.runcmd("git rev-list fef18b445c0cb6b266cd939b9c78d7cbce38663f^..39780b1ccbd76579db0fc6fb9369c848a3bafa9d^",
+                                    bitbakepath,
+                                    logger=logger)
+                bitbake_commit_list = bitbake_commits.splitlines()
+                for commit in bitbake_commit_list:
+                    bitbake_map[commit] = '39780b1ccbd76579db0fc6fb9369c848a3bafa9d'
 
-                ct, ctepoch = commit_list.pop(0).split()
-                ctdate = datetime.fromtimestamp(int(ctepoch))
-                run_internal(maintplanbranch, ct, ctdate, options, logger, bitbake_map, initial=True)
+                if initial:
+                    logger.debug("Adding initial upgrade history ....")
 
-            logger.debug("Adding upgrade history from %s to %s ..." % (since, datetime.today().strftime("%Y-%m-%d")))
-            for item in commit_list:
-                if item:
-                    ct, ctepoch = item.split()
+                    ct, ctepoch = commit_list.pop(0).split()
                     ctdate = datetime.fromtimestamp(int(ctepoch))
-                    commitobj = repo.commit(ct)
-                    touches_recipe = False
-                    for parent in commitobj.parents:
-                        diff = parent.diff(commitobj)
-                        for diffitem in diff:
-                            if diffitem.a_path.endswith(('.bb', '.inc')) or diffitem.b_path.endswith(('.bb', '.inc')):
-                                # We need to look at this commit
-                                touches_recipe = True
-                                break
-                        if touches_recipe:
-                            break
-                    if not touches_recipe:
-                        # No recipes changed in this commit
-                        # NOTE: Whilst it's possible that a change to a class might alter what's
-                        # in the recipe, we can ignore that since we are only concerned with actual
-                        # upgrades which would always require some sort of change to the recipe
-                        # or an include file, so we can safely skip commits that don't do that
-                        logger.debug("Skipping commit %s" % ct)
-                        continue
-                    logger.debug("Analysing commit %s ..." % ct)
-                    run_internal(maintplanbranch, ct, ctdate, options, logger, bitbake_map)
-                    if not options.dry_run:
-                        maintplanbranch.upgrade_rev = ct
-                        maintplanbranch.upgrade_date = ctdate
-                        maintplanbranch.save()
+                    run_internal(maintplanbranch, ct, ctdate, options, logger, bitbake_map, initial=True)
 
-            if commit_list:
-                utils.runcmd("git clean -dfx", repodir, logger=logger)
+                logger.debug("Adding upgrade history from %s to %s ..." % (since, datetime.today().strftime("%Y-%m-%d")))
+                for item in commit_list:
+                    if item:
+                        ct, ctepoch = item.split()
+                        ctdate = datetime.fromtimestamp(int(ctepoch))
+                        commitobj = repo.commit(ct)
+                        touches_recipe = False
+                        for parent in commitobj.parents:
+                            diff = parent.diff(commitobj)
+                            for diffitem in diff:
+                                if diffitem.a_path.endswith(('.bb', '.inc')) or diffitem.b_path.endswith(('.bb', '.inc')):
+                                    # We need to look at this commit
+                                    touches_recipe = True
+                                    break
+                            if touches_recipe:
+                                break
+                        if not touches_recipe:
+                            # No recipes changed in this commit
+                            # NOTE: Whilst it's possible that a change to a class might alter what's
+                            # in the recipe, we can ignore that since we are only concerned with actual
+                            # upgrades which would always require some sort of change to the recipe
+                            # or an include file, so we can safely skip commits that don't do that
+                            logger.debug("Skipping commit %s" % ct)
+                            continue
+                        logger.debug("Analysing commit %s ..." % ct)
+                        run_internal(maintplanbranch, ct, ctdate, options, logger, bitbake_map)
+                        if not options.dry_run:
+                            maintplanbranch.upgrade_rev = ct
+                            maintplanbranch.upgrade_date = ctdate
+                            maintplanbranch.save()
+
+                if commit_list:
+                    utils.runcmd("git clean -dfx", repodir, logger=logger)
+    finally:
+        utils.unlock_file(lockfile)
 
 if __name__=="__main__":
     parser = optparse.OptionParser(usage = """%prog [options]""")

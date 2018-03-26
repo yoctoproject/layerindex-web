@@ -147,12 +147,17 @@ if __name__=="__main__":
 
     logger.debug("Starting upstream history...")
 
-    try:
-        maintplans = MaintenancePlan.objects.filter(updates_enabled=True)
-        if not maintplans.exists():
-            logger.error('No enabled maintenance plans found')
-            sys.exit(1)
+    maintplans = MaintenancePlan.objects.filter(updates_enabled=True)
+    if not maintplans.exists():
+        logger.error('No enabled maintenance plans found')
+        sys.exit(1)
 
+    lockfn = os.path.join(fetchdir, "layerindex.lock")
+    lockfile = utils.lock_file(lockfn)
+    if not lockfile:
+        logger.error("Layer index lock timeout expired")
+        sys.exit(1)
+    try:
         origsyspath = sys.path
 
         for maintplan in maintplans:
@@ -207,3 +212,5 @@ if __name__=="__main__":
                         raise DryRunRollbackException
     except DryRunRollbackException:
         pass
+    finally:
+        utils.unlock_file(lockfile)
