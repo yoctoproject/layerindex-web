@@ -178,30 +178,33 @@ def generate_history(options, layerbranch_id, commit, logger):
     (tinfoil, d, recipes) = load_recipes(layerbranch, bitbakepath,
                         fetchdir, settings, logger, recipe_files=fns,
                         nocheckout=True)
-
-    if options.initial:
-        title = options.initial
-        info = 'No maintainer;;' + utils.runcmd("git log  --format='%ad;%cd' --date=rfc -n 1 " \
-                        + commit, destdir=repodir, logger=logger)
-        recordcommit = ''
-    else:
-        title = utils.runcmd("git log --format='%s' -n 1 " + commit,
-                                        repodir, logger=logger)
-        info = utils.runcmd("git log  --format='%an;%ae;%ad;%cd' --date=rfc -n 1 " \
-                        + commit, destdir=repodir, logger=logger)
-        recordcommit = commit
-
     try:
-        with transaction.atomic():
-            for recipe_data in recipes:
-                _create_upgrade(recipe_data, layerbranch, recordcommit, title,
-                        info, logger, initial=options.initial)
-            if options.dry_run:
-                raise DryRunRollbackException
-    except DryRunRollbackException:
-        pass
 
-    tinfoil.shutdown()
+        if options.initial:
+            title = options.initial
+            info = 'No maintainer;;' + utils.runcmd("git log  --format='%ad;%cd' --date=rfc -n 1 " \
+                            + commit, destdir=repodir, logger=logger)
+            recordcommit = ''
+        else:
+            title = utils.runcmd("git log --format='%s' -n 1 " + commit,
+                                            repodir, logger=logger)
+            info = utils.runcmd("git log  --format='%an;%ae;%ad;%cd' --date=rfc -n 1 " \
+                            + commit, destdir=repodir, logger=logger)
+            recordcommit = commit
+
+        try:
+            with transaction.atomic():
+                for recipe_data in recipes:
+                    _create_upgrade(recipe_data, layerbranch, recordcommit, title,
+                            info, logger, initial=options.initial)
+                if options.dry_run:
+                    raise DryRunRollbackException
+        except DryRunRollbackException:
+            pass
+
+    finally:
+        if tinfoil and hasattr(tinfoil, 'shutdown') and (LooseVersion(bb.__version__) > LooseVersion("1.27")):
+            tinfoil.shutdown()
 
 
 if __name__=="__main__":
