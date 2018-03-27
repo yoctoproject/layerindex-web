@@ -110,7 +110,11 @@ def upgrade_history(options, logger):
                 repodir = os.path.join(fetchdir, urldir)
                 layerdir = os.path.join(repodir, layerbranch.vcs_subdir)
 
-                if maintplanbranch.upgrade_rev and not options.fullreload:
+                if options.commit:
+                    initial = False
+                    since = options.commit
+                    since_option = '%s^..%s' % (options.commit, options.commit)
+                elif maintplanbranch.upgrade_rev and not options.fullreload:
                     initial = False
                     since = maintplanbranch.upgrade_date
                     since_option = '%s..origin/master' % maintplanbranch.upgrade_rev
@@ -187,6 +191,10 @@ if __name__=="__main__":
     parser.add_option("-s", "--since",
             help="Specify initial date for importing recipe upgrades (default '%s')" % DEFAULT_SINCE_DATE,
             action="store", dest="since", default=DEFAULT_SINCE_DATE)
+
+    parser.add_option("-c", "--commit",
+            help="Specify a single commit to import (for debugging)",
+            action="store", dest="commit", default='')
 
     parser.add_option("-d", "--debug",
             help = "Enable debug output",
