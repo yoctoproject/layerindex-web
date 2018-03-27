@@ -109,9 +109,9 @@ def _create_upgrade(recipe_data, layerbranch, ct, title, info, logger, initial=F
                     _save_upgrade(recipe, pv, ct, title, info, logger)
         except KeyboardInterrupt:
             raise
-        except:
+        except Exception as e:
             logger.error("%s: fail to detect upgrade (%s -> %s)" \
-                            " in ct %s." % (pn, prev_pv, pv, ct))
+                            " in ct %s: %s" % (pn, prev_pv, pv, ct, str(e)))
 
 
 """
