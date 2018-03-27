@@ -130,6 +130,9 @@ def _get_recipes_filenames(ct, repodir, layerdir, logger):
             # Skip deleted files in commit
             if not os.path.exists(fullpath):
                 continue
+            if not fullpath.startswith(layerdir_start):
+                # Ignore files in repo that are outside of the layer
+                continue
             (typename, _, filename) = recipeparse.detect_file_type(fullpath,
                                         layerdir_start)
             if typename == 'recipe':
