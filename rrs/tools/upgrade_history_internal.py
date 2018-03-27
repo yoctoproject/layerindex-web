@@ -62,6 +62,10 @@ def _create_upgrade(recipe_data, layerbranch, ct, title, info, logger, initial=F
     pn = recipe_data.getVar('PN', True)
     pv = recipe_data.getVar('PV', True)
 
+    if '..' in pv or pv.endswith('.'):
+        logger.warn('Invalid version for recipe %s in commit %s, ignoring' % (recipe_data.getVar('FILE', True), ct))
+        return
+
     recipes = Recipe.objects.filter(pn=pn, layerbranch=layerbranch).order_by('id')
     if not recipes:
         logger.warn("%s: Not found in Layer branch %s." %
