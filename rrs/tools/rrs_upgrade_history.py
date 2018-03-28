@@ -177,9 +177,6 @@ def upgrade_history(options, logger):
                             maintplanbranch.upgrade_rev = ct
                             maintplanbranch.upgrade_date = ctdate
                             maintplanbranch.save()
-
-                if commit_list:
-                    utils.runcmd("git clean -dfx", repodir, logger=logger)
     finally:
         utils.unlock_file(lockfile)
 
