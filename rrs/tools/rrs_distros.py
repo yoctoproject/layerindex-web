@@ -12,6 +12,7 @@ import os.path
 import optparse
 import logging
 from datetime import datetime
+import shutil
 
 sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__))))
 from common import common_setup, load_recipes, \
@@ -108,7 +109,7 @@ if __name__=="__main__":
                 for item in maintplan.maintenanceplanlayerbranch_set.all():
                     layerbranch = item.layerbranch
                     sys.path = origsyspath
-                    (tinfoil, d, recipes) = load_recipes(layerbranch, bitbakepath,
+                    (tinfoil, d, recipes, tempdir) = load_recipes(layerbranch, bitbakepath,
                             fetchdir, settings, logger)
                     try:
                         if not recipes:
@@ -144,6 +145,7 @@ if __name__=="__main__":
                                     str(layerbranch), distro, alias))
                     finally:
                         tinfoil.shutdown()
+                        shutil.rmtree(tempdir)
             if options.dry_run:
                 raise DryRunRollbackException
     except DryRunRollbackException:

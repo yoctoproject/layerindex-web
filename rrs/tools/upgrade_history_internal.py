@@ -16,6 +16,7 @@ import optparse
 import logging
 import re
 from distutils.version import LooseVersion
+import shutil
 
 sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__))))
 from common import common_setup, get_pv_type, load_recipes, \
@@ -182,7 +183,7 @@ def generate_history(options, layerbranch_id, commit, logger):
     utils.runcmd("git clean -dfx", bitbakepath, logger=logger)
     sys.path.insert(0, os.path.join(bitbakepath, 'lib'))
 
-    (tinfoil, d, recipes) = load_recipes(layerbranch, bitbakepath,
+    (tinfoil, d, recipes, tempdir) = load_recipes(layerbranch, bitbakepath,
                         fetchdir, settings, logger, recipe_files=fns,
                         nocheckout=True)
     try:
@@ -212,6 +213,7 @@ def generate_history(options, layerbranch_id, commit, logger):
     finally:
         if tinfoil and hasattr(tinfoil, 'shutdown') and (LooseVersion(bb.__version__) > LooseVersion("1.27")):
             tinfoil.shutdown()
+        shutil.rmtree(tempdir)
 
 
 if __name__=="__main__":

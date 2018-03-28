@@ -121,7 +121,7 @@ def load_recipes(layerbranch, bitbakepath, fetchdir, settings, logger,
                     % (layerbranch, fn, str(e)))
             continue
 
-    return (tinfoil, d, recipes)
+    return (tinfoil, d, recipes, tempdir)
 
 # XXX: Copied from oe-core recipeutils to avoid import errors.
 def get_recipe_pv_without_srcpv(pv, uri_type):
