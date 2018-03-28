@@ -119,12 +119,14 @@ def _create_upgrade(recipe_data, layerbranch, ct, title, info, logger, initial=F
     Returns a list containing the fullpaths to the recipes from a commit.
 """
 def _get_recipes_filenames(ct, repodir, layerdir, logger):
+    import glob
     ct_files = []
     layerdir_start = os.path.normpath(layerdir) + os.sep
 
     files = utils.runcmd("git log --name-only --format='%n' -n 1 " + ct,
                             repodir, logger=logger)
 
+    incdirs = []
     for f in files.split("\n"):
         if f != "":
             fullpath = os.path.join(repodir, f)
@@ -138,6 +140,15 @@ def _get_recipes_filenames(ct, repodir, layerdir, logger):
                                         layerdir_start)
             if typename == 'recipe':
                 ct_files.append(fullpath)
+            elif fullpath.endswith('.inc'):
+                fpath = os.path.dirname(fullpath)
+                if not fpath in incdirs:
+                    incdirs.append(fpath)
+    for fpath in incdirs:
+        # Let's just assume that all .bb files next to a .inc need to be checked
+        for f in glob.glob(os.path.join(fpath, '*.bb')):
+            if not f in ct_files:
+                ct_files.append(f)
 
     return ct_files
 
