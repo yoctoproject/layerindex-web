@@ -94,14 +94,14 @@ def maintainer_history(options, logger):
                 repodir = os.path.join(fetchdir, urldir)
                 layerdir = os.path.join(repodir, layerbranch.vcs_subdir)
 
-                utils.runcmd("git checkout master -f", layerdir, logger=logger)
                 maintainers_full_path = os.path.join(layerdir, MAINTAINERS_INCLUDE_PATH)
                 if not os.path.exists(maintainers_full_path):
                     logger.debug('No maintainers.inc for %s, skipping' % layerbranch)
                     continue
 
-                commits = utils.runcmd("git log --format='%H' --reverse --date=rfc " +
-                        os.path.join(layerbranch.vcs_subdir, MAINTAINERS_INCLUDE_PATH), repodir, logger=logger)
+                commits = utils.runcmd("git log --format='%%H' --reverse --date=rfc origin/master %s"
+                                       % os.path.join(layerbranch.vcs_subdir, MAINTAINERS_INCLUDE_PATH),
+                                       repodir, logger=logger)
 
                 try:
                     with transaction.atomic():
@@ -155,8 +155,6 @@ def maintainer_history(options, logger):
                                     rm.save()
                                     logger.debug("%s: Not found maintainer in commit %s set to 'No maintainer'." % \
                                                     (recipe.pn, rms.sha1))
-
-                            utils.runcmd("git checkout master -f", repodir, logger=logger)
 
                         # set new recipes to no maintainer if don't have one
                         rms = RecipeMaintainerHistory.get_last()
