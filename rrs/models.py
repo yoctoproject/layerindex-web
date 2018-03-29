@@ -210,6 +210,7 @@ class RecipeMaintainerHistory(models.Model):
     date = models.DateTimeField(db_index=True)
     author = models.ForeignKey(Maintainer)
     sha1 = models.CharField(max_length=64, unique=True)
+    layerbranch = models.ForeignKey(LayerBranch, blank=True, null=True)
 
     @staticmethod
     def get_last():

@@ -88,6 +88,8 @@ def maintainer_history(options, logger):
         for maintplan in maintplans:
             for item in maintplan.maintenanceplanlayerbranch_set.all():
                 layerbranch = item.layerbranch
+                if options.fullreload and not options.dry_run:
+                    RecipeMaintainerHistory.objects.filter(layerbranch=layerbranch).delete()
                 urldir = str(layerbranch.layer.get_fetch_dir())
                 repodir = os.path.join(fetchdir, urldir)
                 layerdir = os.path.join(repodir, layerbranch.vcs_subdir)
@@ -115,7 +117,7 @@ def maintainer_history(options, logger):
 
                             author = Maintainer.create_or_update(author_name, author_email)
                             rms = RecipeMaintainerHistory(title=title, date=date, author=author,
-                                    sha1=commit)
+                                    sha1=commit, layerbranch=layerbranch)
                             rms.save()
 
                             utils.runcmd("git checkout %s -f" % commit,
@@ -176,7 +178,11 @@ def maintainer_history(options, logger):
 
 if __name__=="__main__":
     parser = optparse.OptionParser(usage = """%prog [options]""")
-    
+
+    parser.add_option("--fullreload",
+            help="Reload upgrade data from scratch",
+            action="store_true", dest="fullreload", default=False)
+
     parser.add_option("-d", "--debug",
             help = "Enable debug output",
             action="store_const", const=logging.DEBUG, dest="loglevel",
