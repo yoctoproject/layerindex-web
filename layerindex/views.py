@@ -231,7 +231,7 @@ def bulk_change_patch_view(request, pk):
                     mimetype = 'application/x-gzip'
                 else:
                     mimetype = 'text/x-diff'
-                response = HttpResponse(mimetype=mimetype)
+                response = HttpResponse(content_type=mimetype)
                 response['Content-Disposition'] = 'attachment; filename="%s"' % os.path.basename(fn)
                 with open(fn, "rb") as f:
                     data = f.read()
