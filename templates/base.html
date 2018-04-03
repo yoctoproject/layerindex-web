@@ -74,6 +74,9 @@
                             <li><a href="{% url 'duplicates' 'master' %}">Duplicates</a></li>
                             <li><a href="{% url 'update_list' %}">Updates</a></li>
                             <li><a href="{% url 'stats' %}">Statistics</a></li>
+                            {% if rrs_enabled %}
+                            <li><a href="{% url 'rrs_frontpage' %}">Recipe Maintenance</a></li>
+                            {% endif %}
                         </ul>
                     </li>
                     {% endif %}
