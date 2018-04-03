@@ -24,6 +24,7 @@
 
 <ul class="breadcrumb">
     <li><a href="{% url 'rrs_maintplan' maintplan_name %}">{{ maintplan_name }}</a> <span class="divider">&rarr;</span></li>
+    <li><a href="{% url 'layer_item' recipe.layerbranch.branch.name recipe.layerbranch.layer.name %}">{{ recipe.layerbranch.layer.name }}</a> <span class="divider">&rarr;</span></li>
     <li class="active">{{ recipe.name }}</li>
 </ul>
 
