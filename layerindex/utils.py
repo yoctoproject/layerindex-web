@@ -309,8 +309,10 @@ class ListHandler(logging.Handler):
         return log
 
 
-def lock_file(fn):
-    starttime = time.time()
+def lock_file(fn, timeout=30, logger=None):
+    start = time.time()
+    last = start
+    counter = 1
     while True:
         lock = open(fn, 'w')
         try:
@@ -318,8 +320,14 @@ def lock_file(fn):
             return lock
         except IOError:
             lock.close()
-            if time.time() - starttime > 30:
+            current = time.time()
+            if current - start > timeout:
                 return None
+            # Print a message in every 5 seconds
+            if logger and (current - last > 5):
+                last = current
+                logger.info('Trying to get lock on %s (tried %s seconds) ...' % (fn, (5 * counter)))
+                counter += 1
 
 def unlock_file(lock):
     fcntl.flock(lock, fcntl.LOCK_UN)

@@ -156,6 +156,9 @@ def main():
     parser.add_option("-l", "--layer",
             help = "Specify layers to update (use commas to separate multiple). Default is all published layers.",
             action="store", dest="layers")
+    parser.add_option("-t", "--timeout",
+            help = "Specify timeout in seconds to get layerindex.lock. Default is 30 seconds.",
+            type="int", action="store", dest="timeout", default=30)
     parser.add_option("-r", "--reload",
             help = "Reload recipe data instead of updating since last update",
             action="store_true", dest="reload")
@@ -265,7 +268,7 @@ def main():
         update.save()
     try:
         lockfn = os.path.join(fetchdir, "layerindex.lock")
-        lockfile = utils.lock_file(lockfn)
+        lockfile = utils.lock_file(lockfn, options.timeout, logger)
         if not lockfile:
             logger.error("Layer index lock timeout expired")
             sys.exit(1)
