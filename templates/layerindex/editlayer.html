@@ -196,6 +196,7 @@
             this.vcs_web_url = 'http://cgit.openembedded.org/' + reponame
             this.vcs_web_tree_base_url = 'http://cgit.openembedded.org/' + reponame + '/tree/%path%?h=%branch%'
             this.vcs_web_file_base_url = 'http://cgit.openembedded.org/' + reponame + '/tree/%path%?h=%branch%'
+            this.vcs_web_commit_url = 'http://cgit.openembedded.org/' + reponame + '/commit/?id=%hash%'
             this.vcs_web_type = 'cgit'
         }
         else if( repoval.indexOf('git.yoctoproject.org/') > -1 ) {
@@ -203,6 +204,7 @@
             this.vcs_web_url = 'http://git.yoctoproject.org/cgit/cgit.cgi/' + reponame
             this.vcs_web_tree_base_url = 'http://git.yoctoproject.org/cgit/cgit.cgi/' + reponame + '/tree/%path%?h=%branch%'
             this.vcs_web_file_base_url = 'http://git.yoctoproject.org/cgit/cgit.cgi/' + reponame + '/tree/%path%?h=%branch%'
+            this.vcs_web_commit_url = 'http://git.yoctoproject.org/cgit/cgit.cgi/' + reponame + '/commit/?id=%hash%'
             this.vcs_web_type = 'cgit'
         }
         else if( repoval.indexOf('github.com/') > -1 ) {
@@ -211,6 +213,7 @@
             this.vcs_web_url = 'http://github.com/' + reponame
             this.vcs_web_tree_base_url = 'http://github.com/' + reponame + '/tree/%branch%/'
             this.vcs_web_file_base_url = 'http://github.com/' + reponame + '/blob/%branch%/'
+            this.vcs_web_commit_url = 'http://github.com/' + reponame + '/commit/%hash%/'
             this.vcs_web_type = '(custom)'
         }
         else if( repoval.indexOf('bitbucket.org/') > -1 ) {
@@ -219,12 +222,14 @@
             this.vcs_web_url = 'http://bitbucket.org/' + reponame
             this.vcs_web_tree_base_url = 'http://bitbucket.org/' + reponame + '/src/%branch%/%path%?at=%branch%'
             this.vcs_web_file_base_url = 'http://bitbucket.org/' + reponame + '/src/%branch%/%path%?at=%branch%'
+            this.vcs_web_commit_url = 'http://bitbucket.org/' + reponame + '/commits/%hash%'
             this.vcs_web_type = '(custom)'
         }
         else {
             this.vcs_web_url = ''
             this.vcs_web_tree_base_url = ''
             this.vcs_web_file_base_url = ''
+            this.vcs_web_commit_url = ''
             this.vcs_web_type = '(custom)'
         }
     };
@@ -249,10 +254,12 @@
             readonly = $('#idx_vcs_web_type').prop('disabled')
             $('#id_vcs_web_tree_base_url').prop('readonly', readonly)
             $('#id_vcs_web_file_base_url').prop('readonly', readonly)
+            $('#id_vcs_web_commit_url').prop('readonly', readonly)
         }
         else {
             $('#id_vcs_web_tree_base_url').prop('readonly', true)
             $('#id_vcs_web_file_base_url').prop('readonly', true)
+            $('#id_vcs_web_commit_url').prop('readonly', true)
             vcs_web_url = $('#id_vcs_web_url').val()
             if (vcs_web_url) {
                 if (vcs_web_url.endsWith('/')) {
@@ -261,14 +268,17 @@
                 if (type == 'cgit') {
                     $('#id_vcs_web_tree_base_url').val('readonly', true)
                     $('#id_vcs_web_file_base_url').prop('readonly', true)
+                    $('#id_vcs_web_commit_url').prop('readonly', true)
                     if (e) {
                         $('#id_vcs_web_tree_base_url').val(vcs_web_url + '/tree/%path%?h=%branch%')
                         $('#id_vcs_web_file_base_url').val(vcs_web_url + '/tree/%path%?h=%branch%')
+                        $('#id_vcs_web_commit_url').val(vcs_web_url + '/commit/id=%hash%')
                     }
                 }
                 else if (type == 'gitweb') {
                     $('#id_vcs_web_tree_base_url').val('readonly', true)
                     $('#id_vcs_web_file_base_url').prop('readonly', true)
+                    $('#id_vcs_web_commit_url').prop('readonly', true)
                     if (e) {
                         spliturl = vcs_web_url.split('?')
                         if (spliturl.length > 1) {
@@ -290,14 +300,17 @@
                         }
                         $('#id_vcs_web_tree_base_url').val(vcs_web_url + 'a=tree;f=%path%;hb=refs/heads/%branch%')
                         $('#id_vcs_web_file_base_url').val(vcs_web_url + 'a=blob;f=%path%;hb=refs/heads/%branch%')
+                        $('#id_vcs_web_commit_url').val(vcs_web_url + 'a=commit;h=%hash%')
                     }
                 }
                 else if (type == 'gitlab') {
                     $('#id_vcs_web_tree_base_url').val('readonly', true)
                     $('#id_vcs_web_file_base_url').prop('readonly', true)
+                    $('#id_vcs_web_commit_url').prop('readonly', true)
                     if (e) {
                         $('#id_vcs_web_tree_base_url').val(vcs_web_url + '/tree/%branch%/%path%')
                         $('#id_vcs_web_file_base_url').val(vcs_web_url + '/blob/%branch%/%path%')
+                        $('#id_vcs_web_commit_url').val(vcs_web_url + '/commit/%hash%')
                     }
                 }
             }
@@ -312,6 +325,7 @@
                 $('#id_vcs_web_url').val(awf.vcs_web_url)
                 $('#id_vcs_web_tree_base_url').val(awf.vcs_web_tree_base_url)
                 $('#id_vcs_web_file_base_url').val(awf.vcs_web_file_base_url)
+                $('#id_vcs_web_commit_url').val(awf.vcs_web_commit_url)
                 $('#idx_vcs_web_type').val(awf.vcs_web_type)
             }
             $('#id_vcs_web_url').prop('readonly', true);

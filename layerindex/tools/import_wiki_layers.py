@@ -99,34 +99,33 @@ def main():
                             layer.vcs_web_url = 'http://cgit.openembedded.org/' + reponame
                             layer.vcs_web_tree_base_url = 'http://cgit.openembedded.org/' + reponame + '/tree/%path%?h=%branch%'
                             layer.vcs_web_file_base_url = 'http://cgit.openembedded.org/' + reponame + '/tree/%path%?h=%branch%'
+                            layer.vcs_web_commit_url = 'http://cgit.openembedded.org/' + reponame + '/commit/?id=%hash%'
                         elif 'git.yoctoproject.org/' in repoval:
                             reponame = re.sub('^.*/', '', repoval)
                             layer.vcs_web_url = 'http://git.yoctoproject.org/cgit/cgit.cgi/' + reponame
                             layer.vcs_web_tree_base_url = 'http://git.yoctoproject.org/cgit/cgit.cgi/' + reponame + '/tree/%path%?h=%branch%'
                             layer.vcs_web_file_base_url = 'http://git.yoctoproject.org/cgit/cgit.cgi/' + reponame + '/tree/%path%?h=%branch%'
+                            layer.vcs_web_commit_url = 'http://git.yoctoproject.org/cgit/cgit.cgi/' + reponame + '/commit/?id=%hash%'
                         elif 'github.com/' in repoval:
                             reponame = re.sub('^.*github.com/', '', repoval)
                             reponame = re.sub('.git$', '', reponame)
                             layer.vcs_web_url = 'http://github.com/' + reponame
                             layer.vcs_web_tree_base_url = 'http://github.com/' + reponame + '/tree/%branch%/'
                             layer.vcs_web_file_base_url = 'http://github.com/' + reponame + '/blob/%branch%/'
-                        elif 'gitorious.org/' in repoval:
-                            reponame = re.sub('^.*gitorious.org/', '', repoval)
-                            reponame = re.sub('.git$', '', reponame)
-                            layer.vcs_web_url = 'http://gitorious.org/' + reponame
-                            layer.vcs_web_tree_base_url = 'http://gitorious.org/' + reponame + '/trees/%branch%/'
-                            layer.vcs_web_file_base_url = 'http://gitorious.org/' + reponame + '/blobs/%branch%/'
+                            layer.vcs_web_commit_url = 'http://github.com/' + reponame + '/commit/%hash%'
                         elif 'bitbucket.org/' in repoval:
                             reponame = re.sub('^.*bitbucket.org/', '', repoval)
                             reponame = re.sub('.git$', '', reponame)
                             layer.vcs_web_url = 'http://bitbucket.org/' + reponame
                             layer.vcs_web_tree_base_url = 'http://bitbucket.org/' + reponame + '/src/%branch%/%path%?at=%branch%'
                             layer.vcs_web_file_base_url = 'http://bitbucket.org/' + reponame + '/src/%branch%/%path%?at=%branch%'
+                            layer.vcs_web_commit_url = 'http://bitbucket.org/' + reponame + '/commits/%hash%'
                         elif '.git' in repoval:
                             res = link_re.match(fields[5].strip())
                             layer.vcs_web_url = res.groups(1)[0]
                             layer.vcs_web_tree_base_url = re.sub(r'\.git.*', '.git;a=tree;f=%path%;hb=%branch%', layer.vcs_web_url)
                             layer.vcs_web_file_base_url = re.sub(r'\.git.*', '.git;a=blob;f=%path%;hb=%branch%', layer.vcs_web_url)
+                            layer.vcs_web_file_base_url = re.sub(r'\.git.*', '.git;a=commit;h=%hash%', layer.vcs_web_url)
 
                         layer.save()
                         layerbranch = LayerBranch()

@@ -104,6 +104,7 @@ class LayerItem(models.Model):
     vcs_web_url = models.URLField('Repository web interface URL', blank=True, help_text='URL of the web interface for browsing the repository, if any')
     vcs_web_tree_base_url = models.CharField('Repository web interface tree base URL', max_length=255, blank=True, help_text='Base URL for the web interface for browsing directories within the repository, if any')
     vcs_web_file_base_url = models.CharField('Repository web interface file base URL', max_length=255, blank=True, help_text='Base URL for the web interface for viewing files (blobs) within the repository, if any')
+    vcs_web_commit_url = models.CharField('Repository web interface commit URL', max_length=255, blank=True, help_text='Base URL for the web interface for viewing a single commit within the repository, if any')
     usage_url = models.CharField('Usage web page URL', max_length=255, blank=True, help_text='URL of a web page with more information about the layer and how to use it, if any (or path to file within repository)')
     mailing_list_url = models.URLField('Mailing list URL', blank=True, help_text='URL of the info page for a mailing list for discussing the layer, if any')
     index_preference = models.IntegerField('Preference', default=0, help_text='Number used to find preferred recipes in recipe search results (higher number is greater preference)')
@@ -241,6 +242,16 @@ class LayerBranch(models.Model):
 
     def file_url(self, path = ''):
         return self._handle_url_path(self.layer.vcs_web_file_base_url, path)
+
+    def commit_url(self, commit_hash):
+        url = self.layer.vcs_web_commit_url
+        url = url.replace('%hash%', commit_hash)
+        if self.actual_branch:
+            branchname = self.actual_branch
+        else:
+            branchname = self.branch.name
+        url = url.replace('%branch%', branchname)
+        return url
 
     def test_tree_url(self):
         return self.tree_url('conf')

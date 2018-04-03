@@ -401,8 +401,7 @@ class RecipeUpgrade(models.Model):
         return self.sha1[0:6]
 
     def commit_url(self):
-        web_interface_url = self.recipe.layerbranch.layer.vcs_web_url
-        return web_interface_url + "/commit/?id=" + self.sha1
+        return self.recipe.layerbranch.commit_url(self.sha1)
 
     def __str__(self):
         return '%s: (%s, %s)' % (self.recipe.pn, self.version,

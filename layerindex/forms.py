@@ -54,7 +54,7 @@ class EditLayerForm(forms.ModelForm):
 
     class Meta:
         model = LayerItem
-        fields = ('name', 'layer_type', 'summary', 'description', 'vcs_url', 'vcs_web_url', 'vcs_web_tree_base_url', 'vcs_web_file_base_url', 'usage_url', 'mailing_list_url')
+        fields = ('name', 'layer_type', 'summary', 'description', 'vcs_url', 'vcs_web_url', 'vcs_web_tree_base_url', 'vcs_web_file_base_url', 'vcs_web_commit_url', 'usage_url', 'mailing_list_url')
 
     def __init__(self, user, layerbranch, *args, **kwargs):
         super(self.__class__, self).__init__(*args, **kwargs)
@@ -125,6 +125,13 @@ class EditLayerForm(forms.ModelForm):
 
     def clean_vcs_web_file_base_url(self):
         url = self.cleaned_data['vcs_web_file_base_url'].strip()
+        if url:
+            val = URLValidator()
+            val(url)
+        return url
+
+    def clean_vcs_web_commit_url(self):
+        url = self.cleaned_data['vcs_web_commit_url'].strip()
         if url:
             val = URLValidator()
             val(url)

@@ -641,8 +641,7 @@ def _get_recipe_upgrade_detail(maintplan, recipe_upgrade):
 
     commit_date = recipe_upgrade.commit_date.date().isoformat()
     commit = recipe_upgrade.sha1[:10]
-    commit_url = recipe_upgrade.recipe.layerbranch.layer.vcs_web_url + \
-        '/commit/?id=' + recipe_upgrade.sha1
+    commit_url = recipe_upgrade.recipe.layerbranch.commit_url(recipe_upgrade.sha1)
 
     rud = RecipeUpgradeDetail(recipe_upgrade.title, recipe_upgrade.version, \
             maintplan.name, release_name, milestone_name, commit_date, maintainer_name, \
