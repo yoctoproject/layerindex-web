@@ -147,9 +147,15 @@
                 <dd><a href="{{ recipe.bugtracker }}">{{ recipe.bugtracker }}</a></dd>
                 {% endif %}
 
-                {% if recipe.src_uri %}
-                <dt>Source URI</dt>
-                <dd><a href="{{ recipe.src_uri }}">{{ recipe.src_uri }}</a></dd>
+                {% if recipe.source_set.exists %}
+                <dt>Sources</dt>
+                <dd>
+                    <ul class="unstyled">
+                        {% for source in recipe.source_set.all %}
+                        <li><a href="{{ source.url }}">{{ source.url }}</a></li>
+                        {% endfor %}
+                    </ul>
+                </dd>
                 {% endif %}
 
                 {% if recipe_provides %}
