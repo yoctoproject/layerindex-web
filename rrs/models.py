@@ -408,3 +408,23 @@ class RecipeUpgrade(models.Model):
         return '%s: (%s, %s)' % (self.recipe.pn, self.version,
                         self.commit_date)
 
+
+class RecipeMaintenanceLink(models.Model):
+    pn_match = models.CharField(max_length=100, help_text='Expression to match against pn of recipes that should be linked (glob expression)')
+    pn_target = models.CharField(max_length=100, help_text='Name of recipe to link to')
+
+    @staticmethod
+    def link_maintainer(pn, rmh):
+        import fnmatch
+        for rml in RecipeMaintenanceLink.objects.all():
+            if fnmatch.fnmatch(pn, rml.pn_match):
+                recipe_link_objs = rmh.layerbranch.recipe_set.filter(pn=rml.pn_target)
+                if recipe_link_objs:
+                    lrm = RecipeMaintainer.objects.filter(recipe=recipe_link_objs[0], history=rmh)
+                    if lrm:
+                        return lrm[0]
+        return None
+
+
+    def __str__(self):
+        return '%s -> %s' % (self.pn_match, self.pn_target)

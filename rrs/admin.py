@@ -9,7 +9,8 @@ from django.contrib.admin import DateFieldListFilter
 
 from rrs.models import Release, Milestone, Maintainer, RecipeMaintainerHistory, \
         RecipeMaintainer, RecipeDistro, RecipeUpgrade, RecipeUpstream, \
-        RecipeUpstreamHistory, MaintenancePlan, MaintenancePlanLayerBranch
+        RecipeUpstreamHistory, MaintenancePlan, MaintenancePlanLayerBranch, \
+        RecipeMaintenanceLink
 
 class MaintenancePlanLayerBranchInline(admin.StackedInline):
     model = MaintenancePlanLayerBranch
@@ -70,6 +71,9 @@ class RecipeUpstreamAdmin(admin.ModelAdmin):
             'type', ('date', DateFieldListFilter), 'history']
     model = RecipeUpstream
 
+class RecipeMaintenanceLinkAdmin(admin.ModelAdmin):
+    model = RecipeMaintenanceLink
+
 admin.site.register(MaintenancePlan, MaintenancePlanAdmin)
 admin.site.register(Release, ReleaseAdmin)
 admin.site.register(Milestone, MilestoneAdmin)
@@ -80,3 +84,4 @@ admin.site.register(RecipeDistro, RecipeDistroAdmin)
 admin.site.register(RecipeUpgrade, RecipeUpgradeAdmin)
 admin.site.register(RecipeUpstreamHistory, RecipeUpstreamHistoryAdmin)
 admin.site.register(RecipeUpstream, RecipeUpstreamAdmin)
+admin.site.register(RecipeMaintenanceLink, RecipeMaintenanceLinkAdmin)

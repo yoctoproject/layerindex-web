@@ -22,7 +22,7 @@ from django.db import transaction
 import settings
 
 from layerindex.models import Recipe, LayerBranch, LayerItem
-from rrs.models import MaintenancePlan, Maintainer, RecipeMaintainerHistory, RecipeMaintainer
+from rrs.models import MaintenancePlan, Maintainer, RecipeMaintainerHistory, RecipeMaintainer, RecipeMaintenanceLink
 from django.core.exceptions import ObjectDoesNotExist
 
 # FIXME we shouldn't be hardcoded to expect RECIPE_MAINTAINER to be set in this file,
@@ -150,11 +150,18 @@ def maintainer_history(options, logger):
                                 if not RecipeMaintainer.objects.filter(recipe = recipe, history = rms):
                                     rm = RecipeMaintainer()
                                     rm.recipe = recipe
-                                    rm.maintainer = no_maintainer
+                                    link_maintainer = RecipeMaintenanceLink.link_maintainer(recipe.pn, rms)
+                                    if link_maintainer:
+                                        rm.maintainer = link_maintainer.maintainer
+                                    else:
+                                        rm.maintainer = no_maintainer
                                     rm.history = rms
                                     rm.save()
-                                    logger.debug("%s: Not found maintainer in commit %s set to 'No maintainer'." % \
-                                                    (recipe.pn, rms.sha1))
+                                    if link_maintainer:
+                                        logger.debug("%s: linked to maintainer for %s" % (recipe.pn, link_maintainer.recipe.pn))
+                                    else:
+                                        logger.debug("%s: Not found maintainer in commit %s set to 'No maintainer'." % \
+                                                        (recipe.pn, rms.sha1))
 
                         # set new recipes to no maintainer if don't have one
                         rms = RecipeMaintainerHistory.get_last()
@@ -162,10 +169,17 @@ def maintainer_history(options, logger):
                             if not RecipeMaintainer.objects.filter(recipe = recipe, history = rms):
                                 rm = RecipeMaintainer()
                                 rm.recipe = recipe
-                                rm.maintainer = no_maintainer
+                                link_maintainer = RecipeMaintenanceLink.link_maintainer(recipe.pn, rms)
+                                if link_maintainer:
+                                    rm.maintainer = link_maintainer.maintainer
+                                else:
+                                    rm.maintainer = no_maintainer
                                 rm.history = rms
                                 rm.save()
-                                logger.debug("%s: New recipe not found maintainer set to 'No maintainer'." % \
+                                if link_maintainer:
+                                    logger.debug("%s: New recipe linked to maintainer for %s" % (recipe.pn, link_maintainer.recipe.pn))
+                                else:
+                                    logger.debug("%s: New recipe not found maintainer set to 'No maintainer'." % \
                                                 (recipe.pn))
                     if options.dry_run:
                         raise DryRunRollbackException
