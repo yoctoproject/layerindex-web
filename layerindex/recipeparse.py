@@ -31,8 +31,7 @@ def init_parser(settings, branch, bitbakepath, enable_tracking=False, nocheckout
         else:
             # Branch name
             bitbake_ref = 'origin/%s' % branch.bitbake_branch
-        out = utils.runcmd("git checkout %s" % bitbake_ref, bitbakepath, logger=logger)
-        out = utils.runcmd("git clean -f -x", bitbakepath, logger=logger)
+        utils.checkout_repo(bitbakepath, bitbake_ref, logger=logger)
 
     # Skip sanity checks
     os.environ['BB_ENV_EXTRAWHITE'] = 'DISABLE_SANITY_CHECKS'
@@ -57,8 +56,7 @@ def init_parser(settings, branch, bitbakepath, enable_tracking=False, nocheckout
         core_repodir = os.path.join(fetchdir, core_urldir)
         core_layerdir = os.path.join(core_repodir, core_subdir)
         if not nocheckout:
-            out = utils.runcmd("git checkout origin/%s" % core_branchname, core_repodir, logger=logger)
-            out = utils.runcmd("git clean -f -x", core_repodir, logger=logger)
+            utils.checkout_repo(core_repodir, "origin/%s" % core_branchname, logger=logger)
         if not os.path.exists(os.path.join(core_layerdir, 'conf/bitbake.conf')):
             raise RecipeParseError("conf/bitbake.conf not found in core layer %s - is subdirectory set correctly?" % core_layer.name)
         # The directory above where this script exists should contain our conf/layer.conf,

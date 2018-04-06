@@ -206,14 +206,34 @@ def explode_dep_versions2(bitbakepath, deps):
     import bb.utils
     return bb.utils.explode_dep_versions2(deps)
 
-def checkout_layer_branch(layerbranch, repodir, logger=None):
+def checkout_repo(repodir, commit, logger, force=False):
+    """
+    Check out a revision in a repository, ensuring that untracked/uncommitted
+    files don't get in the way.
+    WARNING: this will throw away any untracked/uncommitted files in the repo,
+    so it is only suitable for use with repos where you don't care about such
+    things (which we don't for the layer repos that we use)
+    """
+    if force:
+        currentref = ''
+    else:
+        currentref = runcmd("git rev-parse HEAD", repodir, logger=logger).strip()
+    if currentref != commit:
+        # Reset in case there are added but uncommitted changes
+        runcmd("git reset --hard HEAD", repodir, logger=logger)
+        # Drop any untracked files in case these cause problems (either because
+        # they will exist in the revision we're checking out, or will otherwise
+        # interfere with operation, e.g. stale pyc files)
+        runcmd("git clean -qdfx", repodir, logger=logger)
+        # Now check out the revision
+        runcmd("git checkout %s" % commit,
+                        repodir, logger=logger)
 
+def checkout_layer_branch(layerbranch, repodir, logger=None):
     branchname = layerbranch.branch.name
     if layerbranch.actual_branch:
         branchname = layerbranch.actual_branch
-
-    out = runcmd("git checkout origin/%s" % branchname, repodir, logger=logger)
-    out = runcmd("git clean -f -x", repodir, logger=logger)
+    checkout_repo(repodir, 'origin/%s' % branchname, logger)
 
 def is_layer_valid(layerdir):
     conf_file = os.path.join(layerdir, "conf", "layer.conf")
