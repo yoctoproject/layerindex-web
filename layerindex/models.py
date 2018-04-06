@@ -280,6 +280,24 @@ class LayerBranch(models.Model):
     def get_recommends(self):
         return self.dependencies_set.filter(required=False)
 
+    def get_recursive_dependencies(self, required=True, include_self=False):
+        deplist = []
+        def recurse_deps(layerbranch):
+            deplist.append(layerbranch)
+            if required:
+                dep_set = layerbranch.dependencies_set.filter(required=True)
+            else:
+                dep_set = layerbranch.dependencies_set.all()
+            for dep in dep_set:
+                deplayerbranch = dep.dependency.get_layerbranch(layerbranch.branch.name)
+                if deplayerbranch and deplayerbranch not in deplist:
+                    recurse_deps(deplayerbranch)
+        recurse_deps(self)
+        if include_self:
+            return deplist
+        else:
+            return deplist[1:]
+
 class LayerMaintainer(models.Model):
     MAINTAINER_STATUS_CHOICES = (
         ('A', 'Active'),
