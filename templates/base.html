@@ -88,7 +88,7 @@
     {% endautoescape %}
     {% endblock %}
 
-    <div id="content" class="container top-padded">
+{% block contenttag %}<div id="content" class="container top-padded">{% endblock %}
         {% if messages %}
             {% for message in messages %}
             <div{% if message.tags %} class="alert {{ message.tags }}"{% endif %}>{{ message }}</div>
