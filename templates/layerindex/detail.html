@@ -62,7 +62,7 @@
             <div class="row-fluid">
                 {% for note in layeritem.layernote_set.all %}
                     <div class="alert">
-                        {{ note.text }}
+                        {{ note.text|urlize }}
                         {% if perms.layerindex.publish_layer or useredit %}
                             <br><br>
                             <p>
