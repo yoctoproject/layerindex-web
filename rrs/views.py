@@ -10,7 +10,7 @@ from django.views.generic import ListView, DetailView, RedirectView
 from django.core.urlresolvers import resolve, reverse, reverse_lazy
 from django.db import connection
 
-from layerindex.models import Recipe, StaticBuildDep
+from layerindex.models import Recipe, StaticBuildDep, Patch
 from rrs.models import Release, Milestone, Maintainer, RecipeMaintainerHistory, \
         RecipeMaintainer, RecipeUpstreamHistory, RecipeUpstream, \
         RecipeDistro, RecipeUpgrade, MaintenancePlan
@@ -468,6 +468,9 @@ def _get_recipe_list(milestone):
         recipe_list_item.upstream_status = upstream_status
         recipe_list_item.upstream_version = upstream_version
         recipe_list_item.outdated = outdated
+        patches = Patch.objects.filter(recipe__id=recipe['id'])
+        recipe_list_item.patches_total = patches.count()
+        recipe_list_item.patches_pending = patches.filter(status='P').count()
         recipe_list_item.maintainer_name = maintainer_name
         recipe_list_item.no_update_reason = no_update_reason
         recipe_list.append(recipe_list_item)

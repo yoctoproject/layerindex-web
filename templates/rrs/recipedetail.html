@@ -116,6 +116,28 @@
             </tbody>
         </table>
         {% endif %}
+
+        <h2>Patches</h2>
+        {% if recipe.patch_set.exists %}
+        <table class="table table-striped table-bordered">
+            <thead>
+                <tr>
+                    <th class="span6">Patch</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for patch in recipe.patch_set.all %}
+                <tr>
+                    <td><a href="{{ patch.vcs_web_url }}">{{ patch.src_path }}</a></td>
+                    <td>{{ patch.get_status_display }} {{ patch.status_extra | urlize }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p>None</p>
+        {% endif %}
     </div>
 
     <div class="span4">
