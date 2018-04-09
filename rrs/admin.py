@@ -53,6 +53,23 @@ class MaintenancePlanAdmin(admin.ModelAdmin):
     inlines = [
         MaintenancePlanLayerBranchInline,
     ]
+    def save_model(self, request, obj, form, change):
+        # For new maintenance plans, copy releases from the first plan
+        if obj.pk is None:
+            copyfrom_mp = MaintenancePlan.objects.all().first()
+        else:
+            copyfrom_mp = None
+        super().save_model(request, obj, form, change)
+        if copyfrom_mp:
+            for release in copyfrom_mp.release_set.all():
+                release.pk = None
+                release.plan = obj
+                release.save()
+                milestone = Milestone(release=release)
+                milestone.name='Default'
+                milestone.start_date = release.start_date
+                milestone.end_date = release.end_date
+                milestone.save()
 
 class ReleaseAdmin(admin.ModelAdmin):
     search_fields = ['name']
