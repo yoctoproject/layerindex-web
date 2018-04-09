@@ -123,6 +123,10 @@ def main():
         usage = """
     %prog [options]""")
 
+    parser.add_option("-p", "--plan",
+            help="Specify maintenance plan to operate on (default is all plans that have updates enabled)",
+            action="store", dest="plan", default=None)
+
     parser.add_option("-s", "--subject",
             action="store", dest="subject", help='Override email subject')
     parser.add_option("-f", "--from",
@@ -139,10 +143,16 @@ def main():
     options, args = parser.parse_args(sys.argv)
 
     # get recipes for send email
-    maintplans = MaintenancePlan.objects.filter(email_enabled=True)
-    if not maintplans.exists():
-        logger.error('No maintenance plans with email enabled were found')
-        sys.exit(1)
+    if options.plan:
+        maintplans = MaintenancePlan.objects.filter(id=int(options.plan))
+        if not maintplans.exists():
+            logger.error('No maintenance plan with ID %s found' % options.plan)
+            sys.exit(1)
+    else:
+        maintplans = MaintenancePlan.objects.filter(email_enabled=True)
+        if not maintplans.exists():
+            logger.error('No maintenance plans with email enabled were found')
+            sys.exit(1)
 
     for maintplan in maintplans:
         recipes = {}

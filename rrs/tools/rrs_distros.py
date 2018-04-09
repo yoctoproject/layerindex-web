@@ -92,13 +92,23 @@ if __name__=="__main__":
             help = "Do not write any data back to the database",
             action="store_true", dest="dry_run", default=False)
 
+    parser.add_option("-p", "--plan",
+            help="Specify maintenance plan to operate on (default is all plans that have updates enabled)",
+            action="store", dest="plan", default=None)
+
     options, args = parser.parse_args(sys.argv)
     logger.setLevel(options.loglevel)
 
-    maintplans = MaintenancePlan.objects.filter(updates_enabled=True)
-    if not maintplans.exists():
-        logger.error('No enabled maintenance plans found')
-        sys.exit(1)
+    if options.plan:
+        maintplans = MaintenancePlan.objects.filter(id=int(options.plan))
+        if not maintplans.exists():
+            logger.error('No maintenance plan with ID %s found' % options.plan)
+            sys.exit(1)
+    else:
+        maintplans = MaintenancePlan.objects.filter(updates_enabled=True)
+        if not maintplans.exists():
+            logger.error('No enabled maintenance plans found')
+            sys.exit(1)
 
     logger.debug("Starting recipe distros update ...")
 

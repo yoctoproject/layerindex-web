@@ -134,7 +134,11 @@ def get_upstream_info(layerbranch, recipe_data, result):
 
 if __name__=="__main__":
     parser = optparse.OptionParser(usage = """%prog [options]""")
-    
+
+    parser.add_option("-p", "--plan",
+            help="Specify maintenance plan to operate on (default is all plans that have updates enabled)",
+            action="store", dest="plan", default=None)
+
     parser.add_option("-d", "--debug",
             help = "Enable debug output",
             action="store_const", const=logging.DEBUG, dest="loglevel", default=logging.INFO)
@@ -146,12 +150,18 @@ if __name__=="__main__":
     options, args = parser.parse_args(sys.argv)
     logger.setLevel(options.loglevel)
 
-    logger.debug("Starting upstream history...")
+    if options.plan:
+        maintplans = MaintenancePlan.objects.filter(id=int(options.plan))
+        if not maintplans.exists():
+            logger.error('No maintenance plan with ID %s found' % options.plan)
+            sys.exit(1)
+    else:
+        maintplans = MaintenancePlan.objects.filter(updates_enabled=True)
+        if not maintplans.exists():
+            logger.error('No enabled maintenance plans found')
+            sys.exit(1)
 
-    maintplans = MaintenancePlan.objects.filter(updates_enabled=True)
-    if not maintplans.exists():
-        logger.error('No enabled maintenance plans found')
-        sys.exit(1)
+    logger.debug("Starting upstream history...")
 
     lockfn = os.path.join(fetchdir, "layerindex.lock")
     lockfile = utils.lock_file(lockfn)

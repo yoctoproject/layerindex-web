@@ -72,10 +72,16 @@ def get_commit_info(info, logger):
 """
 def maintainer_history(options, logger):
     fetchdir = settings.LAYER_FETCH_DIR
-    maintplans = MaintenancePlan.objects.filter(updates_enabled=True)
-    if not maintplans.exists():
-        logger.error('No enabled maintenance plans found')
-        sys.exit(1)
+    if options.plan:
+        maintplans = MaintenancePlan.objects.filter(id=int(options.plan))
+        if not maintplans.exists():
+            logger.error('No maintenance plan with ID %s found' % options.plan)
+            sys.exit(1)
+    else:
+        maintplans = MaintenancePlan.objects.filter(updates_enabled=True)
+        if not maintplans.exists():
+            logger.error('No enabled maintenance plans found')
+            sys.exit(1)
 
     no_maintainer, _ = Maintainer.objects.get_or_create(name='No maintainer')
 
@@ -190,6 +196,10 @@ def maintainer_history(options, logger):
 
 if __name__=="__main__":
     parser = optparse.OptionParser(usage = """%prog [options]""")
+
+    parser.add_option("-p", "--plan",
+            help="Specify maintenance plan to operate on (default is all plans that have updates enabled)",
+            action="store", dest="plan", default=None)
 
     parser.add_option("--fullreload",
             help="Reload upgrade data from scratch",
