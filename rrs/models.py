@@ -47,9 +47,12 @@ class MaintenancePlanLayerBranch(models.Model):
 
 class Release(models.Model):
     plan = models.ForeignKey(MaintenancePlan)
-    name = models.CharField(max_length=100, unique=True)
+    name = models.CharField(max_length=100)
     start_date = models.DateField(db_index=True)
     end_date = models.DateField(db_index=True)
+
+    class Meta:
+        unique_together = ('plan', 'name',)
 
     def get_default_milestone(self):
         return self.milestone_set.last()
@@ -69,8 +72,13 @@ class Release(models.Model):
     def get_current(maintplan):
         current = date.today()
         current_release = Release.get_by_date(maintplan, current)
-
-        return current_release or Release.objects.filter(plan=maintplan).order_by('-end_date')[0]
+        if current_release:
+            return current_release
+        else:
+            plan_releases = Release.objects.filter(plan=maintplan).order_by('-end_date')
+            if plan_releases:
+                return plan_releases[0]
+        return None
 
     def __str__(self):
         return '%s' % (self.name)
