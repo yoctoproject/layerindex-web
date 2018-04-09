@@ -1,0 +1,48 @@
+{% extends "rrs/base_toplevel.html" %}
+{% load i18n %}
+{% load nvd3_tags %}
+{% load staticfiles %}
+
+{% comment %}
+
+  rrs-web - recipe maintenance stats template
+
+  Copyright (C) 2013, 2018 Intel Corporation
+  Licensed under the MIT license, see COPYING.MIT for details
+
+{% endcomment %}
+
+
+<!--
+{% block title_append %} - recipe maintenance statistics - {{ maintplan_name }} {{ release_name }} {{ milestone_name }}{% endblock %}
+-->
+
+
+{% block content_inner %}
+{% autoescape on %}
+
+        <div class="row-fluid">
+
+            <h2>Maintenance statistics - {{ maintplan_name }} {{ release_name }} {{ milestone_name }}</h2>
+
+            <h3>Upstream status (milestone)</h3>
+            {% include_container "chart_status" 400 500 %}
+
+            <h3>Patch status (current)</h3>
+            {% include_container "chart_patchstatus" 400 700 %}
+
+        </div>
+
+{% endautoescape %}
+
+{% endblock %}
+
+{% block scripts %}
+
+    <link media="all" href="{% static "css/nv.d3.css" %}" type="text/css" rel="stylesheet" />
+    <script src="{% static "js/d3.js" %}" type="text/javascript"></script>
+    <script src="{% static "js/nv.d3.js" %}" type="text/javascript"></script>
+
+{% load_chart charttype_status chartdata_status "chart_status" extra_status %}
+{% load_chart charttype_patchstatus chartdata_patchstatus "chart_patchstatus" extra_patchstatus %}
+{% endblock %}

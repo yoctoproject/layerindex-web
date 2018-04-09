@@ -131,7 +131,17 @@
 		{% endif %}
                 Maintainer statistics</a>
                 </li>
-            </ul>
+
+                {% if this_url_name == 'rrs_stats' %}
+                <li class="active">
+                <a href="#">
+		{% else %}
+                <li>
+                <a href="{% url 'rrs_stats' maintplan_name release_name milestone_name %}">
+		{% endif %}
+                Charts</a>
+                </li>
+                </ul>
             {% endblock %}
 
             {% block content_inner %}{% endblock %}

@@ -6,7 +6,7 @@ from django.http import HttpResponse
 from datetime import date, datetime
 from django.http import Http404
 from django.shortcuts import get_object_or_404
-from django.views.generic import ListView, DetailView, RedirectView
+from django.views.generic import TemplateView, ListView, DetailView, RedirectView
 from django.core.urlresolvers import resolve, reverse, reverse_lazy
 from django.db import connection
 
@@ -840,4 +840,84 @@ class MaintainerListView(ListView):
                 context['current_interval'] = self.current_interval
 
         return context
+
+
+class MaintenanceStatsView(TemplateView):
+    def get_context_data(self, **kwargs):
+        context = super(MaintenanceStatsView, self).get_context_data(**kwargs)
+
+        context['this_url_name'] = resolve(self.request.path_info).url_name
+
+        self.maintplan_name = self.kwargs['maintplan_name']
+        maintplan = get_object_or_404(MaintenancePlan, name=self.maintplan_name)
+        self.release_name = self.kwargs['release_name']
+        release = get_object_or_404(Release, plan=maintplan, name=self.release_name)
+        self.milestone_name = self.kwargs['milestone_name']
+        milestone = get_object_or_404(Milestone, release = release, name=self.milestone_name)
+
+        self.milestone_statistics = _get_milestone_statistics(milestone)
+
+        context['recipes_percentage'] = self.milestone_statistics['percentage']
+        context['recipes_all_upgraded'] = self.milestone_statistics['all_upgraded']
+        context['recipes_all_not_upgraded'] = self.milestone_statistics['all_not_upgraded']
+        context['recipes_up_to_date'] = self.milestone_statistics['up_to_date']
+        context['recipes_not_updated'] = self.milestone_statistics['not_updated']
+        context['recipes_cant_be_updated'] = self.milestone_statistics['cant_be_updated']
+        context['recipes_unknown'] = self.milestone_statistics['unknown']
+        context['recipes_percentage_up_to_date'] = \
+            self.milestone_statistics['percentage_up_to_date']
+        context['recipes_percentage_not_updated'] = \
+            self.milestone_statistics['percentage_not_updated']
+        context['recipes_percentage_cant_be_updated'] = \
+            self.milestone_statistics['percentage_cant_be_updated']
+        context['recipes_percentage_unknown'] = \
+            self.milestone_statistics['percentage_unknown']
+
+        # *** Upstream status chart ***
+        statuses = []
+        status_counts = {}
+        statuses.append('Up-to-date')
+        status_counts['Up-to-date'] = self.milestone_statistics['up_to_date']
+        statuses.append('Not updated')
+        status_counts['Not updated'] = self.milestone_statistics['not_updated']
+        statuses.append('Can\'t be updated')
+        status_counts['Can\'t be updated'] = self.milestone_statistics['cant_be_updated']
+        statuses.append('Unknown')
+        status_counts['Unknown'] = self.milestone_statistics['unknown']
+
+        statuses = sorted(statuses, key=lambda status: status_counts[status], reverse=True)
+        chartdata = {'x': statuses, 'y': [status_counts[k] for k in statuses]}
+        context['charttype_status'] = 'discreteBarChart'
+        context['chartdata_status'] = chartdata
+        context['extra_status'] = {
+            'x_is_date': False,
+            'x_axis_format': '',
+            'tag_script_js': True,
+            'jquery_on_ready': False,
+        }
+
+        # *** Patch status chart ***
+        patch_statuses = []
+        patch_status_counts = {}
+        for maintplanlayer in maintplan.maintenanceplanlayerbranch_set.all():
+            layerbranch = maintplanlayer.layerbranch
+            patches = Patch.objects.filter(recipe__layerbranch=layerbranch)
+            for choice, desc in Patch.PATCH_STATUS_CHOICES:
+                if desc not in patch_statuses:
+                    patch_statuses.append(desc)
+                patch_status_counts[desc] = patch_status_counts.get(desc, 0) + patches.filter(status=choice).count()
+
+        patch_statuses = sorted(patch_statuses, key=lambda status: patch_status_counts[status], reverse=True)
+        chartdata = {'x': patch_statuses, 'y': [patch_status_counts[k] for k in patch_statuses]}
+        context['charttype_patchstatus'] = 'discreteBarChart'
+        context['chartdata_patchstatus'] = chartdata
+        context['extra_patchstatus'] = {
+            'x_is_date': False,
+            'x_axis_format': '',
+            'tag_script_js': True,
+            'jquery_on_ready': False,
+        }
+
+        return context
+
 

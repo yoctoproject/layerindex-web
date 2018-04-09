@@ -2,7 +2,8 @@ from django.conf.urls import patterns, include, url
 
 from rrs.models import Release, Milestone
 from rrs.views import RecipeListView, recipes_report, RecipeDetailView, \
-    MaintainerListView, FrontPageRedirect, MaintenancePlanRedirect
+    MaintainerListView, FrontPageRedirect, MaintenancePlanRedirect, \
+    MaintenanceStatsView
 
 urlpatterns = patterns('',
     url(r'^$', FrontPageRedirect.as_view(),
@@ -25,4 +26,8 @@ urlpatterns = patterns('',
         MaintainerListView.as_view(
         template_name='rrs/maintainers.html'),
         name="rrs_maintainers"),
+    url(r'^stats/(?P<maintplan_name>.*)/(?P<release_name>.*)/(?P<milestone_name>.*)/$',
+        MaintenanceStatsView.as_view(
+        template_name='rrs/rrs_stats.html'),
+        name="rrs_stats"),
 )
