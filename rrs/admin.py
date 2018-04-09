@@ -4,16 +4,46 @@
 #
 # Licensed under the MIT license, see COPYING.MIT for details
 
+from django.utils.functional import curry
+
 from django.contrib import admin
 from django.contrib.admin import DateFieldListFilter
+from django.forms.models import BaseInlineFormSet
 
 from rrs.models import Release, Milestone, Maintainer, RecipeMaintainerHistory, \
         RecipeMaintainer, RecipeDistro, RecipeUpgrade, RecipeUpstream, \
         RecipeUpstreamHistory, MaintenancePlan, MaintenancePlanLayerBranch, \
         RecipeMaintenanceLink
 
+class MaintenancePlanLayerBranchFormSet(BaseInlineFormSet):
+    def __init__(self, *args, **kwargs):
+        from layerindex.models import PythonEnvironment
+        initialfields = {}
+        py2env = PythonEnvironment.get_default_python2_environment()
+        if py2env:
+            initialfields['python2_environment'] = py2env.id
+        py3env = PythonEnvironment.get_default_python3_environment()
+        if py3env:
+            initialfields['python3_environment'] = py3env.id
+        if initialfields:
+            kwargs['initial'] = [initialfields]
+        super(MaintenancePlanLayerBranchFormSet, self).__init__(*args, **kwargs)
+
+    @property
+    def empty_form(self):
+        from layerindex.models import PythonEnvironment
+        form = super(MaintenancePlanLayerBranchFormSet, self).empty_form
+        py2env = PythonEnvironment.get_default_python2_environment()
+        if py2env:
+            form.fields['python2_environment'].initial = py2env
+        py3env = PythonEnvironment.get_default_python3_environment()
+        if py3env:
+            form.fields['python3_environment'].initial = py3env
+        return form
+
 class MaintenancePlanLayerBranchInline(admin.StackedInline):
     model = MaintenancePlanLayerBranch
+    formset = MaintenancePlanLayerBranchFormSet
     readonly_fields = ['upgrade_date', 'upgrade_rev']
     min_num = 1
     extra = 0

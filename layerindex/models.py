@@ -47,6 +47,20 @@ class PythonEnvironment(models.Model):
             cmd = self.python_command
         return cmd
 
+    @staticmethod
+    def get_default_python2_environment():
+        for env in PythonEnvironment.objects.all().order_by('id'):
+            if env.name.replace(' ', '').lower().startswith(('python2', 'py2')):
+                return env
+        return None
+
+    @staticmethod
+    def get_default_python3_environment():
+        for env in PythonEnvironment.objects.all().order_by('id'):
+            if env.name.replace(' ', '').lower().startswith(('python3', 'py3')):
+                return env
+        return None
+
     def __str__(self):
         return self.name
 
