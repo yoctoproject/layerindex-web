@@ -81,7 +81,7 @@ class Release(models.Model):
         return None
 
     def __str__(self):
-        return '%s' % (self.name)
+        return '%s - %s' % (self.plan.name, self.name)
 
 class Milestone(models.Model):
     release = models.ForeignKey(Release)
@@ -183,7 +183,7 @@ class Milestone(models.Model):
         return weeks
 
     def __str__(self):
-        return '%s%s' % (self.release.name, self.name)
+        return '%s: %s %s' % (self.release.plan.name, self.release.name, self.name)
 
 class Maintainer(models.Model):
     name = models.CharField(max_length=255, unique=True)

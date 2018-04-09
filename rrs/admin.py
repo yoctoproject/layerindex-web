@@ -73,11 +73,12 @@ class MaintenancePlanAdmin(admin.ModelAdmin):
 
 class ReleaseAdmin(admin.ModelAdmin):
     search_fields = ['name']
+    list_filter = ['plan']
     model = Release
 
 class MilestoneAdmin(admin.ModelAdmin):
     search_fields = ['name']
-    list_filter = ['release__name']
+    list_filter = ['release__plan', 'release__name']
     model = Milestone
 
 class MaintainerAdmin(admin.ModelAdmin):
