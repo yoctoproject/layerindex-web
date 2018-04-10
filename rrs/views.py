@@ -77,15 +77,6 @@ class Raw():
     """
 
     @staticmethod
-    def get_re_all():
-        """ Get all Recipes """
-        cur = connection.cursor()
-        cur.execute("""SELECT id, pn, pv, summary
-                        FROM layerindex_recipe;
-                    """)
-        return Raw.dictfetchall(cur)
-
-    @staticmethod
     def get_re_by_mantainer_and_date(maintainer, date_id):
         """ Get Recipes based on Maintainer and Recipe Maintainer History """
         recipes = []
@@ -212,18 +203,6 @@ class Raw():
                         WHERE rownum = 1
                         ORDER BY re.pn;
                         """, [date])
-        return Raw.dictfetchall(cur)
-
-    @staticmethod
-    def get_reupg_by_dates(start_date, end_date):
-        """ Get Recipe Upgrade for the milestone """
-        cur = connection.cursor()
-        cur.execute("""SELECT id, recipe_id, maintainer_id, author_date, commit_date
-                        FROM rrs_recipeupgrade
-                        WHERE commit_date >= %s
-                        AND commit_date <= %s
-                        ORDER BY commit_date DESC;
-                    """, [start_date, end_date])
         return Raw.dictfetchall(cur)
 
     @staticmethod
