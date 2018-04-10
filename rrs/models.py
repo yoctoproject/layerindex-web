@@ -218,11 +218,11 @@ class RecipeMaintainerHistory(models.Model):
     date = models.DateTimeField(db_index=True)
     author = models.ForeignKey(Maintainer)
     sha1 = models.CharField(max_length=64, unique=True)
-    layerbranch = models.ForeignKey(LayerBranch, blank=True, null=True)
+    layerbranch = models.ForeignKey(LayerBranch)
 
     @staticmethod
-    def get_last():
-        rmh_qry = RecipeMaintainerHistory.objects.filter().order_by('-date')
+    def get_last(layerbranch):
+        rmh_qry = RecipeMaintainerHistory.objects.filter(layerbranch=layerbranch).order_by('-date')
 
         if rmh_qry:
             return rmh_qry[0]
@@ -230,14 +230,16 @@ class RecipeMaintainerHistory(models.Model):
             return None
 
     @staticmethod
-    def get_by_end_date(end_date):
+    def get_by_end_date(layerbranch, end_date):
         rmh_qry = RecipeMaintainerHistory.objects.filter(
+                layerbranch=layerbranch,
                 date__lte = end_date).order_by('-date')
 
         if rmh_qry:
             return rmh_qry[0]
 
         rmh_qry = RecipeMaintainerHistory.objects.filter(
+                layerbranch=layerbranch
                 ).order_by('date')
         if rmh_qry:
             return rmh_qry[0]
@@ -267,12 +269,14 @@ class RecipeMaintainer(models.Model):
                                 self.maintainer.email)
 
 class RecipeUpstreamHistory(models.Model):
+    layerbranch = models.ForeignKey(LayerBranch)
     start_date = models.DateTimeField(db_index=True)
     end_date = models.DateTimeField(db_index=True)
 
     @staticmethod
-    def get_last_by_date_range(start, end):
-        history = RecipeUpstreamHistory.objects.filter(start_date__gte = start, 
+    def get_last_by_date_range(layerbranch, start, end):
+        history = RecipeUpstreamHistory.objects.filter(layerbranch=layerbranch,
+                start_date__gte = start,
                 start_date__lte = end).order_by('-start_date')
 
         if history:
@@ -281,8 +285,9 @@ class RecipeUpstreamHistory(models.Model):
             return None
 
     @staticmethod
-    def get_first_by_date_range(start, end):
-        history = RecipeUpstreamHistory.objects.filter(start_date__gte = start,
+    def get_first_by_date_range(layerbranch, start, end):
+        history = RecipeUpstreamHistory.objects.filter(layerbranch=layerbranch,
+                start_date__gte = start,
                 start_date__lte = end).order_by('start_date')
 
         if history:
@@ -291,8 +296,8 @@ class RecipeUpstreamHistory(models.Model):
             return None
 
     @staticmethod
-    def get_last():
-        history = RecipeUpstreamHistory.objects.filter().order_by('-start_date')
+    def get_last(layerbranch):
+        history = RecipeUpstreamHistory.objects.filter(layerbranch=layerbranch).order_by('-start_date')
 
         if history:
             return history[0]

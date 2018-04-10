@@ -159,12 +159,12 @@ def main():
         for item in maintplan.maintenanceplanlayerbranch_set.all():
             layerbranch = item.layerbranch
 
-            recipe_upstream_history = RecipeUpstreamHistory.get_last()
+            recipe_upstream_history = RecipeUpstreamHistory.get_last(layerbranch)
             if recipe_upstream_history is None:
                 logger.warn('I don\'t have Upstream information yet, run update.py script')
                 sys.exit(1)
 
-            recipe_maintainer_history = RecipeMaintainerHistory.get_last()
+            recipe_maintainer_history = RecipeMaintainerHistory.get_last(layerbranch)
             if recipe_maintainer_history is None:
                 logger.warn('I don\'t have Maintainership information yet,' +
                         ' run rrs_maintainer_history.py script')

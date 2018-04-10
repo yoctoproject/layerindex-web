@@ -87,7 +87,7 @@ class MaintainerAdmin(admin.ModelAdmin):
 
 class RecipeMaintainerHistoryAdmin(admin.ModelAdmin):
     search_fields = ['title', 'author__name', 'sha1']
-    list_filter = ['author__name', ('date', DateFieldListFilter)]
+    list_filter = ['layerbranch__layer', 'author__name', ('date', DateFieldListFilter)]
     model = RecipeMaintainerHistory
 
 class RecipeMaintainerAdmin(admin.ModelAdmin):
@@ -108,6 +108,7 @@ class RecipeUpgradeAdmin(admin.ModelAdmin):
 
 class RecipeUpstreamHistoryAdmin(admin.ModelAdmin):
     list_filter = [
+            'layerbranch__layer',
             ('start_date', DateFieldListFilter),
             ('end_date', DateFieldListFilter)
     ]

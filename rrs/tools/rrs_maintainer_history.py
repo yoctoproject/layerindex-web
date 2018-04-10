@@ -112,7 +112,7 @@ def maintainer_history(options, logger):
                 try:
                     with transaction.atomic():
                         for commit in commits.strip().split("\n"):
-                            if RecipeMaintainerHistory.objects.filter(sha1=commit):
+                            if RecipeMaintainerHistory.objects.filter(layerbranch=layerbranch, sha1=commit):
                                 continue
 
                             logger.debug("Analysing commit %s ..." % (commit))
@@ -170,7 +170,7 @@ def maintainer_history(options, logger):
                                                         (recipe.pn, rms.sha1))
 
                         # set new recipes to no maintainer if don't have one
-                        rms = RecipeMaintainerHistory.get_last()
+                        rms = RecipeMaintainerHistory.get_last(layerbranch)
                         for recipe in layerbranch.recipe_set.all():
                             if not RecipeMaintainer.objects.filter(recipe = recipe, history = rms):
                                 rm = RecipeMaintainer()

@@ -114,7 +114,7 @@ class Raw():
         return stats
 
     @staticmethod
-    def get_reup_statistics(date, date_id):
+    def get_reup_statistics(maintplan, date, date_id):
         """ Special case to get recipes statistics removing gcc-source duplicates """
         recipes = []
         updated = 0
@@ -122,11 +122,13 @@ class Raw():
         cant = 0
         unknown = 0
 
-        all_recipes = Raw.get_reupg_by_date(date)
-        for re in all_recipes:
-            recipes.append(re["id"])
+        for maintplanlayer in maintplan.maintenanceplanlayerbranch_set.all():
+            layerbranch = maintplanlayer.layerbranch
+            layerbranch_recipes = Raw.get_reupg_by_date(layerbranch.id, date)
+            for re in layerbranch_recipes:
+                recipes.append(re["id"])
 
-        if date_id:
+        if date_id and recipes:
             recipes = str(recipes).strip('[]')
             qry = """SELECT id, status, no_update_reason
                     FROM rrs_recipeupstream"""
@@ -166,14 +168,17 @@ class Raw():
         return stats
 
     @staticmethod
-    def get_reup_by_last_updated(date):
+    def get_reup_by_last_updated(layerbranch_id, date):
         """ Get last time the Recipes were upgraded """
         cur = connection.cursor()
         cur.execute("""SELECT recipe_id, MAX(commit_date) AS date
                        FROM rrs_recipeupgrade
+                       INNER JOIN layerindex_recipe AS re
+                       ON rrs_recipeupgrade.recipe_id = re.id
                        WHERE commit_date <= %s
+                       AND re.layerbranch_id = %s
                        GROUP BY recipe_id;
-                    """, [date])
+                    """, [date, layerbranch_id])
         return Raw.dictfetchall(cur)
 
     @staticmethod
@@ -188,7 +193,7 @@ class Raw():
         return [i[0] for i in cur.fetchall()]
 
     @staticmethod
-    def get_reupg_by_date(date):
+    def get_reupg_by_date(layerbranch_id, date):
         """ Get info for Recipes for the milestone """
         cur = connection.cursor()
         cur.execute("""SELECT re.id, re.pn, re.summary, te.version, rownum FROM (
@@ -201,8 +206,9 @@ class Raw():
                         INNER JOIN layerindex_recipe AS re
                         ON te.recipe_id = re.id
                         WHERE rownum = 1
+                        AND re.layerbranch_id = %s
                         ORDER BY re.pn;
-                        """, [date])
+                        """, [date, layerbranch_id])
         return Raw.dictfetchall(cur)
 
     @staticmethod
@@ -220,25 +226,27 @@ class Raw():
         return Raw.dictfetchall(cur)
 
     @staticmethod
-    def get_remahi_by_end_date(date):
+    def get_remahi_by_end_date(layerbranch_id, date):
         """ Get the latest Recipe Maintainer History for the milestone """
         cur = connection.cursor()
 
         cur.execute("""SELECT id
                         FROM rrs_recipemaintainerhistory
                         WHERE date <= %s
+                        AND layerbranch_id = %s
                         ORDER BY date DESC
                         LIMIT 1;
-                    """, [str(date)])
+                    """, [str(date), layerbranch_id])
 
         ret = cur.fetchone()
 
         if not ret:
             cur.execute("""SELECT id
                         FROM rrs_recipemaintainerhistory
+                        WHERE layerbranch_id = %s
                         ORDER BY date
                         LIMIT 1;
-                        """)
+                        """, [layerbranch_id])
             ret = cur.fetchone()
 
         return ret
@@ -256,88 +264,102 @@ class Raw():
 def _get_milestone_statistics(milestone, maintainer_name=None):
     milestone_statistics = {}
 
-    recipe_upstream_history = RecipeUpstreamHistory.get_last_by_date_range(
-        milestone.start_date,
-        milestone.end_date
-    )
-    recipe_upstream_history_first = \
-        RecipeUpstreamHistory.get_first_by_date_range(
-            milestone.start_date,
-            milestone.end_date,
-    )
+    milestone_statistics['all'] = 0
+    milestone_statistics['up_to_date'] = 0
+    milestone_statistics['not_updated'] = 0
+    milestone_statistics['cant_be_updated'] = 0
+    milestone_statistics['unknown'] = 0
 
     if maintainer_name is None:
-        t_updated, t_not_updated, t_cant, t_unknown = \
-            Raw.get_reup_statistics(milestone.end_date, recipe_upstream_history)
-        milestone_statistics['all'] = \
-            t_updated + t_not_updated + t_cant + t_unknown
-        milestone_statistics['up_to_date'] = t_updated
-        milestone_statistics['not_updated'] = t_not_updated
-        milestone_statistics['cant_be_updated'] = t_cant
-        milestone_statistics['unknown'] = t_unknown
-        milestone_statistics['percentage'] = 0
         milestone_statistics['all_upgraded'] = 0
         milestone_statistics['all_not_upgraded'] = 0
-        milestone_statistics['percentage_up_to_date'] = 0
-        milestone_statistics['percentage_not_updated'] = 0
-        milestone_statistics['percentage_cant_be_updated'] = 0
-        milestone_statistics['percentage_unknown'] = 0
 
-        if recipe_upstream_history_first:
-            recipes_not_upgraded = \
-                Raw.get_reup_by_date(recipe_upstream_history_first.id)
-            if recipes_not_upgraded:
-                recipes_upgraded = \
-                    Raw.get_reupg_by_dates_and_recipes(
-                        milestone.start_date, milestone.end_date, recipes_not_upgraded)
-                milestone_statistics['percentage'] = "%.0f" % \
-                    ((float(len(recipes_upgraded)) * 100.0)
-                    /float(len(recipes_not_upgraded)))
-                milestone_statistics['all_upgraded'] = len(recipes_upgraded)
-                milestone_statistics['all_not_upgraded'] = len(recipes_not_upgraded)
-                milestone_statistics['percentage_up_to_date'] = "%.0f" % \
-                    (float(milestone_statistics['up_to_date']) * 100.0 \
-                    /float(milestone_statistics['all']))
-                milestone_statistics['percentage_not_updated'] = "%.0f" % \
-                    (float(milestone_statistics['not_updated']) * 100.0 \
-                    /float(milestone_statistics['all']))
-                milestone_statistics['percentage_cant_be_updated'] = "%.0f" % \
-                    (float(milestone_statistics['cant_be_updated']) * 100.0 \
-                    /float(milestone_statistics['all']))
-                milestone_statistics['percentage_unknown'] = "%.0f" % \
-                    (float(milestone_statistics['unknown']) * 100.0
-                    /float(milestone_statistics['all']))
+    for maintplanlayer in milestone.release.plan.maintenanceplanlayerbranch_set.all():
+        layerbranch = maintplanlayer.layerbranch
 
-    else:
-        recipe_maintainer_history = Raw.get_remahi_by_end_date(
-                milestone.end_date)
-        recipe_maintainer_all = Raw.get_re_by_mantainer_and_date(
-                maintainer_name, recipe_maintainer_history[0])
-        milestone_statistics['all'] = len(recipe_maintainer_all)
-        if recipe_upstream_history:
-            recipe_upstream_all = Raw.get_reup_by_recipes_and_date(
-                    recipe_maintainer_all, recipe_upstream_history.id)
+        recipe_upstream_history = RecipeUpstreamHistory.get_last_by_date_range(
+            layerbranch,
+            milestone.start_date,
+            milestone.end_date
+        )
+        recipe_upstream_history_first = \
+            RecipeUpstreamHistory.get_first_by_date_range(
+                layerbranch,
+                milestone.start_date,
+                milestone.end_date,
+        )
+
+        if maintainer_name is None:
+            t_updated, t_not_updated, t_cant, t_unknown = \
+                Raw.get_reup_statistics(milestone.release.plan, milestone.end_date, recipe_upstream_history)
+            milestone_statistics['all'] += \
+                t_updated + t_not_updated + t_cant + t_unknown
+            milestone_statistics['up_to_date'] = +t_updated
+            milestone_statistics['not_updated'] = +t_not_updated
+            milestone_statistics['cant_be_updated'] += t_cant
+            milestone_statistics['unknown'] += t_unknown
+
+            if recipe_upstream_history_first:
+                recipes_not_upgraded = \
+                    Raw.get_reup_by_date(recipe_upstream_history_first.id)
+                if recipes_not_upgraded:
+                    recipes_upgraded = \
+                        Raw.get_reupg_by_dates_and_recipes(
+                            milestone.start_date, milestone.end_date, recipes_not_upgraded)
+                    milestone_statistics['all_upgraded'] += len(recipes_upgraded)
+                    milestone_statistics['all_not_upgraded'] += len(recipes_not_upgraded)
+
         else:
-            recipe_upstream_all = Raw.get_reup_by_recipes_and_date(
-                    recipe_maintainer_all)
-
-        milestone_statistics['up_to_date'] = 0
-        milestone_statistics['not_updated'] = 0
-        milestone_statistics['cant_be_updated'] = 0
-        milestone_statistics['unknown'] = 0
-        for ru in recipe_upstream_all:
-            if ru['status'] == 'Y':
-                milestone_statistics['up_to_date'] += 1
-            elif ru['status'] == 'N':
-                if ru['no_update_reason'] == '':
-                    milestone_statistics['not_updated'] += 1
-                else:
-                    milestone_statistics['cant_be_updated'] += 1
+            recipe_maintainer_history = Raw.get_remahi_by_end_date(
+                    layerbranch.id, milestone.end_date)
+            recipe_maintainer_all = Raw.get_re_by_mantainer_and_date(
+                    maintainer_name, recipe_maintainer_history[0])
+            milestone_statistics['all'] += len(recipe_maintainer_all)
+            if recipe_upstream_history:
+                recipe_upstream_all = Raw.get_reup_by_recipes_and_date(
+                        recipe_maintainer_all, recipe_upstream_history.id)
             else:
-                milestone_statistics['unknown'] += 1
-        if milestone_statistics['all'] == 0:
-            milestone_statistics['percentage'] = '0'
+                recipe_upstream_all = Raw.get_reup_by_recipes_and_date(
+                        recipe_maintainer_all)
+
+            for ru in recipe_upstream_all:
+                if ru['status'] == 'Y':
+                    milestone_statistics['up_to_date'] += 1
+                elif ru['status'] == 'N':
+                    if ru['no_update_reason'] == '':
+                        milestone_statistics['not_updated'] += 1
+                    else:
+                        milestone_statistics['cant_be_updated'] += 1
+                else:
+                    milestone_statistics['unknown'] += 1
+
+
+    milestone_statistics['percentage'] = '0'
+    if maintainer_name is None:
+        if milestone_statistics['all'] > 0:
+            milestone_statistics['percentage_up_to_date'] = "%.0f" % \
+                (float(milestone_statistics['up_to_date']) * 100.0 \
+                /float(milestone_statistics['all']))
+            milestone_statistics['percentage_not_updated'] = "%.0f" % \
+                (float(milestone_statistics['not_updated']) * 100.0 \
+                /float(milestone_statistics['all']))
+            milestone_statistics['percentage_cant_be_updated'] = "%.0f" % \
+                (float(milestone_statistics['cant_be_updated']) * 100.0 \
+                /float(milestone_statistics['all']))
+            milestone_statistics['percentage_unknown'] = "%.0f" % \
+                (float(milestone_statistics['unknown']) * 100.0
+                /float(milestone_statistics['all']))
+            if milestone_statistics['all_not_upgraded'] > 0:
+                milestone_statistics['percentage'] = "%.0f" % \
+                    ((float(milestone_statistics['all_upgraded']) * 100.0)
+                    /float(milestone_statistics['all_not_upgraded']))
         else:
+            milestone_statistics['percentage_up_to_date'] = "0"
+            milestone_statistics['percentage_not_updated'] = "0"
+            milestone_statistics['percentage_cant_be_updated'] = "0"
+            milestone_statistics['percentage_unknown'] = "0"
+    else:
+        if milestone_statistics['all'] > 0:
             milestone_statistics['percentage'] = "%.0f" % \
                 ((float(milestone_statistics['up_to_date']) /
                     float(milestone_statistics['all'])) * 100)
@@ -361,14 +383,6 @@ class RecipeList():
         self.summary = summary
 
 def _get_recipe_list(milestone):
-    recipe_maintainer_history = Raw.get_remahi_by_end_date(
-                milestone.end_date)
-
-    recipe_upstream_history = RecipeUpstreamHistory.get_last_by_date_range(
-        milestone.start_date,
-        milestone.end_date
-    )
-
     recipe_list = []
     recipes_ids = []
     recipe_upstream_dict_all = {}
@@ -376,29 +390,41 @@ def _get_recipe_list(milestone):
     maintainers_dict_all = {}
     current_date = date.today()
 
-    recipes = Raw.get_reupg_by_date(milestone.end_date)
-    for i,re in enumerate(recipes):
-        if 'pv' in re:
-            recipes[i]['version'] = re['pv']
-        recipes_ids.append(re['id'])
+    for maintplanlayer in milestone.release.plan.maintenanceplanlayerbranch_set.all():
+        layerbranch = maintplanlayer.layerbranch
 
-    if recipes:
-        recipe_last_updated = Raw.get_reup_by_last_updated(
-                milestone.end_date)
-        for rela in recipe_last_updated:
-            recipe_last_updated_dict_all[rela['recipe_id']] = rela
+        recipe_maintainer_history = Raw.get_remahi_by_end_date(layerbranch.id,
+                    milestone.end_date)
 
-        if recipe_upstream_history:
-            recipe_upstream_all = Raw.get_reup_by_recipes_and_date(
-                recipes_ids, recipe_upstream_history.id)
-            for reup in recipe_upstream_all:
-                recipe_upstream_dict_all[reup['recipe_id']] = reup
-    
-        if recipe_maintainer_history:
-            maintainers_all = Raw.get_ma_by_recipes_and_date(
-                recipes_ids, recipe_maintainer_history[0])
-            for ma in maintainers_all:
-                maintainers_dict_all[ma['recipe_id']] = ma['name']
+        recipe_upstream_history = RecipeUpstreamHistory.get_last_by_date_range(
+            layerbranch,
+            milestone.start_date,
+            milestone.end_date
+        )
+
+        recipes = Raw.get_reupg_by_date(layerbranch.id, milestone.end_date)
+        for i,re in enumerate(recipes):
+            if 'pv' in re:
+                recipes[i]['version'] = re['pv']
+            recipes_ids.append(re['id'])
+
+        if recipes:
+            recipe_last_updated = Raw.get_reup_by_last_updated(
+                    layerbranch.id, milestone.end_date)
+            for rela in recipe_last_updated:
+                recipe_last_updated_dict_all[rela['recipe_id']] = rela
+
+            if recipe_upstream_history:
+                recipe_upstream_all = Raw.get_reup_by_recipes_and_date(
+                    recipes_ids, recipe_upstream_history.id)
+                for reup in recipe_upstream_all:
+                    recipe_upstream_dict_all[reup['recipe_id']] = reup
+
+            if recipe_maintainer_history:
+                maintainers_all = Raw.get_ma_by_recipes_and_date(
+                    recipes_ids, recipe_maintainer_history[0])
+                for ma in maintainers_all:
+                    maintainers_dict_all[ma['recipe_id']] = ma['name']
 
     for recipe in recipes:
         upstream_version = ''
@@ -491,8 +517,11 @@ class RecipeListView(ListView):
 
         self.milestone_statistics = _get_milestone_statistics(milestone)
 
-        self.recipe_maintainer_history = RecipeMaintainerHistory.get_by_end_date(
-            milestone.end_date)
+        self.recipe_maintainer_history = {}
+        for maintplanlayer in maintplan.maintenanceplanlayerbranch_set.all():
+            layerbranch = maintplanlayer.layerbranch
+            self.recipe_maintainer_history[layerbranch.id] = RecipeMaintainerHistory.get_by_end_date(layerbranch,
+                                                                                                     milestone.end_date)
 
         recipe_list = _get_recipe_list(milestone)
         self.recipe_list_count = len(recipe_list)
@@ -538,12 +567,12 @@ class RecipeListView(ListView):
         context['maintainer_name'] = self.maintainer_name
         context['set_maintainers'] =  ['All', 'No maintainer']
         all_maintainers = []
-        for rm in RecipeMaintainer.objects.filter(history =
-                self.recipe_maintainer_history).values(
-                'maintainer__name').distinct().order_by('maintainer__name'):
-            if rm['maintainer__name'] in context['set_maintainers']:
-                continue
-            all_maintainers.append(rm['maintainer__name'])
+        for layerbranch_id, rmh in self.recipe_maintainer_history.items():
+            for rm in RecipeMaintainer.objects.filter(history=rmh).values(
+                    'maintainer__name').distinct().order_by('maintainer__name'):
+                if rm['maintainer__name'] in context['set_maintainers']:
+                    continue
+                all_maintainers.append(rm['maintainer__name'])
         context['all_maintainers'] = all_maintainers
 
         context['search'] = self.search
@@ -608,6 +637,7 @@ def _get_recipe_upgrade_detail(maintplan, recipe_upgrade):
         if milestone:
             milestone_name = milestone.name
             recipe_maintainer_history = RecipeMaintainerHistory.get_by_end_date(
+                recipe_upgrade.recipe.layerbranch,
                 milestone.end_date)
 
     is_recipe_maintainer = False
@@ -655,6 +685,7 @@ class RecipeDetailView(DetailView):
         context['upstream_version'] = ''
         context['upstream_no_update_reason'] = ''
         recipe_upstream_history = RecipeUpstreamHistory.get_last_by_date_range(
+            recipe.layerbranch,
             milestone.start_date,
             milestone.end_date
         )
@@ -671,7 +702,7 @@ class RecipeDetailView(DetailView):
                 context['upstream_version'] = recipe_upstream.version
                 context['upstream_no_update_reason'] = recipe_upstream.no_update_reason
 
-        self.recipe_maintainer_history = RecipeMaintainerHistory.get_last()
+        self.recipe_maintainer_history = RecipeMaintainerHistory.get_last(recipe.layerbranch)
         recipe_maintainer = RecipeMaintainer.objects.filter(recipe = recipe,
                 history = self.recipe_maintainer_history)
         if recipe_maintainer:
@@ -737,16 +768,20 @@ class MaintainerListView(ListView):
 
         self.milestone_statistics = _get_milestone_statistics(milestone)
 
-        recipe_maintainer_history = RecipeMaintainerHistory.get_by_end_date(
-            milestone.end_date)
+        self.maintainer_count = 0
+        for maintplanlayer in maintplan.maintenanceplanlayerbranch_set.all():
+            layerbranch = maintplanlayer.layerbranch
 
-        if recipe_maintainer_history:
-            for rm in RecipeMaintainer.objects.filter(history =
-                recipe_maintainer_history).values(
-                'maintainer__name').distinct().order_by('maintainer__name'):
-                maintainer_list.append(MaintainerList(rm['maintainer__name']))
+            recipe_maintainer_history = RecipeMaintainerHistory.get_by_end_date(
+                layerbranch, milestone.end_date)
 
-            self.maintainer_count = len(maintainer_list)
+            if recipe_maintainer_history:
+                for rm in RecipeMaintainer.objects.filter(history =
+                        recipe_maintainer_history).values(
+                        'maintainer__name').distinct().order_by('maintainer__name'):
+                    maintainer_list.append(MaintainerList(rm['maintainer__name']))
+
+                self.maintainer_count += len(maintainer_list)
 
         self.intervals = sorted(intervals.keys())
         current_date = date.today()

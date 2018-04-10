@@ -199,7 +199,7 @@ if __name__=="__main__":
                         for recipe_data in recipes:
                             set_regexes(recipe_data)
 
-                        history = RecipeUpstreamHistory(start_date = datetime.now())
+                        history = RecipeUpstreamHistory(layerbranch=layerbranch, start_date=datetime.now())
 
                         result = []
                         for recipe_data in recipes:
