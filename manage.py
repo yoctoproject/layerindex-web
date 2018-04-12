@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # layerindex-web - Django management script
 #
@@ -6,7 +6,7 @@
 #
 # Copyright (c) Django Software Foundation and individual contributors.
 # All rights reserved.
-#!/usr/bin/env python
+
 import os
 import sys
 
