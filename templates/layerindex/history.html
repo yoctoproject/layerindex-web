@@ -41,11 +41,11 @@
                         {{ revision.comment|linebreaksbr }}
                     {% else %}
                         {% for version in revision.version_set.all %}
-                            {% if version.type = 0 %}
+                            {% if version.type == 0 %}
                                 Added
-                            {% elif version.type = 1 %}
+                            {% elif version.type == 1 %}
                                 Changed
-                            {% elif version.type = 2 %}
+                            {% elif version.type == 2 %}
                                 Deleted
                             {% endif %}
                             {{ version.content_type.name.lower }}: {{ version.object_repr }}

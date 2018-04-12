@@ -51,14 +51,14 @@
                     {{ field.label_tag }}
                 </div>
                 <div class="controls">
-                    {% if field.name = 'deps' %}
+                    {% if field.name == 'deps' %}
                         <div class="scrolling">
                             <table><tbody>
                                 {% for deplayer in deplistlayers %}
                                     {% if deplayer.id in form.checked_deps %}
                                         <tr>
                                             <td class="checkboxtd"><input type="checkbox" name="deps" value="{{ deplayer.id }}" id="id_deps_{{forloop.counter}}" checked="checked" /></td>
-                                            {% if deplayer.status = 'N' %}
+                                            {% if deplayer.status == 'N' %}
                                             <td><label class="muted" for="id_deps_{{forloop.counter}}">{{ deplayer.name }} (unpublished)</label></td>
                                             {% else %}
                                             <td><label for="id_deps_{{forloop.counter}}">{{ deplayer.name }}</label></td>
@@ -70,7 +70,7 @@
                                     {% if not deplayer.id in form.checked_deps %}
                                         <tr>
                                             <td class="checkboxtd"><input type="checkbox" name="deps" value="{{ deplayer.id }}" id="id_deps_{{forloop.counter}}" /></td>
-                                            {% if deplayer.status = 'N' %}
+                                            {% if deplayer.status == 'N' %}
                                             <td><label class="muted" for="id_deps_{{forloop.counter}}">{{ deplayer.name }} (unpublished)</label></td>
                                             {% else %}
                                             <td><label for="id_deps_{{forloop.counter}}">{{ deplayer.name }}</label></td>
@@ -89,7 +89,7 @@
                 </div>
             </div>
             {% endif %}
-            {% if field.name = 'vcs_web_url' %}
+            {% if field.name == 'vcs_web_url' %}
                 <div class="control-label">
                     Web interface type
                 </div>

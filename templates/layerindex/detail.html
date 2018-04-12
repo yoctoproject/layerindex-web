@@ -33,14 +33,14 @@
                         {% if layerbranch.yp_compatible_version %}
                         <a href="{{layerbranch.yp_compatible_version.link_url}}"><img src="{{layerbranch.yp_compatible_version.image_url}}" alt="{{layerbranch.yp_compatible_version.description}}" class="yp-icon" title="{{layerbranch.yp_compatible_version.description}}"></a>
                         {% endif %}
-                        {% if layeritem.status = "N" %}
+                        {% if layeritem.status == "N" %}
                             <span class="label label-warning">Unpublished</span>
                         {% endif %}
                         {% if user.is_authenticated %}
                             <span class="pull-right">
                                 {% if perms.layerindex.publish_layer or useredit %}
                                     <a href="{% url 'edit_layer' url_branch layeritem.name %}" class="btn">Edit layer</a>
-                                    {% if layeritem.layernote_set.count = 0 %}
+                                    {% if layeritem.layernote_set.count == 0 %}
                                         <a href="{% url 'add_layernote' layeritem.name %}" class="btn">Add note</a>
                                     {% endif %}
                                 {% endif %}
@@ -118,7 +118,7 @@
                     {% endif %}
 
                     {% if layerbranch.active_maintainers.count > 0 %}
-                    <h3>{% if layerbranch.active_maintainers|length = 1 %}Maintainer{% else %}Maintainers{% endif %}</h3>
+                    <h3>{% if layerbranch.active_maintainers|length == 1 %}Maintainer{% else %}Maintainers{% endif %}</h3>
 
                     <ul>
                         {% for maintainer in layerbranch.active_maintainers %}
