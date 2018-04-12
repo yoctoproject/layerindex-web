@@ -4,7 +4,7 @@
 #
 # Adds GET parameters to the current URL
 
-from django.template import Library, Node, resolve_variable, TemplateSyntaxError, Variable
+from django.template import Library, Node, TemplateSyntaxError, Variable
 
 register = Library()
 
