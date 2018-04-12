@@ -258,7 +258,7 @@ def _check_url_branch(kwargs):
             raise Http404
         branch = get_object_or_404(Branch, name=branchname)
 
-def publish(request, name):
+def publish_view(request, name):
     if not (request.user.is_authenticated() and request.user.has_perm('layerindex.publish_layer')):
         raise PermissionDenied
     layeritem = get_object_or_404(LayerItem, name=name)
