@@ -9,7 +9,7 @@ from django.views.defaults import page_not_found
 from django.core.urlresolvers import reverse_lazy
 from layerindex.views import LayerListView, RecipeSearchView, MachineSearchView, DistroSearchView, ClassSearchView, PlainTextListView, LayerDetailView, edit_layer_view, delete_layer_view, edit_layernote_view, delete_layernote_view, RedirectParamsView, DuplicatesView, LayerUpdateDetailView
 
-urlpatterns = patterns('',
+urlpatterns = [
     url(r'^$', 
         RedirectParamsView.as_view(permanent=False), {'redirect_name': 'layer_list'}),
     url(r'^layers/$',
@@ -41,4 +41,4 @@ urlpatterns = patterns('',
         DuplicatesView.as_view(
             template_name='layerindex/duplicates.html'),
             name='duplicates'),
-)
+]

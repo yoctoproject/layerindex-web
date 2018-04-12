@@ -27,7 +27,7 @@ router.register(r'distros', restviews.DistroViewSet)
 router.register(r'classes', restviews.ClassViewSet)
 router.register(r'layers', restviews.LayerViewSet, 'layers')
 
-urlpatterns = patterns('',
+urlpatterns = [
     url(r'^$',
         RedirectView.as_view(url=reverse_lazy('layer_list', args=('master',)), permanent=False),
         name='frontpage'),
@@ -147,4 +147,4 @@ urlpatterns = patterns('',
             template_name='layerindex/classicrecipedetail.html'),
             name='classic_recipe'),
     url(r'.*', page_not_found)
-)
+]
