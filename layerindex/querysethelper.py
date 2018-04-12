@@ -71,7 +71,7 @@ def _validate_input(input, model):
             return None, invalid + str(input_list)
 
         # Check we are looking for a valid field
-        valid_fields = model._meta.get_all_field_names()
+        valid_fields = [f.name for f in model._meta.get_fields()]
         for field in input_list[0].split(VALUE_SEPARATOR):
             if not functools.reduce(lambda x, y: x or y, map(lambda x: field.startswith(x), [ x for x in valid_fields ])):
                 return None, (field, [ x for x in valid_fields ])

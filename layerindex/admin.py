@@ -89,7 +89,7 @@ class LayerUpdateAdmin(admin.ModelAdmin):
 class RecipeAdmin(admin.ModelAdmin):
     search_fields = ['filename', 'pn']
     list_filter = ['layerbranch__layer__name', 'layerbranch__branch__name']
-    readonly_fields = [fieldname for fieldname in Recipe._meta.get_all_field_names() if fieldname not in  ['recipefiledependency', 'classicrecipe', 'packageconfig']]
+    readonly_fields = [f.name for f in Recipe._meta.get_fields() if f.name not in ['recipefiledependency', 'classicrecipe', 'packageconfig']]
     def has_add_permission(self, request, obj=None):
         return False
     def has_delete_permission(self, request, obj=None):
@@ -110,7 +110,7 @@ class DynamicBuildDepAdmin(admin.ModelAdmin):
 class ClassicRecipeAdmin(admin.ModelAdmin):
     search_fields = ['filename', 'pn']
     list_filter = ['layerbranch__layer__name', 'layerbranch__branch__name']
-    readonly_fields = [fieldname for fieldname in Recipe._meta.get_all_field_names() if fieldname not in ['recipefiledependency', 'packageconfig']]
+    readonly_fields = [f.name for f in ClassicRecipe._meta.get_fields() if f.name not in ['recipefiledependency', 'packageconfig']]
     def has_add_permission(self, request, obj=None):
         return False
     def has_delete_permission(self, request, obj=None):
@@ -119,7 +119,7 @@ class ClassicRecipeAdmin(admin.ModelAdmin):
 class MachineAdmin(admin.ModelAdmin):
     search_fields = ['name']
     list_filter = ['layerbranch__layer__name', 'layerbranch__branch__name']
-    readonly_fields = Machine._meta.get_all_field_names()
+    readonly_fields = [f.name for f in Machine._meta.get_fields()]
     def has_add_permission(self, request, obj=None):
         return False
     def has_delete_permission(self, request, obj=None):
@@ -128,7 +128,7 @@ class MachineAdmin(admin.ModelAdmin):
 class DistroAdmin(admin.ModelAdmin):
     search_fields = ['name']
     list_filter = ['layerbranch__layer__name', 'layerbranch__branch__name']
-    readonly_fields = Distro._meta.get_all_field_names()
+    readonly_fields = [f.name for f in Distro._meta.get_fields()]
     def has_add_permission(self, request, obj=None):
         return False
     def has_delete_permission(self, request, obj=None):
@@ -138,7 +138,7 @@ class DistroAdmin(admin.ModelAdmin):
 class BBAppendAdmin(admin.ModelAdmin):
     search_fields = ['filename']
     list_filter = ['layerbranch__layer__name', 'layerbranch__branch__name']
-    readonly_fields = BBAppend._meta.get_all_field_names()
+    readonly_fields = [f.name for f in BBAppend._meta.get_fields()]
     def has_add_permission(self, request, obj=None):
         return False
     def has_delete_permission(self, request, obj=None):
@@ -147,7 +147,7 @@ class BBAppendAdmin(admin.ModelAdmin):
 class BBClassAdmin(admin.ModelAdmin):
     search_fields = ['name']
     list_filter = ['layerbranch__layer__name', 'layerbranch__branch__name']
-    readonly_fields = BBClass._meta.get_all_field_names()
+    readonly_fields = [f.name for f in BBClass._meta.get_fields()]
     def has_add_permission(self, request, obj=None):
         return False
     def has_delete_permission(self, request, obj=None):
