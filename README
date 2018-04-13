@@ -12,8 +12,8 @@ Setup
 In order to make use of this application you will need:
 
 * Python 3.4+
-* Django 1.8.x - tested with 1.8.18; newer versions may work, but
-  the application has not been tested with 1.9 or newer.
+* Django 1.11.x - tested with 1.11.12; newer versions may work, but
+  the application has not been tested with 2.0 or newer.
 * RabbitMQ 3.6.x - tested with 3.6.10.
 * For production usage, a web server set up to host Django applications
   (not needed for local-only testing)
