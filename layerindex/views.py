@@ -31,7 +31,7 @@ from . import tasks
 import settings
 from django.dispatch import receiver
 import reversion
-
+from django.db.models.signals import pre_save
 
 def edit_layernote_view(request, template_name, slug, pk=None):
     layeritem = get_object_or_404(LayerItem, name=slug)
@@ -801,46 +801,52 @@ class EditProfileFormView(UpdateView):
         return reverse('frontpage')
 
 
-@receiver(reversion.pre_revision_commit)
-def annotate_revision(sender, **kwargs):
+@receiver(pre_save, sender=reversion.models.Version)
+def annotate_revision_version(sender, instance, *args, **kwargs):
     ignorefields = ['vcs_last_rev', 'vcs_last_fetch', 'vcs_last_commit', 'updated']
-    versions = kwargs.pop('versions')
-    instances = kwargs.pop('instances')
     changelist = []
-    for ver, inst in zip(versions, instances):
-        currentVersion = ver.field_dict
-        modelmeta = ver.content_type.model_class()._meta
-        #FIXME modern django-reversion dropped the type field (argh!)
-        #if ver.type == reversion.models.VERSION_DELETE:
-        #    changelist.append("Deleted %s: %s" % (modelmeta.verbose_name.lower(), ver.object_repr))
-        #else:
-        pastver = reversion.get_for_object(inst)
-        if pastver:# and ver.type != reversion.models.VERSION_ADD:
-            pastVersion = pastver[0].field_dict
-            changes = set(currentVersion.items()) - set(pastVersion.items())
-            changedVars = [var[0] for var in changes]
-            fieldchanges = []
-            for field in changedVars:
-                if field not in ignorefields:
-                    modelfield = modelmeta.get_field(field)
-                    newvalue = currentVersion[field]
-                    if modelfield.choices:
-                        for v in modelfield.choices:
-                            if v[0] == newvalue:
-                                newvalue = v[1]
-                                break
-                    fieldchanges.append("%s to '%s'" % (modelfield.verbose_name.lower(), newvalue))
-            if fieldchanges:
-                changelist.append("Changed %s %s %s" % (modelmeta.verbose_name.lower(), ver.object_repr, ", ".join(fieldchanges)))
+    objclass = instance.content_type.model_class()
+    currentVersion = instance.field_dict
+    #FIXME modern django-reversion dropped the type field (argh!)
+    #if instance.type == reversion.models.VERSION_DELETE:
+    #    changelist.append("Deleted %s: %s" % (modelmeta.verbose_name.lower(), instance.object_repr))
+    #else:
+    pastver = reversion.models.Version.objects.filter(content_type=instance.content_type, object_id=instance.object_id).order_by('-id').first()
+    if pastver:# and instance.type != reversion.models.VERSION_ADD:
+        pastVersion = pastver.field_dict
+        changes = set(currentVersion.items()) - set(pastVersion.items())
+        changedVars = [var[0] for var in changes]
+        fieldchanges = []
+        modelmeta = objclass._meta
+        for field in changedVars:
+            if field not in ignorefields:
+                modelfield = modelmeta.get_field(field)
+                newvalue = currentVersion[field]
+                if modelfield.choices:
+                    for v in modelfield.choices:
+                        if v[0] == newvalue:
+                            newvalue = v[1]
+                            break
+                fieldchanges.append("%s to '%s'" % (modelfield.verbose_name.lower(), newvalue))
+        if fieldchanges:
+            changelist.append("Changed %s %s %s" % (modelmeta.verbose_name.lower(), instance.object_repr, ", ".join(fieldchanges)))
+    if changelist:
+        if not instance.revision.comment or instance.revision.comment == 'No changes':
+            instance.revision.comment = '\n'.join(changelist)
         else:
-            changelist.append("Added %s: %s" % (modelmeta.verbose_name.lower(), ver.object_repr))
-    comment = '\n'.join(changelist)
-    if not comment:
-        comment = 'No changes'
-    revision = kwargs.pop('revision')
-    revision.comment = comment
-    revision.save()
-    kwargs['revision'] = revision
+            instance.revision.comment = instance.revision.comment + '\n' + ('\n'.join(changelist))
+        instance.revision.save()
+
+
+@receiver(pre_save, sender=reversion.models.Revision)
+def annotate_revision(sender, instance, *args, **kwargs):
+    if instance.pk is None:
+        # When you make changes in the admin site the comment gets set to just
+        # specify the field that was changed, but that's not enough detail.
+        # For changes elsewhere it'll be blank since we aren't creating a revision
+        # explicitly. Thus, set the comment to a default value and we'll fill it in
+        # ourselves using the Version pre-save signal handler above.
+        instance.comment = 'No changes'
 
 
 class RecipeDetailView(DetailView):
