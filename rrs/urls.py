@@ -1,11 +1,11 @@
-from django.conf.urls import patterns, include, url
+from django.conf.urls import include, url
 
 from rrs.models import Release, Milestone
 from rrs.views import RecipeListView, recipes_report, RecipeDetailView, \
     MaintainerListView, FrontPageRedirect, MaintenancePlanRedirect, \
     MaintenanceStatsView
 
-urlpatterns = patterns('',
+urlpatterns = [
     url(r'^$', FrontPageRedirect.as_view(),
         name='rrs_frontpage'),
     url(r'^maintplan/(?P<maintplan_name>.*)/$',
@@ -30,4 +30,4 @@ urlpatterns = patterns('',
         MaintenanceStatsView.as_view(
         template_name='rrs/rrs_stats.html'),
         name="rrs_stats"),
-)
+]
