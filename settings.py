@@ -233,3 +233,8 @@ RABBIT_BACKEND = 'rpc://'
 
 # Used for fetching repo
 PARALLEL_JOBS = "4"
+
+# Settings for Recipe reporting system
+RRS_EMAIL_SUBJECT = '[Recipe reporting system] Upgradable recipe name list'
+RRS_EMAIL_FROM = 'recipe-report@yoctoproject.org'
+RRS_EMAIL_TO = 'list@example.com'
