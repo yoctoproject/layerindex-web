@@ -146,5 +146,5 @@ urlpatterns = [
         ClassicRecipeDetailView.as_view(
             template_name='layerindex/classicrecipedetail.html'),
             name='classic_recipe'),
-    url(r'.*', page_not_found)
+    url(r'.*', page_not_found, kwargs={'exception': Exception("Page not Found")})
 ]
