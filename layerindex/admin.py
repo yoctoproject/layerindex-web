@@ -89,7 +89,12 @@ class LayerUpdateAdmin(admin.ModelAdmin):
 class RecipeAdmin(admin.ModelAdmin):
     search_fields = ['filename', 'pn']
     list_filter = ['layerbranch__layer__name', 'layerbranch__branch__name']
-    readonly_fields = [f.name for f in Recipe._meta.get_fields() if f.name not in ['recipefiledependency', 'classicrecipe', 'packageconfig']]
+    def get_readonly_fields(self, request, obj=None):
+        rofields = []
+        for f in Recipe._meta.get_fields():
+            if not (f.auto_created and f.is_relation):
+                rofields.append(f.name)
+        return rofields
     def has_add_permission(self, request, obj=None):
         return False
     def has_delete_permission(self, request, obj=None):
@@ -110,7 +115,12 @@ class DynamicBuildDepAdmin(admin.ModelAdmin):
 class ClassicRecipeAdmin(admin.ModelAdmin):
     search_fields = ['filename', 'pn']
     list_filter = ['layerbranch__layer__name', 'layerbranch__branch__name']
-    readonly_fields = [f.name for f in ClassicRecipe._meta.get_fields() if f.name not in ['recipefiledependency', 'packageconfig']]
+    def get_readonly_fields(self, request, obj=None):
+        rofields = []
+        for f in ClassicRecipe._meta.get_fields():
+            if not (f.auto_created and f.is_relation):
+                rofields.append(f.name)
+        return rofields
     def has_add_permission(self, request, obj=None):
         return False
     def has_delete_permission(self, request, obj=None):
