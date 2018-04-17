@@ -319,6 +319,7 @@ def main():
             # unreliable due to leaking memory (we're using bitbake internals in a manner in which
             # they never get used during normal operation).
             last_rev = {}
+            failed_layers = {}
             for branch in branches:
                 # If layer_A depends(or recommends) on layer_B, add layer_B before layer_A
                 deps_dict_all = {}
@@ -384,9 +385,12 @@ def main():
                     # If nothing changed after a run then some dependencies couldn't be resolved
                     if operator.eq(deps_dict_all_copy, deps_dict_all):
                         logger.warning("Cannot find required collections on branch %s:" % branch)
+                        layer_names = []
                         for layer, value in deps_dict_all.items():
                             logger.error('%s: %s' % (layer.name, value['requires']))
+                            layer_names.append(layer.name)
                         logger.warning("Known collections on branch %s: %s" % (branch, collections))
+                        failed_layers[branch] = layer_names
                         break
 
                 for layer in layerquery_sorted:
@@ -427,6 +431,11 @@ def main():
                         # Interrupted by user, break out of loop
                         logger.info('Update interrupted, exiting')
                         sys.exit(254)
+            if failed_layers:
+                print()
+                for branch, err_msg_list in failed_layers.items():
+                    logger.error("Failed layers on branch %s: %s" % (branch, " ".join(err_msg_list)))
+                print()
         finally:
             utils.unlock_file(lockfile)
 
