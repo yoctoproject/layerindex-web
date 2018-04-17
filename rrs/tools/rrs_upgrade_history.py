@@ -153,6 +153,12 @@ def upgrade_history(options, logger):
                     ctdate = datetime.fromtimestamp(int(ctepoch))
                     run_internal(maintplanbranch, ct, ctdate, options, logger, bitbake_map, initial=True)
 
+                if layerbranch.vcs_subdir:
+                    layersubdir_start = layerbranch.vcs_subdir
+                    if not layersubdir_start.endswith('/'):
+                        layersubdir_start += '/'
+                else:
+                    layersubdir_start = ''
                 logger.debug("Adding upgrade history from %s to %s ..." % (since, datetime.today().strftime("%Y-%m-%d")))
                 for item in commit_list:
                     if item:
@@ -163,6 +169,9 @@ def upgrade_history(options, logger):
                         for parent in commitobj.parents:
                             diff = parent.diff(commitobj)
                             for diffitem in diff:
+                                if layersubdir_start and not (diffitem.a_path.startswith(layersubdir_start) or diffitem.b_path.startswith(layersubdir_start)):
+                                    # Not in this layer, skip it
+                                    continue
                                 if diffitem.a_path.endswith(('.bb', '.inc')) or diffitem.b_path.endswith(('.bb', '.inc')):
                                     # We need to look at this commit
                                     touches_recipe = True
@@ -170,7 +179,7 @@ def upgrade_history(options, logger):
                             if touches_recipe:
                                 break
                         if not touches_recipe:
-                            # No recipes changed in this commit
+                            # No recipes in the layer changed in this commit
                             # NOTE: Whilst it's possible that a change to a class might alter what's
                             # in the recipe, we can ignore that since we are only concerned with actual
                             # upgrades which would always require some sort of change to the recipe
