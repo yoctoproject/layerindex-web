@@ -104,7 +104,7 @@ def send_email(maintplan, recipes, options):
 
     plaintext = get_template('rrs/report_email.txt')
     site_url = 'http://' + current_site.domain + reverse('rrs_frontpage')
-    d = Context({
+    d = {
         'maintplan': maintplan,
         'site': current_site,
         'site_url': site_url,
@@ -112,7 +112,7 @@ def send_email(maintplan, recipes, options):
         'total_upgradable_count': upgradable_count,
         'commits': commits,
         'recipelines': recipelines,
-    })
+    }
     text_content = plaintext.render(d)
 
     msg = EmailMessage(subject_content, text_content, from_email, to_email_list)
