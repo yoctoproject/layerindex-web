@@ -172,11 +172,11 @@ def edit_layer_view(request, template_name, branch='master', slug=None):
                         layer_url = request.build_absolute_uri(reverse('layer_review', args=(layeritem.name,)))
                         if getattr(settings, 'FORCE_REVIEW_HTTPS', False) and layer_url.startswith('http:'):
                             layer_url = 'https:' + layer_url.split(':', 1)[1]
-                        d = Context({
+                        d = {
                             'user_name': user_name,
                             'layer_name': layeritem.name,
                             'layer_url': layer_url,
-                        })
+                        }
                         subject = '%s - %s' % (settings.SUBMIT_EMAIL_SUBJECT, layeritem.name)
                         from_email = settings.SUBMIT_EMAIL_FROM
                         to_email = user.email
@@ -776,7 +776,7 @@ class PlainTextListView(ListView):
     def render_to_response(self, context):
         "Returns a plain text response rendering of the template"
         template = get_template(self.template_name)
-        return HttpResponse(template.render(Context(context)),
+        return HttpResponse(template.render(context),
                                  content_type='text/plain')
 
 class HistoryListView(ListView):
