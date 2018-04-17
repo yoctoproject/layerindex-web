@@ -348,12 +348,11 @@ def main():
                     deps = re.search("^LAYERDEPENDS = \"(.*)\"", output, re.M).group(1) or ''
                     recs = re.search("^LAYERRECOMMENDS = \"(.*)\"", output, re.M).group(1) or ''
 
-                    collections.add((col, ver))
-
                     deps_dict = utils.explode_dep_versions2(bitbakepath, deps + ' ' + recs)
                     if len(deps_dict) == 0:
                         # No depends, add it firstly
                         layerquery_sorted.append(layer)
+                        collections.add((col, ver))
                         continue
                     deps_dict_all[layer] = {'requires': deps_dict, 'collection': col, 'version': ver}
 
@@ -374,6 +373,7 @@ def main():
                             # All the depends are in collections:
                             del(deps_dict_all[layer])
                             layerquery_sorted.append(layer)
+                            collections.add((value['collection'], value['version']))
 
                     if not len(deps_dict_all):
                         break
