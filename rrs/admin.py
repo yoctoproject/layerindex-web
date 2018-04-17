@@ -9,6 +9,7 @@ from django.utils.functional import curry
 from django.contrib import admin
 from django.contrib.admin import DateFieldListFilter
 from django.forms.models import BaseInlineFormSet
+from django.core.exceptions import ValidationError
 
 from rrs.models import Release, Milestone, Maintainer, RecipeMaintainerHistory, \
         RecipeMaintainer, RecipeDistro, RecipeUpgrade, RecipeUpstream, \
@@ -40,6 +41,29 @@ class MaintenancePlanLayerBranchFormSet(BaseInlineFormSet):
         if py3env:
             form.fields['python3_environment'].initial = py3env
         return form
+
+    def clean(self):
+        super(MaintenancePlanLayerBranchFormSet, self).clean()
+        total_checked = 0
+
+        for form in self.forms:
+            if not form.is_valid():
+                return
+            if form.cleaned_data and not form.cleaned_data.get('DELETE'):
+                layerbranch = form.cleaned_data['layerbranch']
+                if not layerbranch:
+                    raise ValidationError('You must select a layerbranch')
+                # Only allow one plan per layer
+                # NOTE: This restriction is in place because we don't have enough safeguards in the
+                # processing code to avoid processing a layer multiple times if it's part of
+                # more than one plan, and there may be other challenges. For now, just keep it simple.
+                mplayerbranches = layerbranch.maintenanceplanlayerbranch_set.all()
+                if form.instance.pk is not None:
+                    mplayerbranches = mplayerbranches.exclude(id=form.instance.id)
+                if mplayerbranches.exists():
+                    raise ValidationError('A layer branch can only be part of one maintenance plan - layer branch %s is already part of maintenance plan %s' % (layerbranch, mplayerbranches.first().plan.name))
+                total_checked += 1
+
 
 class MaintenancePlanLayerBranchInline(admin.StackedInline):
     model = MaintenancePlanLayerBranch
