@@ -8,6 +8,7 @@ from django.utils.functional import curry
 
 from django.contrib import admin
 from django.contrib.admin import DateFieldListFilter
+from django import forms
 from django.forms.models import BaseInlineFormSet
 from django.core.exceptions import ValidationError
 
@@ -72,8 +73,33 @@ class MaintenancePlanLayerBranchInline(admin.StackedInline):
     min_num = 1
     extra = 0
 
+class MaintenancePlanAdminForm(forms.ModelForm):
+    model = MaintenancePlan
+
+    def clean_email_to(self):
+        val = self.cleaned_data['email_to']
+        if self.cleaned_data['email_enabled']:
+            if not val:
+                raise ValidationError('To email address must be specified if emails are enabled')
+        return val
+
+    def clean_email_from(self):
+        val = self.cleaned_data['email_from']
+        if self.cleaned_data['email_enabled']:
+            if not val:
+                raise ValidationError('From email address must be specified if emails are enabled')
+        return val
+
+    def clean_email_subject(self):
+        val = self.cleaned_data['email_subject']
+        if self.cleaned_data['email_enabled']:
+            if not val:
+                raise ValidationError('Email subject must be specified if emails are enabled')
+        return val
+
 class MaintenancePlanAdmin(admin.ModelAdmin):
     model = MaintenancePlan
+    form = MaintenancePlanAdminForm
     inlines = [
         MaintenancePlanLayerBranchInline,
     ]
