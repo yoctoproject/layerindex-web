@@ -287,19 +287,10 @@ def main():
     # Collect repo info
     repo = git.Repo(repodir)
     assert repo.bare == False
-    try:
-        if options.nocheckout:
-            topcommit = repo.commit('HEAD')
-        else:
-            topcommit = repo.commit('origin/%s' % branchname)
-    except:
-        if layerbranch:
-            logger.info("layer %s - branch %s no longer exists, removing it from database" % (layer.name, branchdesc))
-            if not options.dryrun:
-                layerbranch.delete()
-        else:
-            logger.info("Skipping update of layer %s - branch %s doesn't exist" % (layer.name, branchdesc))
-        sys.exit(1)
+    if options.nocheckout:
+        topcommit = repo.commit('HEAD')
+    else:
+        topcommit = repo.commit('origin/%s' % branchname)
 
     tinfoil = None
     tempdir = None
@@ -329,17 +320,6 @@ def main():
                 # Find latest commit in subdirectory
                 # A bit odd to do it this way but apparently there's no other way in the GitPython API
                 topcommit = next(repo.iter_commits('origin/%s' % branchname, paths=layerbranch.vcs_subdir), None)
-                if not topcommit:
-                    # This will error out if the directory is completely invalid or had never existed at this point
-                    # If it previously existed but has since been deleted, you will get the revision where it was
-                    # deleted - so we need to handle that case separately later
-                    if newbranch:
-                        logger.info("Skipping update of layer %s for branch %s - subdirectory %s does not exist on this branch" % (layer.name, branchdesc, layerbranch.vcs_subdir))
-                    elif layerbranch.vcs_subdir:
-                        logger.error("Subdirectory for layer %s does not exist on branch %s - if this is legitimate, the layer branch record should be deleted" % (layer.name, branchdesc))
-                    else:
-                        logger.error("Failed to get last revision for layer %s on branch %s" % (layer.name, branchdesc))
-                    sys.exit(1)
 
             layerdir = os.path.join(repodir, layerbranch.vcs_subdir)
             layerdir_start = os.path.normpath(layerdir) + os.sep
@@ -353,17 +333,6 @@ def main():
                 # Check out appropriate branch
                 if not options.nocheckout:
                     utils.checkout_layer_branch(layerbranch, repodir, logger=logger)
-
-                if layerbranch.vcs_subdir and not os.path.exists(layerdir):
-                    if newbranch:
-                        logger.info("Skipping update of layer %s for branch %s - subdirectory %s does not exist on this branch" % (layer.name, branchdesc, layerbranch.vcs_subdir))
-                    else:
-                        logger.error("Subdirectory for layer %s does not exist on branch %s - if this is legitimate, the layer branch record should be deleted" % (layer.name, branchdesc))
-                    sys.exit(1)
-
-                if not os.path.exists(os.path.join(layerdir, 'conf/layer.conf')):
-                    logger.error("conf/layer.conf not found for layer %s - is subdirectory set correctly?" % layer.name)
-                    sys.exit(1)
 
                 logger.info("Collecting data for layer %s on branch %s" % (layer.name, branchdesc))
                 try:

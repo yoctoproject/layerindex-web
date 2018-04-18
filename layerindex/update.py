@@ -140,6 +140,15 @@ def fetch_repo(vcs_url, repodir, urldir, fetchdir, layer_name):
         logger.error("Fetch of layer %s failed: %s" % (layer_name, e.output))
         return (vcs_url, e.output)
 
+def print_subdir_error(newbranch, layername, vcs_subdir, branchdesc):
+    # This will error out if the directory is completely invalid or had never existed at this point
+    # If it previously existed but has since been deleted, you will get the revision where it was
+    # deleted - so we need to handle that case separately later
+    if newbranch:
+        logger.info("Skipping update of layer %s for branch %s - subdirectory %s does not exist on this branch" % (layername, branchdesc, vcs_subdir))
+    elif vcs_subdir:
+        logger.error("Subdirectory for layer %s does not exist on branch %s - if this is legitimate, the layer branch record should be deleted" % (layername, branchdesc))
+
 def main():
     if LooseVersion(git.__version__) < '0.3.1':
         logger.error("Version of GitPython is too old, please install GitPython (python-git) 0.3.1 or later in order to use this script")
@@ -195,7 +204,7 @@ def main():
 
     utils.setup_django()
     import settings
-    from layerindex.models import Branch, LayerItem, Update, LayerUpdate
+    from layerindex.models import Branch, LayerItem, Update, LayerUpdate, LayerBranch
 
     logger.setLevel(options.loglevel)
 
@@ -337,6 +346,75 @@ def main():
                         collections.add((layerbranch.collection, layerbranch.version))
 
                 for layer in layerquery:
+                    layerbranch = layer.get_layerbranch(branch)
+                    branchname = branch
+                    branchdesc = branch
+                    newbranch = False
+                    branchobj = utils.get_branch(branch)
+                    if layerbranch:
+                        if layerbranch.actual_branch:
+                            branchname = layerbranch.actual_branch
+                            branchdesc = "%s (%s)" % (branch, branchname)
+                    else:
+                        # LayerBranch doesn't exist for this branch, create it temporarily
+                        # (we won't save this - update_layer.py will do the actual creation
+                        # if it gets called).
+                        newbranch = True
+                        layerbranch = LayerBranch()
+                        layerbranch.layer = layer
+                        layerbranch.branch = branchobj
+                        layerbranch_source = layer.get_layerbranch(branchobj)
+                        if not layerbranch_source:
+                            layerbranch_source = layer.get_layerbranch(None)
+                        if layerbranch_source:
+                            layerbranch.vcs_subdir = layerbranch_source.vcs_subdir
+
+                    # Collect repo info
+                    urldir = layer.get_fetch_dir()
+                    repodir = os.path.join(fetchdir, urldir)
+                    repo = git.Repo(repodir)
+                    assert repo.bare == False
+                    try:
+                        if options.nocheckout:
+                            topcommit = repo.commit('HEAD')
+                        else:
+                            topcommit = repo.commit('origin/%s' % branchname)
+                    except:
+                        if newbranch:
+                            logger.info("Skipping update of layer %s - branch %s doesn't exist" % (layer.name, branchdesc))
+                        else:
+                            logger.info("layer %s - branch %s no longer exists, removing it from database" % (layer.name, branchdesc))
+                            if not options.dryrun:
+                                layerbranch.delete()
+                        continue
+
+                    if layerbranch.vcs_subdir and not options.nocheckout:
+                        # Find latest commit in subdirectory
+                        # A bit odd to do it this way but apparently there's no other way in the GitPython API
+                        topcommit = next(repo.iter_commits('origin/%s' % branchname, paths=layerbranch.vcs_subdir), None)
+                        if not topcommit:
+                            print_subdir_error(newbranch, layer.name, layerbranch.vcs_subdir, branchdesc)
+                            if not (newbranch and layerbranch.vcs_subdir):
+                                logger.error("Failed to get last revision for layer %s on branch %s" % (layer.name, branchdesc))
+                            continue
+
+                    if layerbranch.vcs_last_rev == topcommit.hexsha and not update.reload:
+                        logger.info("Layer %s is already up-to-date for branch %s" % (layer.name, branchdesc))
+                        collections.add((layerbranch.collection, layerbranch.version))
+                        continue
+                    else:
+                        # Check out appropriate branch
+                        if not options.nocheckout:
+                            utils.checkout_layer_branch(layerbranch, repodir, logger=logger)
+                        layerdir = os.path.join(repodir, layerbranch.vcs_subdir)
+                        if layerbranch.vcs_subdir and not os.path.exists(layerdir):
+                            print_subdir_error(newbranch, layer.name, layerbranch.vcs_subdir, branchdesc)
+                            continue
+
+                        if not os.path.exists(os.path.join(layerdir, 'conf/layer.conf')):
+                            logger.error("conf/layer.conf not found for layer %s - is subdirectory set correctly?" % layer.name)
+                            continue
+
                     cmd = prepare_update_layer_command(options, branchobj, layer, initial=True)
                     logger.debug('Running layer update command: %s' % cmd)
                     ret, output = run_command_interruptible(cmd)
