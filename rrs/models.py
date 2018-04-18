@@ -225,8 +225,11 @@ class RecipeMaintainerHistory(models.Model):
     title = models.CharField(max_length=255, blank=True)
     date = models.DateTimeField(db_index=True)
     author = models.ForeignKey(Maintainer)
-    sha1 = models.CharField(max_length=64, unique=True)
+    sha1 = models.CharField(max_length=64)
     layerbranch = models.ForeignKey(LayerBranch)
+
+    class Meta:
+        unique_together = ('layerbranch', 'sha1',)
 
     @staticmethod
     def get_last(layerbranch):
