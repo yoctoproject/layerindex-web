@@ -536,6 +536,7 @@ class RecipeListView(ListView):
         context['all_maintplans'] = MaintenancePlan.objects.all()
         context['maintplan_name'] = self.maintplan_name
         maintplan = get_object_or_404(MaintenancePlan, name=self.maintplan_name)
+        context['maintplan'] = maintplan
         context['release_name'] = self.release_name
         context['all_releases'] = Release.objects.filter(plan=maintplan).order_by('-end_date')
         context['milestone_name'] = self.milestone_name
@@ -676,6 +677,7 @@ class RecipeDetailView(DetailView):
 
         maintplan = get_object_or_404(MaintenancePlan, name=self.maintplan_name)
         context['maintplan_name'] = maintplan.name
+        context['maintplan'] = maintplan
         release = Release.get_current(maintplan)
         context['release_name'] = release.name
         milestone = Milestone.get_current(release)

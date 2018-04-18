@@ -40,6 +40,7 @@
                     {% endfor %}
                 </ul>
             </li>
+            {% if maintplan.per_recipe_maintainers %}
             <li><p>and</p></li>
             <li class="dropdown">
                 <a data-toggle="dropdown" href="#" class="dropdown-toggle" id="selected-maintainer">
@@ -56,6 +57,7 @@
                     {% endfor %}
                 </ul>
             </li>
+            {% endif %}
         </ul>
 
         <form id="form-search" class="pull-right input-append">
@@ -80,7 +82,9 @@
         <th class="upstream_status_column span2">Upstream status</th>
         <th class="last_updated_column">Last Updated</th>
         <th class="patches_column">Patches</th>
+        {% if maintplan.per_recipe_maintainers %}
         <th class="maintainer_column">Maintainer</th>
+        {% endif %}
         <th class="summary_column muted span5">Summary</th>
         <th class="no_update_reason_column muted span5" style="display:none">No update reason</th>
     </tr>
@@ -104,7 +108,9 @@
     </td>
     <td class="last_updated_column">{{r.outdated}}</td>
     <td class="patches_column">{% if r.patches_total %}<span {% if not r.patches_pending %}class="muted"{% endif %}>{{ r.patches_pending }}<span class="muted"> / {{ r.patches_total }}</span>{% endif %}</td>
+    {% if maintplan.per_recipe_maintainers %}
     <td class="maintainer_column">{{ r.maintainer_name }}</td>
+    {% endif %}
     <td class="summary_column">{{ r.summary }}</td>
     <td class="no_update_reason_column" style="display:none">{{ r.no_update_reason }}</td>
 </tr>

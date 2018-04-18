@@ -18,6 +18,10 @@ from django.core.exceptions import ObjectDoesNotExist
 
 
 class MaintenancePlan(models.Model):
+    MAINTENANCEPLAN_MAINTAINER_STYLE = (
+        ('I', 'Per-recipe - maintainers.inc'),
+        ('L', 'Layer-wide'),
+    )
     name = models.CharField(max_length=50, unique=True)
     description = models.TextField(blank=True)
     updates_enabled = models.BooleanField('Enable updates', default=True, help_text='Enable automatically updating metadata for this plan via the update scripts')
@@ -26,9 +30,13 @@ class MaintenancePlan(models.Model):
     email_from = models.CharField(max_length=255, blank=True, help_text='Sender for automated emails')
     email_to = models.CharField(max_length=255, blank=True, help_text='Recipient for automated emails (separate multiple addresses with ;)')
     admin = models.ForeignKey(User, blank=True, null=True, help_text='Plan administrator')
+    maintainer_style = models.CharField(max_length=1, choices=MAINTENANCEPLAN_MAINTAINER_STYLE, default='L', help_text='Maintainer tracking style for the layers within this plan')
 
     def get_default_release(self):
         return self.release_set.last()
+
+    def per_recipe_maintainers(self):
+        return self.maintainer_style != 'L'
 
     def __str__(self):
         return '%s' % (self.name)

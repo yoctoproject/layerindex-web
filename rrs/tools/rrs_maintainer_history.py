@@ -67,6 +67,104 @@ def get_commit_info(info, logger):
 
     return (author_name, author_email, date, title)
 
+
+def maintainers_inc_history(options, logger, maintplan, layerbranch, repodir, layerdir):
+    maintainers_full_path = os.path.join(layerdir, MAINTAINERS_INCLUDE_PATH)
+    if not os.path.exists(maintainers_full_path):
+        logger.warning('Maintainer style is maintainers.inc for plan %s but no maintainers.inc exists in for %s' % (maintplan, layerbranch))
+        return
+
+    logger.debug('Checking maintainers.inc history for %s' % layerbranch)
+
+    commits = utils.runcmd("git log --format='%%H' --reverse --date=rfc origin/master %s"
+                        % os.path.join(layerbranch.vcs_subdir, MAINTAINERS_INCLUDE_PATH),
+                        repodir, logger=logger)
+
+    no_maintainer, _ = Maintainer.objects.get_or_create(name='No maintainer')
+
+    try:
+        with transaction.atomic():
+            for commit in commits.strip().split("\n"):
+                if RecipeMaintainerHistory.objects.filter(layerbranch=layerbranch, sha1=commit):
+                    continue
+
+                logger.debug("Analysing commit %s ..." % (commit))
+
+                (author_name, author_email, date, title) = \
+                    get_commit_info(utils.runcmd("git show " + commit, repodir,
+                        logger=logger), logger)
+
+                author = Maintainer.create_or_update(author_name, author_email)
+                rms = RecipeMaintainerHistory(title=title, date=date, author=author,
+                        sha1=commit, layerbranch=layerbranch)
+                rms.save()
+
+                utils.runcmd("git checkout %s -f" % commit,
+                        repodir, logger=logger)
+
+                lines = [line.strip() for line in open(maintainers_full_path)]
+                for line in lines:
+                    res = get_recipe_maintainer(line, logger)
+                    if res:
+                        (pn, name, email) = res
+                        qry = Recipe.objects.filter(pn = pn, layerbranch = layerbranch)
+
+                        if qry:
+                            m = Maintainer.create_or_update(name, email)
+
+                            rm = RecipeMaintainer()
+                            rm.recipe = qry[0]
+                            rm.maintainer = m
+                            rm.history = rms
+                            rm.save()
+
+                            logger.debug("%s: Change maintainer to %s in commit %s." % \
+                                    (pn, m.name, commit))
+                        else:
+                            logger.debug("%s: Not found in %s." % \
+                                    (pn, layerbranch))
+
+                # set missing recipes to no maintainer
+                for recipe in layerbranch.recipe_set.all():
+                    if not RecipeMaintainer.objects.filter(recipe = recipe, history = rms):
+                        rm = RecipeMaintainer()
+                        rm.recipe = recipe
+                        link_maintainer = RecipeMaintenanceLink.link_maintainer(recipe.pn, rms)
+                        if link_maintainer:
+                            rm.maintainer = link_maintainer.maintainer
+                        else:
+                            rm.maintainer = no_maintainer
+                        rm.history = rms
+                        rm.save()
+                        if link_maintainer:
+                            logger.debug("%s: linked to maintainer for %s" % (recipe.pn, link_maintainer.recipe.pn))
+                        else:
+                            logger.debug("%s: Not found maintainer in commit %s set to 'No maintainer'." % \
+                                            (recipe.pn, rms.sha1))
+
+            # set new recipes to no maintainer if don't have one
+            rms = RecipeMaintainerHistory.get_last(layerbranch)
+            for recipe in layerbranch.recipe_set.all():
+                if not RecipeMaintainer.objects.filter(recipe = recipe, history = rms):
+                    rm = RecipeMaintainer()
+                    rm.recipe = recipe
+                    link_maintainer = RecipeMaintenanceLink.link_maintainer(recipe.pn, rms)
+                    if link_maintainer:
+                        rm.maintainer = link_maintainer.maintainer
+                    else:
+                        rm.maintainer = no_maintainer
+                    rm.history = rms
+                    rm.save()
+                    if link_maintainer:
+                        logger.debug("%s: New recipe linked to maintainer for %s" % (recipe.pn, link_maintainer.recipe.pn))
+                    else:
+                        logger.debug("%s: New recipe not found maintainer set to 'No maintainer'." % \
+                                    (recipe.pn))
+        if options.dry_run:
+            raise DryRunRollbackException
+    except DryRunRollbackException:
+        pass
+
 """
     Recreate Maintainership history from the beginning
 """
@@ -83,8 +181,6 @@ def maintainer_history(options, logger):
             logger.error('No enabled maintenance plans found')
             sys.exit(1)
 
-    no_maintainer, _ = Maintainer.objects.get_or_create(name='No maintainer')
-
     lockfn = os.path.join(fetchdir, "layerindex.lock")
     lockfile = utils.lock_file(lockfn)
     if not lockfile:
@@ -100,97 +196,14 @@ def maintainer_history(options, logger):
                 repodir = os.path.join(fetchdir, urldir)
                 layerdir = os.path.join(repodir, layerbranch.vcs_subdir)
 
-                maintainers_full_path = os.path.join(layerdir, MAINTAINERS_INCLUDE_PATH)
-                if not os.path.exists(maintainers_full_path):
-                    logger.debug('No maintainers.inc for %s, skipping' % layerbranch)
-                    continue
-
-                commits = utils.runcmd("git log --format='%%H' --reverse --date=rfc origin/master %s"
-                                       % os.path.join(layerbranch.vcs_subdir, MAINTAINERS_INCLUDE_PATH),
-                                       repodir, logger=logger)
-
-                try:
-                    with transaction.atomic():
-                        for commit in commits.strip().split("\n"):
-                            if RecipeMaintainerHistory.objects.filter(layerbranch=layerbranch, sha1=commit):
-                                continue
-
-                            logger.debug("Analysing commit %s ..." % (commit))
-
-                            (author_name, author_email, date, title) = \
-                                get_commit_info(utils.runcmd("git show " + commit, repodir,
-                                    logger=logger), logger)
-
-                            author = Maintainer.create_or_update(author_name, author_email)
-                            rms = RecipeMaintainerHistory(title=title, date=date, author=author,
-                                    sha1=commit, layerbranch=layerbranch)
-                            rms.save()
-
-                            utils.runcmd("git checkout %s -f" % commit,
-                                    repodir, logger=logger)
-
-                            lines = [line.strip() for line in open(maintainers_full_path)]
-                            for line in lines:
-                                res = get_recipe_maintainer(line, logger)
-                                if res:
-                                    (pn, name, email) = res
-                                    qry = Recipe.objects.filter(pn = pn, layerbranch = layerbranch)
-
-                                    if qry:
-                                        m = Maintainer.create_or_update(name, email)
-
-                                        rm = RecipeMaintainer()
-                                        rm.recipe = qry[0]
-                                        rm.maintainer = m
-                                        rm.history = rms
-                                        rm.save()
-
-                                        logger.debug("%s: Change maintainer to %s in commit %s." % \
-                                                (pn, m.name, commit))
-                                    else:
-                                        logger.debug("%s: Not found in %s." % \
-                                                (pn, layerbranch))
-
-                            # set missing recipes to no maintainer
-                            for recipe in layerbranch.recipe_set.all():
-                                if not RecipeMaintainer.objects.filter(recipe = recipe, history = rms):
-                                    rm = RecipeMaintainer()
-                                    rm.recipe = recipe
-                                    link_maintainer = RecipeMaintenanceLink.link_maintainer(recipe.pn, rms)
-                                    if link_maintainer:
-                                        rm.maintainer = link_maintainer.maintainer
-                                    else:
-                                        rm.maintainer = no_maintainer
-                                    rm.history = rms
-                                    rm.save()
-                                    if link_maintainer:
-                                        logger.debug("%s: linked to maintainer for %s" % (recipe.pn, link_maintainer.recipe.pn))
-                                    else:
-                                        logger.debug("%s: Not found maintainer in commit %s set to 'No maintainer'." % \
-                                                        (recipe.pn, rms.sha1))
-
-                        # set new recipes to no maintainer if don't have one
-                        rms = RecipeMaintainerHistory.get_last(layerbranch)
-                        for recipe in layerbranch.recipe_set.all():
-                            if not RecipeMaintainer.objects.filter(recipe = recipe, history = rms):
-                                rm = RecipeMaintainer()
-                                rm.recipe = recipe
-                                link_maintainer = RecipeMaintenanceLink.link_maintainer(recipe.pn, rms)
-                                if link_maintainer:
-                                    rm.maintainer = link_maintainer.maintainer
-                                else:
-                                    rm.maintainer = no_maintainer
-                                rm.history = rms
-                                rm.save()
-                                if link_maintainer:
-                                    logger.debug("%s: New recipe linked to maintainer for %s" % (recipe.pn, link_maintainer.recipe.pn))
-                                else:
-                                    logger.debug("%s: New recipe not found maintainer set to 'No maintainer'." % \
-                                                (recipe.pn))
-                    if options.dry_run:
-                        raise DryRunRollbackException
-                except DryRunRollbackException:
-                    pass
+                if maintplan.maintainer_style == 'I':
+                    # maintainers.inc
+                    maintainers_inc_history(options, logger, maintplan, layerbranch, repodir, layerdir)
+                elif maintplan.maintainer_style == 'L':
+                    # Layer-wide, don't need to do anything
+                    logger.debug('Skipping maintainer processing for %s - plan %s maintainer style is layer-wide' % (layerbranch, maintplan))
+                else:
+                    raise Exception('Unknown maintainer style %s for maintenance plan %s' % (maintplan.maintainer_style, maintplan))
     finally:
         utils.unlock_file(lockfile)
 
