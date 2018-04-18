@@ -1,4 +1,0 @@
-TODO:
-
-Bugs:
-  - gcc-source recipe has his own recipes per version. This is triggered in gcc-source.inc
