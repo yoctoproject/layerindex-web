@@ -114,13 +114,17 @@ def get_upstream_info(layerbranch, recipe_data, result):
         upv, _, _ = get_recipe_pv_without_srcpv(ru_info['version'],
                 get_pv_type(ru_info['version']))
 
-        cmp_ver = vercmp_string(pv, upv)
-        if cmp_ver == -1:
-            ru.status = 'N' # Not update
-        elif cmp_ver == 0:
-            ru.status = 'Y' # Up-to-date
-        elif cmp_ver == 1:
-            ru.status = 'D' # Downgrade, need to review why
+        if pv and upv:
+            cmp_ver = vercmp_string(pv, upv)
+            if cmp_ver == -1:
+                ru.status = 'N' # Not update
+            elif cmp_ver == 0:
+                ru.status = 'Y' # Up-to-date
+            elif cmp_ver == 1:
+                ru.status = 'D' # Downgrade, need to review why
+        else:
+            logger.debug('Unable to determine upgrade status for %s: %s -> %s' % (recipe.pn, pv, upv))
+            ru.status = 'U' # Unknown
     else:
         ru.version = ''
         ru.type = 'M'
@@ -203,7 +207,11 @@ if __name__=="__main__":
 
                         result = []
                         for recipe_data in recipes:
-                            get_upstream_info(layerbranch, recipe_data, result)
+                            try:
+                                get_upstream_info(layerbranch, recipe_data, result)
+                            except:
+                                import traceback
+                                traceback.print_exc()
 
                         history.end_date = datetime.now()
                         history.save()
