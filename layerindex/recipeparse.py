@@ -110,20 +110,6 @@ def setup_layer(config_data, fetchdir, layerdir, layer, layerbranch):
     config_data_copy.delVar('LAYERDIR')
     return config_data_copy
 
-def get_var_files(fn, varlist, d):
-    import bb.cache
-    varfiles = {}
-    envdata = bb.cache.Cache.loadDataFull(fn, [], d)
-    for v in varlist:
-        history = envdata.varhistory.get_variable_files(v)
-        if history:
-            actualfile = history[-1]
-        else:
-            actualfile = None
-        varfiles[v] = actualfile
-
-    return varfiles
-
 machine_conf_re = re.compile(r'conf/machine/([^/.]*).conf$')
 distro_conf_re = re.compile(r'conf/distro/([^/.]*).conf$')
 bbclass_re = re.compile(r'classes/([^/.]*).bbclass$')
