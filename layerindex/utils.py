@@ -341,3 +341,15 @@ def chain_unique(*iterables):
             if k not in seen:
                 seen.add(k)
                 yield item
+
+def setup_core_layer_sys_path(settings, branchname):
+    """
+    Add OE-Core's lib/oe directory to sys.path in order to allow importing
+    OE python modules
+    """
+    core_layer = get_layer(settings.CORE_LAYER_NAME)
+    core_layerbranch = core_layer.get_layerbranch(branchname)
+    core_urldir = core_layer.get_fetch_dir()
+    core_repodir = os.path.join(settings.LAYER_FETCH_DIR, core_urldir)
+    core_layerdir = os.path.join(core_repodir, core_layerbranch.vcs_subdir)
+    sys.path.insert(0, os.path.join(core_layerdir, 'lib'))
