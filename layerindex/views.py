@@ -20,7 +20,6 @@ from django.db import transaction
 from django.contrib.auth.models import User, Permission
 from django.db.models import Q, Count, Sum
 from django.template.loader import get_template
-from django.template import Context
 from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -277,19 +276,19 @@ def publish_view(request, name):
             break
 
     # create subject from subject template
-    d = Context({
+    d = {
         'layer_name': layeritem.name,
         'site_name': request.META['HTTP_HOST'],
-    })
+    }
     subject = subjecttext.render(d).rstrip()
 
     #create body from body template
-    d = Context({
+    d = {
         'maintainers': maintainer_names,
         'layer_name': layeritem.name,
         'layer_url': layer_url,
         'help_contact': help_contact,
-    })
+    }
     body = bodytext.render(d)
 
     tasks.send_email.apply_async((subject, body, from_email, [m.email for m in maintainers]))
