@@ -774,13 +774,6 @@ class ClassSearchView(ListView):
         context['this_url_name'] = resolve(self.request.path_info).url_name
         return context
 
-class PlainTextListView(ListView):
-    def render_to_response(self, context):
-        "Returns a plain text response rendering of the template"
-        template = get_template(self.template_name)
-        return HttpResponse(template.render(context),
-                                 content_type='text/plain')
-
 class HistoryListView(ListView):
     context_object_name = "revisions"
     paginate_by = 50
