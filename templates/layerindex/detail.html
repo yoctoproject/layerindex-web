@@ -210,13 +210,13 @@
                         <div class="navbar-inner">
                             <a class="brand pull-left">{{ layeritem.name }} recipes <span class="muted">({{ layerbranch.sorted_recipes.count }})</span></a>
 
-                            <ul class="nav pull-right">
-                                <li>
-                                    <form action="" class="navbar-search pull-right" id="filter-form">
-                                        <input type="text" placeholder="Search recipes" class="search-query" id="filter">
-                                    </form>
-                                </li>
-                            </ul>
+                            <div class="pull-right">
+                                <a href="{% url 'layer_export_recipes_csv' layerbranch.branch.name layerbranch.layer.name %}" class="btn"><i class="icon-file"></i> Export CSV</a>
+
+                                <form action="" class="navbar-search nav-spacer pull-right" id="filter-form">
+                                    <input type="text" placeholder="Search recipes" class="search-query" id="filter">
+                                </form>
+                            </div>
                         </div>
                     </div>
 

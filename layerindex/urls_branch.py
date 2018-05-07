@@ -7,7 +7,7 @@
 from django.conf.urls import *
 from django.views.defaults import page_not_found
 from django.core.urlresolvers import reverse_lazy
-from layerindex.views import LayerListView, RecipeSearchView, MachineSearchView, DistroSearchView, ClassSearchView, LayerDetailView, edit_layer_view, delete_layer_view, edit_layernote_view, delete_layernote_view, RedirectParamsView, DuplicatesView, LayerUpdateDetailView
+from layerindex.views import LayerListView, RecipeSearchView, MachineSearchView, DistroSearchView, ClassSearchView, LayerDetailView, edit_layer_view, delete_layer_view, edit_layernote_view, delete_layernote_view, RedirectParamsView, DuplicatesView, LayerUpdateDetailView, layer_export_recipes_csv_view
 
 urlpatterns = [
     url(r'^$', 
@@ -20,6 +20,9 @@ urlpatterns = [
         LayerDetailView.as_view(
             template_name='layerindex/detail.html'),
             name='layer_item'),
+    url(r'^layer/(?P<slug>[-\w]+)/recipes/csv/$',
+        layer_export_recipes_csv_view,
+        name='layer_export_recipes_csv'),
     url(r'^recipes/$',
         RecipeSearchView.as_view(
             template_name='layerindex/recipes.html'),

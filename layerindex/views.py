@@ -1025,3 +1025,25 @@ class StatsView(TemplateView):
                 machine_count=Count('layerbranch__machine', distinct=True),
                 distro_count=Count('layerbranch__distro', distinct=True))
         return context
+
+
+def layer_export_recipes_csv_view(request, branch, slug):
+    import csv
+    layer = get_object_or_404(LayerItem, name=slug)
+    layerbranch = layer.get_layerbranch(branch)
+
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="recipes_%s_%s.csv"' % (layer.name, layerbranch.branch.name)
+
+    fieldlist = request.GET.get('fields', 'pn,pv,license').split(',')
+    recipe_fields = [f.name for f in Recipe._meta.get_fields() if not (f.auto_created and f.is_relation)]
+    for field in fieldlist:
+        if field not in recipe_fields:
+            return HttpResponse('Field %s is invalid' % field)
+
+    writer = csv.writer(response)
+    for recipe in layerbranch.sorted_recipes():
+        values = [getattr(recipe, field) for field in fieldlist]
+        writer.writerow(values)
+
+    return response
