@@ -153,6 +153,47 @@ def main():
                                 if not found:
                                     recipe.classic_category = 'perl'
                                     recipe.save()
+                        if not found:
+                            if recipe.pn.startswith('R-'):
+                                recipe.classic_category = 'R'
+                                recipe.save()
+                            elif recipe.pn.startswith('rubygem-'):
+                                recipe.classic_category = 'ruby'
+                                recipe.save()
+                            elif recipe.pn.startswith('jdk-'):
+                                sanepn = sanepn[4:]
+                                replquery = recipe_pn_query(sanepn)
+                                for replrecipe in replquery:
+                                    logger.debug('Found match %s to cover %s in layer %s' % (replrecipe.pn, recipe.pn, replrecipe.layerbranch.layer.name))
+                                    recipe.cover_layerbranch = replrecipe.layerbranch
+                                    recipe.cover_pn = replrecipe.pn
+                                    recipe.cover_status = 'D'
+                                    recipe.cover_verified = False
+                                    recipe.save()
+                                    found = True
+                                    break
+                                recipe.classic_category = 'java'
+                                recipe.save()
+                            elif recipe.pn.startswith('golang-'):
+                                if recipe.pn.startswith('golang-github-'):
+                                    sanepn = 'go-' + sanepn[14:]
+                                else:
+                                    sanepn = 'go-' + sanepn[7:]
+                                replquery = recipe_pn_query(sanepn)
+                                for replrecipe in replquery:
+                                    logger.debug('Found match %s to cover %s in layer %s' % (replrecipe.pn, recipe.pn, replrecipe.layerbranch.layer.name))
+                                    recipe.cover_layerbranch = replrecipe.layerbranch
+                                    recipe.cover_pn = replrecipe.pn
+                                    recipe.cover_status = 'D'
+                                    recipe.cover_verified = False
+                                    recipe.save()
+                                    found = True
+                                    break
+                                recipe.classic_category = 'go'
+                                recipe.save()
+                            elif recipe.pn.startswith('gnome-'):
+                                recipe.classic_category = 'gnome'
+                                recipe.save()
 
 
             if options.dryrun:
