@@ -15,42 +15,23 @@
 {% block title_append %} - OE-Classic{% endblock %}
 -->
 
-{% block branch_selector %}
-{% autoescape on %}
-                        <li class="dropdown">
-                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                            Branch: <b>OE-Classic</b>
-                            <b class="caret"></b>
-                            </a>
-                            <ul class="dropdown-menu">
-                                {% for branch in all_branches %}
-                                    <li><a href="{% url 'layer_list' branch.name %}">
-                                        {{ branch.name }}
-                                        {% if branch.short_description %}
-                                        ({{ branch.short_description }})
-                                        {% endif %}
-                                    </a></li>
-                                {% endfor %}
-                                <li class="divider"></li>
-                                <li><a href="{% url 'classic' %}"><b>OE-Classic</b></a></li>
-                            </ul>
-                        </li>
-{% endautoescape %}
-{% endblock %}
-
 {% block content_inner %}
 {% autoescape on %}
 
         <div class="container-fluid">
             <div class="row-fluid">
 
+                {% if branch.name == 'oe-classic' %}
                 <h2>OE-Classic</h2>
 
                 <p>OpenEmbedded-Classic (OE-Classic) is the name for the old monolithic version of OpenEmbedded. It contained a number of recipes some of which have not yet been migrated on top of OE-Core. To help people to find and migrate these recipes we provide an index here as well as some statistics to get an idea of the migration.</p>
+                {% else %}
+                <h2>{{ branch.short_description }}</h2>
+                {% endif %}
 
-                <a class="btn btn-large btn-primary" href="{% url 'classic_recipe_search' %}">Recipes</a>
-                <a class="btn btn-large" href="{% url 'classic_recipe_search' %}?q=&cover_status=!">Unmigrated Recipes</a>
-                <a class="btn btn-large btn-primary" href="{% url 'classic_recipe_stats' %}">Stats</a>
+                <a class="btn btn-large btn-primary" href="{% url 'comparison_recipe_search' branch.name %}">Recipes</a>
+                <a class="btn btn-large" href="{% url 'comparison_recipe_search' branch.name %}?q=&cover_status=!">Unmigrated Recipes</a>
+                <a class="btn btn-large btn-primary" href="{% url 'comparison_recipe_stats' branch.name %}">Stats</a>
             </div>
 
         </div>

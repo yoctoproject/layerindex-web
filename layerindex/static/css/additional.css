@@ -238,3 +238,19 @@ blockquote.span7.warn {
     width: auto;
     height: 1em;
 }
+
+td.success {
+    background-color: #dff0d8 !important;
+}
+
+td.error {
+    background-color: #f2dede !important;
+}
+
+td.warning {
+    background-color: #fcf8e3 !important;
+}
+
+td.info {
+    background-color: #d9edf7 !important;
+}

@@ -7,20 +7,20 @@
 
   layerindex-web - OE-Classic recipe migration stats template
 
-  Copyright (C) 2013 Intel Corporation
+  Copyright (C) 2013, 2018 Intel Corporation
   Licensed under the MIT license, see COPYING.MIT for details
 
 {% endcomment %}
 
 
 <!--
-{% block title_append %} - OE-Classic recipe statistics{% endblock %}
+{% block title_append %} - {% if branch.name == 'oe-classic' %}OE-Classic{% else %}{{ branch.short_description }}{% endif %} recipe statistics{% endblock %}
 -->
 
 {% block navs %}
 {% autoescape on %}
-                            <li><a href="{% url 'classic_recipe_search' %}">Recipes</a></li>
-                            <li class="active"><a href="{% url 'classic_recipe_stats' %}">Stats</a></li>
+                            <li><a href="{% url 'comparison_recipe_search' branch.name %}">Recipes</a></li>
+                            <li class="active"><a href="{% url 'comparison_recipe_stats' branch.name %}">Stats</a></li>
 {% endautoescape %}
 {% endblock %}
 
@@ -31,12 +31,16 @@
 
         <div class="row-fluid">
 
+            {% if branch.name == 'oe-classic' %}
             <h2>OE-Classic statistics</h2>
+            {% else %}
+            <h2>{{ branch.short_description }} statistics</h2>
+            {% endif %}
 
-            <h3>Migration status</h3>
+            <h3>Comparison status</h3>
             {% include_container "chart_status" 400 600 %}
 
-            <h3>Unmigrated recipes by category</h3>
+            <h3>Unavailable recipes by category</h3>
             {% include_container "chart_category" 400 600 %}
 
         </div>

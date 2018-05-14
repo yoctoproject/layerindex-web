@@ -17,10 +17,10 @@ def layerindex_context(request):
     else:
         site_name = 'OpenEmbedded Layer Index'
     return {
-        'all_branches': Branch.objects.exclude(name='oe-classic').order_by('sort_priority'),
+        'all_branches': Branch.objects.exclude(comparison=True).order_by('sort_priority'),
         'unpublished_count': LayerItem.objects.filter(status='N').count(),
-        'oe_classic': Branch.objects.filter(name='oe-classic'),
         'site_name': site_name,
         'rrs_enabled': 'rrs' in settings.INSTALLED_APPS,
         'notices': SiteNotice.objects.filter(disabled=False).filter(Q(expires__isnull=True) | Q(expires__gte=datetime.now())),
+        'comparison_branches': Branch.objects.filter(comparison=True),
     }

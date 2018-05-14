@@ -28,16 +28,19 @@
                                 {% for branch in all_branches %}
                                     <li><a href="{% url this_url_name branch.name %}{{ extra_url_param }}">
                                         {% if branch.name == url_branch %}<b>{% endif %}
-                                        {{ branch.name }}
-                                        {% if branch.short_description %}
-                                        ({{ branch.short_description }})
-                                        {% endif %}
+                                        {{ branch }}
                                         {% if branch.name == url_branch %}</b>{% endif %}
                                     </a></li>
                                 {% endfor %}
-                                {% if oe_classic %}
+                                {% if comparison_branches %}
                                     <li class="divider"></li>
-                                    <li><a href="{% url 'classic' %}">OE-Classic</a></li>
+                                    {% for branch in comparison_branches %}
+                                        <li><a href="{% url 'comparison_recipe_search' branch.name %}">
+                                            {% if branch.name == url_branch %}<b>{% endif %}
+                                            {{ branch }}
+                                            {% if branch.name == url_branch %}</b>{% endif %}
+                                        </a></li>
+                                    {% endfor %}
                                 {% endif %}
                             </ul>
                         </li>

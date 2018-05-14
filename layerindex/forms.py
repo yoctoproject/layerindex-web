@@ -215,7 +215,7 @@ BulkChangeEditFormSet = modelformset_factory(RecipeChange, form=BulkChangeEditFo
 
 
 class ClassicRecipeSearchForm(forms.Form):
-    COVER_STATUS_CHOICES = [('','(any)'), ('!','(not migrated)')] + ClassicRecipe.COVER_STATUS_CHOICES
+    COVER_STATUS_CHOICES = [('','(any)'), ('!','(unknown / not available)')] + ClassicRecipe.COVER_STATUS_CHOICES
     VERIFIED_CHOICES = [
         ('', '(any)'),
         ('1', 'Verified'),

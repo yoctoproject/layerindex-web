@@ -129,16 +129,26 @@ urlpatterns = [
         RedirectView.as_view(url=reverse_lazy('classic_recipe_search'), permanent=False),
             name='classic'),
     url(r'^oe-classic/recipes/$',
-        ClassicRecipeSearchView.as_view(
-            template_name='layerindex/classicrecipes.html'),
+        RedirectView.as_view(url=reverse_lazy('comparison_recipe_search', kwargs={'branch': 'oe-classic'}), permanent=False),
             name='classic_recipe_search'),
     url(r'^oe-classic/stats/$',
-        ClassicRecipeStatsView.as_view(
-            template_name='layerindex/classicstats.html'),
+        RedirectView.as_view(url=reverse_lazy('comparison_recipe_stats', kwargs={'branch': 'oe-classic'}), permanent=False),
             name='classic_recipe_stats'),
     url(r'^oe-classic/recipe/(?P<pk>[-\w]+)/$',
         ClassicRecipeDetailView.as_view(
             template_name='layerindex/classicrecipedetail.html'),
             name='classic_recipe'),
+    url(r'^comparison/recipes/(?P<branch>[-\w]+)/$',
+        ClassicRecipeSearchView.as_view(
+            template_name='layerindex/classicrecipes.html'),
+            name='comparison_recipe_search'),
+    url(r'^comparison/stats/(?P<branch>[-\w]+)/$',
+        ClassicRecipeStatsView.as_view(
+            template_name='layerindex/classicstats.html'),
+            name='comparison_recipe_stats'),
+    url(r'^comparison/recipe/(?P<pk>[-\w]+)/$',
+        ClassicRecipeDetailView.as_view(
+            template_name='layerindex/classicrecipedetail.html'),
+            name='comparison_recipe'),
     url(r'.*', page_not_found, kwargs={'exception': Exception("Page not Found")})
 ]

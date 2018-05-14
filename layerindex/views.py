@@ -1,10 +1,12 @@
 # layerindex-web - view definitions
 #
-# Copyright (C) 2013-2016 Intel Corporation
+# Copyright (C) 2013-2018 Intel Corporation
 #
 # Licensed under the MIT license, see COPYING.MIT for details
 
 import sys
+from pkg_resources import parse_version
+from itertools import islice
 from django.shortcuts import get_object_or_404, get_list_or_404, render
 from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidden, Http404
 from django.core.urlresolvers import reverse, reverse_lazy, resolve
@@ -15,10 +17,13 @@ from datetime import datetime
 from django.views.generic import TemplateView, DetailView, ListView
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
 from django.views.generic.base import RedirectView
+from django.contrib.messages.views import SuccessMessageMixin
 from layerindex.forms import EditLayerForm, LayerMaintainerFormSet, EditNoteForm, EditProfileForm, RecipeChangesetForm, AdvancedRecipeSearchForm, BulkChangeEditFormSet, ClassicRecipeForm, ClassicRecipeSearchForm
 from django.db import transaction
 from django.contrib.auth.models import User, Permission
 from django.db.models import Q, Count, Sum
+from django.db.models.functions import Lower
+from django.db.models.query import QuerySet
 from django.template.loader import get_template
 from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import login_required
@@ -867,21 +872,65 @@ class RecipeDetailView(DetailView):
         return context
 
 
+class ClassicRecipeLinkWrapper:
+    def __init__(self, queryset):
+        self.queryset = queryset
+
+    # This function is required by generic views, create another proxy
+    def _clone(self):
+        return ClassicRecipeLinkIterator(self.queryset._clone(), **self.kwargs)
+
+    def _annotate(self, obj):
+        recipe = None
+        vercmp = 0
+        if obj.cover_layerbranch and obj.cover_pn:
+            rq = Recipe.objects.filter(layerbranch=obj.cover_layerbranch).filter(pn=obj.cover_pn)
+            if rq:
+                recipe = rq.first()
+                if obj.pv and recipe.pv:
+                    obj_ver = parse_version(obj.pv)
+                    recipe_ver = parse_version(recipe.pv)
+                    vercmp = ((recipe_ver > obj_ver) - (recipe_ver < obj_ver))
+        setattr(obj, 'cover_recipe', recipe)
+        setattr(obj, 'cover_vercmp', vercmp)
+
+    def __iter__(self):
+        for obj in self.queryset:
+            self._annotate(obj)
+            yield obj
+
+    def _slice(self, start, stop, step=1):
+        for item in islice(self.queryset, start, stop, step):
+            self._annotate(item)
+            yield item
+
+    def __getitem__(self, key):
+        if isinstance(key, slice):
+            return self._slice(key.start, key.stop, key.step)
+        else:
+            return next(self._slice(key, key+1))
+
+    def __len__(self):
+        if isinstance(self.queryset, QuerySet):
+            return self.queryset.count()
+        else:
+            return len(self.queryset)
+
 class ClassicRecipeSearchView(RecipeSearchView):
     def render_to_response(self, context, **kwargs):
         # Bypass the redirect-to-single-instance behaviour of RecipeSearchView
         return super(ListView, self).render_to_response(context, **kwargs)
 
     def get_queryset(self):
-        self.kwargs['branch'] = 'oe-classic'
+        self.kwargs['branch'] = self.kwargs.get('branch', 'oe-classic')
         query_string = self.request.GET.get('q', '')
         cover_status = self.request.GET.get('cover_status', None)
         cover_verified = self.request.GET.get('cover_verified', None)
         category = self.request.GET.get('category', None)
-        init_qs = ClassicRecipe.objects.filter(layerbranch__branch__name='oe-classic')
+        init_qs = ClassicRecipe.objects.filter(layerbranch__branch__name=self.kwargs['branch'])
         if cover_status:
             if cover_status == '!':
-                init_qs = init_qs.filter(cover_status__in=['U', 'N'])
+                init_qs = init_qs.filter(cover_status__in=['U', 'N', 'S'])
             else:
                 init_qs = init_qs.filter(cover_status=cover_status)
         if cover_verified:
@@ -889,7 +938,7 @@ class ClassicRecipeSearchView(RecipeSearchView):
         if category:
             init_qs = init_qs.filter(classic_category__icontains=category)
         if query_string.strip():
-            order_by = ('pn', 'layerbranch__layer')
+            order_by = (Lower('pn'), 'layerbranch__layer')
 
             qs0 = init_qs.filter(pn=query_string).order_by(*order_by)
 
@@ -902,30 +951,33 @@ class ClassicRecipeSearchView(RecipeSearchView):
             qs = list(utils.chain_unique(qs0, qs1, qs2))
         else:
             if 'q' in self.request.GET:
-                qs = init_qs.order_by('pn', 'layerbranch__layer')
+                qs = init_qs.order_by(Lower('pn'), 'layerbranch__layer')
             else:
                 # It's a bit too slow to return all records by default, and most people
                 # won't actually want that (if they do they can just hit the search button
                 # with no query string)
                 return Recipe.objects.none()
-        return qs
+        return ClassicRecipeLinkWrapper(qs)
 
     def get_context_data(self, **kwargs):
         context = super(ClassicRecipeSearchView, self).get_context_data(**kwargs)
-        context['multi_classic_layers'] = LayerItem.objects.filter(classic=True).count() > 1
+        context['this_url_name'] = 'recipe_search'
+        branchname = self.kwargs.get('branch', 'oe-classic')
+        context['branch'] = get_object_or_404(Branch, name=branchname)
         if 'q' in self.request.GET:
             searched = True
             search_form = ClassicRecipeSearchForm(self.request.GET)
         else:
             searched = False
             search_form = ClassicRecipeSearchForm()
+        context['compare'] = self.request.GET.get('compare', False)
         context['search_form'] = search_form
         context['searched'] = searched
         return context
 
 
 
-class ClassicRecipeDetailView(UpdateView):
+class ClassicRecipeDetailView(SuccessMessageMixin, UpdateView):
     model = ClassicRecipe
     form_class = ClassicRecipeForm
     context_object_name = 'recipe'
@@ -946,24 +998,41 @@ class ClassicRecipeDetailView(UpdateView):
 
         return super(ClassicRecipeDetailView, self).post(request, *args, **kwargs)
 
+    def get_success_message(self, cleaned_data):
+        return "Comparison saved successfully"
+
     def get_success_url(self):
-        return reverse_lazy('classic_recipe_search')
+        return reverse_lazy('comparison_recipe', args=(self.object.id,))
 
     def get_context_data(self, **kwargs):
         context = super(ClassicRecipeDetailView, self).get_context_data(**kwargs)
         context['can_edit'] = self._can_edit()
+        recipe = context['recipe']
+        context['branch'] = recipe.layerbranch.branch
+        # Get covering recipe if any
+        cover_recipe = None
+        if recipe.cover_pn:
+            rq = Recipe.objects.filter(layerbranch=recipe.cover_layerbranch).filter(pn=recipe.cover_pn)
+            if rq:
+                cover_recipe = rq.first()
+        context['cover_recipe'] = cover_recipe
         return context
 
 
 class ClassicRecipeStatsView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super(ClassicRecipeStatsView, self).get_context_data(**kwargs)
+        branchname = self.kwargs.get('branch', 'oe-classic')
+        context['branch'] = get_object_or_404(Branch, name=branchname)
+        context['url_branch'] = branchname
+        context['this_url_name'] = 'recipe_search'
         # *** Cover status chart ***
+        recipes = ClassicRecipe.objects.filter(layerbranch__branch=context['branch'])
         statuses = []
         status_counts = {}
         for choice, desc in ClassicRecipe.COVER_STATUS_CHOICES:
             statuses.append(desc)
-            status_counts[desc] = ClassicRecipe.objects.filter(cover_status=choice).count()
+            status_counts[desc] = recipes.filter(cover_status=choice).count()
         statuses = sorted(statuses, key=lambda status: status_counts[status], reverse=True)
         chartdata = {'x': statuses, 'y': [status_counts[k] for k in statuses]}
         context['charttype_status'] = 'pieChart'
@@ -976,7 +1045,7 @@ class ClassicRecipeStatsView(TemplateView):
         }
         # *** Categories chart ***
         categories = ['obsoletedir', 'nonworkingdir']
-        uniquevals = ClassicRecipe.objects.exclude(classic_category='').values_list('classic_category', flat=True).distinct()
+        uniquevals = recipes.exclude(classic_category='').values_list('classic_category', flat=True).distinct()
         for value in uniquevals:
             cats = value.split()
             for cat in cats:
@@ -984,7 +1053,7 @@ class ClassicRecipeStatsView(TemplateView):
                     categories.append(cat)
         categories.append('none')
         catcounts = dict.fromkeys(categories, 0)
-        unmigrated = ClassicRecipe.objects.filter(cover_status='U')
+        unmigrated = recipes.filter(cover_status='U')
         catcounts['none'] = unmigrated.filter(classic_category='').count()
         values = unmigrated.exclude(classic_category='').values_list('classic_category', flat=True)
         # We gather data this way because an item might be in more than one category, thus

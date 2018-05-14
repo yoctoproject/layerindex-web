@@ -71,6 +71,7 @@ class Branch(models.Model):
     short_description = models.CharField(max_length=50, blank=True)
     sort_priority = models.IntegerField(blank=True, null=True)
     updates_enabled = models.BooleanField('Enable updates', default=True, help_text='Enable automatically updating layer metadata for this branch via the update script')
+    comparison = models.BooleanField('Comparison', default=False, help_text='If enabled, branch is for comparison purposes only and will appear separately')
     update_environment = models.ForeignKey(PythonEnvironment, blank=True, null=True, on_delete=models.SET_NULL)
 
     updated = models.DateTimeField(auto_now=True, blank=True, null=True)
@@ -80,7 +81,9 @@ class Branch(models.Model):
         ordering = ['sort_priority']
 
     def __str__(self):
-        if self.short_description:
+        if self.comparison and self.short_description:
+            return self.short_description
+        elif self.short_description:
             return '%s (%s)' % (self.name, self.short_description)
         else:
             return self.name
@@ -520,6 +523,7 @@ class ClassicRecipe(Recipe):
         ('R', 'Replaced'),
         ('P', 'Provided (BBCLASSEXTEND)'),
         ('C', 'Provided (PACKAGECONFIG)'),
+        ('S', 'Distro-specific'),
         ('O', 'Obsolete'),
         ('E', 'Equivalent functionality'),
         ('D', 'Direct match'),
