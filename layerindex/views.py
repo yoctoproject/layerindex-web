@@ -927,7 +927,7 @@ class ClassicRecipeSearchView(RecipeSearchView):
         cover_status = self.request.GET.get('cover_status', None)
         cover_verified = self.request.GET.get('cover_verified', None)
         category = self.request.GET.get('category', None)
-        init_qs = ClassicRecipe.objects.filter(layerbranch__branch__name=self.kwargs['branch'])
+        init_qs = ClassicRecipe.objects.filter(layerbranch__branch__name=self.kwargs['branch']).filter(deleted=False)
         if cover_status:
             if cover_status == '!':
                 init_qs = init_qs.filter(cover_status__in=['U', 'N', 'S'])
@@ -1027,7 +1027,7 @@ class ClassicRecipeStatsView(TemplateView):
         context['url_branch'] = branchname
         context['this_url_name'] = 'recipe_search'
         # *** Cover status chart ***
-        recipes = ClassicRecipe.objects.filter(layerbranch__branch=context['branch'])
+        recipes = ClassicRecipe.objects.filter(layerbranch__branch=context['branch']).filter(deleted=False)
         statuses = []
         status_counts = {}
         for choice, desc in ClassicRecipe.COVER_STATUS_CHOICES:

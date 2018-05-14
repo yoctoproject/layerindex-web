@@ -168,7 +168,7 @@ def main():
 
                 logger.debug("%s|%s|%s|%s|%s|%s" % (pn, status, newpn, newlayer, categories, comment))
 
-                recipequery = ClassicRecipe.objects.filter(layerbranch=layerbranch).filter(pn=pn)
+                recipequery = ClassicRecipe.objects.filter(layerbranch=layerbranch).filter(pn=pn).filter(deleted=False)
                 if recipequery:
                     for recipe in recipequery:
                         recipe.cover_layerbranch = None

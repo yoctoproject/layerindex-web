@@ -534,6 +534,7 @@ class ClassicRecipe(Recipe):
     cover_verified = models.BooleanField(default=False)
     cover_comment = models.TextField(blank=True)
     classic_category = models.CharField('OE-Classic Category', max_length=100, blank=True)
+    deleted = models.BooleanField(default=False)
 
     class Meta:
         permissions = (
