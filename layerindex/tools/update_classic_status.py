@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
-# Update migration info in OE-Classic recipes in OE layer index database
+# Update cover info for OE-Classic / other distro recipes in OE layer index database
 #
-# Copyright (C) 2013 Intel Corporation
+# Copyright (C) 2013, 2018 Intel Corporation
 # Author: Paul Eggleton <paul.eggleton@linux.intel.com>
 #
 # Licensed under the MIT license, see COPYING.MIT for details
@@ -17,7 +17,7 @@ import re
 import utils
 import logging
 
-logger = utils.logger_create('LayerIndexClassicUpdate')
+logger = utils.logger_create('LayerIndexComparisonUpdate')
 
 class DryRunRollbackException(Exception):
     pass
@@ -70,7 +70,7 @@ def main():
             def recipe_pn_query(pn):
                 return Recipe.objects.filter(layerbranch__branch__name='master').filter(pn=pn).order_by('-layerbranch__layer__index_preference')
 
-            recipequery = ClassicRecipe.objects.filter(layerbranch=layerbranch).filter(cover_status__in=['U', 'N'])
+            recipequery = ClassicRecipe.objects.filter(layerbranch=layerbranch).filter(deleted=False).filter(cover_status__in=['U', 'N'])
             for recipe in recipequery:
                 replquery = recipe_pn_query(recipe.pn)
                 found = False
@@ -83,31 +83,32 @@ def main():
                     found = True
                     break
                 if not found:
-                    if recipe.pn.endswith('-native') or recipe.pn.endswith('-nativesdk'):
-                        searchpn, _, suffix = recipe.pn.rpartition('-')
-                        replquery = recipe_pn_query(searchpn)
-                        for replrecipe in replquery:
-                            if suffix in replrecipe.bbclassextend.split():
-                                logger.debug('Found BBCLASSEXTEND of %s to cover %s in layer %s' % (replrecipe.pn, recipe.pn, replrecipe.layerbranch.layer.name))
-                                recipe.cover_layerbranch = replrecipe.layerbranch
-                                recipe.cover_pn = replrecipe.pn
-                                recipe.cover_status = 'P'
-                                recipe.cover_verified = False
-                                recipe.save()
-                                found = True
-                                break
-                        if not found and recipe.pn.endswith('-nativesdk'):
-                            searchpn, _, _ = recipe.pn.rpartition('-')
-                            replquery = recipe_pn_query('nativesdk-%s' % searchpn)
+                    if layerbranch.layer.name == 'oe-classic':
+                        if recipe.pn.endswith('-native') or recipe.pn.endswith('-nativesdk'):
+                            searchpn, _, suffix = recipe.pn.rpartition('-')
+                            replquery = recipe_pn_query(searchpn)
                             for replrecipe in replquery:
-                                logger.debug('Found replacement %s to cover %s in layer %s' % (replrecipe.pn, recipe.pn, replrecipe.layerbranch.layer.name))
-                                recipe.cover_layerbranch = replrecipe.layerbranch
-                                recipe.cover_pn = replrecipe.pn
-                                recipe.cover_status = 'R'
-                                recipe.cover_verified = False
-                                recipe.save()
-                                found = True
-                                break
+                                if suffix in replrecipe.bbclassextend.split():
+                                    logger.debug('Found BBCLASSEXTEND of %s to cover %s in layer %s' % (replrecipe.pn, recipe.pn, replrecipe.layerbranch.layer.name))
+                                    recipe.cover_layerbranch = replrecipe.layerbranch
+                                    recipe.cover_pn = replrecipe.pn
+                                    recipe.cover_status = 'P'
+                                    recipe.cover_verified = False
+                                    recipe.save()
+                                    found = True
+                                    break
+                            if not found and recipe.pn.endswith('-nativesdk'):
+                                searchpn, _, _ = recipe.pn.rpartition('-')
+                                replquery = recipe_pn_query('nativesdk-%s' % searchpn)
+                                for replrecipe in replquery:
+                                    logger.debug('Found replacement %s to cover %s in layer %s' % (replrecipe.pn, recipe.pn, replrecipe.layerbranch.layer.name))
+                                    recipe.cover_layerbranch = replrecipe.layerbranch
+                                    recipe.cover_pn = replrecipe.pn
+                                    recipe.cover_status = 'R'
+                                    recipe.cover_verified = False
+                                    recipe.save()
+                                    found = True
+                                    break
 
 
             if options.dryrun:
