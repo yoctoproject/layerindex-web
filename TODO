@@ -62,5 +62,3 @@ RRS:
 * We only list recipes that have upgrade info (an earlier design decision) - should we list all?
 * Replace "All" with "(all)" and "No maintainer" with "(no maintainer)"?
 * Link to upstream changelogs? (will require per-recipe variable)
-* Link to other distro comparisons?
-* Link to other distro package info pages?

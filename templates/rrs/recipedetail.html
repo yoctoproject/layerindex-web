@@ -215,10 +215,21 @@
                 </dd>
                 {% endif %}
 
-                {% if recipe_distros %}
+                {% if recipe_distros or recipe.comparison_recipes.exists %}
                 <dt>Distributions</dt>
                 <dd>
                     <ul class="unstyled">
+                        {% for cr in recipe.comparison_recipes %}
+                        <li><a href="{% url 'comparison_recipe' cr.id %}">{{ cr.layerbranch.branch }} - {{ cr.pn }}</a>
+                            {% if cr.extra_urls %}
+                                <ul>
+                                    {% for extra_url in cr.extra_urls %}
+                                        <li><a href="{{ extra_url.url }}">{{ extra_url.name }}</a></li>
+                                    {% endfor %}
+                                </ul>
+                            {% endif %}
+                        </li>
+                        {% endfor %}
                         {% for d in recipe_distros %}
                         <li>{{ d }}</li>
                         {% endfor %}

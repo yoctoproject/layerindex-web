@@ -465,6 +465,9 @@ class Recipe(models.Model):
             eu = ExtraURL(name=item.name, url=item.render_url(self))
             yield eu
 
+    def comparison_recipes(self):
+        return ClassicRecipe.objects.filter(cover_layerbranch=self.layerbranch).filter(cover_pn=self.pn)
+
     def __str__(self):
         return os.path.join(self.filepath, self.filename)
 
