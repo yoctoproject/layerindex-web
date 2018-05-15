@@ -107,7 +107,7 @@ def edit_layer_view(request, template_name, branch='master', slug=None):
         if not (request.user.is_authenticated() and (request.user.has_perm('layerindex.publish_layer') or layeritem.user_can_edit(request.user))):
             raise PermissionDenied
         layerbranch = get_object_or_404(LayerBranch, layer=layeritem, branch=branchobj)
-        deplistlayers = LayerItem.objects.exclude(id=layeritem.id).order_by('name')
+        deplistlayers = LayerItem.objects.filter(comparison=False).exclude(id=layeritem.id).order_by('name')
         returnto = request.GET.get('returnto', 'layer_item')
         if returnto:
             if returnto == 'layer_review':
