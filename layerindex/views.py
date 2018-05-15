@@ -39,7 +39,7 @@ from django.db.models.signals import pre_save
 
 def edit_layernote_view(request, template_name, slug, pk=None):
     layeritem = get_object_or_404(LayerItem, name=slug)
-    if layeritem.classic:
+    if layeritem.comparison:
         raise Http404
     if not (request.user.is_authenticated() and (request.user.has_perm('layerindex.publish_layer') or layeritem.user_can_edit(request.user))):
         raise PermissionDenied
@@ -65,7 +65,7 @@ def edit_layernote_view(request, template_name, slug, pk=None):
 
 def delete_layernote_view(request, template_name, slug, pk):
     layeritem = get_object_or_404(LayerItem, name=slug)
-    if layeritem.classic:
+    if layeritem.comparison:
         raise Http404
     if not (request.user.is_authenticated() and (request.user.has_perm('layerindex.publish_layer') or layeritem.user_can_edit(request.user))):
         raise PermissionDenied
@@ -82,7 +82,7 @@ def delete_layernote_view(request, template_name, slug, pk):
 
 def delete_layer_view(request, template_name, slug):
     layeritem = get_object_or_404(LayerItem, name=slug)
-    if layeritem.classic:
+    if layeritem.comparison:
         raise Http404
     if not (request.user.is_authenticated() and request.user.has_perm('layerindex.publish_layer') and layeritem.status == 'N'):
         raise PermissionDenied
@@ -102,7 +102,7 @@ def edit_layer_view(request, template_name, branch='master', slug=None):
     if slug:
         # Edit mode
         layeritem = get_object_or_404(LayerItem, name=slug)
-        if layeritem.classic:
+        if layeritem.comparison:
             raise Http404
         if not (request.user.is_authenticated() and (request.user.has_perm('layerindex.publish_layer') or layeritem.user_can_edit(request.user))):
             raise PermissionDenied
@@ -118,7 +118,7 @@ def edit_layer_view(request, template_name, branch='master', slug=None):
         # Submit mode
         layeritem = LayerItem()
         layerbranch = LayerBranch(layer=layeritem, branch=branchobj)
-        deplistlayers = LayerItem.objects.filter(classic=False).order_by('name')
+        deplistlayers = LayerItem.objects.filter(comparison=False).order_by('name')
 
     if request.method == 'POST':
         last_vcs_url = layeritem.vcs_url
@@ -303,7 +303,7 @@ def publish_view(request, name):
 
 def _statuschange(request, name, newstatus):
     w = get_object_or_404(LayerItem, name=name)
-    if w.classic:
+    if w.comparison:
         raise Http404
     if w.status != newstatus:
         w.change_status(newstatus, request.user.username)
@@ -353,7 +353,7 @@ class LayerDetailView(DetailView):
         res = super(LayerDetailView, self).dispatch(request, *args, **kwargs)
         l = self.get_object()
         if l:
-            if l.classic:
+            if l.comparison:
                 raise Http404
             if l.status == 'N':
                 if not (request.user.is_authenticated() and request.user.has_perm('layerindex.publish_layer')):

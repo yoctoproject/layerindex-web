@@ -119,7 +119,7 @@ def main():
         layer.vcs_web_url = 'http://cgit.openembedded.org/openembedded'
         layer.vcs_web_tree_base_url = 'http://cgit.openembedded.org/openembedded/tree/%path%'
         layer.vcs_web_file_base_url = 'http://cgit.openembedded.org/openembedded/tree/%path%'
-        layer.classic = True
+        layer.comparison = True
         layer.save()
 
     layerbranch = layer.get_layerbranch(options.branch)

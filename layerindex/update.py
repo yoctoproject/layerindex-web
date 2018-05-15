@@ -194,7 +194,7 @@ def main():
 
 
     # We deliberately exclude status == 'X' ("no update") here
-    layerquery_all = LayerItem.objects.filter(classic=False).filter(status='P')
+    layerquery_all = LayerItem.objects.filter(comparison=False).filter(status='P')
     if layerquery_all.count() == 0:
         logger.info("No published layers to update")
         sys.exit(1)
@@ -207,11 +207,11 @@ def main():
             update_bitbake = True
             layers.remove('bitbake')
         for layer in layers:
-            layerquery = LayerItem.objects.filter(classic=False).filter(name=layer)
+            layerquery = LayerItem.objects.filter(comparison=False).filter(name=layer)
             if layerquery.count() == 0:
                 logger.error('No layers matching specified query "%s"' % layer)
                 sys.exit(1)
-        layerquery = LayerItem.objects.filter(classic=False).filter(name__in=layers)
+        layerquery = LayerItem.objects.filter(comparison=False).filter(name__in=layers)
     else:
         layerquery = layerquery_all
         update_bitbake = True
@@ -255,7 +255,7 @@ def main():
 
             if not options.nofetch:
                 # Make sure oe-core is fetched since recipe parsing requires it
-                layerquery_core = LayerItem.objects.filter(classic=False).filter(name=settings.CORE_LAYER_NAME)
+                layerquery_core = LayerItem.objects.filter(comparison=False).filter(name=settings.CORE_LAYER_NAME)
                 if layerquery_core in layerquery:
                     layerquery_fetch = list(layerquery)
                 else:

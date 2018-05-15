@@ -126,7 +126,7 @@ class LayerItem(models.Model):
     usage_url = models.CharField('Usage web page URL', max_length=255, blank=True, help_text='URL of a web page with more information about the layer and how to use it, if any (or path to file within repository)')
     mailing_list_url = models.URLField('Mailing list URL', blank=True, help_text='URL of the info page for a mailing list for discussing the layer, if any')
     index_preference = models.IntegerField('Preference', default=0, help_text='Number used to find preferred recipes in recipe search results (higher number is greater preference)')
-    classic = models.BooleanField('Classic', default=False, help_text='Is this OE-Classic?')
+    comparison = models.BooleanField('Comparison', default=False, help_text='Is this a comparison layer?')
 
     updated = models.DateTimeField(auto_now=True)
 

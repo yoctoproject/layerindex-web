@@ -49,7 +49,7 @@ LayerMaintainerFormSet = inlineformset_factory(LayerBranch, LayerMaintainer, for
 class EditLayerForm(forms.ModelForm):
     # Additional form fields
     vcs_subdir = forms.CharField(label='Repository subdirectory', max_length=40, required=False, help_text='Subdirectory within the repository where the layer is located, if not in the root (usually only used if the repository contains more than one layer)')
-    deps = forms.ModelMultipleChoiceField(label='Other layers this layer depends upon', queryset=LayerItem.objects.filter(classic=False), required=False)
+    deps = forms.ModelMultipleChoiceField(label='Other layers this layer depends upon', queryset=LayerItem.objects.filter(comparison=False), required=False)
     captcha = CaptchaField(label='Verification', help_text='Please enter the letters displayed for verification purposes', error_messages={'invalid':'Incorrect entry, please try again'})
 
     class Meta:
@@ -197,7 +197,7 @@ class AdvancedRecipeSearchForm(forms.Form):
     field = forms.ChoiceField(choices=FIELD_CHOICES)
     match_type = forms.ChoiceField(choices=MATCH_TYPE_CHOICES)
     value = forms.CharField(max_length=255, required=False)
-    layer = forms.ModelChoiceField(queryset=LayerItem.objects.filter(classic=False).filter(status__in=['P', 'X']).order_by('name'), empty_label="(any)", required=False)
+    layer = forms.ModelChoiceField(queryset=LayerItem.objects.filter(comparison=False).filter(status__in=['P', 'X']).order_by('name'), empty_label="(any)", required=False)
 
 
 class RecipeChangesetForm(forms.ModelForm):
@@ -234,7 +234,7 @@ class ClassicRecipeSearchForm(forms.Form):
 
     q = forms.CharField(label='Keyword', max_length=255, required=False)
     category = forms.CharField(max_length=255, required=False)
-    oe_layer = forms.ModelChoiceField(label='OE Layer', queryset=LayerItem.objects.filter(classic=False).filter(status__in=['P', 'X']).order_by('name'), empty_label="(any)", required=False)
+    oe_layer = forms.ModelChoiceField(label='OE Layer', queryset=LayerItem.objects.filter(comparison=False).filter(status__in=['P', 'X']).order_by('name'), empty_label="(any)", required=False)
     has_patches = forms.ChoiceField(label='Patches', choices=PATCH_CHOICES, required=False)
     cover_status = forms.ChoiceField(label='Status', choices=COVER_STATUS_CHOICES, required=False)
     cover_verified = forms.ChoiceField(label='Verified', choices=VERIFIED_CHOICES, required=False)
