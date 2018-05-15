@@ -11,6 +11,7 @@ from django.core.urlresolvers import reverse
 from django.core.validators import URLValidator
 from django.db.models.signals import pre_save
 from django.dispatch import receiver
+from collections import namedtuple
 import os.path
 import re
 import posixpath
@@ -179,6 +180,27 @@ class LayerItem(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class LayerRecipeExtraURL(models.Model):
+    layer = models.ForeignKey(LayerItem)
+    name = models.CharField(max_length=50, help_text='Name to display for link')
+    url = models.CharField('URL', max_length=255, help_text='Template for URL to link to (macros: %pn% %pv% %branch% %actual_branch%)')
+
+    class Meta:
+        verbose_name = "Layer Recipe Extra URL"
+
+    def render_url(self, recipe):
+        url = self.url
+        url = url.replace('%pn%', recipe.pn)
+        url = url.replace('%pv%', recipe.pv)
+        url = url.replace('%branch%', recipe.layerbranch.branch.name)
+        url = url.replace('%actual_branch%', recipe.layerbranch.actual_branch)
+        return url
+
+    def __str__(self):
+        return '%s - %s' % (self.layer.name, self.name)
+
 
 class YPCompatibleVersion(models.Model):
     name = models.CharField('Yocto Project Version', max_length=25, unique=True, help_text='Name of this Yocto Project compatible version (e.g. "2.0")')
@@ -436,6 +458,12 @@ class Recipe(models.Model):
             return self.homepage
         else:
             return None
+
+    def extra_urls(self):
+        ExtraURL = namedtuple('ExtraURL', 'name url')
+        for item in self.layerbranch.layer.layerrecipeextraurl_set.all():
+            eu = ExtraURL(name=item.name, url=item.render_url(self))
+            yield eu
 
     def __str__(self):
         return os.path.join(self.filepath, self.filename)

@@ -85,6 +85,18 @@
                                 {% endif %}
                             </td>
                         </tr>
+                        {% if recipe.extra_urls %}
+                        <tr>
+                            <th>Extra links</th>
+                            <td>
+                                <ul class="unstyled">
+                                {% for extra_url in recipe.extra_urls %}
+                                    <li><a href="{{ extra_url.url }}">{{ extra_url.name }}</a></li>
+                                {% endfor %}
+                                </ul>
+                            </td>
+                        </tr>
+                        {% endif %}
                     </tbody>
                 </table>
 
