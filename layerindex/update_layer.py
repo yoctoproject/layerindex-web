@@ -636,7 +636,7 @@ def main():
                                 bbclass.save()
 
                     for diffitem in diff.iter_change_type('M'):
-                        path = diffitem.a_blob.path
+                        path = diffitem.b_blob.path
                         if path.startswith(subdir_start):
                             skip = False
                             for removedir in removedirs:

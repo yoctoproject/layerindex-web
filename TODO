@@ -10,7 +10,6 @@ TODO:
 
 Bugs
 * Duplication of first maintainer when editing to add a second?
-* GitPython sometimes reports renamed files as type M but we don't handle that properly e.g. OE-Core 59285b324f6d9ed270b0bef209ef5da22a620a83 086308aa2a5e332de6f00ed397c4a55d132f158f
 
 Other
 * Full-text search on layer contents
