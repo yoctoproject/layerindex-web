@@ -228,7 +228,6 @@ def update_recipe_file(tinfoil, data, path, recipe, layerdir_start, repodir, ski
             recipedep.save()
 
         for filedep in recipedeps_delete:
-            logger.debug('%s: removing %s' % (recipe.layerbranch, filedep))
             recipedeps.filter(path=filedep).delete()
 
     except KeyboardInterrupt:
