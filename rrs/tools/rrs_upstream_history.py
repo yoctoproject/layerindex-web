@@ -47,7 +47,7 @@ def set_regexes(d):
         one set it.
     """
 
-    variables = ('REGEX', 'REGEX_URI', 'GITTAGREGEX')
+    variables = ('UPSTREAM_CHECK_REGEX', 'UPSTREAM_CHECK_URI', 'UPSTREAM_CHECK_GITTAGREGEX')
 
     if any(d.getVar(var, True) for var in variables):
         return
