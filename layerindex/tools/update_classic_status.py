@@ -35,6 +35,9 @@ def main():
     parser.add_option("-l", "--layer",
             help = "Specify layer to import into",
             action="store", dest="layer", default='oe-classic')
+    parser.add_option("-u", "--update",
+            help = "Specify update record to link to",
+            action="store", dest="update")
     parser.add_option("-n", "--dry-run",
             help = "Don't write any data back to the database",
             action="store_true", dest="dryrun")
@@ -51,7 +54,7 @@ def main():
     options, args = parser.parse_args(sys.argv)
 
     utils.setup_django()
-    from layerindex.models import LayerItem, LayerBranch, Recipe, ClassicRecipe
+    from layerindex.models import LayerItem, LayerBranch, Recipe, ClassicRecipe, Update, ComparisonRecipeUpdate
     from django.db import transaction
 
     logger.setLevel(options.loglevel)
@@ -68,6 +71,14 @@ def main():
         logger.error("Specified branch %s does not exist in database" % options.branch)
         sys.exit(1)
 
+    updateobj = None
+    if options.update:
+        updateobj = Update.objects.filter(id=int(options.update))
+        if not updateobj:
+            logger.error("Specified update id %s does not exist in database" % options.update)
+            sys.exit(1)
+        updateobj = updateobj.first()
+
     if options.skip:
         skiplist = options.skip.split(',')
     else:
@@ -82,6 +93,7 @@ def main():
                 if recipe.pn in skiplist:
                     logger.debug('Skipping %s' % recipe.pn)
                     continue
+                updated = False
                 sanepn = recipe.pn.lower().replace('_', '-')
                 replquery = recipe_pn_query(sanepn)
                 found = False
@@ -92,6 +104,7 @@ def main():
                     recipe.cover_status = 'D'
                     recipe.cover_verified = False
                     recipe.save()
+                    updated = True
                     found = True
                     break
                 if not found:
@@ -107,6 +120,7 @@ def main():
                                     recipe.cover_status = 'P'
                                     recipe.cover_verified = False
                                     recipe.save()
+                                    updated = True
                                     found = True
                                     break
                             if not found and recipe.pn.endswith('-nativesdk'):
@@ -119,6 +133,7 @@ def main():
                                     recipe.cover_status = 'R'
                                     recipe.cover_verified = False
                                     recipe.save()
+                                    updated = True
                                     found = True
                                     break
                     else:
@@ -137,6 +152,7 @@ def main():
                                         recipe.cover_status = 'D'
                                         recipe.cover_verified = False
                                         recipe.save()
+                                        updated = True
                                         found = True
                                         break
                                     if found:
@@ -144,6 +160,7 @@ def main():
                                 if not found:
                                     recipe.classic_category = 'python'
                                     recipe.save()
+                                    updated = True
                             elif 'cpan.org' in source0.url:
                                 perlpn = sanepn
                                 if perlpn.startswith('perl-'):
@@ -158,18 +175,22 @@ def main():
                                     recipe.cover_status = 'D'
                                     recipe.cover_verified = False
                                     recipe.save()
+                                    updated = True
                                     found = True
                                     break
                                 if not found:
                                     recipe.classic_category = 'perl'
                                     recipe.save()
+                                    updated = True
                         if not found:
                             if recipe.pn.startswith('R-'):
                                 recipe.classic_category = 'R'
                                 recipe.save()
+                                updated = True
                             elif recipe.pn.startswith('rubygem-'):
                                 recipe.classic_category = 'ruby'
                                 recipe.save()
+                                updated = True
                             elif recipe.pn.startswith('jdk-'):
                                 sanepn = sanepn[4:]
                                 replquery = recipe_pn_query(sanepn)
@@ -180,10 +201,12 @@ def main():
                                     recipe.cover_status = 'D'
                                     recipe.cover_verified = False
                                     recipe.save()
+                                    updated = True
                                     found = True
                                     break
                                 recipe.classic_category = 'java'
                                 recipe.save()
+                                updated = True
                             elif recipe.pn.startswith('golang-'):
                                 if recipe.pn.startswith('golang-github-'):
                                     sanepn = 'go-' + sanepn[14:]
@@ -197,14 +220,20 @@ def main():
                                     recipe.cover_status = 'D'
                                     recipe.cover_verified = False
                                     recipe.save()
+                                    updated = True
                                     found = True
                                     break
                                 recipe.classic_category = 'go'
                                 recipe.save()
+                                updated = True
                             elif recipe.pn.startswith('gnome-'):
                                 recipe.classic_category = 'gnome'
                                 recipe.save()
-
+                                updated = True
+                if updated and updateobj:
+                    rupdate, _ = ComparisonRecipeUpdate.objects.get_or_create(update=updateobj, recipe=recipe)
+                    rupdate.link_updated = True
+                    rupdate.save()
 
             if options.dryrun:
                 raise DryRunRollbackException()

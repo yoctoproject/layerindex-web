@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load extrafilters %}
+
+{% comment %}
+
+  layerindex-web - task page
+
+  Copyright (C) 2018 Intel Corporation
+  Licensed under the MIT license, see COPYING.MIT for details
+
+{% endcomment %}
+
+
+{% block head_extra %}
+{% if not update.finished %}<meta http-equiv="refresh" content="5" />{% endif %}
+{% endblock %}
+
+<!--
+{% block title_append %} - task status{% endblock %}
+-->
+
+{% block content %}
+{% autoescape on %}
+
+<p>Task status for {{ update.task_id }} started by {{ update.triggered_by }} {% if update.finished %} on {{ update.started }} (finished in {{ update.started | timesince2:update.finished }}){% else %}{{ update.started | timesince2 }} ago{% endif%}:</p>
+
+{% if update.log %}
+<pre>{{ update.log }}</pre>
+{% else %}
+<p>{% if update.finished %}(no output){% else %}(no output - waiting for task to finish){% endif %}
+{% endif %}
+
+{% if update.comparisonrecipeupdate_set.exists %}
+<h3>Updated comparison recipes</h3>
+<ul>
+{% for recipeupdate in update.comparisonrecipeupdate_set.all %}
+    <li><a href="{% url 'comparison_recipe' recipeupdate.recipe.id %}">{{ recipeupdate.recipe.pn }}</a> {% if recipeupdate.meta_updated and recipeupdate.link_updated %}(meta, link){% elif recipeupdate.link_updated %}(link){% elif recipeupdate.meta_updated %}(meta){% endif %}</li>
+{% endfor %}
+</ul>
+{% endif %}
+
+{% endautoescape %}
+{% endblock %}
+
+{% block footer %}
+{% endblock %}

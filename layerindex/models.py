@@ -95,6 +95,8 @@ class Update(models.Model):
     finished = models.DateTimeField(blank=True, null=True)
     log = models.TextField(blank=True)
     reload = models.BooleanField('Reloaded', default=False, help_text='Was this update a reload?')
+    task_id = models.CharField(max_length=50, blank=True, db_index=True)
+    triggered_by = models.ForeignKey(User, blank=True, null=True, on_delete=models.SET_NULL)
 
     def __str__(self):
         return '%s' % self.started
@@ -571,6 +573,7 @@ class ClassicRecipe(Recipe):
     class Meta:
         permissions = (
             ("edit_classic", "Can edit OE-Classic recipes"),
+            ("update_comparison_branch", "Can update comparison branches"),
         )
 
     def get_cover_desc(self):
@@ -596,6 +599,16 @@ class ClassicRecipe(Recipe):
             else:
                 desc = "%s - %s" % (desc, self.cover_comment)
         return desc
+
+
+class ComparisonRecipeUpdate(models.Model):
+    update = models.ForeignKey(Update)
+    recipe = models.ForeignKey(ClassicRecipe)
+    meta_updated = models.BooleanField(default=False)
+    link_updated = models.BooleanField(default=False)
+
+    def __str__(self):
+        return '%s - %s' % (self.update, self.recipe)
 
 
 class Machine(models.Model):

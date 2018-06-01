@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% load i18n %}
 {% load static %}
+{% load extrafilters %}
 
 {% comment %}
 
@@ -36,7 +37,7 @@
                 {% for update in updates %}
                 <tr>
                     <td><a href="{% url 'update' update.id %}">{{ update.started }}{% if update.reload %} (reload){% endif %}</a></td>
-                    <td>{% if update.finished %}{{ update.started|timesince:update.finished }}{% else %}(in progress){% endif %}</td>
+                    <td>{% if update.finished %}{{ update.started|timesince2:update.finished }}{% else %}(in progress){% endif %}</td>
                     <td>{% if update.errors %}<span class="badge badge-important">{{ update.errors }}</span>{% endif %}</td>
                     <td>{% if update.warnings %}<span class="badge badge-warning">{{ update.warnings }}</span>{% endif %}</td>
                 </tr>

@@ -22,6 +22,28 @@
 {% endautoescape %}
 {% endblock %}
 
+{% block navs_extra %}
+{% autoescape on %}
+{% if updateable %}
+<div id="updateDialog" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="updateDialogLabel" aria-hidden="true">
+    <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+        <h3 id="updateDialogLabel">Update {{ branch.short_description }}</h3>
+    </div>
+    <div class="modal-body">
+        <p>Are you sure you want to update? This will likely take some time.</p>
+    </div>
+    <div class="modal-footer">
+        <a href="{% url 'comparison_update' branch.name %}" class="btn btn-primary" aria-hidden="true">Update</a>
+        <button class="btn" id="id_layerdialog_cancel" data-dismiss="modal" aria-hidden="true">Cancel</button>
+    </div>
+</div>
+<div class="pull-right"><a href="#updateDialog" id="id_update_btn" role="button" class="btn" data-toggle="modal">Update</a></div>
+{% endif %}
+{% endautoescape %}
+{% endblock %}
+
+
 {% block content_inner %}
 {% autoescape on %}
 

@@ -176,6 +176,10 @@ class RecipeChangesetAdmin(admin.ModelAdmin):
         RecipeChangeInline
     ]
 
+class ComparisonRecipeUpdateAdmin(admin.ModelAdmin):
+    model = ComparisonRecipeUpdate
+    list_filter = ['update']
+
 admin.site.register(Branch, BranchAdmin)
 admin.site.register(YPCompatibleVersion, YPCompatibleVersionAdmin)
 admin.site.register(LayerItem, LayerItemAdmin)
@@ -199,5 +203,6 @@ admin.site.register(Patch)
 admin.site.register(LayerRecipeExtraURL)
 admin.site.register(RecipeChangeset, RecipeChangesetAdmin)
 admin.site.register(ClassicRecipe, ClassicRecipeAdmin)
+admin.site.register(ComparisonRecipeUpdate, ComparisonRecipeUpdateAdmin)
 admin.site.register(PythonEnvironment)
 admin.site.register(SiteNotice)

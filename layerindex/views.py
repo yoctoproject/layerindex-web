@@ -1182,6 +1182,14 @@ class ClassicRecipeSearchView(RecipeSearchView):
         else:
             context['excludeclasses_display'] = ' (none)'
             context['excludeclasses'] = []
+
+        context['updateable'] = False
+        if self.request.user.has_perm('layerindex.update_comparison_branch'):
+            for item in getattr(settings, 'COMPARISON_UPDATE', []):
+                if item['branch_name'] == context['branch'].name:
+                    context['updateable'] = True
+                    break
+
         return context
 
 
@@ -1327,3 +1335,43 @@ def layer_export_recipes_csv_view(request, branch, slug):
         writer.writerow(values)
 
     return response
+
+
+def comparison_update_view(request, branch):
+    branchobj = get_object_or_404(Branch, name=branch)
+    if not branchobj.comparison:
+        raise Http404
+    if not request.user.has_perm('layerindex.update_comparison_branch'):
+        raise PermissionDenied
+
+    from celery import uuid
+
+    cmd = None
+    for item in getattr(settings, 'COMPARISON_UPDATE', []):
+        if item['branch_name'] == branchobj.name:
+            cmd = item['update_command']
+            break
+    if not cmd:
+        raise Exception('No update command defined for branch %s' % branch)
+
+    task_id = uuid()
+    # Create this here first, because inside the task we don't have all of the required info
+    update = Update(task_id=task_id)
+    update.started = datetime.now()
+    update.triggered_by = request.user
+    update.save()
+
+    res = tasks.run_update_command.apply_async((branch, cmd), task_id=task_id)
+
+    return HttpResponseRedirect(reverse_lazy('task_status', kwargs={'task_id': task_id}))
+
+
+class TaskStatusView(TemplateView):
+    def get_context_data(self, **kwargs):
+        from celery.result import AsyncResult
+        context = super(TaskStatusView, self).get_context_data(**kwargs)
+        task_id = self.kwargs['task_id']
+        context['task_id'] = task_id
+        context['result'] = AsyncResult(task_id)
+        context['update'] = get_object_or_404(Update, task_id=task_id)
+        return context

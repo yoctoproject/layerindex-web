@@ -20,6 +20,8 @@
     <link rel="stylesheet" href="{% static "css/additional.css" %}" />
     <link rel="icon" type="image/vnd.microsoft.icon" href="{% static "img/favicon.ico" %}" />
     <title>{{ site_name }}{% block title_append %} - {% endblock %}</title>
+    {% block head_extra %}
+    {% endblock %}
 </head>
 
 <body>

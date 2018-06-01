@@ -38,6 +38,15 @@
     <p>No messages</p>
 {% endif %}
 
+{% if update.comparisonrecipeupdate_set.exists %}
+<h3>Updated comparison recipes</h3>
+<ul>
+{% for recipeupdate in update.comparisonrecipeupdate_set.all %}
+    <li><a href="{% url 'comparison_recipe' recipeupdate.recipe.id %}">{{ recipeupdate.recipe.pn }}</a> {% if recipeupdate.meta_updated and recipeupdate.link_updated %}(meta, link){% elif recipeupdate.link_updated %}(link){% elif recipeupdate.meta_updated %}(meta){% endif %}</li>
+{% endfor %}
+</ul>
+{% endif %}
+
 {% endautoescape %}
 
 {% endblock %}

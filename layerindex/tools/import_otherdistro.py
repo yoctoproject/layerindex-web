@@ -336,6 +336,17 @@ def check_branch_layer(args):
     return 0, layerbranch
 
 
+def get_update_obj(args):
+    updateobj = None
+    if args.update:
+        updateobj = Update.objects.filter(id=int(args.update))
+        if not updateobj:
+            logger.error("Specified update id %s does not exist in database" % args.update)
+            sys.exit(1)
+        updateobj = updateobj.first()
+    return updateobj
+
+
 def import_pkgspec(args):
     utils.setup_django()
     import settings
@@ -345,6 +356,8 @@ def import_pkgspec(args):
     ret, layerbranch = check_branch_layer(args)
     if ret:
         return ret
+
+    updateobj = get_update_obj(args)
 
     metapath = args.pkgdir
 
@@ -378,6 +391,10 @@ def import_pkgspec(args):
                         existingentry = (specpath, specfn)
                         if existingentry in existing:
                             existing.remove(existingentry)
+                        if updateobj:
+                            rupdate, _ = ComparisonRecipeUpdate.objects.get_or_create(update=updateobj, recipe=recipe)
+                            rupdate.meta_updated = True
+                            rupdate.save()
                 else:
                     logger.warn('Missing spec file in %s' % os.path.join(metapath, entry))
 
@@ -452,6 +469,8 @@ def import_deblist(args):
     if ret:
         return ret
 
+    updateobj = get_update_obj(args)
+
     try:
         with transaction.atomic():
             layerrecipes = ClassicRecipe.objects.filter(layerbranch=layerbranch)
@@ -483,6 +502,10 @@ def import_deblist(args):
                 recipe.save()
                 if pkgname in existing:
                     existing.remove(pkgname)
+                if updateobj:
+                    rupdate, _ = ComparisonRecipeUpdate.objects.get_or_create(update=updateobj, recipe=recipe)
+                    rupdate.meta_updated = True
+                    rupdate.save()
 
             pkgs = []
             pkginfo = {}
@@ -545,6 +568,7 @@ def main():
     parser_pkgspec.add_argument('branch', help='Branch to import into')
     parser_pkgspec.add_argument('layer', help='Layer to import into')
     parser_pkgspec.add_argument('pkgdir', help='Top level directory containing package subdirectories')
+    parser_pkgspec.add_argument('-u', '--update', help='Specify update record to link to')
     parser_pkgspec.add_argument('-n', '--dry-run', help='Don\'t write any data back to the database', action='store_true')
     parser_pkgspec.set_defaults(func=import_pkgspec)
 
@@ -564,6 +588,7 @@ def main():
     parser_deblist.add_argument('branch', help='Branch to import into')
     parser_deblist.add_argument('layer', help='Layer to import into')
     parser_deblist.add_argument('pkglistfile', help='File containing a list of packages, as produced by: apt-cache show "*"')
+    parser_deblist.add_argument('-u', '--update', help='Specify update record to link to')
     parser_deblist.add_argument('-n', '--dry-run', help='Don\'t write any data back to the database', action='store_true')
     parser_deblist.set_defaults(func=import_deblist)
 
