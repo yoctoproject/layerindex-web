@@ -141,6 +141,7 @@ def main():
             action="store_const", const=logging.ERROR, dest="loglevel")
 
     options, args = parser.parse_args(sys.argv)
+    logger.setLevel(options.loglevel)
 
     # get recipes for send email
     if options.plan:
