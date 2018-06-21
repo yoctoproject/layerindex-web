@@ -21,11 +21,11 @@ def layerindex_context(request):
     else:
         login_return_url = request.path
     return {
-        'all_branches': Branch.objects.exclude(comparison=True).order_by('sort_priority'),
+        'all_branches': Branch.objects.exclude(comparison=True).exclude(hidden=True).order_by('sort_priority'),
         'unpublished_count': LayerItem.objects.filter(status='N').count(),
         'site_name': site_name,
         'rrs_enabled': 'rrs' in settings.INSTALLED_APPS,
         'notices': SiteNotice.objects.filter(disabled=False).filter(Q(expires__isnull=True) | Q(expires__gte=datetime.now())),
-        'comparison_branches': Branch.objects.filter(comparison=True),
+        'comparison_branches': Branch.objects.filter(comparison=True).exclude(hidden=True),
         'login_return_url': login_return_url,
     }

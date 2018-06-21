@@ -1369,7 +1369,7 @@ class StatsView(TemplateView):
         context['class_count_distinct'] = BBClass.objects.values('name').distinct().count()
         context['machine_count_distinct'] = Machine.objects.values('name').distinct().count()
         context['distro_count_distinct'] = Distro.objects.values('name').distinct().count()
-        context['perbranch'] = Branch.objects.order_by('sort_priority').annotate(
+        context['perbranch'] = Branch.objects.filter(hidden=False).order_by('sort_priority').annotate(
                 layer_count=Count('layerbranch', distinct=True),
                 recipe_count=Count('layerbranch__recipe', distinct=True),
                 class_count=Count('layerbranch__bbclass', distinct=True),

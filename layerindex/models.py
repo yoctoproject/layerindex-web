@@ -75,6 +75,7 @@ class Branch(models.Model):
     updates_enabled = models.BooleanField('Enable updates', default=True, help_text='Enable automatically updating layer metadata for this branch via the update script')
     comparison = models.BooleanField('Comparison', default=False, help_text='If enabled, branch is for comparison purposes only and will appear separately')
     update_environment = models.ForeignKey(PythonEnvironment, blank=True, null=True, on_delete=models.SET_NULL)
+    hidden = models.BooleanField('Hidden', default=False, help_text='Hide from normal selections')
 
     updated = models.DateTimeField(auto_now=True, blank=True, null=True)
 
