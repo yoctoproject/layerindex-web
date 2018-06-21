@@ -148,6 +148,21 @@
                     </tbody>
                 </table>
 
+                <h2>Sources</h2>
+                {% if recipe.source_set.exists %}
+                <table class="table table-striped table-bordered">
+                    <tbody>
+                        {% for source in recipe.source_set.all %}
+                        <tr>
+                            <td>{% if source.web_url %}<a href="{{ source.web_url }}">{% endif %}{{ source.url }}{% if source.web_url %}</a>{% endif %}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p>None</p>
+                {% endif %}
+
                 <h2>Patches</h2>
                 {% if recipe.patch_set.exists %}
                 <table class="table table-striped table-bordered">

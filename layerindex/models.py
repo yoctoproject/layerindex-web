@@ -478,8 +478,23 @@ class Source(models.Model):
     recipe = models.ForeignKey(Recipe)
     url = models.CharField(max_length=255)
 
+    def web_url(self):
+        def drop_dotgit(url):
+            if url.endswith('.git'):
+                url = url[:-4]
+            return url
+        if self.url and self.url.startswith(('http', 'ftp')):
+            return self.url
+        elif self.url.startswith('git://github.com'):
+            return drop_dotgit('https' + self.url[3:])
+        elif self.url.startswith('git://git.yoctoproject.org'):
+            return drop_dotgit('https://git.yoctoproject.org/cgit/cgit.cgi' + self.url[26:])
+        elif self.url.startswith('git://git.kernel.org'):
+            return 'https' + self.url[3:]
+        return None
+
     def __str__(self):
-        return '%s - %s' % (self.recipe.pn, self.url)
+        return '%s - %s - %s' % (self.recipe.layerbranch, self.recipe.pn, self.url)
 
 
 class Patch(models.Model):
