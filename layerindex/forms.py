@@ -166,6 +166,17 @@ class ClassicRecipeForm(forms.ModelForm):
         model = ClassicRecipe
         fields = ('cover_layerbranch', 'cover_pn', 'cover_status', 'cover_verified', 'cover_comment', 'classic_category')
 
+    def clean(self):
+        cleaned_data = super(ClassicRecipeForm, self).clean()
+        cover_pn = cleaned_data.get('cover_pn')
+        cover_layerbranch = cleaned_data.get('cover_layerbranch')
+        if cleaned_data.get('cover_status') in ['U', 'N', 'S']:
+            if cover_layerbranch:
+                cleaned_data['cover_layerbranch'] = None
+            if cover_pn:
+                cleaned_data['cover_pn'] = ''
+        return cleaned_data
+
 
 class AdvancedRecipeSearchForm(forms.Form):
     FIELD_CHOICES = (
