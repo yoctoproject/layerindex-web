@@ -140,8 +140,11 @@ def _add_dependency(var, name, layerbranch, config_data, logger=None, required=T
         # No layer found.
         if not dep_layer:
             if logger:
-                logger.error('Cannot resolve %s %s (version %s) for %s' % (name, dep, ver_str, layer_name))
-                continue
+                if required:
+                    logger.error('Cannot resolve %s %s (version %s) for %s' % (name, dep, ver_str, layer_name))
+                else:
+                    logger.warning('Cannot resolve %s %s (version %s) for %s' % (name, dep, ver_str, layer_name))
+            continue
 
         # Preparing to remove obsolete ones
         if need_remove:
