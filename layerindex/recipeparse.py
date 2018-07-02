@@ -102,7 +102,11 @@ def setup_layer(config_data, fetchdir, layerdir, layer, layerbranch):
         deprepodir = os.path.join(fetchdir, depurldir)
         deplayerbranch = dep.dependency.get_layerbranch(layerbranch.branch.name)
         if not deplayerbranch:
-            raise RecipeParseError('Dependency %s of layer %s does not have branch record for branch %s' % (dep.dependency.name, layer.name, layerbranch.branch.name))
+            if dep.required:
+                raise RecipeParseError('Dependency %s of layer %s does not have branch record for branch %s' % (dep.dependency.name, layer.name, layerbranch.branch.name))
+            else:
+                logger.warning('Recommends %s of layer %s does not have branch record for branch %s - ignoring' % (dep.dependency.name, layer.name, layerbranch.branch.name))
+                continue
         deplayerdir = os.path.join(deprepodir, deplayerbranch.vcs_subdir)
         utils.parse_layer_conf(deplayerdir, config_data_copy)
     config_data_copy.delVar('LAYERDIR')
