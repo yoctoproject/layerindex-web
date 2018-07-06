@@ -426,15 +426,6 @@ def main():
                 # why won't they just fix that?!)
                 tinfoil.config_data.setVar('LICENSE', '')
 
-                # Set up for recording patch info
-                utils.setup_core_layer_sys_path(settings, branch.name)
-                skip_patches = False
-                try:
-                    import oe.recipeutils
-                except ImportError:
-                    logger.warn('Failed to find lib/oe/recipeutils.py in layers - patch information will not be collected')
-                    skip_patches = True
-
                 layerconfparser = layerconfparse.LayerConfParse(logger=logger, tinfoil=tinfoil)
                 layer_config_data = layerconfparser.parse_layer(layerdir)
                 if not layer_config_data:
@@ -447,6 +438,16 @@ def main():
                     for i in ["BBFILE_COLLECTIONS", "LAYERVERSION", "LAYERDEPENDS", "LAYERRECOMMENDS"]:
                         print('%s = "%s"' % (i, utils.get_layer_var(layer_config_data, i, logger)))
                     sys.exit(0)
+
+                # Set up for recording patch info
+                utils.setup_core_layer_sys_path(settings, branch.name)
+                skip_patches = False
+                try:
+                    import oe.recipeutils
+                except ImportError:
+                    logger.warn('Failed to find lib/oe/recipeutils.py in layers - patch information will not be collected')
+                    skip_patches = True
+
                 utils.add_dependencies(layerbranch, layer_config_data, logger=logger)
                 utils.add_recommends(layerbranch, layer_config_data, logger=logger)
                 layerbranch.save()
