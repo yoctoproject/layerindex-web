@@ -299,6 +299,7 @@ def main():
             last_rev = {}
             failed_layers = {}
             for branch in branches:
+                failed_layers[branch] = []
                 # If layer_A depends(or recommends) on layer_B, add layer_B before layer_A
                 deps_dict_all = {}
                 layerquery_sorted = []
@@ -399,28 +400,34 @@ def main():
                     deps = re.search("^LAYERDEPENDS = \"(.*)\"", output, re.M).group(1) or ''
                     recs = re.search("^LAYERRECOMMENDS = \"(.*)\"", output, re.M).group(1) or ''
 
-                    deps_dict = utils.explode_dep_versions2(bitbakepath, deps + ' ' + recs)
-                    if len(deps_dict) == 0:
+                    deps_dict = utils.explode_dep_versions2(bitbakepath, deps)
+                    recs_dict = utils.explode_dep_versions2(bitbakepath, recs)
+                    if not (deps_dict or recs_dict):
                         # No depends, add it firstly
                         layerquery_sorted.append(layer)
                         collections.add((col, ver))
                         continue
-                    deps_dict_all[layer] = {'requires': deps_dict, 'collection': col, 'version': ver}
+                    deps_dict_all[layer] = {'deps': deps_dict, \
+                                            'recs': recs_dict, \
+                                            'collection': col, \
+                                            'version': ver}
 
                 # Move deps_dict_all to layerquery_sorted orderly
-                logger.info("Sorting layers for branch %s" % branch)
+                if deps_dict_all:
+                    logger.info("Sorting layers for branch %s" % branch)
                 while True:
                     deps_dict_all_copy = deps_dict_all.copy()
                     for layer, value in deps_dict_all_copy.items():
-                        for req_col, req_ver_list in value['requires'].copy().items():
-                            matched = False
-                            if req_ver_list:
-                                req_ver = req_ver_list[0]
-                            else:
-                                req_ver = None
-                            if utils.is_deps_satisfied(req_col, req_ver, collections):
-                                del(value['requires'][req_col])
-                        if not value['requires']:
+                        for deps_recs in ('deps', 'recs'):
+                            for req_col, req_ver_list in value[deps_recs].copy().items():
+                                matched = False
+                                if req_ver_list:
+                                    req_ver = req_ver_list[0]
+                                else:
+                                    req_ver = None
+                                if utils.is_deps_satisfied(req_col, req_ver, collections):
+                                    del(value[deps_recs][req_col])
+                        if not (value['deps'] or value['recs']):
                             # All the depends are in collections:
                             del(deps_dict_all[layer])
                             layerquery_sorted.append(layer)
@@ -429,15 +436,32 @@ def main():
                     if not len(deps_dict_all):
                         break
 
-                    # If nothing changed after a run then some dependencies couldn't be resolved
+                    finished = True
+                    # If nothing changed after a run, drop recs and try again
                     if operator.eq(deps_dict_all_copy, deps_dict_all):
-                        logger.warning("Cannot find required collections on branch %s:" % branch)
-                        layer_names = []
                         for layer, value in deps_dict_all.items():
-                            logger.error('%s: %s' % (layer.name, value['requires']))
-                            layer_names.append(layer.name)
+                            if value['recs'] and not value['deps']:
+                                # Add it if recs isn't satisfied only.
+                                logger.warn('Adding %s without LAYERRECOMMENDS...' % layer.name)
+                                del(deps_dict_all[layer])
+                                layerquery_sorted.append(layer)
+                                collections.add((value['collection'], value['version']))
+                                failed_msg = '%s: Added without LAYERRECOMMENDS' % layer.name
+                                failed_layers[branch].append(failed_msg)
+                                finished = False
+                                break
+                        if not finished:
+                            continue
+                        logger.warning("Cannot find required collections on branch %s:" % branch)
+                        for layer, value in deps_dict_all.items():
+                            logger.warn('%s: LAYERDEPENDS: %s LAYERRECOMMENDS: %s' % (layer.name, value['deps'], value['recs']))
+                            if value['deps']:
+                                failed_layers[branch].append('%s: Failed to add since LAYERDEPENDS is not satisfied' % layer.name)
+                            else:
+                                # Should never come here
+                                logger.error("Unexpected errors when sorting layers")
+                                sys.exit(1)
                         logger.warning("Known collections on branch %s: %s" % (branch, collections))
-                        failed_layers[branch] = layer_names
                         break
 
                 for layer in layerquery_sorted:
@@ -479,10 +503,11 @@ def main():
                         logger.info('Update interrupted, exiting')
                         sys.exit(254)
             if failed_layers:
-                print()
                 for branch, err_msg_list in failed_layers.items():
-                    logger.error("Failed layers on branch %s: %s" % (branch, " ".join(err_msg_list)))
-                print()
+                    if err_msg_list:
+                        print()
+                        logger.error("Issues found on branch %s:\n    %s" % (branch, "\n    ".join(err_msg_list)))
+                        print()
         finally:
             utils.unlock_file(lockfile)
 
