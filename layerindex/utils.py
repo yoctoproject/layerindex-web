@@ -217,17 +217,25 @@ def checkout_repo(repodir, commit, logger, force=False):
     if force:
         currentref = ''
     else:
-        currentref = runcmd("git rev-parse HEAD", repodir, logger=logger).strip()
+        try:
+            # The "git rev-parse HEAD" returns "fatal: ambiguous argument 'HEAD'"
+            # when a repo is unable to check out after git clone:
+            # git clone <url>
+            # warning: remote HEAD refers to nonexistent ref, unable to checkout.
+            # So check and avoid that
+            currentref = runcmd("git rev-parse HEAD", repodir, logger=logger).strip()
+        except Exception as esc:
+            logger.warn(esc)
+            currentref = ''
     if currentref != commit:
         # Reset in case there are added but uncommitted changes
-        runcmd("git reset --hard HEAD", repodir, logger=logger)
+        runcmd("git reset --hard", repodir, logger=logger)
         # Drop any untracked files in case these cause problems (either because
         # they will exist in the revision we're checking out, or will otherwise
         # interfere with operation, e.g. stale pyc files)
         runcmd("git clean -qdfx", repodir, logger=logger)
         # Now check out the revision
-        runcmd("git checkout %s" % commit,
-                        repodir, logger=logger)
+        runcmd("git checkout %s" % commit, repodir, logger=logger)
 
 def checkout_layer_branch(layerbranch, repodir, logger=None):
     branchname = layerbranch.branch.name
