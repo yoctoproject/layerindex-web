@@ -2,7 +2,10 @@ FROM buildpack-deps:latest
 LABEL maintainer="Michael Halstead <mhalstead@linuxfoundation.org>"
 
 EXPOSE 80
-ENV PYTHONUNBUFFERED 1
+ENV PYTHONUNBUFFERED=1 \
+    LANG=en_US.UTF-8 \
+    LC_ALL=en_US.UTF-8 \
+    LC_CTYPE=en_US.UTF-8
 ## Uncomment to set proxy ENVVARS within container
 #ENV http_proxy http://your.proxy.server:port
 #ENV https_proxy https://your.proxy.server:port
@@ -17,10 +20,14 @@ RUN apt-get install -y --no-install-recommends \
 	python3-mysqldb \
 	python3-dev \
 	python3-pil \
+	locales \
 	rabbitmq-server \
 	netcat-openbsd \
 	vim \
 	&& rm -rf /var/lib/apt/lists/*
+RUN echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen \
+	&& locale-gen en_US.UTF-8 \
+	&& update-locale
 RUN pip install --upgrade pip
 RUN pip3 install gunicorn
 RUN pip install setuptools

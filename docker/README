@@ -10,7 +10,7 @@ docker build -t halstead/layerindex-web -f Dockerfile.web .
 ##   'PASSWORD': 'testingpw',
 ##   'HOST': 'layersdb',
 ##   'PORT': '',
-docker run -d --name layerdb -e MYSQL_ROOT_PASSWORD=testingpw -e MYSQL_DATABASE=layersdb mariadb
+docker run -d --name layerdb -e MYSQL_ROOT_PASSWORD=testingpw -e MYSQL_DATABASE=layersdb mariadb --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
 
 ## If you have a copy of the the production data now is the time to insert it.
 ## If not you can skip the next step for a clean install.
