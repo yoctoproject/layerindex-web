@@ -13,16 +13,22 @@ RUN apt-get install -y --no-install-recommends \
 	python-mysqldb \
 	python-dev \
 	python-imaging \
+	python3-pip \
+	python3-mysqldb \
+	python3-dev \
+	python3-pil \
 	rabbitmq-server \
 	netcat-openbsd \
 	vim \
 	&& rm -rf /var/lib/apt/lists/*
 RUN pip install --upgrade pip
-RUN pip install gunicorn
+RUN pip3 install gunicorn
 RUN pip install setuptools
+RUN pip3 install setuptools
 RUN mkdir /opt/workdir
 COPY . /opt/layerindex
 RUN pip install -r /opt/layerindex/requirements.txt
+RUN pip3 install -r /opt/layerindex/requirements.txt
 COPY settings.py /opt/layerindex/settings.py
 COPY docker/updatelayers.sh /opt/updatelayers.sh
 COPY docker/migrate.sh /opt/migrate.sh
