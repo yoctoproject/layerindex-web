@@ -362,10 +362,9 @@ def main():
     # Collect repo info
     repo = git.Repo(repodir)
     assert repo.bare == False
+    topcommit = repo.commit('origin/%s' % branchname)
     if options.nocheckout:
         topcommit = repo.commit('HEAD')
-    else:
-        topcommit = repo.commit('origin/%s' % branchname)
 
     tinfoil = None
     tempdir = None

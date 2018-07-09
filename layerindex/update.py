@@ -345,10 +345,10 @@ def main():
                     repo = git.Repo(repodir)
                     assert repo.bare == False
                     try:
+                        # Always get origin/branchname, so it raises error when branch doesn't exist when nocheckout
+                        topcommit = repo.commit('origin/%s' % branchname)
                         if options.nocheckout:
                             topcommit = repo.commit('HEAD')
-                        else:
-                            topcommit = repo.commit('origin/%s' % branchname)
                     except:
                         if newbranch:
                             logger.info("Skipping update of layer %s - branch %s doesn't exist" % (layer.name, branchdesc))
