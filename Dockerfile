@@ -10,6 +10,7 @@ ENV PYTHONUNBUFFERED=1 \
 #ENV http_proxy http://your.proxy.server:port
 #ENV https_proxy https://your.proxy.server:port
 
+COPY requirements.txt /
 RUN apt-get update
 RUN apt-get install -y --no-install-recommends \
 	python-pip \
@@ -32,10 +33,10 @@ RUN pip install --upgrade pip
 RUN pip3 install gunicorn
 RUN pip install setuptools
 RUN pip3 install setuptools
+RUN pip install -r /requirements.txt
+RUN pip3 install -r /requirements.txt
 RUN mkdir /opt/workdir
 COPY . /opt/layerindex
-RUN pip install -r /opt/layerindex/requirements.txt
-RUN pip3 install -r /opt/layerindex/requirements.txt
 COPY settings.py /opt/layerindex/settings.py
 COPY docker/updatelayers.sh /opt/updatelayers.sh
 COPY docker/migrate.sh /opt/migrate.sh
