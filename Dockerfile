@@ -1,5 +1,5 @@
 FROM buildpack-deps:latest
-MAINTAINER Michael Halstead <mhalstead@linuxfoundation.org>
+LABEL maintainer="Michael Halstead <mhalstead@linuxfoundation.org>"
 
 EXPOSE 80
 ENV PYTHONUNBUFFERED 1
@@ -20,21 +20,18 @@ RUN apt-get install -y --no-install-recommends \
 RUN pip install --upgrade pip
 RUN pip install gunicorn
 RUN pip install setuptools
-CMD mkdir /opt/workdir
-ADD . /opt/layerindex
+RUN mkdir /opt/workdir
+COPY . /opt/layerindex
 RUN pip install -r /opt/layerindex/requirements.txt
-ADD settings.py /opt/layerindex/settings.py
-ADD docker/updatelayers.sh /opt/updatelayers.sh
-ADD docker/migrate.sh /opt/migrate.sh
+COPY settings.py /opt/layerindex/settings.py
+COPY docker/updatelayers.sh /opt/updatelayers.sh
+COPY docker/migrate.sh /opt/migrate.sh
 
 ## Uncomment to add a .gitconfig file within container
-#ADD docker/.gitconfig /root/.gitconfig
+#COPY docker/.gitconfig /root/.gitconfig
 ## Uncomment to add a proxy script within container, if you choose to
 ## do so, you will also have to edit .gitconfig appropriately
-#ADD docker/git-proxy /opt/bin/git-proxy
+#COPY docker/git-proxy /opt/bin/git-proxy
 
 # Start Gunicorn
 CMD ["/usr/local/bin/gunicorn", "wsgi:application", "--workers=4", "--bind=:5000", "--log-level=debug", "--chdir=/opt/layerindex"]
-
-# Start Celery
-CMD ["/usr/local/bin/celery", "-A", "layerindex.tasks", "worker", "--loglevel=info", "--workdir=/opt/layerindex"]
