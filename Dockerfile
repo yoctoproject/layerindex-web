@@ -1,4 +1,4 @@
-FROM buildpack-deps:latest
+FROM debian:stretch
 LABEL maintainer="Michael Halstead <mhalstead@linuxfoundation.org>"
 
 EXPOSE 80
@@ -10,9 +10,15 @@ ENV PYTHONUNBUFFERED=1 \
 #ENV http_proxy http://your.proxy.server:port
 #ENV https_proxy https://your.proxy.server:port
 
+# NOTE: we don't purge gcc below as we have some places in the OE metadata that look for it
+
 COPY requirements.txt /
 RUN apt-get update
 RUN apt-get install -y --no-install-recommends \
+	autoconf \
+	g++ \
+	gcc \
+	make \
 	python-pip \
 	python-mysqldb \
 	python-dev \
@@ -21,11 +27,14 @@ RUN apt-get install -y --no-install-recommends \
 	python3-mysqldb \
 	python3-dev \
 	python3-pil \
+	libjpeg-dev \
+	libmariadbclient-dev \
 	locales \
 	rabbitmq-server \
 	netcat-openbsd \
-	vim \
-	&& rm -rf /var/lib/apt/lists/*
+	curl \
+	git-core \
+	vim
 RUN echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen \
 	&& locale-gen en_US.UTF-8 \
 	&& update-locale
@@ -36,6 +45,10 @@ RUN pip3 install setuptools
 RUN pip install -r /requirements.txt
 RUN pip3 install -r /requirements.txt
 RUN mkdir /opt/workdir
+RUN apt-get purge -y autoconf g++ make python3-dev libjpeg-dev libmariadbclient-dev \
+	&& apt-get autoremove -y \
+	&& rm -rf /var/lib/apt/lists/* \
+	&& apt-get clean
 COPY . /opt/layerindex
 COPY settings.py /opt/layerindex/settings.py
 COPY docker/updatelayers.sh /opt/updatelayers.sh
