@@ -44,7 +44,6 @@ RUN pip install setuptools
 RUN pip3 install setuptools
 RUN pip install -r /requirements.txt
 RUN pip3 install -r /requirements.txt
-RUN mkdir /opt/workdir
 RUN apt-get purge -y autoconf g++ make python3-dev libjpeg-dev libmariadbclient-dev \
 	&& apt-get autoremove -y \
 	&& rm -rf /var/lib/apt/lists/* \
@@ -59,6 +58,11 @@ COPY docker/migrate.sh /opt/migrate.sh
 ## Uncomment to add a proxy script within container, if you choose to
 ## do so, you will also have to edit .gitconfig appropriately
 #COPY docker/git-proxy /opt/bin/git-proxy
+
+RUN mkdir /opt/workdir \
+	&& adduser --system --uid=500 layers \
+	&& chown -R layers /opt
+USER layers
 
 # Start Gunicorn
 CMD ["/usr/local/bin/gunicorn", "wsgi:application", "--workers=4", "--bind=:5000", "--log-level=debug", "--chdir=/opt/layerindex"]
