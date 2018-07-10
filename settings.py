@@ -3,6 +3,8 @@
 # Based on settings.py from the Django project template
 # Copyright (c) Django Software Foundation and individual contributors.
 
+import os
+
 DEBUG = False
 
 ADMINS = (
@@ -45,8 +47,7 @@ USE_I18N = True
 # calendars according to the current locale
 USE_L10N = True
 
-# Avoid specific paths (added by paule)
-import os
+# Avoid specific paths
 BASE_DIR = os.path.dirname(__file__)
 
 # Absolute filesystem path to the directory that will hold user-uploaded files.
@@ -143,7 +144,6 @@ INSTALLED_APPS = (
     'django.contrib.sites',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    # Uncomment the next line to enable the admin:
     'django.contrib.admin',
     # Uncomment the next line to enable admin documentation:
     # 'django.contrib.admindocs',
@@ -187,6 +187,7 @@ LOGGING = {
     }
 }
 
+# Set bootstrap alert CSS styles for each message level
 from django.contrib.messages import constants as messages
 MESSAGE_TAGS = {
     messages.SUCCESS: 'alert-success',
