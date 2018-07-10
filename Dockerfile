@@ -1,7 +1,8 @@
+# See docker/README for how to use this.
+
 FROM debian:stretch
 LABEL maintainer="Michael Halstead <mhalstead@linuxfoundation.org>"
 
-EXPOSE 80
 ENV PYTHONUNBUFFERED=1 \
     LANG=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8 \
@@ -30,7 +31,6 @@ RUN apt-get install -y --no-install-recommends \
 	libjpeg-dev \
 	libmariadbclient-dev \
 	locales \
-	rabbitmq-server \
 	netcat-openbsd \
 	curl \
 	git-core \
@@ -49,7 +49,8 @@ RUN apt-get purge -y autoconf g++ make python3-dev libjpeg-dev libmariadbclient-
 	&& rm -rf /var/lib/apt/lists/* \
 	&& apt-get clean
 COPY . /opt/layerindex
-COPY settings.py /opt/layerindex/settings.py
+COPY docker/settings.py /opt/layerindex/settings.py
+COPY docker/refreshlayers.sh /opt/refreshlayers.sh
 COPY docker/updatelayers.sh /opt/updatelayers.sh
 COPY docker/migrate.sh /opt/migrate.sh
 
