@@ -1,2 +1,2 @@
 #!/bin/bash
-python /opt/layerindex/manage.py migrate layerindex
+python /opt/layerindex/manage.py migrate
