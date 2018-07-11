@@ -14,8 +14,8 @@ ENV PYTHONUNBUFFERED=1 \
 # NOTE: we don't purge gcc below as we have some places in the OE metadata that look for it
 
 COPY requirements.txt /
-RUN apt-get update
-RUN apt-get install -y --no-install-recommends \
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
 	autoconf \
 	g++ \
 	gcc \
@@ -34,20 +34,20 @@ RUN apt-get install -y --no-install-recommends \
 	netcat-openbsd \
 	curl \
 	git-core \
-	vim
-RUN echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen \
+	vim \
+    && echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen \
 	&& locale-gen en_US.UTF-8 \
-	&& update-locale
-RUN pip install --upgrade pip
-RUN pip3 install gunicorn
-RUN pip install setuptools
-RUN pip3 install setuptools
-RUN pip install -r /requirements.txt
-RUN pip3 install -r /requirements.txt
-RUN apt-get purge -y autoconf g++ make python3-dev libjpeg-dev libmariadbclient-dev \
+	&& update-locale \
+    && pip3 install gunicorn \
+    && pip install setuptools \
+    && pip3 install setuptools \
+    && pip install -r /requirements.txt \
+    && pip3 install -r /requirements.txt \
+    && apt-get purge -y autoconf g++ make python-dev python3-dev libjpeg-dev libmariadbclient-dev \
 	&& apt-get autoremove -y \
 	&& rm -rf /var/lib/apt/lists/* \
 	&& apt-get clean
+
 COPY . /opt/layerindex
 COPY docker/settings.py /opt/layerindex/settings.py
 COPY docker/refreshlayers.sh /opt/refreshlayers.sh
