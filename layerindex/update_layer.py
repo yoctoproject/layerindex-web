@@ -502,6 +502,10 @@ def main():
                         if skip:
                             continue
                         if oldpath.startswith(subdir_start):
+                            if not newpath.startswith(subdir_start):
+                                logger.debug("Treating rename of %s to %s as a delete since new path is outside layer" % (oldpath, newpath))
+                                other_deletes.append(diffitem)
+                                continue
                             (oldtypename, oldfilepath, oldfilename) = recipeparse.detect_file_type(oldpath, subdir_start)
                             (newtypename, newfilepath, newfilename) = recipeparse.detect_file_type(newpath, subdir_start)
                             if oldtypename != newtypename:
@@ -684,16 +688,21 @@ def main():
                         # First, check which recipes still exist
                         layerrecipe_values = layerrecipes.values('id', 'filepath', 'filename', 'pn')
                         for v in layerrecipe_values:
-                            root = os.path.join(layerdir, v['filepath'])
-                            fullpath = os.path.join(root, v['filename'])
-                            preserve = True
-                            if os.path.exists(fullpath):
-                                for removedir in removedirs:
-                                    if fullpath.startswith(removedir):
-                                        preserve = False
-                                        break
-                            else:
+                            if v['filepath'].startswith('../'):
+                                # FIXME: These recipes were present due to a bug (not handling renames
+                                # to paths outside the layer) - this can be removed at some point in the future
                                 preserve = False
+                            else:
+                                root = os.path.join(layerdir, v['filepath'])
+                                fullpath = os.path.join(root, v['filename'])
+                                if os.path.exists(fullpath):
+                                    preserve = True
+                                    for removedir in removedirs:
+                                        if fullpath.startswith(removedir):
+                                            preserve = False
+                                            break
+                                else:
+                                    preserve = False
 
                             if preserve:
                                 # Recipe still exists, update it
