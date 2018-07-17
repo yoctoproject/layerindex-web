@@ -1,4 +1,5 @@
 *.pyc
 *.db3
 *.swp
+.pytest_cache
 venv/
