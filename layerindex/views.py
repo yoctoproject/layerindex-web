@@ -18,7 +18,7 @@ from django.views.generic import TemplateView, DetailView, ListView
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
 from django.views.generic.base import RedirectView
 from django.contrib.messages.views import SuccessMessageMixin
-from layerindex.forms import EditLayerForm, LayerMaintainerFormSet, EditNoteForm, EditProfileForm, RecipeChangesetForm, AdvancedRecipeSearchForm, BulkChangeEditFormSet, ClassicRecipeForm, ClassicRecipeSearchForm
+from layerindex.forms import EditLayerForm, LayerMaintainerFormSet, EditNoteForm, EditProfileForm, RecipeChangesetForm, AdvancedRecipeSearchForm, BulkChangeEditFormSet, ClassicRecipeForm, ClassicRecipeSearchForm, ComparisonRecipeSelectForm
 from django.db import transaction
 from django.contrib.auth.models import User, Permission
 from django.db.models import Q, Count, Sum
@@ -28,6 +28,7 @@ from django.template.loader import get_template
 from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django import forms
 from reversion.models import Revision
 from . import utils
 from . import simplesearch
@@ -1202,24 +1203,10 @@ class ClassicRecipeDetailView(SuccessMessageMixin, UpdateView):
     def _can_edit(self):
         if self.request.user.is_authenticated():
             if not self.request.user.has_perm('layerindex.edit_classic'):
-                user_email = self.request.user.email.strip().lower()
-                if not LayerMaintainer.objects.filter(email__iexact=user_email):
-                    return False
+                return False
         else:
             return False
         return True
-
-    def post(self, request, *args, **kwargs):
-        if not self._can_edit():
-            raise PermissionDenied
-
-        return super(ClassicRecipeDetailView, self).post(request, *args, **kwargs)
-
-    def get_success_message(self, cleaned_data):
-        return "Comparison saved successfully"
-
-    def get_success_url(self):
-        return reverse_lazy('comparison_recipe', args=(self.object.id,))
 
     def get_context_data(self, **kwargs):
         context = super(ClassicRecipeDetailView, self).get_context_data(**kwargs)
@@ -1233,6 +1220,9 @@ class ClassicRecipeDetailView(SuccessMessageMixin, UpdateView):
             if rq:
                 cover_recipe = rq.first()
         context['cover_recipe'] = cover_recipe
+        context['layerbranch_desc'] = str(recipe.layerbranch.branch)
+        context['to_desc'] = 'OpenEmbedded'
+        context['recipes'] = [recipe, cover_recipe]
         return context
 
 
@@ -1375,3 +1365,116 @@ class TaskStatusView(TemplateView):
         context['result'] = AsyncResult(task_id)
         context['update'] = get_object_or_404(Update, task_id=task_id)
         return context
+
+
+class ComparisonRecipeSelectView(ClassicRecipeSearchView):
+    def _can_edit(self):
+        if self.request.user.is_authenticated():
+            if not self.request.user.has_perm('layerindex.edit_classic'):
+                return False
+        else:
+            return False
+        return True
+
+    def get_context_data(self, **kwargs):
+        self.kwargs['branch'] = 'master'
+        context = super(ComparisonRecipeSelectView, self).get_context_data(**kwargs)
+        recipe = get_object_or_404(ClassicRecipe, pk=self.kwargs['pk'])
+        context['select_for'] = recipe
+        context['existing_cover_recipe'] = recipe.get_cover_recipe()
+        comparison_form = ClassicRecipeForm(prefix='selectrecipedialog', instance=recipe)
+        comparison_form.fields['cover_pn'].widget = forms.HiddenInput()
+        comparison_form.fields['cover_layerbranch'].widget = forms.HiddenInput()
+        context['comparison_form'] = comparison_form
+
+        if 'q' in self.request.GET:
+            search_form = ComparisonRecipeSelectForm(self.request.GET)
+        else:
+            search_form = ComparisonRecipeSelectForm()
+        context['search_form'] = search_form
+
+        context['can_edit'] = self._can_edit()
+        return context
+
+    def get_queryset(self):
+        query_string = self.request.GET.get('q', '')
+        selectedlayers_param = self.request.GET.get('selectedlayers', '')
+        if selectedlayers_param:
+            layer_ids = [int(i) for i in selectedlayers_param.split(',')]
+        else:
+            layer_ids = []
+        init_qs = Recipe.objects.filter(layerbranch__branch__name='master')
+        if layer_ids:
+            init_qs = init_qs.filter(layerbranch__layer__in=layer_ids)
+        if query_string.strip():
+            order_by = (Lower('pn'), 'layerbranch__layer')
+
+            qs0 = init_qs.filter(pn=query_string).order_by(*order_by)
+
+            entry_query = simplesearch.get_query(query_string, ['pn'])
+            qs1 = init_qs.filter(entry_query).order_by(*order_by)
+
+            entry_query = simplesearch.get_query(query_string, ['summary', 'description'])
+            qs2 = init_qs.filter(entry_query).order_by(*order_by)
+
+            qs = list(utils.chain_unique(qs0, qs1, qs2))
+        else:
+            if 'q' in self.request.GET:
+                qs = init_qs.order_by(Lower('pn'), 'layerbranch__layer')
+            else:
+                # It's a bit too slow to return all records by default, and most people
+                # won't actually want that (if they do they can just hit the search button
+                # with no query string)
+                return Recipe.objects.none()
+        return qs
+
+    def post(self, request, *args, **kwargs):
+        if not self._can_edit():
+            raise PermissionDenied
+
+        recipe = get_object_or_404(ClassicRecipe, pk=self.kwargs['pk'])
+        form = ClassicRecipeForm(request.POST, prefix='selectrecipedialog', instance=recipe)
+
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Changes to comparison recipe %s saved successfully.' % recipe.pn)
+            return HttpResponseRedirect(reverse('comparison_recipe', args=(recipe.id,)))
+        else:
+            # FIXME this is ugly because HTML gets escaped
+            messages.error(request, 'Failed to save changes: %s' % form.errors)
+
+        return self.get(request, *args, **kwargs)
+
+
+class ComparisonRecipeSelectDetailView(DetailView):
+    model = Recipe
+
+    def get_context_data(self, **kwargs):
+        context = super(ComparisonRecipeSelectDetailView, self).get_context_data(**kwargs)
+        recipe = get_object_or_404(ClassicRecipe, pk=self.kwargs['selectfor'])
+        context['select_for'] = recipe
+        context['existing_cover_recipe'] = recipe.get_cover_recipe()
+        comparison_form = ClassicRecipeForm(prefix='selectrecipedialog', instance=recipe)
+        comparison_form.fields['cover_pn'].widget = forms.HiddenInput()
+        comparison_form.fields['cover_layerbranch'].widget = forms.HiddenInput()
+        context['comparison_form'] = comparison_form
+        context['can_edit'] = False
+        return context
+
+    def post(self, request, *args, **kwargs):
+        if not request.user.is_authenticated():
+            raise PermissionDenied
+
+        recipe = get_object_or_404(ClassicRecipe, pk=self.kwargs['selectfor'])
+        form = ClassicRecipeForm(request.POST, prefix='selectrecipedialog', instance=recipe)
+
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Changes to comparison recipe %s saved successfully.' % recipe.pn)
+            return HttpResponseRedirect(reverse('comparison_recipe', args=(recipe.id,)))
+        else:
+            # FIXME this is ugly because HTML gets escaped
+            messages.error(request, 'Failed to save changes: %s' % form.errors)
+
+        return self.get(request, *args, **kwargs)
+

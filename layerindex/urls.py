@@ -1,6 +1,6 @@
 # layerindex-web - URL definitions
 #
-# Copyright (C) 2013 Intel Corporation
+# Copyright (C) 2013, 2018 Intel Corporation
 #
 # Licensed under the MIT license, see COPYING.MIT for details
 
@@ -8,7 +8,7 @@ from django.conf.urls import *
 from django.views.generic import TemplateView, DetailView, ListView, RedirectView
 from django.views.defaults import page_not_found
 from django.core.urlresolvers import reverse_lazy
-from layerindex.views import LayerListView, LayerReviewListView, LayerReviewDetailView, RecipeSearchView, MachineSearchView, LayerDetailView, edit_layer_view, delete_layer_view, edit_layernote_view, delete_layernote_view, HistoryListView, EditProfileFormView, AdvancedRecipeSearchView, BulkChangeView, BulkChangeSearchView, bulk_change_edit_view, bulk_change_patch_view, BulkChangeDeleteView, RecipeDetailView, RedirectParamsView, ClassicRecipeSearchView, ClassicRecipeDetailView, ClassicRecipeStatsView, LayerUpdateDetailView, UpdateListView, UpdateDetailView, StatsView, publish_view, LayerCheckListView, BBClassCheckListView, TaskStatusView
+from layerindex.views import LayerListView, LayerReviewListView, LayerReviewDetailView, RecipeSearchView, MachineSearchView, LayerDetailView, edit_layer_view, delete_layer_view, edit_layernote_view, delete_layernote_view, HistoryListView, EditProfileFormView, AdvancedRecipeSearchView, BulkChangeView, BulkChangeSearchView, bulk_change_edit_view, bulk_change_patch_view, BulkChangeDeleteView, RecipeDetailView, RedirectParamsView, ClassicRecipeSearchView, ClassicRecipeDetailView, ClassicRecipeStatsView, LayerUpdateDetailView, UpdateListView, UpdateDetailView, StatsView, publish_view, LayerCheckListView, BBClassCheckListView, TaskStatusView, ComparisonRecipeSelectView, ComparisonRecipeSelectDetailView
 from layerindex.models import LayerItem, Recipe, RecipeChangeset
 from rest_framework import routers
 from . import restviews
@@ -156,6 +156,14 @@ urlpatterns = [
         ClassicRecipeDetailView.as_view(
             template_name='layerindex/classicrecipedetail.html'),
             name='comparison_recipe'),
+    url(r'^comparison/select/(?P<pk>[-\w]+)/$',
+        ComparisonRecipeSelectView.as_view(
+            template_name='layerindex/comparisonrecipeselect.html'),
+            name='comparison_select'),
+    url(r'^comparison/selectdetail/(?P<selectfor>[-\w]+)/(?P<pk>[-\w]+)/$',
+        ComparisonRecipeSelectDetailView.as_view(
+            template_name='layerindex/comparisonrecipeselectdetail.html'),
+            name='comparison_select_detail'),
     url(r'^task/(?P<task_id>[-\w]+)/$',
         TaskStatusView.as_view(
             template_name='layerindex/task.html'),

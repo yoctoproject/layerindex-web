@@ -254,3 +254,7 @@ td.warning {
 td.info {
     background-color: #d9edf7 !important;
 }
+
+.hidden-select {
+    display: none !important;
+}

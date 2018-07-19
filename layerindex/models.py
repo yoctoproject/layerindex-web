@@ -615,6 +615,12 @@ class ClassicRecipe(Recipe):
                 desc = "%s - %s" % (desc, self.cover_comment)
         return desc
 
+    def get_cover_recipe(self):
+        if self.cover_layerbranch and self.cover_pn:
+            return Recipe.objects.filter(layerbranch=self.cover_layerbranch).filter(pn=self.cover_pn).first()
+        else:
+            return None
+
 
 class ComparisonRecipeUpdate(models.Model):
     update = models.ForeignKey(Update)

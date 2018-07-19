@@ -240,3 +240,8 @@ class ClassicRecipeSearchForm(forms.Form):
     cover_verified = forms.ChoiceField(label='Verified', choices=VERIFIED_CHOICES, required=False)
     needs_attention = forms.ChoiceField(label='Needs attention', choices=ATTENTION_CHOICES, required=False)
 
+
+class ComparisonRecipeSelectForm(forms.Form):
+    q = forms.CharField(label='Keyword', max_length=255, required=False)
+    oe_layer = forms.ModelChoiceField(label='OE Layer', queryset=LayerItem.objects.filter(comparison=False).filter(status__in=['P', 'X']).order_by('name'), empty_label="(any)", required=False)
+

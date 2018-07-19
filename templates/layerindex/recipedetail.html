@@ -29,9 +29,11 @@
        <div class="container-fluid">
         <div class="row-fluid">
 
+            {% block page_heading %}
             <div class="page-header">
                 <h1>{{ recipe.name }} {{ recipe.pv }} {% if recipe.blacklisted %} <span class="label label-inverse valign-middle">blacklisted</span> {% endif %}</h1>
             </div>
+            {% endblock %}
 
             {% if recipe.blacklisted %}
                 <div class="alert">
@@ -216,6 +218,9 @@
             </div>
         </div>
 
+{% block content_extra %}
+{% endblock %}
+
 {% endautoescape %}
 
 {% endblock %}
@@ -226,4 +231,6 @@
             $('[data-toggle="tooltip"]').tooltip();
         });
     </script>
+{% block scripts_extra %}
+{% endblock %}
 {% endblock %}

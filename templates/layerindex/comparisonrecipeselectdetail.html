@@ -1,0 +1,98 @@
+{% extends "layerindex/recipedetail.html" %}
+{% load i18n %}
+
+{% comment %}
+
+  layerindex-web - comparison recipe selection detail page template
+
+  Copyright (C) 2018 Intel Corporation
+  Licensed under the MIT license, see COPYING.MIT for details
+
+{% endcomment %}
+
+<!--
+{% block title_append %} - comparison - select match for {{ select_for.name }}{% endblock %}
+-->
+
+                {% block page_heading %}
+                <div class="page-header">
+                    <h1>{{ recipe.name }} {{ recipe.pv }}</h1>
+                <div class="pull-right"><a href="#selectRecipeDialog" role="button" data-toggle="modal" class="select_recipe_button btn {% if recipe.id == existing_cover_recipe.id %}btn-primary{% else %}btn-default{% endif %}" recipe-pn="{{ recipe.pn }}" recipe-layerbranch="{{ recipe.layerbranch.id }}">Select</a> <a href="javascript:history.back()" class="btn btn-default">Back</a></div>
+                </div>
+
+                                        <form id="comparison_form" class="form-inline" method="post">
+                                        <div id="selectRecipeDialog" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="selectRecipeDialogLabel" aria-hidden="true">
+                                            <div class="modal-header">
+                                                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+                                                <h3 id="selectRecipeDialogLabel">Select <span id="id_span_select_recipe">recipe</span> to match {{ select_for.pn }}</h3>
+                                            </div>
+                                            <div class="modal-body">
+                                                    {% csrf_token %}
+                                                    {% for hidden in comparison_form.hidden_fields %}
+                                                        {{ hidden }}
+                                                    {% endfor %}
+
+                                                    <select class="hidden-select" id="id_hidden_selectbox">
+                                                    </select>
+
+                                                    Coverage {{ comparison_form.cover_status }}
+                                                    {% if comparison_form.cover_verified %}
+                                                    <label class="checkbox" id="id_label_cover_verified">
+                                                    {{ comparison_form.cover_verified }} verified
+                                                    </label>
+                                                    {% endif %}
+                                                    {% if comparison_form.classic_category %}
+                                                    <p>
+                                                    <label>
+                                                    Category
+                                                    {{ comparison_form.classic_category }}
+                                                    </label>
+                                                    </p>
+                                                    {% endif %}
+                                                    <p>
+                                                    <label>
+                                                    Comment
+                                                    {{ comparison_form.cover_comment }} 
+                                                    </label>
+                                                    </p>
+                                                    {% if comparison_form.needs_attention %}
+                                                    <p>
+                                                    <label class="checkbox" id="id_label_needs_attention">
+                                                    {{ comparison_form.needs_attention }}
+                                                    Needs attention
+                                                    </label>
+                                                    </p>
+                                                    {% endif %}
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button class="btn btn-primary" id="id_selectrecipedialog_save" data-dismiss="modal" aria-hidden="true">Save</button>
+                                                <button class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>
+                                            </div>
+                                        </div>
+                                        </form>
+                {% endblock %}
+
+{% block scripts %}
+<script>
+    $('.select_recipe_button').click(function (e) {
+        pn = "{{ recipe.pn }}";
+        $('#id_span_select_recipe').text(pn);
+        $('#id_selectrecipedialog-cover_pn').val(pn);
+        $('#id_selectrecipedialog-cover_layerbranch').val("{{ recipe.layerbranch.id }}");
+        {% if existing_cover_recipe %}
+        $('#id_selectrecipedialog-cover_status').val('{{ select_for.cover_status }}');
+        {% else %}
+        $('#id_selectrecipedialog-cover_status').val('D');
+        {% endif %}
+    });
+    $('#id_selectrecipedialog_save').click(function (e) {
+        $('#comparison_form').submit()
+        $('#selectRecipeDialog').modal('hide')
+    });
+    $(document).ready(function() {
+        $('#id_selectrecipedialog-cover_status option[value="N"]').remove();
+        $('#id_selectrecipedialog-cover_status option[value="S"]').remove();
+        $('#id_selectrecipedialog-cover_status option[value="U"]').remove();
+    });
+</script>
+{% endblock %}

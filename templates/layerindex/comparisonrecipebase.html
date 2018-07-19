@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% comment %}
+
+  layerindex-web - image comparison recipe detail page template
+
+  Copyright (C) 2018 Intel Corporation
+  Licensed under the MIT license, see COPYING.MIT for details
+
+{% endcomment %}
+
+
+<!--
+{% autoescape on %}
+{% block title_append %} - {{ recipe.pn }}{% endblock %}
+{% endautoescape %}
+-->
+
+{% block contenttag %}<div id="content" class="container-fluid top-padded">{% endblock %}
+
+{% block content %}
+{% autoescape on %}
+
+        {% block breadcrumbs %}
+        <ul class="breadcrumb">
+            <li><a href="#">{{ layerbranch_desc }}</a> <span class="divider">&rarr;</span></li>
+            <li class="active">{{ recipe.name }}</li>
+        </ul>
+        {% endblock %}
+
+       <div class="container-fluid">
+        <div class="row-fluid">
+
+            {% block page_heading %}
+            <div class="page-header">
+                <h1>{{ recipe.name }} {{ recipe.pv }}</h1>
+            </div>
+            {% endblock %}
+
+                <table class="table table-striped table-bordered">
+                    <thead>
+                        <tr>
+                            <th></th>
+                            <th width="50%">{{ layerbranch_desc }}{{ layerbranch_addtext }}</th>
+                            <th width="50%">{{ to_desc }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <th>Name</th>
+                            <td>{{ recipe.name }}</td>
+                            <td>{% if cover_recipe %}{{ cover_recipe.name }} ({{ recipe.get_cover_status_display }}{% if recipe.cover_comment %} - {{ recipe.cover_comment }}{% endif %}){% else %}{{ recipe.get_cover_status_display }}{% if recipe.cover_comment %} - {{ recipe.cover_comment }}{% endif %}{% endif %}{% block to_recipe_extra %}{% endblock %}
+                            <div class="pull-right">
+                            {% block selectbuttons %}
+                            <a href="#" class="btn btn-info">Select...</a>
+                            {% endblock %}
+                            </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Version</th>
+                            <td>{{ recipe.pv }}</td>
+                            <td>{{ cover_recipe.pv }}</td>
+                        </tr>
+                        <tr>
+                            <th>Summary</th>
+                            <td>{{ recipe.summary }}</td>
+                            <td>{{ cover_recipe.summary }}</td>
+                        </tr>
+                        <tr>
+                            <th>Description</th>
+                            <td>{{ recipe.description }}</td>
+                            <td>{{ cover_recipe.description }}</td>
+                        </tr>
+                        <tr>
+                            <th>Section</th>
+                            <td>{{ recipe.section }}</td>
+                            <td>{{ cover_recipe.section }}</td>
+                        </tr>
+                        <tr>
+                            <th>License</th>
+                            <td>{{ recipe.license }}</td>
+                            <td>{{ cover_recipe.license }}</td>
+                        </tr>
+                        <tr>
+                            <th>Homepage</th>
+                            <td>
+                                {% if recipe.homepage_url_only %}
+                                    <a href="{{ recipe.homepage }}">{{ recipe.homepage }}</a>
+                                {% elif recipe.homepage %}
+                                    {{ recipe.homepage }}
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if cover_recipe.homepage_url_only %}
+                                    <a href="{{ cover_recipe.homepage }}">{{ cover_recipe.homepage }}</a>
+                                {% elif cover_recipe.homepage %}
+                                    {{ cover_recipe.homepage }}
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% if recipe.bugtracker or cover_recipe.bugtracker %}
+                        <tr>
+                            <th>Bug tracker</th>
+                            <td><a href="{{ recipe.bugtracker }}">{{ recipe.bugtracker }}</a></td>
+                            <td><a href="{{ cover_recipe.bugtracker }}">{{ cover_recipe.bugtracker }}</a></td>
+                        </tr>
+                        {% endif %}
+                        <tr>
+                            <th>Package/recipe file</th>
+                            {% for rcp in recipes %}
+                            <td>
+                                {% if rcp.vcs_web_url %}
+                                    <a href="{{ rcp.vcs_web_url }}">{{ rcp.full_path }}</a>
+                                {% else %}
+                                    {{ rcp.full_path }}
+                                {% endif %}
+                            </td>
+                            {% endfor %}
+                        </tr>
+                        <tr>
+                            {% block origin_row %}
+                            <th>Layer</th>
+                            <td><a href="{% url 'layer_item' recipe.layerbranch.branch.name recipe.layerbranch.layer.name %}">{{ layerbranch_desc }}</a>{{ layerbranch_addtext }}</td>
+                            <td></td>
+                            {% endblock %}
+                        </tr>
+                        {% block table_extra %}
+                        {% endblock %}
+                    </tbody>
+                </table>
+
+                <h2>Sources</h2>
+                <table width="100%" class="table table-bordered">
+                    <thead>
+                        <th width="50%">{{ layerbranch_desc }}{{ layerbranch_addtext }}</th>
+                        <th width="50%">{{ to_desc }}</th>
+                    </thead>
+                    <tbody><tr>
+                    {% for rcp in recipes %}
+                    {% if rcp.source_set.exists %}
+                    <td width="50%" valign="top">
+                        <table class="table table-bordered">
+                            <tbody>
+                                {% for source in rcp.source_set.all %}
+                                <tr>
+                                    <td>{% if source.web_url %}<a href="{{ source.web_url }}">{% endif %}{{ source.url }}{% if source.web_url %}</a>{% endif %}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </td>
+                    {% else %}
+                    <td valign="top">None</td>
+                    {% endif %}
+                    {% endfor %}
+                    </tr></tbody>
+                </table>
+
+                <h2>Patches</h2>
+                <table width="100%" class="table table-bordered">
+                    <thead>
+                        <th width="50%">{{ layerbranch_desc }}{{ layerbranch_addtext }}</th>
+                        <th width="50%">{{ to_desc }}</th>
+                    </thead>
+                    <tbody><tr>
+                    {% for rcp in recipes %}
+                    {% if rcp.patch_set.exists %}
+                    <td width="50%" valign="top">
+                        <table class="table table-striped table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Patch</th>
+                                    <th class="span3">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for patch in rcp.patch_set.all %}
+                                <tr>
+                                    <td><a href="{{ patch.vcs_web_url }}">{{ patch.src_path }}</a></td>
+                                    <td>{{ patch.get_status_display }} {{ patch.status_extra | urlize }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </td>
+                    {% else %}
+                    <td valign="top">None</td>
+                    {% endif %}
+                    {% endfor %}
+                    </tr></tbody>
+                </table>
+            </div>
+        </div>
+
+{% endautoescape %}
+
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        $(document).ready(function() {
+            $('[data-toggle="tooltip"]').tooltip();
+            $('#id_cover_status').change(enable_value_field)
+            enable_value_field()
+        });
+        enable_value_field = function() {
+            cover_status = $('#id_cover_status').val()
+            if( cover_status == 'U' || cover_status == 'N' || cover_status == 'S' ) {
+                $('#id_cover_pn').prop('readonly', true);
+                $('#id_cover_layerbranch').prop('readonly', true);
+                $('#id_span_cover_opts').addClass('muted');
+            }
+            else {
+                $('#id_cover_pn').prop('readonly', false);
+                $('#id_cover_layerbranch').prop('readonly', false);
+                $('#id_span_cover_opts').removeClass('muted');
+            }
+        }
+    </script>
+{% endblock %}
