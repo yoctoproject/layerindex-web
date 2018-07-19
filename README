@@ -29,8 +29,41 @@ In order to make use of this application you will need:
   in settings.py and have access to the database used by the web
   application):
   * Python 2.7.6+ / Python 3.4+ to match with the version of BitBake
-    for the OpenEmbedded branch being parsed
-  * GitPython (python-git) version 2.0 or later
+    for the OpenEmbedded branch being parsed (for modern versions it's
+    Python 3.)
+  * Python dependencies as per requirements.txt (we still need Django
+    etc. here since we interact with the database through Django's ORM.)
+
+Example virtualenv-based setup for the above:
+
+Python's virtualenv provides an easy way to isolate the python dependencies
+of applications such as the layer index. Here's an example of setting up a
+virtualenv for the layer index that's particularly useful for development.
+(This assumes a Debian-based distribution, adjust accordingly for other
+distros).
+
+1. Install required host distro packages (some of these are required by
+   pip to build the dependencies; it's also assumed you want MariaDB as
+   the database backend):
+
+   sudo apt-get install virtualenv libmariadb-client-lgpl-dev build-essential python3-dev libjpeg-dev libz-dev libfreetype6-dev mariadb-server rabbitmq-server
+
+2. Work around path issues (you may not need this):
+
+   sudo ln -s /usr/bin/mariadb_config /usr/bin/mysql_config
+
+3. Create a Python 3 virtualenv (path can be anywhere you like):
+
+   virtualenv -p python3 /path/to/desired/venv
+
+4. Activate the virtualenv:
+
+   . /path/to/desired/venv/bin/activate
+
+5. Install requirements:
+
+   pip install -r requirements.txt
+
 
 Setup instructions:
 
