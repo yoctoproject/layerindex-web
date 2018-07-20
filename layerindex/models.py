@@ -467,6 +467,17 @@ class Recipe(models.Model):
             eu = ExtraURL(name=item.name, url=item.render_url(self))
             yield eu
 
+    def adjacent_includes(self):
+        """Returns an iterator over any files included by this recipe that are adjacent to the recipe (usually .inc files)"""
+        recipepath = os.path.join(self.layerbranch.vcs_subdir, self.filepath)
+        if not recipepath.endswith('/'):
+            recipepath += '/'
+        IncludeFile = namedtuple('IncludeFile', 'filepath vcs_web_url')
+        for rfd in self.recipefiledependency_set.all():
+            if rfd.path.startswith(recipepath) and not os.path.basename(rfd.path) == self.filename:
+                ifile = IncludeFile(filepath=rfd.layer_path(), vcs_web_url=rfd.vcs_web_url())
+                yield ifile
+
     def comparison_recipes(self):
         return ClassicRecipe.objects.filter(cover_layerbranch=self.layerbranch).filter(cover_pn=self.pn)
 
@@ -559,6 +570,13 @@ class RecipeFileDependency(models.Model):
 
     class Meta:
         verbose_name_plural = "Recipe file dependencies"
+
+    def layer_path(self):
+        return os.path.relpath(self.path, self.layerbranch.vcs_subdir)
+
+    def vcs_web_url(self):
+        url = self.layerbranch.file_url(self.layer_path())
+        return url or ''
 
     def __str__(self):
         return '%s' % self.path

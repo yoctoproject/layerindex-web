@@ -870,6 +870,11 @@ class RecipeDetailView(DetailView):
             context['verappends'] = verappends
             context['packageconfigs'] = recipe.packageconfig_set.order_by('feature')
             context['staticdependencies'] = recipe.staticbuilddep_set.order_by('name')
+            extrafiles = []
+            for dep in recipe.recipefiledependency_set.all():
+                if dep.path.endswith('.inc'):
+                    extrafiles.append(dep)
+            context['extrafiles'] = extrafiles
         return context
 
 

@@ -96,6 +96,13 @@
                                 {% else %}
                                     {{ recipe.full_path }}
                                 {% endif %}
+                                {% for include in recipe.adjacent_includes %}
+                                    {% if include.vcs_web_url %}
+                                        <br><a href="{{ include.vcs_web_url }}">{{ include.filepath }}</a>
+                                    {% else %}
+                                        <br>{{ include.filepath }}
+                                    {% endif %}
+                                {% endfor %}
                             </td>
                         </tr>
                         <tr>

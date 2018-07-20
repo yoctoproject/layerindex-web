@@ -116,6 +116,13 @@
                                 {% else %}
                                     {{ rcp.full_path }}
                                 {% endif %}
+                                {% for include in rcp.adjacent_includes %}
+                                    {% if include.vcs_web_url %}
+                                        <br><a href="{{ include.vcs_web_url }}">{{ include.filepath }}</a>
+                                    {% else %}
+                                        <br>{{ include.filepath }}
+                                    {% endif %}
+                                {% endfor %}
                             </td>
                             {% endfor %}
                         </tr>
