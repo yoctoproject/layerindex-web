@@ -327,7 +327,7 @@ class LayerMaintainer(models.Model):
         respstr = ""
         if self.responsibility:
             respstr = " (%s)" % self.responsibility
-        return "%s: %s <%s>%s" % (self.layerbranch.layer.name, self.name, self.email, respstr)
+        return "%s: %s <%s>%s" % (self.layerbranch, self.name, self.email, respstr)
 
 
 class LayerDependency(models.Model):

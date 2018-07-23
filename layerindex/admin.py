@@ -72,6 +72,7 @@ class LayerBranchAdmin(CompareVersionAdmin):
         return readonly_fields
 
 class LayerMaintainerAdmin(CompareVersionAdmin):
+    search_fields = ['name', 'email']
     list_filter = ['status', 'layerbranch__layer__name']
 
 class LayerDependencyAdmin(CompareVersionAdmin):
