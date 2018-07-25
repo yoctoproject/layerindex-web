@@ -8,8 +8,7 @@ import os
 DEBUG = os.getenv('DEBUG', False)
 
 ADMINS = (
-    ('Paul Eggleton', 'paul.eggleton@linux.intel.com'),
-    ('Michael Halstead', 'mhalstead@linuxfoundation.org'),
+    # ('Your Name', 'your_email@example.com'),
 )
 
 MANAGERS = ADMINS
