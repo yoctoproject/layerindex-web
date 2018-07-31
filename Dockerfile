@@ -54,16 +54,16 @@ COPY docker/refreshlayers.sh /opt/refreshlayers.sh
 COPY docker/updatelayers.sh /opt/updatelayers.sh
 COPY docker/migrate.sh /opt/migrate.sh
 
-## Uncomment to add a .gitconfig file within container
-#COPY docker/.gitconfig /root/.gitconfig
-## Uncomment to add a proxy script within container, if you choose to
-## do so, you will also have to edit .gitconfig appropriately
-#COPY docker/git-proxy /opt/bin/git-proxy
-
 RUN mkdir /opt/workdir \
 	&& adduser --system --uid=500 layers \
 	&& chown -R layers /opt
 USER layers
+
+## Uncomment to add a .gitconfig file within container
+#COPY docker/.gitconfig /home/layers/.gitconfig
+## Uncomment to add a proxy script within container, if you choose to
+## do so, you will also have to edit .gitconfig appropriately
+#COPY docker/git-proxy /opt/bin/git-proxy
 
 # Start Gunicorn
 CMD ["/usr/local/bin/gunicorn", "wsgi:application", "--workers=4", "--bind=:5000", "--log-level=debug", "--chdir=/opt/layerindex"]
