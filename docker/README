@@ -83,3 +83,7 @@ docker run --rm --network layerindex --hostname updatelayers.openembedded.org --
 
 ## Or do a full refresh
 docker run --rm --network layerindex --hostname updatelayers.openembedded.org --name updatelayers-throwaway --mount src=update-workdir,dst=/opt/workdir --env DATABASE_HOST=layersdb --env DATABASE_PASSWORD=testingpw halstead/layerindex-app python3 /opt/layerindex/layerindex/update.py -r
+
+
+## Once you've finished here, if this is a fresh database, you should now
+## follow the instructions in the "Database Setup" section of the main README.

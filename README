@@ -5,18 +5,33 @@ This is a small Django-based web application that provides a way to
 manage an index of OpenEmbedded metadata layers for use on top of
 OE-Core.
 
+There are two main methods of setting up this application - within
+a set of Docker containers, or standalone. The Docker-based setup
+is more suited for production whereas standalone is a bit easier
+for development.
 
-Setup
------
 
-In order to make use of this application you will need:
+Docker Setup
+------------
+
+To use layerindex-web hosted within Docker containers, refer to
+docker/README keeping in mind you'll need to set up Docker properly
+as part of the setup process. Once you've run through those
+instructions you'll need to return to this document and follow the
+instructions in the section "Database Setup" below.
+
+
+Standalone Setup
+----------------
+
+In order to run this application standalone you will need:
 
 * Python 3.4+
 * Django 1.11.x - tested with 1.11.12; newer versions may work, but
   the application has not been tested with 2.0 or newer.
 * RabbitMQ 3.6.x - tested with 3.6.10.
 * For production usage, a web server set up to host Django applications
-  (not needed for local-only testing)
+  (not needed for local-only testing/development)
 * A database supported by Django (SQLite, MySQL, etc.). Django takes
   care of creating the database itself, you just need to ensure that the
   database server (if not using SQLite) is configured and running.
@@ -65,7 +80,7 @@ distros).
    pip install -r requirements.txt
 
 
-Setup instructions:
+Configuration and running:
 
 1. Edit settings.py to specify a database, EMAIL_HOST, SECRET_KEY and
    other settings specific to your installation. Ensure you set
@@ -93,22 +108,32 @@ Setup instructions:
 
    NOTE: This local server should only be used for testing - for
    production you need to use a proper web server and have DEBUG set
-   to False.
+   to False (or use the Docker-based setup).
 
    3.1. In order to process asynchronous tasks like sending email,
         you will need to run a Celery worker:
 
         celery -A layerindex.tasks worker --loglevel=info
 
-4. You'll need to add at least the openembedded-core layer to the
+
+
+Database Setup
+--------------
+
+Once the application is running you'll need to do a bit of further
+setup within it:
+
+1. You'll need to add at least the openembedded-core layer to the
    database, or some equivalent that contains conf/bitbake.conf for
    the base system configuration. To add this, follow these steps:
 
-   4.1. With the server running, go to the main page (see above) and
-        click on the "Log in" button on the top right. Use the
-        login/password you added in step 2 above.
+   1.1. With the server running, go to the main page (
+        http://127.0.0.1:8000/admin/ or equivalent depending on
+        your setup) and click on the "Log in" button on the top
+        right. Use the login/password for the admin account you
+        added previously.
 
-   4.2. Click on the "Submit Layer" button in the top right and
+   1.2. Click on the "Submit Layer" button in the top right and
         enter the details for the core layer. To use the real
         openembedded-core layer, use these values:
 
@@ -126,13 +151,13 @@ Setup instructions:
         unless you change CORE_LAYER_NAME in settings.py to match
         whatever alternative name you use here.
 
-   4.3. The layer has been added but is not yet published. (For the
+   2.3. The layer has been added but is not yet published. (For the
         public index this provides some protection against spam and
         malformed entries.) To publish it, click on the orange number
         next to your login name at the top right, click on the
         newly added layer entry, and then click on "Publish Layer".
 
-5. If you need to support multiple branches of OpenEmbedded/BitBake
+2. If you need to support multiple branches of OpenEmbedded/BitBake
    where some require Python 2.x and others require Python 3.x, then
    you will need to set up "Python environment" records through the
    admin interface to correspond to these so that the right Python
@@ -142,19 +167,16 @@ Setup instructions:
    separate virtual environments set up for Python 2 and 3 which you
    should point to in the Python environment record.
 
-6. Set the site name (as displayed in the top bar and page titles) by
-   going into the admin interface (http://127.0.0.1:8000/admin/),
-   clicking on "Sites" at the bottom, and editing the first entry,
-   setting "Display name" to the desired name.
+3. Set the site name (as displayed in the top bar and page titles) by
+   going into the admin interface (http://127.0.0.1:8000/admin/
+   or equivalent), clicking on "Sites" at the bottom, and editing the
+   first entry, setting "Display name" to the desired name.
 
-7. You may wish to customise some of the page templates to suit your
+4. You may wish to customise some of the page templates to suit your
    installation, in particular:
    * templates/base.html
    * templates/layerindex/about.html
 
-8. To use layerindex-web with Docker containers, refer to docker/README
-   keeping in mind you'll need to set up Docker properly as part of the
-   setup process.
 
 
 Usage
