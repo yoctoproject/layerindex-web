@@ -9,7 +9,6 @@
 
 ## First, find and replace layers.openembedded.org below with your hostname
 ## You'll probably also want to replace the database password "testingpw".
-## If you are using a version of Docker older than 17.06 then you'll need to replace --mount src=<src>,dst=<dst> with -v <src>:<dst>
 
 ## If you want to change any of the application configuration, edit docker/settings.py as desired.
 ## Some settings have been set so that values can be passed in via environment variables.
@@ -32,7 +31,7 @@ docker network create layerindex
 ## Start a database server - here we use MariaDB, though you can obviously use something else and change docker/settings.py as appropriate
 #  run one of the following.
 ## To use an existing dump run the following and wait for startup and import
-docker run --detach --name layersdb --network layerindex --mount src=layers-database-dump.sql,dst=/docker-entrypoint-initdb.d/layerdb.sql -e MYSQL_ROOT_PASSWORD=testingpw mariadb:10.2 --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+docker run --detach --name layersdb --network layerindex -v layers-database-dump.sql:/docker-entrypoint-initdb.d/layerdb.sql -e MYSQL_ROOT_PASSWORD=testingpw mariadb:10.2 --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
 ## Or to start fresh
 docker run --detach --name layersdb --network layerindex -e MYSQL_DATABASE=layersdb -e MYSQL_ROOT_PASSWORD=testingpw mariadb:10.2 --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
 
@@ -57,32 +56,32 @@ docker run --detach --network layerindex --name layersapp --hostname layers.open
 docker volume create layersstatic
 
 ## Set the volume permissions using debian:stretch since we recently fetched it
-docker run --mount src=layersstatic,dst=/usr/share/nginx/html debian:stretch chown 500 /usr/share/nginx/html
+docker run -v layersstatic:/usr/share/nginx/html debian:stretch chown 500 /usr/share/nginx/html
 
 ## Generate static assets. Run this command again to regenerate at any time (when static assets in the code are updated)
-docker run --env STATIC_ROOT=/usr/share/nginx/html -ti --rm --network layerindex --hostname layers.openembedded.org --name generatestatic --mount src=layersstatic,dst=/usr/share/nginx/html --env DATABASE_HOST=layersdb --env DATABASE_PASSWORD=testingpw halstead/layerindex-app python3 /opt/layerindex/manage.py collectstatic
+docker run --env STATIC_ROOT=/usr/share/nginx/html -ti --rm --network layerindex --hostname layers.openembedded.org --name generatestatic -v layersstatic:/usr/share/nginx/html --env DATABASE_HOST=layersdb --env DATABASE_PASSWORD=testingpw halstead/layerindex-app python3 /opt/layerindex/manage.py collectstatic
 
 ## Start the reverse proxy
 ##  run one of the following:
 ## A) for local/test use forward port 8080:
-docker run --detach --network layerindex -p 8080:80 --mount src=layersstatic,dst=/usr/share/nginx/html --name layersweb --hostname layers.openembedded.org halstead/layerindex-web
+docker run --detach --network layerindex -p 8080:80 -v layersstatic:/usr/share/nginx/html --name layersweb --hostname layers.openembedded.org halstead/layerindex-web
 ## B) with SSL for production:
 #     Make sure your DNS is setup and then run the following to get the certs
-docker run -it --rm -p 80:80 -p 443:443 --name certbot --mount src=layerscerts,dst=/etc/letsencrypt --mount src=certbotvar,dst=/var/lib/letsencrypt certbot/certbot certonly #renew
+docker run -it --rm -p 80:80 -p 443:443 --name certbot -v layerscerts:/etc/letsencrypt -v certbotvar:/var/lib/letsencrypt certbot/certbot certonly #renew
 #     then start the proxy with ssl
-docker run --detach --network layerindex -p 80:80 -p 443:443 --mount src=layersstatic,dst=/usr/share/nginx/html --mount src=layerscerts,dst=/etc/letsencrypt --name layersweb --hostname layers.openembedded.org halstead/layerindex-web
+docker run --detach --network layerindex -p 80:80 -p 443:443 -v layersstatic:/usr/share/nginx/html -v layerscerts:/etc/letsencrypt --name layersweb --hostname layers.openembedded.org halstead/layerindex-web
 
 ## Create a workdir to prevent downloading repos fresh each time
 docker volume create update-workdir
 
 ## Set the volume permissions using debian:stretch since we recently fetched it
-docker run --mount src=update-workdir,dst=/opt/workdir debian:stretch chown 500 /opt/workdir
+docker run -v update-workdir:/opt/workdir debian:stretch chown 500 /opt/workdir
 
 ## Run the layer updates
-docker run --rm --network layerindex --hostname updatelayers.openembedded.org --name updatelayers-throwaway --mount src=update-workdir,dst=/opt/workdir --env DATABASE_HOST=layersdb --env DATABASE_PASSWORD=testingpw halstead/layerindex-app python3 /opt/layerindex/layerindex/update.py
+docker run --rm --network layerindex --hostname updatelayers.openembedded.org --name updatelayers-throwaway -v update-workdir:/opt/workdir --env DATABASE_HOST=layersdb --env DATABASE_PASSWORD=testingpw halstead/layerindex-app python3 /opt/layerindex/layerindex/update.py
 
 ## Or do a full refresh
-docker run --rm --network layerindex --hostname updatelayers.openembedded.org --name updatelayers-throwaway --mount src=update-workdir,dst=/opt/workdir --env DATABASE_HOST=layersdb --env DATABASE_PASSWORD=testingpw halstead/layerindex-app python3 /opt/layerindex/layerindex/update.py -r
+docker run --rm --network layerindex --hostname updatelayers.openembedded.org --name updatelayers-throwaway -v update-workdir:/opt/workdir --env DATABASE_HOST=layersdb --env DATABASE_PASSWORD=testingpw halstead/layerindex-app python3 /opt/layerindex/layerindex/update.py -r
 
 
 ## Once you've finished here, if this is a fresh database, you should now
