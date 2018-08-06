@@ -96,6 +96,10 @@ def main():
     fetchdir = settings.LAYER_FETCH_DIR
     bitbakepath = os.path.join(fetchdir, 'bitbake')
 
+    if not os.path.exists(bitbakepath):
+        sys.stderr.write("Unable to find bitbake checkout at %s" % bitbakepath)
+        sys.exit(1)
+
     lockfn = os.path.join(fetchdir, "layerindex.lock")
     lockfile = utils.lock_file(lockfn)
     if not lockfile:
@@ -103,17 +107,18 @@ def main():
         sys.exit(1)
     try:
         (tinfoil, tempdir) = recipeparse.init_parser(settings, branch, bitbakepath, True)
+        try:
+            changeset = get_changeset(sys.argv[1])
+            if not changeset:
+                sys.stderr.write("Unable to find changeset with id %s\n" % sys.argv[1])
+                sys.exit(1)
 
-        changeset = get_changeset(sys.argv[1])
-        if not changeset:
-            sys.stderr.write("Unable to find changeset with id %s\n" % sys.argv[1])
-            sys.exit(1)
+            utils.setup_core_layer_sys_path(settings, branch.name)
 
-        utils.setup_core_layer_sys_path(settings, branch.name)
-
-        outp = generate_patches(tinfoil, fetchdir, changeset, sys.argv[2])
+            outp = generate_patches(tinfoil, fetchdir, changeset, sys.argv[2])
+        finally:
+            tinfoil.shutdown()
     finally:
-        tinfoil.shutdown()
         utils.unlock_file(lockfile)
 
     if outp:
