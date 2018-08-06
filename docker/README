@@ -49,8 +49,15 @@ docker run --rm --network layerindex --env DATABASE_HOST=layersdb --env DATABASE
 docker run --rm -it --network layerindex --env DATABASE_HOST=layersdb --env DATABASE_PASSWORD=testingpw halstead/layerindex-app /opt/layerindex/manage.py createsuperuser
 
 
+## Create a workdir to prevent downloading metadata repos fresh each time (and allow the "bulk change" function to work)
+docker volume create layersmeta
+
+## Set the volume permissions using debian:stretch since we recently fetched it
+docker run -v layersmeta:/opt/workdir debian:stretch chown 500 /opt/workdir
+
+
 ## Start the layerindex application
-docker run --detach --network layerindex --name layersapp --hostname layers.openembedded.org  -e DATABASE_PASSWORD=testingpw -e DATABASE_HOST=layersdb halstead/layerindex-app
+docker run --detach --network layerindex --name layersapp --hostname layers.openembedded.org -v layersmeta:/opt/workdir -e DATABASE_PASSWORD=testingpw -e DATABASE_HOST=layersdb halstead/layerindex-app
 
 ## Create a volume for static assets
 docker volume create layersstatic
@@ -71,17 +78,11 @@ docker run -it --rm -p 80:80 -p 443:443 --name certbot -v layerscerts:/etc/letse
 #     then start the proxy with ssl
 docker run --detach --network layerindex -p 80:80 -p 443:443 -v layersstatic:/usr/share/nginx/html -v layerscerts:/etc/letsencrypt --name layersweb --hostname layers.openembedded.org halstead/layerindex-web
 
-## Create a workdir to prevent downloading repos fresh each time
-docker volume create update-workdir
-
-## Set the volume permissions using debian:stretch since we recently fetched it
-docker run -v update-workdir:/opt/workdir debian:stretch chown 500 /opt/workdir
-
 ## Run the layer updates
-docker run --rm --network layerindex --hostname updatelayers.openembedded.org --name updatelayers-throwaway -v update-workdir:/opt/workdir --env DATABASE_HOST=layersdb --env DATABASE_PASSWORD=testingpw halstead/layerindex-app python3 /opt/layerindex/layerindex/update.py
+docker run --rm --network layerindex --hostname updatelayers.openembedded.org --name updatelayers-throwaway -v layersmeta:/opt/workdir --env DATABASE_HOST=layersdb --env DATABASE_PASSWORD=testingpw halstead/layerindex-app python3 /opt/layerindex/layerindex/update.py
 
 ## Or do a full refresh
-docker run --rm --network layerindex --hostname updatelayers.openembedded.org --name updatelayers-throwaway -v update-workdir:/opt/workdir --env DATABASE_HOST=layersdb --env DATABASE_PASSWORD=testingpw halstead/layerindex-app python3 /opt/layerindex/layerindex/update.py -r
+docker run --rm --network layerindex --hostname updatelayers.openembedded.org --name updatelayers-throwaway -v layersmeta:/opt/workdir --env DATABASE_HOST=layersdb --env DATABASE_PASSWORD=testingpw halstead/layerindex-app python3 /opt/layerindex/layerindex/update.py -r
 
 
 ## Once you've finished here, if this is a fresh database, you should now
