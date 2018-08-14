@@ -118,6 +118,13 @@ def print_subdir_error(newbranch, layername, vcs_subdir, branchdesc):
     elif vcs_subdir:
         logger.error("Subdirectory for layer %s does not exist on branch %s - if this is legitimate, the layer branch record should be deleted" % (layername, branchdesc))
 
+def extract_value(valuename, output):
+    res = re.search("^%s = \"(.*)\"" % valuename, output, re.M)
+    if res:
+        return res.group(1) or ''
+    else:
+        return ''
+
 def main():
     if LooseVersion(git.__version__) < '0.3.1':
         logger.error("Version of GitPython is too old, please install GitPython (python-git) 0.3.1 or later in order to use this script")
@@ -395,10 +402,15 @@ def main():
                         sys.exit(254)
                     elif ret != 0:
                         continue
-                    col = re.search("^BBFILE_COLLECTIONS = \"(.*)\"", output, re.M).group(1) or ''
-                    ver = re.search("^LAYERVERSION = \"(.*)\"", output, re.M).group(1) or ''
-                    deps = re.search("^LAYERDEPENDS = \"(.*)\"", output, re.M).group(1) or ''
-                    recs = re.search("^LAYERRECOMMENDS = \"(.*)\"", output, re.M).group(1) or ''
+
+                    col = extract_value('BBFILE_COLLECTIONS', output)
+                    if not col:
+                        logger.error('Unable to find BBFILE_COLLECTIONS value in initial output')
+                        # Assume (perhaps naively) that it's an error specific to the layer
+                        continue
+                    ver = extract_value('LAYERVERSION', output)
+                    deps = extract_value('LAYERDEPENDS', output)
+                    recs = extract_value('LAYERRECOMMENDS', output)
 
                     deps_dict = utils.explode_dep_versions2(bitbakepath, deps)
                     recs_dict = utils.explode_dep_versions2(bitbakepath, recs)
