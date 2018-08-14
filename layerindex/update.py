@@ -540,6 +540,10 @@ def main():
     except KeyboardInterrupt:
         logger.info('Update interrupted, exiting')
         sys.exit(254)
+    except Exception:
+        import traceback
+        logger.error(traceback.format_exc().rstrip())
+        sys.exit(1)
     finally:
         update.log = ''.join(listhandler.read())
         update.finished = datetime.now()
