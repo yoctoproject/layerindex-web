@@ -708,7 +708,7 @@ class UpdateListView(ListView):
     paginate_by = 50
 
     def get_queryset(self):
-        return Update.objects.all().order_by('-started').annotate(errors=Sum('layerupdate__errors'), warnings=Sum('layerupdate__warnings'))
+        return Update.objects.all().order_by('-started')
 
 
 class UpdateDetailView(DetailView):

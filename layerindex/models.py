@@ -98,6 +98,14 @@ class Update(models.Model):
     task_id = models.CharField(max_length=50, blank=True, db_index=True)
     triggered_by = models.ForeignKey(User, blank=True, null=True, on_delete=models.SET_NULL)
 
+    def error_count(self):
+        sums = self.layerupdate_set.aggregate(errors=models.Sum('errors'))
+        return (sums['errors'] or 0) + self.log.count('ERROR:')
+
+    def warning_count(self):
+        sums = self.layerupdate_set.aggregate(warnings=models.Sum('warnings'))
+        return (sums['warnings'] or 0) + self.log.count('WARNING:')
+
     def __str__(self):
         return '%s' % self.started
 
