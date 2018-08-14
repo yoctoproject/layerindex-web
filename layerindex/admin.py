@@ -85,7 +85,7 @@ class UpdateAdmin(admin.ModelAdmin):
     pass
 
 class LayerUpdateAdmin(admin.ModelAdmin):
-    list_filter = ['update__started', 'layerbranch__layer__name', 'layerbranch__branch__name']
+    list_filter = ['update__started', 'layer', 'branch']
 
 class RecipeAdmin(admin.ModelAdmin):
     search_fields = ['filename', 'pn']

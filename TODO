@@ -43,7 +43,6 @@ Features
 * Use bar instead of pie graphs for OE-Classic statistics
 * Ability for reviewers to comment before publishing a layer?
 * Show a note at the top of the layer edit form if there's a validation error
-* Record layer update start/end revisions
 * Show count in duplicates page
 * Search on layer selection dialogs
 

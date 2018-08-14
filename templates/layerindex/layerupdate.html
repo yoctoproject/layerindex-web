@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load i18n %}
+{% load extrafilters %}
 
 {% comment %}
 
@@ -11,13 +12,27 @@
 {% endcomment %}
 
 <!--
-{% block title_append %} - {{ layerupdate.layerbranch.layer.name }} {{ layerupdate.layerbranch.branch.name }} - {{ layerupdate.started }} {% endblock %}
+{% block title_append %} - {{ layerupdate.layer.name }} {{ layerupdate.branch.name }} - {{ layerupdate.started }} {% endblock %}
 -->
 
 {% block content %}
 {% autoescape on %}
 
-<h2>{{ layerupdate.layerbranch.layer.name }} {{ layerupdate.layerbranch.branch.name }} - {{ layerupdate.started }}</h2>
+<h2>{{ layerupdate.layer.name }} {{ layerupdate.branch.name }} - {{ layerupdate.started }} <small>({{ layerupdate.started|timesince2:layerupdate.finished }})</small></h2>
+
+{% if layerupdate.layerbranch_exists %}
+{% if layerupdate.vcs_before_rev != layerupdate.vcs_after_rev %}
+<p>
+    Updated
+    {% with before_url=layerupdate.vcs_before_commit_url after_url=layerupdate.vcs_after_commit_url %}
+    {% if before_url %}<a href="{{ before_url }}">{% endif %}{{ layerupdate.vcs_before_rev|truncatesimple:10 }}{% if before_url %}</a>{% endif %} &rarr; {% if after_url %}<a href="{{ after_url }}">{% endif %}{{ layerupdate.vcs_after_rev|truncatesimple:10 }}{% if after_url %}</a>{% endif %}
+    {% endwith %}
+    {% else %}
+    {{ layerupdate.vcs_before_rev|truncatesimple:10 }} → {{ layerupdate.vcs_after_rev|truncatesimple:10 }}
+</p>
+{% endif %}
+{% endif %}
+
 
 <pre>{{ layerupdate.log }}</pre>
 

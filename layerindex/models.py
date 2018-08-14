@@ -394,13 +394,35 @@ class LayerNote(models.Model):
 
 
 class LayerUpdate(models.Model):
-    layerbranch = models.ForeignKey(LayerBranch)
+    layer = models.ForeignKey(LayerItem)
+    branch = models.ForeignKey(Branch)
     update = models.ForeignKey(Update)
     started = models.DateTimeField()
-    finished = models.DateTimeField()
+    finished = models.DateTimeField(blank=True, null=True)
     errors = models.IntegerField(default=0)
     warnings = models.IntegerField(default=0)
+    vcs_before_rev = models.CharField('Revision before', max_length=80, blank=True)
+    vcs_after_rev = models.CharField('Revision after', max_length=80, blank=True)
     log = models.TextField(blank=True)
+    retcode = models.IntegerField(default=0)
+
+    def layerbranch_exists(self):
+        """Helper function for linking"""
+        return LayerBranch.objects.filter(layer=self.layer, branch=self.branch).exists()
+
+    def vcs_before_commit_url(self):
+        if self.vcs_before_rev:
+            layerbranch = LayerBranch.objects.filter(layer=self.layer, branch=self.branch).first()
+            if layerbranch:
+                return layerbranch.commit_url(self.vcs_before_rev)
+        return None
+
+    def vcs_after_commit_url(self):
+        if self.vcs_after_rev:
+            layerbranch = LayerBranch.objects.filter(layer=self.layer, branch=self.branch).first()
+            if layerbranch:
+                return layerbranch.commit_url(self.vcs_after_rev)
+        return None
 
     def save(self):
         warnings = 0
@@ -415,7 +437,7 @@ class LayerUpdate(models.Model):
         super(LayerUpdate, self).save()
 
     def __str__(self):
-        return "%s: %s: %s" % (self.layerbranch.layer.name, self.layerbranch.branch.name, self.started)
+        return "%s: %s: %s" % (self.layer.name, self.branch.name, self.started)
 
 
 class Recipe(models.Model):

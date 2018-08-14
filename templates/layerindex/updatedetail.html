@@ -1,11 +1,12 @@
 {% extends "base.html" %}
 {% load i18n %}
+{% load extrafilters %}
 
 {% comment %}
 
   layerindex-web - update page
 
-  Copyright (C) 2016 Intel Corporation
+  Copyright (C) 2016, 2018 Intel Corporation
   Licensed under the MIT license, see COPYING.MIT for details
 
 {% endcomment %}
@@ -30,12 +31,37 @@
 {% endif %}
 
 {% for layerupdate in layerupdates %}
-    <a href="{% url 'layer_item' layerupdate.layerbranch.branch.name layerupdate.layerbranch.layer.name %}"><h3>{{ layerupdate.layerbranch.layer.name }} {{ layerupdate.layerbranch.branch.name }}</h3></a>
-    <pre>{{ layerupdate.log }}</pre>
+    <table class="table table-bordered">
+        <thead>
+            {% with layerbranch_exists=layerupdate.layerbranch_exists %}
+            <tr><td{% if layerupdate.errors > 0 or layerupdate.retcode != 0 %} class="error"{% elif layerupdate.warnings %} class="warning"{% endif %}>
+            {% if layerbranch_exists %}<a href="{% url 'layer_item' layerupdate.branch.name layerupdate.layer.name %}">{% endif %}<strong>{{ layerupdate.layer.name }} {{ layerupdate.branch.name }}</strong>{% if layerbranch_exists %}</a>{% endif %}
+            {% if layerupdate.vcs_before_rev != layerupdate.vcs_after_rev %}
+            <span class="pull-right">
+                {% if layerbranch_exists %}
+                {% with before_url=layerupdate.vcs_before_commit_url after_url=layerupdate.vcs_after_commit_url %}
+                {% if before_url %}<a href="{{ before_url }}">{% endif %}{{ layerupdate.vcs_before_rev|truncatesimple:10 }}{% if before_url %}</a>{% endif %} &rarr; {% if after_url %}<a href="{{ after_url }}">{% endif %}{{ layerupdate.vcs_after_rev|truncatesimple:10 }}{% if after_url %}</a>{% endif %}
+                {% endwith %}
+                {% else %}
+                {{ layerupdate.vcs_before_rev|truncatesimple:10 }} → {{ layerupdate.vcs_after_rev|truncatesimple:10 }}
+                {% endif %}
+            </span>
+            {% endif %}
+            </td></tr>
+            {% endwith %}
+        </thead>
+        <tbody>
+            {% if layerupdate.log %}
+            <tr><td class="td-pre">
+            <pre class="pre-scrollable pre-plain">{{ layerupdate.log }}</pre>
+            </td></tr>
+            {% endif %}
+        </tbody>
+    </table>
 {% endfor %}
 
 {% if not update.log and not layerupdates %}
-    <p>No messages</p>
+    <p>No messages or layer updates</p>
 {% endif %}
 
 {% if update.comparisonrecipeupdate_set.exists %}

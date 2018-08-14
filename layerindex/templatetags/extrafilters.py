@@ -13,6 +13,10 @@ def squashspaces(strval):
     return utils.squashspaces(strval)
 
 @register.filter
+def truncatesimple(strval, length):
+    return strval[:length]
+
+@register.filter
 def timesince2(date, date2=None):
     # Based on http://www.didfinishlaunchingwithoptions.com/a-better-timesince-template-filter-for-django/
     if date2 is None:

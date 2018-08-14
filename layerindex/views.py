@@ -373,7 +373,7 @@ class LayerDetailView(DetailView):
             context['distros'] = layerbranch.distro_set.order_by('name')
             context['appends'] = layerbranch.bbappend_set.order_by('filename')
             context['classes'] = layerbranch.bbclass_set.order_by('name')
-            context['updates'] = layerbranch.layerupdate_set.order_by('-started')
+            context['updates'] = LayerUpdate.objects.filter(layer=layerbranch.layer, branch=layerbranch.branch).order_by('-started')
         context['url_branch'] = self.kwargs['branch']
         context['this_url_name'] = resolve(self.request.path_info).url_name
         if 'rrs' in settings.INSTALLED_APPS:
@@ -718,7 +718,7 @@ class UpdateDetailView(DetailView):
         context = super(UpdateDetailView, self).get_context_data(**kwargs)
         update = self.get_object()
         if update:
-            context['layerupdates'] = update.layerupdate_set.exclude(log__isnull=True).exclude(log__exact='')
+            context['layerupdates'] = update.layerupdate_set.order_by('-started')
         return context
 
 

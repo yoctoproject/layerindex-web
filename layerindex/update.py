@@ -303,7 +303,6 @@ def main():
             # We now do this by calling out to a separate script; doing otherwise turned out to be
             # unreliable due to leaking memory (we're using bitbake internals in a manner in which
             # they never get used during normal operation).
-            last_rev = {}
             failed_layers = {}
             for branch in branches:
                 failed_layers[branch] = []
@@ -401,6 +400,17 @@ def main():
                         logger.info('Update interrupted, exiting')
                         sys.exit(254)
                     elif ret != 0:
+                        output = output.rstrip()
+                        # Save a layerupdate here or we won't see this output
+                        layerupdate = LayerUpdate()
+                        layerupdate.update = update
+                        layerupdate.layer = layer
+                        layerupdate.branch = branchobj
+                        layerupdate.started = datetime.now()
+                        layerupdate.log = output
+                        layerupdate.retcode = ret
+                        if not options.dryrun:
+                            layerupdate.save()
                         continue
 
                     col = extract_value('BBFILE_COLLECTIONS', output)
@@ -479,23 +489,27 @@ def main():
                 for layer in layerquery_sorted:
                     layerupdate = LayerUpdate()
                     layerupdate.update = update
+                    layerupdate.layer = layer
+                    layerupdate.branch = branchobj
+                    layerbranch = layer.get_layerbranch(branch)
+                    if layerbranch:
+                        layerupdate.vcs_before_rev = layerbranch.vcs_last_rev
 
                     errmsg = failedrepos.get(layer.vcs_url, '')
                     if errmsg:
                         logger.info("Skipping update of layer %s as fetch of repository %s failed:\n%s" % (layer.name, layer.vcs_url, errmsg))
-                        layerbranch = layer.get_layerbranch(branch)
-                        if layerbranch:
-                            layerupdate.layerbranch = layerbranch
-                            layerupdate.started = datetime.now()
-                            layerupdate.finished = datetime.now()
-                            layerupdate.log = 'ERROR: fetch failed: %s' % errmsg
-                            if not options.dryrun:
-                                layerupdate.save()
+                        layerupdate.started = datetime.now()
+                        layerupdate.finished = datetime.now()
+                        layerupdate.log = 'ERROR: fetch failed: %s' % errmsg
+                        if not options.dryrun:
+                            layerupdate.save()
                         continue
 
+                    layerupdate.started = datetime.now()
+                    if not options.dryrun:
+                        layerupdate.save()
                     cmd = prepare_update_layer_command(options, branchobj, layer)
                     logger.debug('Running layer update command: %s' % cmd)
-                    layerupdate.started = datetime.now()
                     ret, output = utils.run_command_interruptible(cmd)
                     layerupdate.finished = datetime.now()
 
@@ -504,11 +518,11 @@ def main():
                     # didn't exist) so we still need to check
                     layerbranch = layer.get_layerbranch(branch)
                     if layerbranch:
-                        last_rev[layerbranch] = layerbranch.vcs_last_rev
-                        layerupdate.layerbranch = layerbranch
-                        layerupdate.log = output
-                        if not options.dryrun:
-                            layerupdate.save()
+                        layerupdate.vcs_after_rev = layerbranch.vcs_last_rev
+                    layerupdate.log = output
+                    layerupdate.retcode = ret
+                    if not options.dryrun:
+                        layerupdate.save()
 
                     if ret == 254:
                         # Interrupted by user, break out of loop

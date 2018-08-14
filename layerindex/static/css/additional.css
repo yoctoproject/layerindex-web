@@ -258,3 +258,13 @@ td.info {
 .hidden-select {
     display: none !important;
 }
+
+.pre-plain {
+    background-color: transparent;
+    border-style: none;
+    padding: 0;
+}
+
+.td-pre {
+    background-color: #f5f5f5;
+}
