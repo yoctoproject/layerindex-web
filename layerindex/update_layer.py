@@ -808,7 +808,8 @@ def main():
         pass
     except:
         import traceback
-        traceback.print_exc()
+        logger.error(traceback.format_exc().rstrip())
+        sys.exit(1)
     finally:
         if tinfoil and (LooseVersion(bb.__version__) > LooseVersion("1.27")):
             tinfoil.shutdown()
