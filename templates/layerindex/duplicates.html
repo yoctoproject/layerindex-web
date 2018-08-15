@@ -18,11 +18,11 @@
 {% block content %}
 {% autoescape on %}
 
-        <div class="row-fluid">
-            <div class="span12">
+        <div class="row">
+            <div class="col-md-12">
 
-    <div class="btn-group pull-right">
-        <a href="#" class="btn dropdown-toggle" data-toggle="dropdown">
+    <div class="pull-right">
+        <a href="#" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
         Branch: <b>{{ url_branch }}</b>
         <b class="caret"></b>
         </a>
@@ -39,45 +39,49 @@
             {% endfor %}
         </ul>
 
-        <div id="layerDialog" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="layerDialogLabel" aria-hidden="true">
-            <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
-                <h3 id="layerDialogLabel">Select layers to include</h3>
-            </div>
-            <form action="" method="get">
-                <div class="modal-body">
-                    <div class="scrolling">
-                        <table><tbody>
-                            {% for layerbranch in layers %}
-                                <tr>
-                                    <td class="checkboxtd"><input
-                                        type="checkbox"
-                                        class="filterlayercheckbox"
-                                        name="l"
-                                        value="{{ layerbranch.layer.id }}" id="id_layer_{{layerbranch.layer.id}}"
-                                        {% if showlayers and layerbranch.layer.id in showlayers %}
-                                            checked
-                                        {% endif %}
-                                        />
-                                    </td>
-                                    <td><label for="id_layer_{{layerbranch.layer.id}}">{{ layerbranch.layer.name }}</label></td>
-                                </tr>
-                            {% endfor %}
-                        </tbody></table>
+        <div id="layerDialog" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="layerDialogLabel">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                        <h3 id="layerDialogLabel">Select layers to include</h3>
                     </div>
-                    <div class="buttonblock">
-                    <button type="button" class="btn" id="id_select_all">Select all</button>
-                    <button type="button" class="btn buttonblock-btn" id="id_select_none">Select none</button>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <input type="submit" value="Filter" class='btn btn-primary' />
-                    <button class="btn" id="id_cancel" data-dismiss="modal" aria-hidden="true">Cancel</button>
-                </div>
-            </form>
+                    <form action="" method="get">
+                        <div class="modal-body">
+                            <div class="scrolling">
+                                <table><tbody>
+                                    {% for layerbranch in layers %}
+                                        <tr>
+                                            <td class="checkboxtd"><input
+                                                type="checkbox"
+                                                class="filterlayercheckbox"
+                                                name="l"
+                                                value="{{ layerbranch.layer.id }}" id="id_layer_{{layerbranch.layer.id}}"
+                                                {% if showlayers and layerbranch.layer.id in showlayers %}
+                                                    checked
+                                                {% endif %}
+                                                />
+                                            </td>
+                                            <td><label for="id_layer_{{layerbranch.layer.id}}">{{ layerbranch.layer.name }}</label></td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody></table>
+                            </div>
+                            <div class="buttonblock">
+                            <button type="button" class="btn btn-default" id="id_select_all">Select all</button>
+                            <button type="button" class="btn btn-default buttonblock-btn" id="id_select_none">Select none</button>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <input type="submit" value="Filter" class="btn btn-primary" />
+                            <button class="btn btn-default" id="id_cancel" data-dismiss="modal">Cancel</button>
+                        </div>
+                    </form>
+                </div><!-- /.modal-content -->
+            </div><!-- /.modal-dialog -->
         </div>
 
-        <a href="#layerDialog" role="button" class="btn nav-spacer" data-toggle="modal">Filter layers {% if showlayers %}<span class="badge badge-success">{{ showlayers|length }}</span>{% endif %}</a>
+        <a href="#layerDialog" role="button" class="btn btn-default nav-spacer" data-toggle="modal">Filter layers {% if showlayers %}<span class="badge badge-success">{{ showlayers|length }}</span>{% endif %}</a>
 
     </div>
 
@@ -89,14 +93,14 @@
                         <tr>
                             <th>Recipe name</th>
                             <th>Version</th>
-                            <th class="span9">Description</th>
+                            <th class="col-md-9">Description</th>
                             <th>Layer</th>
                         </tr>
                     </thead>
 
                     <tbody>
                         {% for recipe in recipes %}
-                            <tr {% if recipe.preferred_count > 0 %}class="muted"{% endif %}>
+                            <tr {% if recipe.preferred_count > 0 %}class="text-muted"{% endif %}>
                                 <td><a href="{% url 'recipe' recipe.id %}">{{ recipe.name }}</a></td>
                                 <td>{{ recipe.pv }}</td>
                                 <td>{{ recipe.short_desc }}</td>
@@ -112,8 +116,8 @@
         </div>
 
 
-        <div class="row-fluid">
-            <div class="span12">
+        <div class="row">
+            <div class="col-md-12">
                 <h2>Duplicate classes</h2>
 {% if classes %}
                 <p>Classes with the same name in different layers:</p>

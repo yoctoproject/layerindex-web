@@ -23,7 +23,7 @@
 {% autoescape on %}
 
 <div class="container-fluid">
-    <div class="row-fluid">
+    <div class="row">
         {% block heading %}
         <div class="page-header">
             <h1>Edit layer</h1>
@@ -42,10 +42,10 @@
         {% for field in form.visible_fields %}
             {% if field.name != 'captcha' %}
             {% if field.errors %}
-            <div class="control-group alert alert-error">
+            <div class="form-group alert alert-danger">
             {{ field.errors }}
             {% else %}
-            <div class="control-group">
+            <div class="form-group">
             {% endif %}
                 <div class="control-label">
                     {{ field.label_tag }}
@@ -59,7 +59,7 @@
                                         <tr>
                                             <td class="checkboxtd"><input type="checkbox" name="deps" value="{{ deplayer.id }}" id="id_deps_{{forloop.counter}}" checked="checked" /></td>
                                             {% if deplayer.status == 'N' %}
-                                            <td><label class="muted" for="id_deps_{{forloop.counter}}">{{ deplayer.name }} (unpublished)</label></td>
+                                            <td><label class="text-muted" for="id_deps_{{forloop.counter}}">{{ deplayer.name }} (unpublished)</label></td>
                                             {% else %}
                                             <td><label for="id_deps_{{forloop.counter}}">{{ deplayer.name }}</label></td>
                                             {% endif %}
@@ -71,7 +71,7 @@
                                         <tr>
                                             <td class="checkboxtd"><input type="checkbox" name="deps" value="{{ deplayer.id }}" id="id_deps_{{forloop.counter}}" /></td>
                                             {% if deplayer.status == 'N' %}
-                                            <td><label class="muted" for="id_deps_{{forloop.counter}}">{{ deplayer.name }} (unpublished)</label></td>
+                                            <td><label class="text-muted" for="id_deps_{{forloop.counter}}">{{ deplayer.name }} (unpublished)</label></td>
                                             {% else %}
                                             <td><label for="id_deps_{{forloop.counter}}">{{ deplayer.name }}</label></td>
                                             {% endif %}
@@ -83,7 +83,7 @@
                     {% else %}
                         {{ field }}
                     {% endif %}
-                    <span class="help-inline custom-help">
+                    <span class="help-block custom-help">
                         {{ field.help_text }}
                     </span>
                 </div>
@@ -95,14 +95,14 @@
                 </div>
                 <div class="controls">
                     <div class="formfield-div">
-                        <select id="idx_vcs_web_type">
+                        <select id="idx_vcs_web_type" class="form-control">
                         <option>(custom)</option>
                         <option>cgit</option>
                         <option>gitweb</option>
                         <option>gitlab</option>
                         </select>
                     </div>
-                    <span class="help-inline custom-help">
+                    <span class="help-block custom-help">
                         Type of web interface (helps to auto-determine other URL fields)
                     </span>
                 </div>
@@ -122,17 +122,17 @@
 
                 {% for field in maintainerform.visible_fields %}
                     {% if field.errors %}
-                    <div class="control-group alert alert-error">
+                    <div class="form-group alert alert-danger">
                     {{ field.errors }}
                     {% else %}
-                    <div class="control-group">
+                    <div class="form-group">
                     {% endif %}
                         <div class="control-label">
                             {{ field.label_tag }}
                         </div>
                         <div class="controls">
                             {{ field }}
-                            <span class="help-inline custom-help">
+                            <span class="help-block custom-help">
                                 {{ field.help_text }}
                             </span>
                         </div>
@@ -141,21 +141,21 @@
             </div>
         </div>
     {% endfor %}
-    <p><a href="#" class="btn btn-small" id="addanothermaintainer"><i class="icon-plus"></i>Add maintainer</a><p>
+    <p><a href="#" class="btn btn-default btn-sm" id="addanothermaintainer"><i class="glyphicon glyphicon-plus" aria-hidden="true"></i>Add maintainer</a><p>
 
 
     {% if form.captcha %}
         <div class="captchafield">
             <h3>Verification</h3>
             {% if form.captcha.errors %}
-            <div class="control-group alert alert-error">
+            <div class="form-group alert alert-danger">
             {{ form.captcha.errors }}
             {% else %}
-            <div class="control-group">
+            <div class="form-group">
             {% endif %}
                 <div class="controls">
                     {{ form.captcha }}
-                    <span class="help-inline custom-help">
+                    <span class="help-block custom-help">
                         {{ form.captcha.help_text }}
                     </span>
                 </div>
@@ -166,7 +166,7 @@
 <div class="submitbuttons">
 {% block submitbuttons %}
 <input type="submit" value="Save layer" class="btn btn-primary btn-large submitbutton" />
-<a href="{{ return_url }}" class="btn btn-large">Cancel</a>
+<a href="{{ return_url }}" class="btn btn-default btn-large">Cancel</a>
 {% endblock %}
 </div>
 </form>

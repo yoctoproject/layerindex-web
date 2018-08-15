@@ -19,7 +19,7 @@
 {% autoescape on %}
 
         <div class="container-fluid">
-            <div class="row-fluid">
+            <div class="row">
 
                 {% if branch.name == 'oe-classic' %}
                 <h2>OE-Classic</h2>
@@ -30,7 +30,7 @@
                 {% endif %}
 
                 <a class="btn btn-large btn-primary" href="{% url 'comparison_recipe_search' branch.name %}">Recipes</a>
-                <a class="btn btn-large" href="{% url 'comparison_recipe_search' branch.name %}?q=&cover_status=!">Unmigrated Recipes</a>
+                <a class="btn btn-large btn-default" href="{% url 'comparison_recipe_search' branch.name %}?q=&cover_status=!">Unmigrated Recipes</a>
                 <a class="btn btn-large btn-primary" href="{% url 'comparison_recipe_stats' branch.name %}">Stats</a>
             </div>
 

@@ -9,8 +9,8 @@
 
 {% load addurlparameter %}
 
-<div class="pagination pagination-centered">
-    <ul>
+<nav class="text-center">
+    <ul class="pagination">
     {% if page.has_previous %}
         <li><a href="{% addurlparameter 'page' page.previous_page_number %}">prev</a></li>
     {% else %}

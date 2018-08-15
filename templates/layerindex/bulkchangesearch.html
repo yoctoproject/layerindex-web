@@ -20,11 +20,11 @@
 
 <h2>Add recipes to changeset</h2>
 
-        <div class="row-fluid">
+        <div class="row">
 
-            <div class="span9">
+            <div class="col-md-9">
 
-                <div class="row-fluid">
+                <div class="row">
                     <form id="search-form" class="form-inline" method="GET">
                         <table class="search-form-table">
                             <tbody>
@@ -56,7 +56,7 @@
                                 </tr>
                             </tbody>
                         </table>
-                        <button class="btn" type="submit">Search</button>
+                        <button class="btn btn-default" type="submit">Search</button>
                     </form>
                 </div>
 
@@ -69,7 +69,7 @@
                                 <th></th>
                                 <th>Recipe name</th>
                                 <th>Version</th>
-                                <th class="span9">Description</th>
+                                <th class="col-md-9">Description</th>
                                 <th>Layer</th>
                             </tr>
                         </thead>
@@ -86,8 +86,8 @@
                             {% endfor %}
                         </tbody>
                     </table>
-                    <input type="submit" class="btn" name="add_selected" value="Add selected"></input>
-                    <input type="submit" class="btn" name="add_all" value="Add all"></input>
+                    <input type="submit" class="btn btn-default" name="add_selected" value="Add selected"></input>
+                    <input type="submit" class="btn btn-default" name="add_all" value="Add all"></input>
 
     {% if is_paginated %}
         {% load pagination %}
@@ -100,7 +100,7 @@
 {% endif %}
             </div>
 
-            <div class="span3">
+            <div class="col-md-3">
                     {% if changeset %}
                     <div class="well">
                         <p>{{ changeset.name }}</p>
@@ -119,10 +119,10 @@
                             {% endfor %}
                             </ul>
                         </small>
-                        <input type="submit" class="btn" name="remove_all" value="Remove all"></input>
-                        <a href="{% url 'bulk_change_edit' changeset.id %}" class="btn">Edit</a>
+                        <input type="submit" class="btn btn-default" name="remove_all" value="Remove all"></input>
+                        <a href="{% url 'bulk_change_edit' changeset.id %}" class="btn btn-default">Edit</a>
                         {% endif %}
-                        <a href="{% url 'bulk_change_delete' changeset.id %}?cancel=bulk_change_search" class="btn">Delete</a>
+                        <a href="{% url 'bulk_change_delete' changeset.id %}?cancel=bulk_change_search" class="btn btn-default">Delete</a>
                     </div>
                     {% endif %}
                 </form>

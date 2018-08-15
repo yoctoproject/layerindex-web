@@ -31,6 +31,10 @@ textarea {
     color:white;
 }
 
+.label {
+    margin-right: 0.25em;
+}
+
 .footer {
     text-align: center;
     margin-bottom: 40px;
@@ -194,6 +198,10 @@ padding: 8px;
     background-color: transparent;
 }
 
+.breadcrumb > li + li:before {
+    content: "\2192";
+}
+
 .nav-spacer {
     margin-left: 10px;
 }
@@ -219,7 +227,7 @@ padding: 8px;
     background-color: #999;
 }
 
-ul.unstyled {
+.list-unstyled {
     margin-bottom: 0;
 }
 
@@ -267,4 +275,48 @@ td.info {
 
 .td-pre {
     background-color: #f5f5f5;
+}
+
+.bottom-margin {
+    margin-bottom: 20px;
+}
+
+.no-left-pad {
+    padding-left: 0;
+}
+
+.dropdown-menu > li > a > .checkbox {
+    margin-top: 0;
+    margin-bottom: 0;
+    margin-left: 10px;
+}
+
+.badge-important {
+    background-color: #b94a48 !important;
+}
+
+.badge-warning {
+    background-color: #f89406 !important;
+}
+
+.badge-success {
+    background-color: #468847 !important;
+}
+
+/*
+ * Borrowed from https://stackoverflow.com/questions/20366166/bootstrap-3-styled-select-dropdown-looks-ugly-in-firefox-on-os-x
+ */
+@-moz-document url-prefix() {
+  select.form-control {
+    padding-right: 25px;
+    background-image: url("data:image/svg+xml,\
+      <svg version='1.1' xmlns='http://www.w3.org/2000/svg' width='14px'\
+           height='14px' viewBox='0 0 1200 1000' fill='rgb(51,51,51)'>\
+        <path d='M1100 411l-198 -199l-353 353l-353 -353l-197 199l551 551z'/>\
+      </svg>");
+    background-repeat: no-repeat;
+    background-position: calc(100% - 7px) 50%;
+    -moz-appearance: none;
+    appearance: none;
+  }
 }

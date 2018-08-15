@@ -24,13 +24,13 @@
 
         {% block breadcrumbs %}
         <ul class="breadcrumb">
-            <li><a href="#">{{ layerbranch_desc }}</a> <span class="divider">&rarr;</span></li>
+            <li><a href="#">{{ layerbranch_desc }}</a></li>
             <li class="active">{{ recipe.name }}</li>
         </ul>
         {% endblock %}
 
        <div class="container-fluid">
-        <div class="row-fluid">
+        <div class="row">
 
             {% block page_heading %}
             <div class="page-header">
@@ -179,7 +179,7 @@
                             <thead>
                                 <tr>
                                     <th>Patch</th>
-                                    <th class="span3">Status</th>
+                                    <th class="col-md-3">Status</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -217,12 +217,12 @@
             if( cover_status == 'U' || cover_status == 'N' || cover_status == 'S' ) {
                 $('#id_cover_pn').prop('readonly', true);
                 $('#id_cover_layerbranch').prop('readonly', true);
-                $('#id_span_cover_opts').addClass('muted');
+                $('#id_span_cover_opts').addClass('text-muted');
             }
             else {
                 $('#id_cover_pn').prop('readonly', false);
                 $('#id_cover_layerbranch').prop('readonly', false);
-                $('#id_span_cover_opts').removeClass('muted');
+                $('#id_span_cover_opts').removeClass('text-muted');
             }
         }
     </script>

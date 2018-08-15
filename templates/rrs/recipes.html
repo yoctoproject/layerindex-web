@@ -19,11 +19,11 @@
 -->
 
 {% block content_inner %}
-<div class="navbar navbar-table-controls">
-    <div class="navbar-inner table-controls">
-        <ul class="nav">
-            <li class="dropdown">
-                <span class="badge" id="recipe-count"></span>
+<nav class="navbar navbar-default navbar-table-controls">
+    <div class="container-fluid table-controls">
+        <ul class="nav navbar-nav">
+            <li>
+                <span class="badge navbar-badge" id="recipe-count"></span>
             </li>
             <li class="dropdown">
                 <a data-toggle="dropdown" href="#" class="dropdown-toggle" id="selected-status">
@@ -41,7 +41,7 @@
                 </ul>
             </li>
             {% if maintplan.per_recipe_maintainers %}
-            <li><p>and</p></li>
+            <li class="navbar-text">and</li>
             <li class="dropdown">
                 <a data-toggle="dropdown" href="#" class="dropdown-toggle" id="selected-maintainer">
                     Maintainer: <strong></strong>
@@ -60,33 +60,37 @@
             {% endif %}
         </ul>
 
-        <form id="form-search" class="pull-right input-append">
-            <input type="text" class="input-xlarge" placeholder="Search all recipes" id="filter"/>                
-            <a class="add-on btn" style="display:none" id="clear-search-btn">
-                <i class="icon-remove"></i>
-            </a>
-            <button type="submit" value="Search" class="btn" id="btn-search">Search</button>
+        <form id="form-search" class="pull-right navbar-form">
+            <div class="input-group">
+                <input type="text" class="form-control" placeholder="Search all recipes" id="filter"/>
+                <div class="input-group-btn">
+                    <a class="input-group-addon btn btn-default" style="display:none" id="clear-search-btn">
+                        <i class="glyphicon glyphicon-remove" aria-hidden="true"></i>
+                    </a>
+                    <button type="submit" value="Search" class="btn btn-default" id="btn-search">Search</button>
+                </div>
+            </div>
         </form>
     </div>
-</div>
+</nav>
 
-<div id="no_recipes_alert" class="alert" style="display:none">
+<div id="no_recipes_alert" class="alert alert-warning" style="display:none">
     No recipes found <a href="#" id="view-all-recipes" style="margin-left:10px;">View all recipes</a>
 </div>
 <table class="table tablesorter table-bordered table-hover" id="recipestable">
 <thead>
     <tr>
         <th class="recipe_column">Recipe</th>
-        <th class="version_column muted">Version</th>
-        <th class="upstream_version_column muted">Upstream version</th>
+        <th class="version_column text-muted">Version</th>
+        <th class="upstream_version_column text-muted">Upstream version</th>
         <th class="upstream_status_column span2">Upstream status</th>
         <th class="last_updated_column">Last Updated</th>
         <th class="patches_column">Patches</th>
         {% if maintplan.per_recipe_maintainers %}
         <th class="maintainer_column">Maintainer</th>
         {% endif %}
-        <th class="summary_column muted span5">Summary</th>
-        <th class="no_update_reason_column muted span5" style="display:none">No update reason</th>
+        <th class="summary_column text-muted span5">Summary</th>
+        <th class="no_update_reason_column text-muted span5" style="display:none">No update reason</th>
     </tr>
 </thead>
 <tbody>
@@ -98,16 +102,16 @@
     {% if r.upstream_status == "Up-to-date" %}
     <td class="text-success">
     {% elif r.upstream_status == "Not updated" %}
-    <td class="text-error">
+    <td class="text-danger">
     {% elif r.upstream_status == "Can't be updated" %}
-    <td class="muted">
+    <td class="text-muted">
     {% else %}
     <td class="text-warning">
     {% endif %}
         {{ r.upstream_status }}
     </td>
     <td class="last_updated_column">{{r.outdated}}</td>
-    <td class="patches_column">{% if r.patches_total %}<span {% if not r.patches_pending %}class="muted"{% endif %}>{{ r.patches_pending }}<span class="muted"> / {{ r.patches_total }}</span>{% endif %}</td>
+    <td class="patches_column">{% if r.patches_total %}<span {% if not r.patches_pending %}class="text-muted"{% endif %}>{{ r.patches_pending }}<span class="text-muted"> / {{ r.patches_total }}</span>{% endif %}</td>
     {% if maintplan.per_recipe_maintainers %}
     <td class="maintainer_column">{{ r.maintainer_name }}</td>
     {% endif %}
@@ -332,7 +336,7 @@ $(document).ready(function() {
         clearSearch()
     });
 
-    $(".icon-remove").tooltip( {container: 'body', html: true, title: "Clear search" });
+    $(".glyphicon-remove").tooltip( {container: 'body', html: true, title: "Clear search" });
 
 {% if recipe_list_count > 0 %}
     $(recipesTable).tablesorter({

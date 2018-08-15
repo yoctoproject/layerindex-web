@@ -37,10 +37,10 @@
     </li>
 {% endfor %}
 </ul>
-<a href="{% url 'bulk_change_search' changeset.id %}" class="btn">Add recipes</a>
-<a href="{% url 'bulk_change_edit' changeset.id %}" class="btn">Edit</a>
-<a href="{% url 'bulk_change_patches' changeset.id %}" class="btn">Get patches</a>
-<a href="{% url 'bulk_change_delete' changeset.id %}?cancel=bulk_change_review" class="btn">Delete</a>
+<a href="{% url 'bulk_change_search' changeset.id %}" class="btn btn-default">Add recipes</a>
+<a href="{% url 'bulk_change_edit' changeset.id %}" class="btn btn-default">Edit</a>
+<a href="{% url 'bulk_change_patches' changeset.id %}" class="btn btn-default">Get patches</a>
+<a href="{% url 'bulk_change_delete' changeset.id %}?cancel=bulk_change_review" class="btn btn-default">Delete</a>
 
 {% endautoescape %}
 

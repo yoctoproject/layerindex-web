@@ -80,9 +80,10 @@ th > a, th.muted {
     font-size:70%;
 }
 
-.navbar .badge {
-	margin-top: 10px;
-	margin-right: 10px;
+.navbar-badge {
+	margin-top: 15px;
+	margin-left: 15px;
+	margin-right: 4px;
 }
 
 .navbar-table-controls {

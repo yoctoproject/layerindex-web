@@ -19,42 +19,46 @@
 -->
 
 {% block content_inner %}
-<div class="navbar navbar-table-controls">
-    <div class="navbar-inner table-controls">
-        <ul class="nav">
+<nav class="navbar navbar-default navbar-table-controls">
+    <div class="container-fluid table-controls">
+        <ul class="nav navbar-nav">
             <li class="dropdown">
-            <span class="badge" id="maintainer-count" style="margin-top:11px;"></span>
+            <span class="badge navbar-badge" id="maintainer-count" style="margin-top:11px;"></span>
             </li>
-        </ul>    		
-        <form id="form-search" class="pull-right input-append">
-            <input type="text" class="input-xlarge" placeholder="Search maintainers" id="filter">				
-            <a class="add-on btn" id="clear-search-btn" style="display:none">
-                <i class="icon-remove"></i>
-            </a>
-            <button type="submit" value="Search" class="btn" id="btn-search">Search</button>
+        </ul>
+        <form id="form-search" class="pull-right navbar-form">
+            <div class="input-group">
+                <input type="text" class="form-control" placeholder="Search maintainers" id="filter">
+                <div class="input-group-btn">
+                    <a class="btn btn-default" id="clear-search-btn" style="display:none">
+                        <i class="glyphicon glyphicon-remove" aria-hidden="true"></i>
+                    </a>
+                    <button type="submit" value="Search" class="btn btn-default" id="btn-search">Search</button>
+                </div>
+            </div>
         </form>
     </div>
-</div>
+</nav>
 
-<div id="no_maintainers_alert" class="alert" style="display:none">
+<div id="no_maintainers_alert" class="alert alert-warning" style="display:none">
     No maintainers found <a href="#" id="view-all-maintainers" style="margin-left:10px;">View all maintainers</a>
 </div>
 <table class="table table-bordered table-hover" id="statistics-table">
 <thead>
     <tr class="headerRow">
         <th class="sorted">Maintainer</th>
-        <th class="muted">Assigned recipes</th>
-        <th class="muted">Up-to-date</th>
-        <th class="muted">Not updated</th>
-        <th class="muted">Can't be updated</th>
-        <th class="muted">Unknown</th>
-        <th class="muted">% done</th>
+        <th class="text-muted">Assigned recipes</th>
+        <th class="text-muted">Up-to-date</th>
+        <th class="text-muted">Not updated</th>
+        <th class="text-muted">Can't be updated</th>
+        <th class="text-muted">Unknown</th>
+        <th class="text-muted">% done</th>
 
         {% for i in intervals %}
         {% if current_interval == forloop.counter0 %}
         <th class="current-wk">
         {% else %}
-        <th class="muted">
+        <th class="text-muted">
         {% endif %}
         {{ i }}
         </th>
@@ -97,7 +101,7 @@
             {% if current_interval == forloop.counter0 %}
             <td class="current-wk">
             {% else %}
-            <td class="muted">
+            <td class="text-muted">
             {% endif %}
             {{ number }}
             </td>
@@ -224,7 +228,7 @@ $(document).ready(function() {
         }
         var $dataRows=$("#statistics-table-body tr:visible")
         $dataRows.each(function() {
-            $(this).find('.rowData, .current-wk, .muted').each(function(i){
+            $(this).find('.rowData, .current-wk, .text-muted').each(function(i){
                 if ($(this).html().trim() != '') {
                     totals[i] += parseInt($(this).html())
                 }

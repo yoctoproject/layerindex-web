@@ -2,7 +2,7 @@
 
   layerindex-web - base template for output pages
 
-  Copyright (C) 2013 Intel Corporation
+  Copyright (C) 2013, 2018 Intel Corporation
   Licensed under the MIT license, see COPYING.MIT for details
 
 {% endcomment %}
@@ -15,8 +15,11 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 
 <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="{% static "css/bootstrap.css" %}" />
-    <link rel="stylesheet" href="{% static "css/bootstrap-responsive.css" %}" />
+    <link rel="stylesheet" href="{% static "css/bootstrap-theme.css" %}" />
     <link rel="stylesheet" href="{% static "css/additional.css" %}" />
     <link rel="icon" type="image/vnd.microsoft.icon" href="{% static "img/favicon.ico" %}" />
     <title>{{ site_name }}{% block title_append %} - {% endblock %}</title>
@@ -27,22 +30,24 @@
 <body>
     {% block header %}
     {% autoescape on %}
-    <div class="navbar navbar-fixed-top">
-        <div class="navbar-inner">
-            <div class="container-fluid">
-                <a class="brand" href="{% url 'frontpage' %}">{{ site_name }}</a>
+    <nav class="navbar navbar-default navbar-fixed-top">
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <a class="navbar-brand" href="{% url 'frontpage' %}">{{ site_name }}</a>
+            </div>
 
-                {% if user.is_authenticated %}
-                    <div class="btn-group pull-right">
+            <div class="navbar-collapse collapse">
+               {% if user.is_authenticated %}
+                    <div class="btn-group pull-right nav-spacer">
                         {% if perms.layerindex.publish_layer %}
                         {% if unpublished_count > 0 %}
-                        <a class="btn" href="{% url 'layer_list_review' %}?branch=master">
+                        <a class="btn btn-default navbar-btn" href="{% url 'layer_list_review' %}?branch=master">
                             <span class="badge badge-warning review-notification">{{ unpublished_count }}</span>
                         </a>
                         {% endif %}
                         {% endif %}
-                        <button class="btn dropdown-toggle" data-toggle="dropdown"">
-                            <i class="icon-user"></i>
+                        <button class="btn btn-default navbar-btn dropdown-toggle" data-toggle="dropdown">
+                            <i class="glyphicon glyphicon-user" aria-hidden="true"></i>
                             {{ user.username }}
                             <b class="caret"></b>
                         </button>
@@ -53,18 +58,18 @@
                         </ul>
                     </div>
                 {% else %}
-                    <div class="pull-right">
-                        <a class="btn" href="{% url 'auth_login' %}">{% trans "Log in" %}</a>
+                    <div class="pull-right nav-spacer">
+                        <a class="btn btn-default navbar-btn" href="{% url 'auth_login' %}">{% trans "Log in" %}</a>
                     </div>
                 {% endif %}
-                <ul class="nav pull-right">
+                <ul class="nav navbar-nav pull-right">
                     <li class="divider-vertical"></li>
                 </ul>
                 {% block topfunctions %}
                 <div class="pull-right nav-spacer">
-                    <a class="btn btn-info" href="{% url 'submit_layer' %}">Submit layer</a>
+                    <a class="btn btn-info navbar-btn" href="{% url 'submit_layer' %}">Submit layer</a>
                 </div>
-                <ul class="nav pull-right">
+                <ul class="nav navbar-nav pull-right">
                     {% if user.is_authenticated %}
                     <li class="dropdown">
                         <a href="#" class="dropdown-toggle" data-toggle="dropdown">
@@ -85,15 +90,15 @@
                 </ul>
                 {% endblock %}
             </div> <!-- end of "container" -->
-        </div> <!--  "end of "navbar-inner" -->
-    </div> <!--  end of "navbar" -->
+        </div> <!--  "end of "container-fluid" -->
+    </nav> <!--  end of "navbar" -->
     {% endautoescape %}
     {% endblock %}
 
 {% block contenttag %}<div id="content" class="container top-padded">{% endblock %}
         {% if notices %}
             {% for notice in notices %}
-            <div class="alert {% if notice.level == 'I' %}alert-info{% elif notice.level == 'S' %}alert-success{% elif notice.level == 'W' %}{% elif notice.level == 'E' %}alert-error{% endif %}">{{ notice.text_sanitised|safe|urlize }}</div>
+            <div class="alert {% if notice.level == 'I' %}alert-info{% elif notice.level == 'S' %}alert-success{% elif notice.level == 'W' %}alert-warning{% elif notice.level == 'E' %}alert-danger{% endif %}">{{ notice.text_sanitised|safe|urlize }}</div>
             {% endfor %}
         {% endif %}
         {% if messages %}
@@ -116,7 +121,7 @@
         {% endblock %}
     </div>
 
-    <script src="{% static "js/jquery-1.7.2.js" %}"></script>
+    <script src="{% static "js/jquery-3.3.1.js" %}"></script>
     <script src="{% static "js/bootstrap.js" %}"></script>
 {% block scripts %}
 {% endblock %}

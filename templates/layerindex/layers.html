@@ -32,39 +32,37 @@
 
 {% if layerbranch_list %}
 
-            <div class="row-fluid">
-                <div class="span5">
-                    <form id="filter-form">
-                        <input type="text" class="input-xxlarge search-query" id="filter" placeholder="Search layers">
-                    </form>
-                </div>
-
-                <div class="pull-right">
-                    <div class="btn-group">
-                        <a class="btn dropdown-toggle" data-toggle="dropdown" href="#">
-                            Filter layers
-                            <span class="caret"></span>
-                        </a>
-                        <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownMenu">
-                            {% for choice_id, choice_label in layer_type_choices %}
-                            <li><a tabindex="-1" href="#">
-                                <label class="checkbox">
-                                    <input type="checkbox" checked value="{{ choice_id }}">{{ choice_label }}
-                                </label>
-                            </a></li>
-                            {% endfor %}
-
-                        </ul>
-
-                    </div>
-                </div>
+            <div class="col-md-6 no-left-pad bottom-margin">
+                <form id="filter-form">
+                    <input type="text" class="form-control" id="filter" placeholder="Search layers">
+                </form>
             </div>
+
+            <span class="pull-right">
+                <div class="btn-group">
+                    <button class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Filter layers
+                        <span class="caret"></span>
+                    </button>
+                    <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownMenu">
+                        {% for choice_id, choice_label in layer_type_choices %}
+                        <li><a tabindex="-1" href="#">
+                            <label class="checkbox">
+                                <input type="checkbox" checked value="{{ choice_id }}">{{ choice_label }}
+                            </label>
+                        </a></li>
+                        {% endfor %}
+
+                    </ul>
+
+                </div>
+            </span>
 
             <table class="table table-striped table-bordered layerstable">
                 <thead>
                     <tr>
                         <th>Layer name</th>
-                        <th class="span4">Description</th>
+                        <th class="col-md-4">Description</th>
                         <th>Type</th>
                         <th>Repository</th>
                     </tr>

@@ -19,7 +19,7 @@
 
         {% block breadcrumbs %}
         <ul class="breadcrumb">
-            <li><a href="{% url 'comparison_recipe_search' branch.name %}">{{ branch.short_description }}</a> <span class="divider">&rarr;</span></li>
+            <li><a href="{% url 'comparison_recipe_search' branch.name %}">{{ branch.short_description }}</a></li>
             <li class="active">{{ recipe.name }}</li>
         </ul>
         {% endblock %}
@@ -58,7 +58,7 @@
                         <tr>
                             <th>Extra links</th>
                             <td>
-                                <ul class="unstyled">
+                                <ul class="list-unstyled">
                                 {% for extra_url in recipe.extra_urls %}
                                     <li><a href="{{ extra_url.url }}">{{ extra_url.name }}</a></li>
                                 {% endfor %}

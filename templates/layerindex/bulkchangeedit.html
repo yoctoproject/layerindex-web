@@ -30,16 +30,16 @@
         <h3>{{ form.instance.recipe.filename }}</h3>
         {% for field in form.visible_fields %}
             {% if field.errors %}
-            <div class="control-group alert alert-error">
+            <div class="form-group alert alert-danger">
             {{ field.errors }}
             {% endif %}
-            <div class="control-group formfields">
+            <div class="form-group formfields">
                 <div class="control-label">
                     {{ field.label_tag }}
                 </div>
                 <div class="controls">
                     {{ field }}
-                    <span class="help-inline custom-help">
+                    <span class="help-block custom-help">
                         {{ field.help_text }}
                     </span>
                 </div>
@@ -49,7 +49,7 @@
             {% endif %}
         {% endfor %}
     {% endfor %}
-    <input type="submit" class="btn" name="save" value="Save"></input>
+    <input type="submit" class="btn btn-default" name="save" value="Save"></input>
 </form>
 
 {% endautoescape %}

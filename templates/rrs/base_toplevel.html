@@ -14,7 +14,7 @@
 {% block contenttag %}<div id="content" class="container-fluid top-padded">{% endblock %}
 
 {% block topfunctions %}
-<ul class="nav">
+<ul class="nav navbar-nav">
 <li class="divider-vertical" style="display; list-item;"/>
 {% block maintplan_selector %}
     <li class="dropdown">
@@ -68,50 +68,53 @@
     </li>
 {% endblock %}
 </ul>
-                    <a href="{% url 'rrs_recipesreport' maintplan_name release_name milestone_name %}" class="btn pull-right">Export recipe list</a>
+                    <a href="{% url 'rrs_recipesreport' maintplan_name release_name milestone_name %}" class="btn btn-default navbar-btn pull-right">Export recipe list</a>
+{% endblock %}
+
+{% block head_extra %}
+    <link rel="stylesheet" href="{% static "css/rrs-additional.css" %}" />
 {% endblock %}
 
 {% block content %}
-<link rel="stylesheet" href="{% static "css/rrs-additional.css" %}" />
 
-            <div class="navbar">
-                <div class="navbar-inner">
-                    <ul class="nav">
-                        <li class="lead">
-                            {{ release_name }}
-                            {% if milestone_name != "All" %}
-                            {{ milestone_name }}
-                            {% endif %}
-                        </li>
-                        <li class="lead" id="up-to-date-recipes">
-                            <span class="text-success">{{ recipes_percentage_up_to_date }}%</span>
-                            <span class="secondary-info">up-to-date ({{ recipes_up_to_date }})</span>
-                        </li>
-                        <li class="lead" id="not-updated-recipes">
-                            <span class="text-error">{{ recipes_percentage_not_updated }}%</span>
-                            <span class="secondary-info">not updated ({{ recipes_not_updated }})</span>
-                        </li>
-                        <li class="lead" id="cant-be-updated-recipes">
-                            <span class="muted">{{ recipes_percentage_cant_be_updated }}%</span>
-                            <span class="secondary-info">can't be updated ({{ recipes_cant_be_updated }})</span>
-                        </li>
-                        <li class="lead" id="unknown-recipes">
-                            <span class="text-warning">{{ recipes_percentage_unknown }}%</span>
-                            <span class="secondary-info">unknown ({{ recipes_unknown }})</span>
-                        </li>
-                        <li class="lead" id="percentage">
-                            <span class="normal-text">{{ recipes_percentage }}%</span>
-                            <span class="secondary-info">of planned work done ({{ recipes_all_upgraded }} of {{ recipes_all_not_upgraded }})</span>
-                        </li>
-                    </ul>
-                    <ul class="nav">
-                        {% block navs %}{% endblock %}
-                    </ul>
-                </div>
-            </div>
+                    <nav class="navbar navbar-default">
+                        <div class="container-fluid">
+                            <ul class="nav navbar-nav">
+                                <li class="lead">
+                                    {{ release_name }}
+                                    {% if milestone_name != "All" %}
+                                    {{ milestone_name }}
+                                    {% endif %}
+                                </li>
+                                <li class="lead" id="up-to-date-recipes">
+                                    <span class="text-success">{{ recipes_percentage_up_to_date }}%</span>
+                                    <span class="secondary-info">up-to-date ({{ recipes_up_to_date }})</span>
+                                </li>
+                                <li class="lead" id="not-updated-recipes">
+                                    <span class="text-danger">{{ recipes_percentage_not_updated }}%</span>
+                                    <span class="secondary-info">not updated ({{ recipes_not_updated }})</span>
+                                </li>
+                                <li class="lead" id="cant-be-updated-recipes">
+                                    <span class="text-muted">{{ recipes_percentage_cant_be_updated }}%</span>
+                                    <span class="secondary-info">can't be updated ({{ recipes_cant_be_updated }})</span>
+                                </li>
+                                <li class="lead" id="unknown-recipes">
+                                    <span class="text-warning">{{ recipes_percentage_unknown }}%</span>
+                                    <span class="secondary-info">unknown ({{ recipes_unknown }})</span>
+                                </li>
+                                <li class="lead" id="percentage">
+                                    <span class="normal-text">{{ recipes_percentage }}%</span>
+                                    <span class="secondary-info">of planned work done ({{ recipes_all_upgraded }} of {{ recipes_all_not_upgraded }})</span>
+                                </li>
+                            </ul>
+                            <ul class="nav navbar-nav">
+                                {% block navs %}{% endblock %}
+                            </ul>
+                    </div>
+                </nav>
 
             {% block content_top %}
-            <ul class="nav nav-pills">
+            <ul class="nav nav-pills bottom-margin">
                 {% if this_url_name == 'rrs_recipes' %}
                 <li class="active">
                 <a href="#">

@@ -25,53 +25,56 @@
                 </div>
 
                                         <form id="comparison_form" class="form-inline" method="post">
-                                        <div id="selectRecipeDialog" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="selectRecipeDialogLabel" aria-hidden="true">
-                                            <div class="modal-header">
-                                                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
-                                                <h3 id="selectRecipeDialogLabel">Select <span id="id_span_select_recipe">recipe</span> to match {{ select_for.pn }}</h3>
-                                            </div>
-                                            <div class="modal-body">
-                                                    {% csrf_token %}
-                                                    {% for hidden in comparison_form.hidden_fields %}
-                                                        {{ hidden }}
-                                                    {% endfor %}
+                                        <div id="selectRecipeDialog" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="selectRecipeDialogLabel">
+                                            <div class="modal-dialog" role="document">
+                                                <div class="modal-content">
+                                                    <div class="modal-header">
+                                                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                                                        <h3 id="selectRecipeDialogLabel">Select <span id="id_span_select_recipe">recipe</span> to match {{ select_for.pn }}</h3>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                            {% csrf_token %}
+                                                            {% for hidden in comparison_form.hidden_fields %}
+                                                                {{ hidden }}
+                                                            {% endfor %}
 
-                                                    <select class="hidden-select" id="id_hidden_selectbox">
-                                                    </select>
+                                                            <select class="hidden-select" id="id_hidden_selectbox">
+                                                            </select>
 
-                                                    Coverage {{ comparison_form.cover_status }}
-                                                    {% if comparison_form.cover_verified %}
-                                                    <label class="checkbox" id="id_label_cover_verified">
-                                                    {{ comparison_form.cover_verified }} verified
-                                                    </label>
-                                                    {% endif %}
-                                                    {% if comparison_form.classic_category %}
-                                                    <p>
-                                                    <label>
-                                                    Category
-                                                    {{ comparison_form.classic_category }}
-                                                    </label>
-                                                    </p>
-                                                    {% endif %}
-                                                    <p>
-                                                    <label>
-                                                    Comment
-                                                    {{ comparison_form.cover_comment }} 
-                                                    </label>
-                                                    </p>
-                                                    {% if comparison_form.needs_attention %}
-                                                    <p>
-                                                    <label class="checkbox" id="id_label_needs_attention">
-                                                    {{ comparison_form.needs_attention }}
-                                                    Needs attention
-                                                    </label>
-                                                    </p>
-                                                    {% endif %}
-                                            </div>
-                                            <div class="modal-footer">
-                                                <button class="btn btn-primary" id="id_selectrecipedialog_save" data-dismiss="modal" aria-hidden="true">Save</button>
-                                                <button class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>
-                                            </div>
+                                                            <label for="id_selectrecipedialog-cover_status">Coverage</label> {{ comparison_form.cover_status }}
+                                                            {% if comparison_form.cover_verified %}
+                                                            <div class="checkbox">
+                                                                <label id="id_label_cover_verified">
+                                                                    {{ comparison_form.cover_verified }} verified
+                                                                </label>
+                                                            </div>
+                                                            {% endif %}
+                                                            {% if comparison_form.classic_category %}
+                                                            <p>
+                                                            <label for="id_selectrecipedialog-classic_category">Category</label>
+                                                            {{ comparison_form.classic_category }}
+                                                            </p>
+                                                            {% endif %}
+                                                            <p>
+                                                            <label for="id_selectrecipedialog-cover_comment">Comment</label>
+                                                            {{ comparison_form.cover_comment }} 
+                                                            </p>
+                                                            {% if comparison_form.needs_attention %}
+                                                            <p>
+                                                            <div class="checkbox">
+                                                                <label id="id_label_needs_attention">
+                                                                    {{ comparison_form.needs_attention }} Needs attention
+                                                                </label>
+                                                            </div>
+                                                            </p>
+                                                            {% endif %}
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button class="btn btn-primary" id="id_selectrecipedialog_save" data-dismiss="modal">Save</button>
+                                                        <button class="btn btn-default" data-dismiss="modal">Cancel</button>
+                                                    </div>
+                                                </div><!-- /.modal-content -->
+                                            </div><!-- /.modal-dialog -->
                                         </div>
                                         </form>
                 {% endblock %}

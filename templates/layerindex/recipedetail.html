@@ -21,13 +21,13 @@
 {% autoescape on %}
 
         <ul class="breadcrumb">
-            <li><a href="{% url 'layer_list' recipe.layerbranch.branch.name %}">{{ recipe.layerbranch.branch.name }}</a> <span class="divider">&rarr;</span></li>
-            <li><a href="{% url 'layer_item' recipe.layerbranch.branch.name recipe.layerbranch.layer.name %}">{{ recipe.layerbranch.layer.name }}</a> <span class="divider">&rarr;</span></li>
+            <li><a href="{% url 'layer_list' recipe.layerbranch.branch.name %}">{{ recipe.layerbranch.branch.name }}</a></li>
+            <li><a href="{% url 'layer_item' recipe.layerbranch.branch.name recipe.layerbranch.layer.name %}">{{ recipe.layerbranch.layer.name }}</a></li>
             <li class="active">{{ recipe.name }}</li>
         </ul>
 
        <div class="container-fluid">
-        <div class="row-fluid">
+        <div class="row">
 
             {% block page_heading %}
             <div class="page-header">
@@ -36,10 +36,10 @@
             {% endblock %}
 
             {% if recipe.blacklisted %}
-                <div class="alert">
-                    <div class="row-fluid">
+                <div class="alert alert-warning">
+                    <div class="row">
                         <p>This recipe is <strong>blacklisted</strong> by the <a href="{% url 'layer_item' recipe.layerbranch.branch.name recipe.layerbranch.layer.name %}">{{ recipe.layerbranch.layer.name }}</a> layer. The reason provided is:</p>
-                        <blockquote class="span7 warn">
+                        <blockquote class="col-md-7 warn">
                             <p>{{ recipe.blacklisted }}</p>
                         </blockquote>
                     </div>
@@ -113,7 +113,7 @@
                             <th>Inherits</th>
                             <td>
                                 {% if recipe.inherits %}
-                                    <ul class="unstyled">
+                                    <ul class="list-unstyled">
                                         {% for recipe in recipe.inherits.split %}
                                             <li>{{ recipe }}</li>
                                         {% endfor %}
@@ -122,20 +122,20 @@
                             </td>
                         </tr>
                         <tr>
-                            <th>Dependencies <i class="icon-exclamation-sign" data-toggle="tooltip" title="NOTE: Dependencies may vary based on configuration"></i></th>
+                            <th>Dependencies <i class="glyphicon glyphicon-exclamation-sign" data-toggle="tooltip" title="NOTE: Dependencies may vary based on configuration" aria-hidden="true"></i></th>
                             <td>
                                 {% if staticdependencies %}
-                                    <ul class="unstyled">
+                                    <ul class="list-unstyled">
                                         {% for dep in staticdependencies %}
                                             <li> {{dep.name}} </li>
                                         {% endfor %}
                                     </ul>
                                 {% endif %}
                                 {% if packageconfigs %}
-                                    <ul class="unstyled">
+                                    <ul class="list-unstyled">
                                         {% for pc in packageconfigs %}
                                             {% for dep in pc.dynamicbuilddep_set.all %}
-                                            <li> {{dep.name}}<i class="icon-cog" data-toggle="tooltip" title="If &quot;{{pc.feature}}&quot; is set in PACKAGECONFIG"></i></li>
+                                            <li> {{dep.name}}<i class="glyphicon glyphicon-cog" data-toggle="tooltip" title="If &quot;{{pc.feature}}&quot; is set in PACKAGECONFIG" aria-hidden="true"></i></li>
                                             {% endfor %}
                                         {% endfor %}
                                     </ul>
@@ -146,7 +146,7 @@
                             <th>PACKAGECONFIG options</th>
                             <td>
                                 {% if packageconfigs %}
-                                    <ul class="unstyled">
+                                    <ul class="list-unstyled">
                                         {% for pc in packageconfigs %}
                                             <li> {{ pc.feature }} </li>
                                         {% endfor %}
@@ -177,7 +177,7 @@
                 <table class="table table-striped table-bordered">
                     <thead>
                         <tr>
-                            <th class="span6">Patch</th>
+                            <th class="col-md-6">Patch</th>
                             <th>Status</th>
                         </tr>
                     </thead>
@@ -212,10 +212,10 @@
                     {% if not append in verappends %}
                     <tr>
                         <td>
-                            <a href="{% url 'layer_item' append.layerbranch.branch.name append.layerbranch.layer.name %}" class="muted">{{ append.layerbranch.layer.name }}</a>
+                            <a href="{% url 'layer_item' append.layerbranch.branch.name append.layerbranch.layer.name %}" class="text-muted">{{ append.layerbranch.layer.name }}</a>
                         </td>
                         <td>
-                            <a href="{{ append.vcs_web_url }}" class="muted">{{ append.filename }}</a>
+                            <a href="{{ append.vcs_web_url }}" class="text-muted">{{ append.filename }}</a>
                         </td>
                     </tr>
                     {% endif %}

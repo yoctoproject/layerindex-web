@@ -30,16 +30,17 @@
 {% autoescape on %}
 
 
-
-                <div class="row-fluid">
+                <div class="bottom-margin">
                     <form id="filter-form" action="{% url 'recipe_search' url_branch %}" method="get" onsubmit="return validate()">
-                        <div class="control-group"  id="searchfield">
+                        <div class="form-group" id="searchfield">
                             <div class="controls">
-                                <div class="input-append">
-                                    <input type="text" class="input-xxlarge" id="appendedInputButtons" placeholder="Search recipes" name="q" value="{{ search_keyword }}" />
-                                    <button class="btn" type="submit">search</button>
+                                <div class="input-group col-md-6">
+                                    <input type="text" class="form-control" id="appendedInputButtons" placeholder="Search recipes" name="q" value="{{ search_keyword }}" />
+                                    <div class="input-group-btn">
+                                        <button class="btn btn-default" type="submit">search</button>
+                                    </div>
                                 </div>
-                                <span class="help-inline" id="errortext"></span>
+                                <span class="help-block" id="errortext"></span>
                             </div>
                         </div>
                     </form>
@@ -52,15 +53,15 @@
                         <tr>
                             <th>Recipe name</th>
                             <th>Version</th>
-                            <th class="span9">Description</th>
+                            <th class="col-md-9">Description</th>
                             <th>Layer</th>
                         </tr>
                     </thead>
 
                     <tbody>
                         {% for recipe in recipe_list %}
-                            <tr {% if recipe.preferred_count > 0 %}class="muted"{% endif %}>
-                                <td><a href="{% url 'recipe' recipe.id %}">{{ recipe.name }}</a>{% if 'image' in recipe.inherits.split %}<i class="icon-hdd"></i>{% endif %}{% if recipe.blacklisted %}<span class="label label-inverse" title="{{ recipe.blacklisted }}">blacklisted</span>{% endif %}</td>
+                            <tr {% if recipe.preferred_count > 0 %}class="text-muted"{% endif %}>
+                                <td><a href="{% url 'recipe' recipe.id %}">{{ recipe.name }}</a>{% if 'image' in recipe.inherits.split %}<i class="glyphicon glyphicon-hdd" aria-hidden="true"></i>{% endif %}{% if recipe.blacklisted %}<span class="label label-inverse" title="{{ recipe.blacklisted }}">blacklisted</span>{% endif %}</td>
                                 <td>{{ recipe.pv }}</td>
                                 <td>{{ recipe.short_desc }}</td>
                                 <td><a href="{% url 'layer_item' url_branch recipe.layerbranch.layer.name %}">{{ recipe.layerbranch.layer.name }}</a></td>
@@ -91,14 +92,14 @@
         if( ! firstfield.val() )
             firstfield.focus()
 
-        $('.icon-hdd').tooltip({title:"Inherits image"});
+        $('.glyphicon-hdd').tooltip({title:"Inherits image"});
         $('.label-inverse').tooltip();
     });
 
     function validate(){
         if (!$("#appendedInputButtons").val()){
             $("#errortext").html("<p>Please specify search text</p>");
-            $("#searchfield").addClass("error");
+            $("#searchfield").addClass("has-error");
             return false;
         }
     }

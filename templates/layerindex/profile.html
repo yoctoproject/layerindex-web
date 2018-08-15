@@ -27,10 +27,10 @@
 
     {% for field in form.visible_fields %}
         {% if field.errors %}
-        <div class="control-group alert alert-error">
+        <div class="form-group alert alert-danger">
         {{ field.errors }}
         {% else %}
-        <div class="control-group">
+        <div class="form-group">
         {% endif %}
             <div class="control-label {% if field.required %}requiredlabel{% endif %}">
                 {{ field.label_tag }}
@@ -41,8 +41,8 @@
         </div>
     {% endfor %}
 
-  <input type="submit" class="btn" value="{% trans 'Save' %}" />
-  <a class="btn" href="{% url 'frontpage' %}">{% trans 'Cancel' %}</a>
+  <input type="submit" class="btn btn-default" value="{% trans 'Save' %}" />
+  <a class="btn btn-default" href="{% url 'frontpage' %}">{% trans 'Cancel' %}</a>
   {% csrf_token %}
 </form>
 

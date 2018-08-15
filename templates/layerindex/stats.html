@@ -43,7 +43,7 @@
     </thead>
     <tbody>
         {% for branch in perbranch %}
-        <tr {% if not branch.updates_enabled %}class="muted"{% endif %}>
+        <tr {% if not branch.updates_enabled %}class="text-muted"{% endif %}>
             <td>{{ branch.name }}</td>
             <td style="text-align: right">{{ branch.layer_count }}</td>
             <td style="text-align: right">{{ branch.recipe_count }}</td>

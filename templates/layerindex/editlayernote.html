@@ -24,8 +24,8 @@
 <form id="edit_layernote_form" method="post">
     {% csrf_token %}
     {{ form.as_p }}
-<input type="submit" value="Save" class='btn' />
-<a href="{% url 'layer_item' 'master' form.instance.layer.name %}" class='btn'>Cancel</a>
+<input type="submit" value="Save" class="btn btn-default" />
+<a href="{% url 'layer_item' 'master' form.instance.layer.name %}" class="btn btn-default">Cancel</a>
 </form>
 
 {% endautoescape %}

@@ -22,12 +22,12 @@
 
 {% autoescape on %}
         <ul class="breadcrumb">
-            <li><a href="{% url 'layer_list' url_branch %}">{{ layerbranch.branch.name }}</a> <span class="divider">&rarr;</span></li>
+            <li><a href="{% url 'layer_list' url_branch %}">{{ layerbranch.branch.name }}</a></li>
             <li class="active">{{ layeritem.name }}</li>
         </ul>
 
         <div class="container-fluid">
-            <div class="row-fluid">
+            <div class="row">
                 <div class="page-header">
                     <h1>{{ layeritem.name }}
                         {% if layerbranch.yp_compatible_version %}
@@ -39,43 +39,43 @@
                         {% if user.is_authenticated %}
                             <span class="pull-right">
                                 {% if perms.layerindex.publish_layer or useredit %}
-                                    <a href="{% url 'edit_layer' url_branch layeritem.name %}" class="btn">Edit layer</a>
+                                    <a href="{% url 'edit_layer' url_branch layeritem.name %}" class="btn btn-default">Edit layer</a>
                                     {% if layeritem.layernote_set.count == 0 %}
-                                        <a href="{% url 'add_layernote' layeritem.name %}" class="btn">Add note</a>
+                                        <a href="{% url 'add_layernote' layeritem.name %}" class="btn btn-default">Add note</a>
                                     {% endif %}
                                 {% endif %}
                             </span>
                         {% endif %}
                     </h1>
                 </div>
-            </div> <!--  end of row-fluid -->
+            </div> <!--  end of row -->
         </div> <!-- end of container-fluid -->
 
         <div class="container-fluid">
             {% if not layerbranch %}
-            <div class="row-fluid">
-                <div class="alert alert-error">
+            <div class="row">
+                <div class="alert alert-danger">
                     This layer does not exist for branch {{ url_branch }}.
                 </div>
             </div>
             {% endif %}
-            <div class="row-fluid">
+            <div class="row">
                 {% for note in layeritem.layernote_set.all %}
-                    <div class="alert">
+                    <div class="alert alert-warning">
                         {{ note.text|urlize }}
                         {% if perms.layerindex.publish_layer or useredit %}
                             <br><br>
                             <p>
-                                <a href="{% url 'edit_layernote' layeritem.name note.pk %}" class="btn">Edit note</a>
-                                <a href="{% url 'delete_layernote' layeritem.name note.pk %}" class='btn'>Delete note</a>
+                                <a href="{% url 'edit_layernote' layeritem.name note.pk %}" class="btn btn-default">Edit note</a>
+                                <a href="{% url 'delete_layernote' layeritem.name note.pk %}" class="btn btn-default">Delete note</a>
                             </p>
                         {% endif %}
                     </div>
                 {% endfor %}
             </div>
 
-            <div class="row-fluid">
-                <div class="description span7">
+            <div class="row">
+                <div class="description col-md-7">
                     <p style="white-space: pre-wrap">{{ layeritem.description }}</p>
                     <p>
                         {% if layeritem.usage_url %}
@@ -92,7 +92,7 @@
 
                     <h3>Git repository</h3>
 
-                    <p><span data-toggle="tooltip" title="Select URL"><i class="icon-circle-arrow-right selectallicon" for="vcs_url" id="vcs_url_select"></i></span><span id="vcs_url" class="copyable">{{ layeritem.vcs_url }}</span>
+                    <p><span data-toggle="tooltip" title="Select URL"><i class="glyphicon glyphicon-circle-arrow-right selectallicon" for="vcs_url" id="vcs_url_select" aria-hidden="true"></i></span><span id="vcs_url" class="copyable">{{ layeritem.vcs_url }}</span>
                         {% if layeritem.vcs_web_url %}
                             <span class="label label-info">
                                 <a href="{{ layeritem.vcs_web_url }}">web repo</a>
@@ -102,7 +102,7 @@
 
                     {% if layerbranch.vcs_subdir %}
                         <h4>Subdirectory</h4>
-                        <p><span data-toggle="tooltip" title="Select subdirectory"><i class="icon-circle-arrow-right selectallicon" for="vcs_subdir" id="vcs_subdir_select"></i></span><span id="vcs_subdir" class="copyable">{{ layerbranch.vcs_subdir }}</span>
+                        <p><span data-toggle="tooltip" title="Select subdirectory"><i class="glyphicon glyphicon-circle-arrow-right selectallicon" for="vcs_subdir" id="vcs_subdir_select" aria-hidden="true"></i></span><span id="vcs_subdir" class="copyable">{{ layerbranch.vcs_subdir }}</span>
                             {% if layerbranch.tree_url %}
                                 <span class="label label-info">
                                     <a href="{{ layerbranch.tree_url }}">web subdirectory</a>
@@ -113,7 +113,7 @@
 
                     {% if layerbranch.vcs_last_commit %}
                     <p>
-                    <span class="muted"><small>Last commit: {{ layerbranch.vcs_last_commit|timesince }} ago ({{ layerbranch.branch.name }} branch)</small></span>
+                    <span class="text-muted"><small>Last commit: {{ layerbranch.vcs_last_commit|timesince }} ago ({{ layerbranch.branch.name }} branch)</small></span>
                     </p>
                     {% endif %}
 
@@ -147,9 +147,9 @@
                     </ul>
                     {% endif %}
 
-                </div> <!-- end of span7 -->
+                </div> <!-- end of col-md-7 -->
 
-                <div class="span4 pull-right description">
+                <div class="col-md-4 pull-right description">
                     {% if layerbranch.dependencies_set.count > 0 %}
                         <div class="well dependency-well">
                             {% if layerbranch.get_required.count > 0 %}
@@ -172,8 +172,8 @@
                             {% endif %} <!-- end of layerbranch.get_recommends.count -->
                         </div> <!-- end of well -->
                     {% endif %} <!-- end of layerbranch.dependencies_set.count -->
-                </div> <!-- end of span4 -->
-            </div>  <!-- end of row-fluid -->
+                </div> <!-- end of col-md-4 -->
+            </div>  <!-- end of row -->
         </div> <!-- end of container-fluid -->
 
         {% if not layerbranch.vcs_last_commit %}
@@ -206,19 +206,21 @@
         <div class="tab-content">
             {% if layerbranch.recipe_set.count > 0 %}
                 <div class="tab-pane" id="recipes">
-                    <div class="navbar">
-                        <div class="navbar-inner">
-                            <a class="brand pull-left">{{ layeritem.name }} recipes <span class="muted">({{ layerbranch.sorted_recipes.count }})</span></a>
+                    <nav class="navbar navbar-default">
+                        <div class="container-fluid">
+                            <div class="navbar-header">
+                                <a class="navbar-brand">{{ layeritem.name }} recipes <span class="text-muted">({{ layerbranch.sorted_recipes.count }})</span></a>
+                            </div>
 
-                            <div class="pull-right">
-                                <a href="{% url 'layer_export_recipes_csv' layerbranch.branch.name layerbranch.layer.name %}" class="btn"><i class="icon-file"></i> Export CSV</a>
+                            <div class="navbar-right">
+                                <a href="{% url 'layer_export_recipes_csv' layerbranch.branch.name layerbranch.layer.name %}" class="btn btn-default navbar-btn"><i class="glyphicon glyphicon-file" aria-hidden="true"></i> Export CSV</a>
 
-                                <form action="" class="navbar-search nav-spacer pull-right" id="filter-form">
-                                    <input type="text" placeholder="Search recipes" class="search-query" id="filter">
+                                <form action="" class="navbar-form pull-right" id="filter-form">
+                                    <input type="text" placeholder="Search recipes" class="form-control" id="filter">
                                 </form>
                             </div>
                         </div>
-                    </div>
+                    </nav>
 
                     <table class="table table-bordered recipestable">
                         <thead>
@@ -231,9 +233,9 @@
                         <tbody>
                             {% for recipe in layerbranch.sorted_recipes %}
                                 <tr>
-                                    <td><a href="{% url 'recipe' recipe.id %}">{{ recipe.name }}</a>{% if 'image' in recipe.inherits.split %}<i class="icon-hdd"></i>{% endif %}{% if recipe.blacklisted %}<span class="label label-inverse" title="{{ recipe.blacklisted }}">blacklisted</span>{% endif %}</td>
+                                    <td><a href="{% url 'recipe' recipe.id %}">{{ recipe.name }}</a>{% if 'image' in recipe.inherits.split %}<i class="glyphicon glyphicon-hdd"></i>{% endif %}{% if recipe.blacklisted %}<span class="label label-inverse" title="{{ recipe.blacklisted }}">blacklisted</span>{% endif %}</td>
                                     <td>{{ recipe.pv }}</td>
-                                    <td class="span8">{{ recipe.short_desc }}</td>
+                                    <td class="col-md-8">{{ recipe.short_desc }}</td>
                                 </tr>
                             {% endfor %}
                         </tbody>
@@ -242,11 +244,13 @@
             {% endif %}
             {% if machines.count > 0 %}
                 <div class="tab-pane" id="machines">
-                    <div class="navbar">
-                        <div class="navbar-inner">
-                                <a class="brand pull-left">{{ layeritem.name }} machines <span class="muted">({{ machines.count }})</span></a>
+                    <nav class="navbar navbar-default">
+                        <div class="container-fluid">
+                            <div class="navbar-header">
+                                <a class="navbar-brand">{{ layeritem.name }} machines <span class="text-muted">({{ machines.count }})</span></a>
+                            </div>
                         </div>
-                    </div>
+                    </nav>
 
                     <table class="table table-bordered">
                         <tbody>
@@ -262,11 +266,13 @@
             {% endif %}
             {% if appends.count > 0 %}
                 <div class="tab-pane" id="appends">
-                    <div class="navbar">
-                        <div class="navbar-inner">
-                                <a class="brand pull-left">{{ layeritem.name }} bbappends <span class="muted">({{ appends.count }})</span></a>
+                    <nav class="navbar navbar-default">
+                        <div class="container-fluid">
+                            <div class="navbar-header">
+                                <a class="navbar-brand">{{ layeritem.name }} bbappends <span class="text-muted">({{ appends.count }})</span></a>
+                            </div>
                         </div>
-                    </div>
+                    </nav>
 
                     <table class="table table-bordered">
                         <tbody>
@@ -281,11 +287,13 @@
             {% endif %}
             {% if classes.count > 0 %}
                 <div class="tab-pane" id="classes">
-                    <div class="navbar">
-                        <div class="navbar-inner">
-                                <a class="brand pull-left">{{ layeritem.name }} classes <span class="muted">({{ classes.count }})</span></a>
+                    <nav class="navbar navbar-default">
+                        <div class="container-fluid">
+                            <div class="navbar-header">
+                                <a class="navbar-brand">{{ layeritem.name }} classes <span class="text-muted">({{ classes.count }})</span></a>
+                            </div>
                         </div>
-                    </div>
+                    </nav>
 
                     <table class="table table-bordered">
                         <tbody>
@@ -300,11 +308,13 @@
             {% endif %}
             {% if distros.count > 0 %}
                 <div class="tab-pane" id="distros">
-                    <div class="navbar">
-                        <div class="navbar-inner">
-                                <a class="brand pull-left">{{ layeritem.name }} distros <span class="muted">({{ distros.count }})</span></a>
+                    <nav class="navbar navbar-default">
+                        <div class="container-fluid">
+                            <div class="navbar-header">
+                                <a class="navbar-brand">{{ layeritem.name }} distros <span class="text-muted">({{ distros.count }})</span></a>
+                            </div>
                         </div>
-                    </div>
+                    </nav>
 
                     <table class="table table-bordered">
                         <tbody>
@@ -320,11 +330,13 @@
             {% endif %}
             {% if updates.count > 0 %}
                 <div class="tab-pane" id="updates">
-                    <div class="navbar">
-                        <div class="navbar-inner">
-                            <a class="brand pull-left">{{ layeritem.name }} updates</a>
+                    <nav class="navbar navbar-default">
+                        <div class="container-fluid">
+                            <div class="navbar-header">
+                                <a class="navbar-brand">{{ layeritem.name }} updates</a>
+                            </div>
                         </div>
-                    </div>
+                    </nav>
 
                     <table class="table table-bordered">
                         <thead>
@@ -341,7 +353,7 @@
                                         {% if update.log %}
                                             <a href="{% url 'layerupdate' update.id %}">{{ update.started }}{% if update.update.reload %} (reload){% endif%}</a>
                                         {% else %}
-                                            <span class="muted">{{ update.started }}{% if update.update.reload %} (reload){% endif%}</span>
+                                            <span class="text-muted">{{ update.started }}{% if update.update.reload %} (reload){% endif%}</span>
                                         {% endif %}
                                     </td>
                                     <td>{% if update.errors %}<span class="badge badge-important">{{ update.errors }}</span>{% endif %}</td>
@@ -409,7 +421,7 @@
                     $(this).tab('show');
                 })
 
-                $('.icon-hdd').tooltip({title:"Inherits image"});
+                $('.glyphicon-hdd').tooltip({title:"Inherits image"});
                 $('.label-inverse').tooltip();
             });
         });

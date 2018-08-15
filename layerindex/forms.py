@@ -15,7 +15,22 @@ import re
 import settings
 
 
-class LayerMaintainerForm(forms.ModelForm):
+class StyledForm(forms.Form):
+    # Ensure form-control class for Bootstrap 3 is applied to Django-generated widgets
+    def __init__(self, *args, **kwargs):
+        super(StyledForm, self).__init__(*args, **kwargs)
+        for visible in self.visible_fields():
+            visible.field.widget.attrs['class'] = 'form-control'
+
+class StyledModelForm(forms.ModelForm):
+    # Ensure form-control class for Bootstrap 3 is applied to Django-generated widgets
+    def __init__(self, *args, **kwargs):
+        super(StyledModelForm, self).__init__(*args, **kwargs)
+        for visible in self.visible_fields():
+            visible.field.widget.attrs['class'] = 'form-control'
+
+
+class LayerMaintainerForm(StyledModelForm):
     class Meta:
         model = LayerMaintainer
         fields = ('name', 'email', 'responsibility', 'status')
@@ -46,7 +61,7 @@ class BaseLayerMaintainerFormSet(forms.models.BaseInlineFormSet):
 
 LayerMaintainerFormSet = inlineformset_factory(LayerBranch, LayerMaintainer, form=LayerMaintainerForm, formset=BaseLayerMaintainerFormSet,  can_delete=False, extra=10, max_num=10)
 
-class EditLayerForm(forms.ModelForm):
+class EditLayerForm(StyledModelForm):
     # Additional form fields
     vcs_subdir = forms.CharField(label='Repository subdirectory', max_length=40, required=False, help_text='Subdirectory within the repository where the layer is located, if not in the root (usually only used if the repository contains more than one layer)')
     deps = forms.ModelMultipleChoiceField(label='Other layers this layer depends upon', queryset=LayerItem.objects.filter(comparison=False), required=False)
@@ -152,7 +167,7 @@ class EditLayerForm(forms.ModelForm):
         return usage
 
 
-class EditNoteForm(forms.ModelForm):
+class EditNoteForm(StyledModelForm):
     class Meta:
         model = LayerNote
         fields = ('text',)
@@ -162,13 +177,13 @@ class EditNoteForm(forms.ModelForm):
         return text
 
 
-class EditProfileForm(forms.ModelForm):
+class EditProfileForm(StyledModelForm):
     class Meta:
         model = User
         fields = ('first_name', 'last_name', 'email')
 
 
-class ClassicRecipeForm(forms.ModelForm):
+class ClassicRecipeForm(StyledModelForm):
     class Meta:
         model = ClassicRecipe
         fields = ('cover_layerbranch', 'cover_pn', 'cover_status', 'cover_verified', 'cover_comment', 'classic_category', 'needs_attention')
@@ -185,7 +200,7 @@ class ClassicRecipeForm(forms.ModelForm):
         return cleaned_data
 
 
-class AdvancedRecipeSearchForm(forms.Form):
+class AdvancedRecipeSearchForm(StyledForm):
     FIELD_CHOICES = (
         ('pn',          'Name'),
         ('summary',     'Summary'),
@@ -207,13 +222,13 @@ class AdvancedRecipeSearchForm(forms.Form):
     layer = forms.ModelChoiceField(queryset=LayerItem.objects.filter(comparison=False).filter(status__in=['P', 'X']).order_by('name'), empty_label="(any)", required=False)
 
 
-class RecipeChangesetForm(forms.ModelForm):
+class RecipeChangesetForm(StyledModelForm):
     class Meta:
         model = RecipeChangeset
         fields = ('name',)
 
 
-class BulkChangeEditForm(forms.ModelForm):
+class BulkChangeEditForm(StyledModelForm):
     class Meta:
         model = RecipeChange
         fields = ('summary', 'description', 'homepage', 'bugtracker', 'section', 'license')
@@ -221,7 +236,7 @@ class BulkChangeEditForm(forms.ModelForm):
 BulkChangeEditFormSet = modelformset_factory(RecipeChange, form=BulkChangeEditForm, extra=0)
 
 
-class ClassicRecipeSearchForm(forms.Form):
+class ClassicRecipeSearchForm(StyledForm):
     COVER_STATUS_CHOICES = [('','(any)'), ('!','(unknown / not available)'), ('#','(available)')] + ClassicRecipe.COVER_STATUS_CHOICES
     VERIFIED_CHOICES = [
         ('', '(any)'),
@@ -248,7 +263,7 @@ class ClassicRecipeSearchForm(forms.Form):
     needs_attention = forms.ChoiceField(label='Needs attention', choices=ATTENTION_CHOICES, required=False)
 
 
-class ComparisonRecipeSelectForm(forms.Form):
+class ComparisonRecipeSelectForm(StyledForm):
     q = forms.CharField(label='Keyword', max_length=255, required=False)
     oe_layer = forms.ModelChoiceField(label='OE Layer', queryset=LayerItem.objects.filter(comparison=False).filter(status__in=['P', 'X']).order_by('name'), empty_label="(any)", required=False)
 
