@@ -23,7 +23,7 @@
     <div class="navbar-inner table-controls">
         <ul class="nav">
             <li class="dropdown">
-                <span class="badge"></span>
+                <span class="badge" id="recipe-count"></span>
             </li>
             <li class="dropdown">
                 <a data-toggle="dropdown" href="#" class="dropdown-toggle" id="selected-status">
@@ -203,9 +203,9 @@ $(document).ready(function() {
         }
 
         if (count == 2) {
-            $('.badge').html("1 recipe");
+            $('#recipe-count').html("1 recipe");
         } else {
-            $('.badge').html((count - 1) + " recipes");
+            $('#recipe-count').html((count - 1) + " recipes");
         }
     }
 
