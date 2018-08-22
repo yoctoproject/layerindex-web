@@ -15,6 +15,7 @@
     <div class="container-fluid">
         <div class="row-fluid">
 
+            {% block navbar %}
             <div class="navbar">
                 <div class="navbar-inner">
                     <ul class="nav">
@@ -53,6 +54,7 @@
                     {% block navs_extra %}{% endblock %}
                 </div>
             </div>
+            {% endblock %}
 
             {% block content_inner %}{% endblock %}
 
