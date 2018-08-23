@@ -57,7 +57,7 @@ def split_recipe_fn(path):
 
 patch_status_re = re.compile(r"^[\t ]*(Upstream[-_ ]Status:?)[\t ]*(\w+)([\t ]+.*)?", re.IGNORECASE | re.MULTILINE)
 
-def collect_patch(recipe, patchfn, layerdir_start):
+def collect_patch(recipe, patchfn, layerdir_start, stop_on_error):
     from django.db import DatabaseError
     from layerindex.models import Patch
 
@@ -93,10 +93,13 @@ def collect_patch(recipe, patchfn, layerdir_start):
     except DatabaseError:
         raise
     except Exception as e:
-        logger.error("Unable to read patch %s: %s", patchfn, str(e))
-        patchrec.save()
+        if stop_on_error:
+            raise
+        else:
+            logger.error("Unable to read patch %s: %s", patchfn, str(e))
+            patchrec.save()
 
-def collect_patches(recipe, envdata, layerdir_start):
+def collect_patches(recipe, envdata, layerdir_start, stop_on_error):
     from layerindex.models import Patch
 
     try:
@@ -111,9 +114,9 @@ def collect_patches(recipe, envdata, layerdir_start):
         if not patch.startswith(layerdir_start):
             # Likely a remote patch, skip it
             continue
-        collect_patch(recipe, patch, layerdir_start)
+        collect_patch(recipe, patch, layerdir_start, stop_on_error)
 
-def update_recipe_file(tinfoil, data, path, recipe, layerdir_start, repodir, skip_patches=False):
+def update_recipe_file(tinfoil, data, path, recipe, layerdir_start, repodir, stop_on_error, skip_patches=False):
     from django.db import DatabaseError
 
     fn = str(os.path.join(path, recipe.filename))
@@ -197,7 +200,7 @@ def update_recipe_file(tinfoil, data, path, recipe, layerdir_start, repodir, ski
 
         if not skip_patches:
             # Handle patches
-            collect_patches(recipe, envdata, layerdir_start)
+            collect_patches(recipe, envdata, layerdir_start, stop_on_error)
 
         # Get file dependencies within this layer
         deps = envdata.getVar('__depends', True)
@@ -235,9 +238,12 @@ def update_recipe_file(tinfoil, data, path, recipe, layerdir_start, repodir, ski
     except DatabaseError:
         raise
     except BaseException as e:
-        if not recipe.pn:
-            recipe.pn = recipe.filename[:-3].split('_')[0]
-        logger.error("Unable to read %s: %s", fn, str(e))
+        if stop_on_error:
+            raise
+        else:
+            if not recipe.pn:
+                recipe.pn = recipe.filename[:-3].split('_')[0]
+            logger.error("Unable to read %s: %s", fn, str(e))
 
 def update_machine_conf_file(path, machine):
     logger.debug('Updating machine %s' % path)
@@ -304,6 +310,9 @@ def main():
     parser.add_option("", "--nocheckout",
             help = "Don't check out branches",
             action="store_true", dest="nocheckout")
+    parser.add_option("", "--stop-on-error",
+            help = "Stop on first parsing error",
+            action="store_true", default=False, dest="stop_on_error")
     parser.add_option("-i", "--initial",
             help = "Print initial values parsed from layer.conf only",
             action="store_true")
@@ -523,7 +532,7 @@ def main():
                                     recipe.filepath = newfilepath
                                     recipe.filename = newfilename
                                     recipe.save()
-                                    update_recipe_file(tinfoil, config_data_copy, os.path.join(layerdir, newfilepath), recipe, layerdir_start, repodir, skip_patches)
+                                    update_recipe_file(tinfoil, config_data_copy, os.path.join(layerdir, newfilepath), recipe, layerdir_start, repodir, options.stop_on_error, skip_patches)
                                     updatedrecipes.add(os.path.join(oldfilepath, oldfilename))
                                     updatedrecipes.add(os.path.join(newfilepath, newfilename))
                                 else:
@@ -655,7 +664,7 @@ def main():
                                 results = layerrecipes.filter(filepath=filepath).filter(filename=filename)[:1]
                                 if results:
                                     recipe = results[0]
-                                    update_recipe_file(tinfoil, config_data_copy, os.path.join(layerdir, filepath), recipe, layerdir_start, repodir, skip_patches)
+                                    update_recipe_file(tinfoil, config_data_copy, os.path.join(layerdir, filepath), recipe, layerdir_start, repodir, options.stop_on_error, skip_patches)
                                     recipe.save()
                                     updatedrecipes.add(recipe.full_path())
                             elif typename == 'machine':
@@ -677,7 +686,7 @@ def main():
 
                     for recipe in dirtyrecipes:
                         if not recipe.full_path() in updatedrecipes:
-                            update_recipe_file(tinfoil, config_data_copy, os.path.join(layerdir, recipe.filepath), recipe, layerdir_start, repodir, skip_patches)
+                            update_recipe_file(tinfoil, config_data_copy, os.path.join(layerdir, recipe.filepath), recipe, layerdir_start, repodir, options.stop_on_error, skip_patches)
                 else:
                     # Collect recipe data from scratch
 
@@ -708,7 +717,7 @@ def main():
                                 # Recipe still exists, update it
                                 results = layerrecipes.filter(id=v['id'])[:1]
                                 recipe = results[0]
-                                update_recipe_file(tinfoil, config_data_copy, root, recipe, layerdir_start, repodir, skip_patches)
+                                update_recipe_file(tinfoil, config_data_copy, root, recipe, layerdir_start, repodir, options.stop_on_error, skip_patches)
                             else:
                                 # Recipe no longer exists, mark it for later on
                                 layerrecipes_delete.append(v)
@@ -777,7 +786,7 @@ def main():
                     recipe.filename = os.path.basename(added)
                     root = os.path.dirname(added)
                     recipe.filepath = os.path.relpath(root, layerdir)
-                    update_recipe_file(tinfoil, config_data_copy, root, recipe, layerdir_start, repodir, skip_patches)
+                    update_recipe_file(tinfoil, config_data_copy, root, recipe, layerdir_start, repodir, options.stop_on_error, skip_patches)
                     recipe.save()
 
                 for deleted in layerrecipes_delete:

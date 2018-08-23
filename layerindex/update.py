@@ -57,6 +57,8 @@ def prepare_update_layer_command(options, branch, layer, initial=False):
         cmd += ' -q'
     if options.keep_temp:
         cmd += ' --keep-temp'
+    if options.stop_on_error:
+        cmd += ' --stop-on-error'
     return cmd
 
 def update_actual_branch(layerquery, fetchdir, branch, options, update_bitbake, bitbakepath):
@@ -159,6 +161,9 @@ def main():
     parser.add_option("", "--nocheckout",
             help = "Don't check out branches",
             action="store_true", dest="nocheckout")
+    parser.add_option("", "--stop-on-error",
+            help = "Stop on first parsing error",
+            action="store_true", default=False, dest="stop_on_error")
     parser.add_option("-a", "--actual-branch",
             help = "Update actual branch for layer and bitbake",
             action="store", dest="actual_branch", default='')
@@ -528,6 +533,9 @@ def main():
                         # Interrupted by user, break out of loop
                         logger.info('Update interrupted, exiting')
                         sys.exit(254)
+                    if options.stop_on_error and ret != 0:
+                        logger.info('Layer update failed with --stop-on-error, stopping')
+                        sys.exit(1)
             if failed_layers:
                 for branch, err_msg_list in failed_layers.items():
                     if err_msg_list:
