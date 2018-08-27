@@ -1,4 +1,4 @@
-# This .gitconfig file resides in /root/ in the "layersapp" container
+# This .gitconfig file resides in /home/layers/ in the "layersapp" container
 # add any settings you'd like to have in there, such as proxy servers
 [http]
     #proxy = http://your.proxy.server:port
