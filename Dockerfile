@@ -59,11 +59,9 @@ RUN mkdir /opt/workdir \
 	&& chown -R layers /opt
 USER layers
 
-## Uncomment to add a .gitconfig file within container
-#COPY docker/.gitconfig /home/layers/.gitconfig
-## Uncomment to add a proxy script within container, if you choose to
-## do so, you will also have to edit .gitconfig appropriately
-#COPY docker/git-proxy /opt/bin/git-proxy
+# Always copy in .gitconfig and proxy helper script (they need editing to be active)
+COPY docker/.gitconfig /home/layers/.gitconfig
+COPY docker/git-proxy /opt/bin/git-proxy
 
 # Start Gunicorn
 CMD ["/usr/local/bin/gunicorn", "wsgi:application", "--workers=4", "--bind=:5000", "--log-level=debug", "--chdir=/opt/layerindex"]
