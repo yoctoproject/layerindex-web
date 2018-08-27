@@ -7,82 +7,42 @@
 ## - layerscelery: Celery (for running background jobs)
 ## - layersrabbit: RabbitMQ (required by Celery)
 
-## First, find and replace layers.openembedded.org below with your hostname
+## You will need docker and docker-compose installed in order to proceed.
+
+## First, find and replace layers.openembedded.org in the docker-compose.yml with your hostname
 ## You'll probably also want to replace the database password "testingpw".
 
 ## If you want to change any of the application configuration, edit docker/settings.py as desired.
-## Some settings have been set so that values can be passed in via environment variables.
-## You will definitely need to set SECRET_KEY.
+## Some settings have been set so that values can be passed in via environment variables, so you can set these from the docker-compose.yml if you want to.
+## You will definitely need to set SECRET_KEY and probably EMAIL_HOST.
 
 ## If you are on a network that requires a proxy to get out to the internet, then you'll need to:
 ## - Uncomment several lines in Dockerfile (search for "proxy")
 ## - Edit docker/.gitconfig and docker/git-proxy
 
-## Build the main container from the root of the repo.
-docker build -t halstead/layerindex-app .
-
-## Build the static web server container
-## (for SSL, first move docker/nginx-ssl.conf to docker/nginx.conf and edit as needed.)
-docker build -t halstead/layerindex-web -f Dockerfile.web .
-
-## Add a network for our containers
-docker network create layerindex
-
-## Start a database server - here we use MariaDB, though you can obviously use something else and change docker/settings.py as appropriate
-#  run one of the following.
-## To use an existing dump run the following and wait for startup and import
-docker run --detach --name layersdb --network layerindex -v layers-database-dump.sql:/docker-entrypoint-initdb.d/layerdb.sql -e MYSQL_ROOT_PASSWORD=testingpw mariadb:10.2 --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
-## Or to start fresh
-docker run --detach --name layersdb --network layerindex -e MYSQL_DATABASE=layersdb -e MYSQL_ROOT_PASSWORD=testingpw mariadb:10.2 --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
-
-## Start the RabbitMQ container
-docker run --detach --network layerindex --name layersrabbit rabbitmq:alpine
-
-## Start the Celery container
-docker run --detach --network layerindex --name layerscelery -e DATABASE_PASSWORD=testingpw -e DATABASE_HOST=layersdb  halstead/layerindex-app /usr/local/bin/celery -A layerindex.tasks worker --loglevel=info --workdir=/opt/layerindex
+## Start the containers:
+docker-compose up
 
 
 ## Apply any pending layerindex migrations / initialize the database
-docker run --rm --network layerindex --env DATABASE_HOST=layersdb --env DATABASE_PASSWORD=testingpw halstead/layerindex-app /opt/migrate.sh
+docker-compose run --rm layersapp /opt/migrate.sh
 
 ## For a fresh database, create an admin account
-docker run --rm -it --network layerindex --env DATABASE_HOST=layersdb --env DATABASE_PASSWORD=testingpw halstead/layerindex-app /opt/layerindex/manage.py createsuperuser
+docker-compose run --rm layersapp /opt/layerindex/manage.py createsuperuser
 
-
-## Create a workdir to prevent downloading metadata repos fresh each time (and allow the "bulk change" function to work)
-docker volume create layersmeta
 
 ## Set the volume permissions using debian:stretch since we recently fetched it
-docker run -v layersmeta:/opt/workdir debian:stretch chown 500 /opt/workdir
-
-
-## Start the layerindex application
-docker run --detach --network layerindex --name layersapp --hostname layers.openembedded.org -v layersmeta:/opt/workdir -e DATABASE_PASSWORD=testingpw -e DATABASE_HOST=layersdb halstead/layerindex-app
-
-## Create a volume for static assets
-docker volume create layersstatic
-
-## Set the volume permissions using debian:stretch since we recently fetched it
-docker run -v layersstatic:/usr/share/nginx/html debian:stretch chown 500 /usr/share/nginx/html
+docker run --rm -v layerindexweb_layersmeta:/opt/workdir debian:stretch chown 500 /opt/workdir
+docker run --rm -v layerindexweb_layersstatic:/usr/share/nginx/html debian:stretch chown 500 /usr/share/nginx/html
 
 ## Generate static assets. Run this command again to regenerate at any time (when static assets in the code are updated)
-docker run --env STATIC_ROOT=/usr/share/nginx/html -ti --rm --network layerindex --hostname layers.openembedded.org --name generatestatic -v layersstatic:/usr/share/nginx/html --env DATABASE_HOST=layersdb --env DATABASE_PASSWORD=testingpw halstead/layerindex-app python3 /opt/layerindex/manage.py collectstatic
-
-## Start the reverse proxy
-##  run one of the following:
-## A) for local/test use forward port 8080:
-docker run --detach --network layerindex -p 8080:80 -v layersstatic:/usr/share/nginx/html --name layersweb --hostname layers.openembedded.org halstead/layerindex-web
-## B) with SSL for production:
-#     Make sure your DNS is setup and then run the following to get the certs
-docker run -it --rm -p 80:80 -p 443:443 --name certbot -v layerscerts:/etc/letsencrypt -v certbotvar:/var/lib/letsencrypt certbot/certbot certonly #renew
-#     then start the proxy with ssl
-docker run --detach --network layerindex -p 80:80 -p 443:443 -v layersstatic:/usr/share/nginx/html -v layerscerts:/etc/letsencrypt --name layersweb --hostname layers.openembedded.org halstead/layerindex-web
+docker-compose run --rm -e STATIC_ROOT=/usr/share/nginx/html -v layerindexweb_layersstatic:/usr/share/nginx/html layersapp /opt/layerindex/manage.py collectstatic
 
 ## Run the layer updates
-docker run --rm --network layerindex --hostname updatelayers.openembedded.org --name updatelayers-throwaway -v layersmeta:/opt/workdir --env DATABASE_HOST=layersdb --env DATABASE_PASSWORD=testingpw halstead/layerindex-app python3 /opt/layerindex/layerindex/update.py
+docker-compose run --rm layersapp /opt/layerindex/layerindex/update.py
 
 ## Or do a full refresh
-docker run --rm --network layerindex --hostname updatelayers.openembedded.org --name updatelayers-throwaway -v layersmeta:/opt/workdir --env DATABASE_HOST=layersdb --env DATABASE_PASSWORD=testingpw halstead/layerindex-app python3 /opt/layerindex/layerindex/update.py -r
+docker-compose run --rm layersapp /opt/layerindex/layerindex/update.py -r
 
 
 ## Once you've finished here, if this is a fresh database, you should now

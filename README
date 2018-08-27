@@ -127,11 +127,12 @@ setup within it:
    database, or some equivalent that contains conf/bitbake.conf for
    the base system configuration. To add this, follow these steps:
 
-   1.1. With the server running, go to the main page (
-        http://127.0.0.1:8000/admin/ or equivalent depending on
-        your setup) and click on the "Log in" button on the top
-        right. Use the login/password for the admin account you
-        added previously.
+   1.1. With the server running, go to the main page -
+        http://127.0.0.1:8000/admin/ (or http://localhost:8080/admin/
+        for the docker-compose setup - the hostname must match what
+        the web server is configured for). Then click on the "Log in"
+        button on the top right and use the login/password for the
+        admin account you added previously.
 
    1.2. Click on the "Submit Layer" button in the top right and
         enter the details for the core layer. To use the real
