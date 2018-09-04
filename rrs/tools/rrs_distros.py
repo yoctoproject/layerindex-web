@@ -113,6 +113,7 @@ if __name__=="__main__":
     logger.debug("Starting recipe distros update ...")
 
     origsyspath = sys.path
+    pkglst_dir = None
     for maintplan in maintplans:
         for item in maintplan.maintenanceplanlayerbranch_set.all():
             layerbranch = item.layerbranch
@@ -127,10 +128,12 @@ if __name__=="__main__":
                     with transaction.atomic():
                         utils.setup_core_layer_sys_path(settings, layerbranch.branch.name)
 
-                        from oe import distro_check
-                        logger.debug("Downloading distro's package information ...")
-                        distro_check.create_distro_packages_list(fetchdir, d)
-                        pkglst_dir = os.path.join(fetchdir, "package_lists")
+                        if not pkglst_dir:
+                            # Only need to do this once
+                            from oe import distro_check
+                            logger.debug("Downloading distro's package information ...")
+                            distro_check.create_distro_packages_list(fetchdir, d)
+                            pkglst_dir = os.path.join(fetchdir, "package_lists")
 
                         RecipeDistro.objects.filter(recipe__layerbranch = layerbranch).delete()
 
