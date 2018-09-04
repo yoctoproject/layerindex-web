@@ -327,6 +327,10 @@ def main():
                         collections.add((layerbranch.collection, layerbranch.version))
 
                 for layer in layerquery:
+                    if layer.vcs_url in failedrepos:
+                        logger.info("Skipping update of layer %s - fetch failed" % layer.name)
+                        continue
+
                     layerbranch = layer.get_layerbranch(branch)
                     branchname = branch
                     branchdesc = branch

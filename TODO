@@ -2,8 +2,6 @@ TODO:
 
 Bugs
 * Duplication of first maintainer when editing to add a second?
-* meta-tizen gives PathError in initial info gathering step
- * If a layer has not yet been fetched and it can't be then it still tries to parse it and blows up when querying git revision
 * meta-debian seems to be prompting for github credentials during recipe parsing?
 * Remote patches in SRC_URI trigger errors
 * We're wasting time gathering layer info at the start for layers that have not changed
