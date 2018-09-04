@@ -223,6 +223,7 @@ $(document).ready(function() {
     }
 
     function updateMaintainerSelected() {
+        {% if maintplan.per_recipe_maintainers %}
         $("#selected-maintainer strong").html(maintainer)
 
         maintainerList = document.getElementById("select-maintainer").getElementsByTagName("li")
@@ -233,6 +234,7 @@ $(document).ready(function() {
                 $(maintainerList[i]).removeClass("active")
             }
         }
+        {% endif %}
     }
 
     function applyFilters() {
@@ -311,10 +313,12 @@ $(document).ready(function() {
         clearSearch()
     });
 
+    {% if maintplan.per_recipe_maintainers %}
     $("#select-maintainer a").click(function() {
         maintainer = this.text
         clearSearch()
     });
+    {% endif %}
 
     $("#view-all-recipes").click(function() { 
         upstreamStatus = 'All' 
