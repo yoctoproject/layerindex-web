@@ -112,19 +112,19 @@ if __name__=="__main__":
 
     logger.debug("Starting recipe distros update ...")
 
-    try:
-        origsyspath = sys.path
-        with transaction.atomic():
-            for maintplan in maintplans:
-                for item in maintplan.maintenanceplanlayerbranch_set.all():
-                    layerbranch = item.layerbranch
-                    sys.path = origsyspath
-                    (tinfoil, d, recipes, tempdir) = load_recipes(layerbranch, bitbakepath,
-                            fetchdir, settings, logger)
-                    try:
-                        if not recipes:
-                            continue
+    origsyspath = sys.path
+    for maintplan in maintplans:
+        for item in maintplan.maintenanceplanlayerbranch_set.all():
+            layerbranch = item.layerbranch
+            sys.path = origsyspath
+            (tinfoil, d, recipes, tempdir) = load_recipes(layerbranch, bitbakepath,
+                    fetchdir, settings, logger)
+            try:
+                if not recipes:
+                    continue
 
+                try:
+                    with transaction.atomic():
                         utils.setup_core_layer_sys_path(settings, layerbranch.branch.name)
 
                         from oe import distro_check
@@ -153,10 +153,10 @@ if __name__=="__main__":
                                 recipedistro.save()
                                 logger.debug('%s: layer branch %s, add distro %s alias %s' % (pn,
                                     str(layerbranch), distro, alias))
-                    finally:
-                        tinfoil.shutdown()
-                        shutil.rmtree(tempdir)
-            if options.dry_run:
-                raise DryRunRollbackException
-    except DryRunRollbackException:
-        pass
+                        if options.dry_run:
+                            raise DryRunRollbackException
+                except DryRunRollbackException:
+                    pass
+            finally:
+                tinfoil.shutdown()
+                shutil.rmtree(tempdir)

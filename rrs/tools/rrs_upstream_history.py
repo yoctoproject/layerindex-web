@@ -178,59 +178,60 @@ if __name__=="__main__":
         for maintplan in maintplans:
             for item in maintplan.maintenanceplanlayerbranch_set.all():
                 layerbranch = item.layerbranch
-                with transaction.atomic():
-                    sys.path = origsyspath
+                try:
+                    with transaction.atomic():
+                        sys.path = origsyspath
 
-                    layer = layerbranch.layer
-                    urldir = layer.get_fetch_dir()
-                    repodir = os.path.join(fetchdir, urldir)
-                    layerdir = os.path.join(repodir, layerbranch.vcs_subdir)
+                        layer = layerbranch.layer
+                        urldir = layer.get_fetch_dir()
+                        repodir = os.path.join(fetchdir, urldir)
+                        layerdir = os.path.join(repodir, layerbranch.vcs_subdir)
 
-                    recipe_files = []
-                    for recipe in layerbranch.recipe_set.all():
-                        file = str(os.path.join(layerdir, recipe.full_path()))
-                        recipe_files.append(file)
+                        recipe_files = []
+                        for recipe in layerbranch.recipe_set.all():
+                            file = str(os.path.join(layerdir, recipe.full_path()))
+                            recipe_files.append(file)
 
-                    (tinfoil, d, recipes, tempdir) = load_recipes(layerbranch, bitbakepath,
-                            fetchdir, settings, logger,  recipe_files=recipe_files)
-                    try:
+                        (tinfoil, d, recipes, tempdir) = load_recipes(layerbranch, bitbakepath,
+                                fetchdir, settings, logger,  recipe_files=recipe_files)
+                        try:
 
-                        if not recipes:
-                            continue
+                            if not recipes:
+                                continue
 
-                        utils.setup_core_layer_sys_path(settings, layerbranch.branch.name)
+                            utils.setup_core_layer_sys_path(settings, layerbranch.branch.name)
 
-                        for recipe_data in recipes:
-                            set_regexes(recipe_data)
+                            for recipe_data in recipes:
+                                set_regexes(recipe_data)
 
-                        history = RecipeUpstreamHistory(layerbranch=layerbranch, start_date=datetime.now())
+                            history = RecipeUpstreamHistory(layerbranch=layerbranch, start_date=datetime.now())
 
-                        result = []
-                        for recipe_data in recipes:
-                            try:
-                                get_upstream_info(layerbranch, recipe_data, result)
-                            except:
-                                import traceback
-                                traceback.print_exc()
+                            result = []
+                            for recipe_data in recipes:
+                                try:
+                                    get_upstream_info(layerbranch, recipe_data, result)
+                                except:
+                                    import traceback
+                                    traceback.print_exc()
 
-                        history.end_date = datetime.now()
-                        history.save()
+                            history.end_date = datetime.now()
+                            history.save()
 
-                        for res in result:
-                            (recipe, ru) = res
+                            for res in result:
+                                (recipe, ru) = res
 
-                            ru.history = history
-                            ru.save()
+                                ru.history = history
+                                ru.save()
 
-                            logger.debug('%s: layer branch %s, pv %s, upstream (%s)' % (recipe.pn,
-                                str(layerbranch), recipe.pv, str(ru)))
+                                logger.debug('%s: layer branch %s, pv %s, upstream (%s)' % (recipe.pn,
+                                    str(layerbranch), recipe.pv, str(ru)))
 
-                    finally:
-                        tinfoil.shutdown()
-                        shutil.rmtree(tempdir)
-                    if options.dry_run:
-                        raise DryRunRollbackException
-    except DryRunRollbackException:
-        pass
+                        finally:
+                            tinfoil.shutdown()
+                            shutil.rmtree(tempdir)
+                        if options.dry_run:
+                            raise DryRunRollbackException
+                except DryRunRollbackException:
+                    pass
     finally:
         utils.unlock_file(lockfile)
