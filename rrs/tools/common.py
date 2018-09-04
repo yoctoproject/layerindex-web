@@ -17,6 +17,11 @@ def common_setup():
     sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__), '../../')))
     sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__), '../../layerindex')))
 
+    # We don't want git to prompt for any passwords (e.g. when accessing renamed/hidden github repos)
+    os.environ['SSH_ASKPASS'] = ''
+    os.environ['GIT_ASKPASS'] = ''
+    os.environ['GIT_TERMINAL_PROMPT'] = '0'
+
 def get_logger(name, settings):
     from logging.handlers import RotatingFileHandler
 

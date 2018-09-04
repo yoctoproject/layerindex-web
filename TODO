@@ -2,7 +2,6 @@ TODO:
 
 Bugs
 * Duplication of first maintainer when editing to add a second?
-* meta-debian seems to be prompting for github credentials during recipe parsing?
 * Remote patches in SRC_URI trigger errors
 * We're wasting time gathering layer info at the start for layers that have not changed
 * import_layer on OE-Core then a layer that depends on core does not work

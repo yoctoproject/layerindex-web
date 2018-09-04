@@ -244,6 +244,11 @@ def main():
     fetchedrepos = []
     failedrepos = {}
 
+    # We don't want git to prompt for any passwords (e.g. when accessing renamed/hidden github repos)
+    os.environ['SSH_ASKPASS'] = ''
+    os.environ['GIT_ASKPASS'] = ''
+    os.environ['GIT_TERMINAL_PROMPT'] = '0'
+
     listhandler = utils.ListHandler()
     listhandler.setFormatter(logging.Formatter("%(levelname)s: %(message)s"))
     logger.addHandler(listhandler)
