@@ -121,10 +121,29 @@ class MaintenancePlanAdmin(admin.ModelAdmin):
                 milestone.end_date = release.end_date
                 milestone.save()
 
+class MilestoneFormSet(BaseInlineFormSet):
+    def clean(self):
+        super(MilestoneFormSet, self).clean()
+        total = 0
+        for form in self.forms:
+            if not form.is_valid():
+                return
+            if form.cleaned_data and not form.cleaned_data.get('DELETE'):
+                total += 1
+        if not total:
+            raise ValidationError('Releases must have at least one milestone')
+
+class MilestoneInline(admin.StackedInline):
+    model = Milestone
+    formset = MilestoneFormSet
+
 class ReleaseAdmin(admin.ModelAdmin):
     search_fields = ['name']
     list_filter = ['plan']
     model = Release
+    inlines = [
+        MilestoneInline,
+    ]
 
 class MilestoneAdmin(admin.ModelAdmin):
     search_fields = ['name']
