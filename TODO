@@ -1,6 +1,8 @@
 TODO:
 
 Bugs
+* Directory where bitbake-cookerdaemon.log is placed isn't right (meta dir)
+* bitbake-cookerdaemon.log should be cleared out every time
 * Duplication of first maintainer when editing to add a second?
 * Remote patches in SRC_URI trigger errors
 * We're wasting time gathering layer info at the start for layers that have not changed
@@ -41,9 +43,12 @@ Features
 * Show a note at the top of the layer edit form if there's a validation error
 * Show count in duplicates page
 * Search on layer selection dialogs
+* Close buttons on site-wide messages (using cookie to keep closed ?)
 
 
 RRS:
+* gcc recipes showing up as not updated (we have maintainer links, but not upstream links - gcc-source-${PV} is the actual recipe)
+* Make it easier to create release with milestones
 * Ability for maintainers to create their own maintenance plans
 * Use gitpython instead of shelling out to git to get commits?
 * "Last updated" date doesn't show without upstream status data ?
@@ -57,3 +62,7 @@ RRS:
 * We only list recipes that have upgrade info (an earlier design decision) - should we list all?
 * Replace "All" with "(all)" and "No maintainer" with "(no maintainer)"?
 * Link to upstream changelogs? (will require per-recipe variable)
+* Tie into AUH? i.e. display last sent auto recipe upgrade status on recipe detail, add overall AUH status
+* Display outstanding patches on recipe detail? (keyword search from patchwork?)
+* Record update logs for all scripts
+* Sorting by patch count should sort numerically
