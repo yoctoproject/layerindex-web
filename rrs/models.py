@@ -33,7 +33,7 @@ class MaintenancePlan(models.Model):
     maintainer_style = models.CharField(max_length=1, choices=MAINTENANCEPLAN_MAINTAINER_STYLE, default='L', help_text='Maintainer tracking style for the layers within this plan')
 
     def get_default_release(self):
-        return self.release_set.last()
+        return self.release_set.filter(milestone__isnull=False).last()
 
     def per_recipe_maintainers(self):
         return self.maintainer_style != 'L'
