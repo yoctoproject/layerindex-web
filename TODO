@@ -14,7 +14,6 @@ Features
 * Allow users to make a comment sent to admins/maintainers?
 * Marking for recipes with ptest enabled
 * Make it easy to update people's email addresses
-* Prevent selection of "Base" layer type for layer unless you have admin access (or layer is already of that type)
 * Use proper model to store inherits
 * Make dependency and inherits list items into search links
 * Full-text search on layer contents

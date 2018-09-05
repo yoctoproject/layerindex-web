@@ -56,7 +56,7 @@ class EditLayerForm(forms.ModelForm):
         model = LayerItem
         fields = ('name', 'layer_type', 'summary', 'description', 'vcs_url', 'vcs_web_url', 'vcs_web_tree_base_url', 'vcs_web_file_base_url', 'vcs_web_commit_url', 'usage_url', 'mailing_list_url')
 
-    def __init__(self, user, layerbranch, *args, **kwargs):
+    def __init__(self, user, layerbranch, allow_base_type, *args, **kwargs):
         super(self.__class__, self).__init__(*args, **kwargs)
         self.layerbranch = layerbranch
         if self.instance.pk:
@@ -77,6 +77,7 @@ class EditLayerForm(forms.ModelForm):
         self.fields = new_fields
         self.fields['vcs_subdir'].initial = layerbranch.vcs_subdir
         self.was_saved = False
+        self.allow_base_type = allow_base_type
 
     def checked_deps(self):
         val = [int(v) for v in self['deps'].value()]
@@ -99,6 +100,12 @@ class EditLayerForm(forms.ModelForm):
         summary = self.cleaned_data['summary'].strip()
         summary = re.sub('\s+', ' ', summary)
         return summary
+
+    def clean_layer_type(self):
+        layer_type = self.cleaned_data['layer_type']
+        if layer_type == 'A' and not self.allow_base_type:
+            raise forms.ValidationError("Base type is not allowed, please select a more specific type")
+        return layer_type
 
     def clean_description(self):
         description = self.cleaned_data['description'].strip()

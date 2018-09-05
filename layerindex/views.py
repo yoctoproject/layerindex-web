@@ -121,9 +121,11 @@ def edit_layer_view(request, template_name, branch='master', slug=None):
         layerbranch = LayerBranch(layer=layeritem, branch=branchobj)
         deplistlayers = LayerItem.objects.filter(comparison=False).order_by('name')
 
+    allow_base_type = request.user.has_perm('layerindex.publish_layer') or layeritem.layer_type == 'A'
+
     if request.method == 'POST':
         last_vcs_url = layeritem.vcs_url
-        form = EditLayerForm(request.user, layerbranch, request.POST, instance=layeritem)
+        form = EditLayerForm(request.user, layerbranch, allow_base_type, request.POST, instance=layeritem)
         maintainerformset = LayerMaintainerFormSet(request.POST, instance=layerbranch)
         if form.is_valid() and maintainerformset.is_valid():
             with transaction.atomic():
@@ -196,13 +198,14 @@ def edit_layer_view(request, template_name, branch='master', slug=None):
                     return_url = reverse_lazy(returnto, args=(branch, layeritem.name))
                 return HttpResponseRedirect(return_url)
     else:
-        form = EditLayerForm(request.user, layerbranch, instance=layeritem)
+        form = EditLayerForm(request.user, layerbranch, allow_base_type, instance=layeritem)
         maintainerformset = LayerMaintainerFormSet(instance=layerbranch)
 
     return render(request, template_name, {
         'form': form,
         'maintainerformset': maintainerformset,
         'deplistlayers': deplistlayers,
+        'allow_base_type': allow_base_type,
         'return_url': return_url,
     })
 

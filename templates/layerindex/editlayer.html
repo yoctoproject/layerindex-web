@@ -391,6 +391,10 @@
         $('#idx_vcs_web_type').change(auto_web_type_field)
         auto_web_fields(null)
 
+        {% if not allow_base_type %}
+        $("#id_layer_type option[value='A']").remove();
+        {% endif %}
+
         firstfield = $("#edit_layer_form input:text, #edit_layer_form textarea").first();
         if( ! firstfield.val() )
             firstfield.focus()
