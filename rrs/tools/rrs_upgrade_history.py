@@ -10,12 +10,11 @@
 #
 # Licensed under the MIT license, see COPYING.MIT for details
 
-from datetime import datetime, timedelta
-
 import sys
 import os.path
 import optparse
 import logging
+from datetime import date, datetime, timedelta
 
 sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__))))
 from common import common_setup, get_logger
@@ -87,7 +86,7 @@ def run_internal(maintplanlayerbranch, commit, commitdate, options, logger, bitb
     Upgrade history handler.
 """
 def upgrade_history(options, logger):
-    from rrs.models import MaintenancePlan, RecipeUpgrade
+    from rrs.models import MaintenancePlan, RecipeUpgrade, Release, Milestone
 
     if options.plan:
         maintplans = MaintenancePlan.objects.filter(id=int(options.plan))
@@ -107,6 +106,16 @@ def upgrade_history(options, logger):
         sys.exit(1)
     try:
         for maintplan in maintplans:
+            # Check releases and milestones
+            current = date.today()
+            current_release = Release.get_by_date(maintplan, current)
+            if current_release:
+                current_milestone = Milestone.get_by_release_and_date(current_release, current)
+                if not current_milestone:
+                    logger.warning('%s: there is no milestone defined in the latest release (%s) that covers the current date, so up-to-date data will not be visible in the web interface.' % (maintplan, current_release))
+            else:
+                logger.warning('%s: there is no release defined that covers the current date, so up-to-date data will not be visible in the web interface.' % maintplan)
+
             for maintplanbranch in maintplan.maintenanceplanlayerbranch_set.all():
                 layerbranch = maintplanbranch.layerbranch
                 if options.fullreload and not options.dry_run:

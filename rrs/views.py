@@ -9,6 +9,7 @@ from django.shortcuts import get_object_or_404
 from django.views.generic import TemplateView, ListView, DetailView, RedirectView
 from django.core.urlresolvers import resolve, reverse, reverse_lazy
 from django.db import connection
+from django.contrib import messages
 
 from layerindex.models import Recipe, StaticBuildDep, Patch
 from rrs.models import Release, Milestone, Maintainer, RecipeMaintainerHistory, \
@@ -541,6 +542,15 @@ class RecipeListView(ListView):
         context['all_releases'] = Release.objects.filter(plan=maintplan).order_by('-end_date')
         context['milestone_name'] = self.milestone_name
         context['all_milestones'] = Milestone.get_by_release_name(maintplan, self.release_name)
+
+        current = date.today()
+        current_release = Release.get_by_date(maintplan, current)
+        if current_release:
+            current_milestone = Milestone.get_by_release_and_date(current_release, current)
+            if not current_milestone:
+                messages.error(self.request, 'There is no milestone defined in the latest release (%s) that covers the current date, so data shown here is not up-to-date. The administrator will need to create a milestone in order to fix this.' % current_release)
+        else:
+            messages.error(self.request, 'There is no release defined that covers the current date, so data shown here is not up-to-date. The administrator will need to create a release (and corresponding milestones) in order to fix this.')
 
         context['recipes_percentage'] = self.milestone_statistics['percentage']
         context['recipes_all_upgraded'] = self.milestone_statistics['all_upgraded']
