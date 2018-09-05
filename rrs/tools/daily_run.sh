@@ -5,7 +5,7 @@ venv_activate=__VENV_ACTIVATE__
 
 source $venv_activate
 
-$rrs_dir/layerindex/update.py --reload
+$rrs_dir/layerindex/update.py
 $rrs_dir/rrs/tools/rrs_maintainer_history.py -d
 $rrs_dir/rrs/tools/rrs_upgrade_history.py -d
 $rrs_dir/rrs/tools/rrs_upstream_history.py -d
