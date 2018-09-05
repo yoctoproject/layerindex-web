@@ -22,6 +22,7 @@ from layerindex import utils
 
 utils.setup_django()
 from django.db import transaction
+from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 import settings
 
 logger = get_logger("RecipeDistros", settings)
@@ -139,11 +140,16 @@ if __name__=="__main__":
 
                         for recipe_data in recipes:
                             pn = recipe_data.getVar('PN', True)
+                            fn = os.path.basename(recipe_data.getVar('FILE', True))
 
                             try:
-                                recipe = Recipe.objects.get(pn = pn, layerbranch = layerbranch)
-                            except:
-                                logger.warn('%s: layer branch %s, NOT found' % (pn,
+                                recipe = Recipe.objects.get(filename=fn, layerbranch=layerbranch)
+                            except MultipleObjectsReturned:
+                                logger.warn('Recipe file %s appears more than once in layerbranch %s!' % (fn,
+                                    str(layerbranch)))
+                                continue
+                            except ObjectDoesNotExist:
+                                logger.warn('Recipe file %s not found in layerbranch %s' % (fn,
                                     str(layerbranch)))
                                 continue
 
