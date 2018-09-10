@@ -1,3 +1,10 @@
+# Celery task definitions for the layer index app
+#
+# Copyright (C) 2018 Intel Corporation
+# Author: Paul Eggleton <paul.eggleton@linux.intel.com>
+#
+# Licensed under the MIT license, see COPYING.MIT for details
+
 from celery import Celery
 from django.core.mail import EmailMessage
 from . import utils
@@ -36,7 +43,12 @@ def run_update_command(self, branch_name, update_command):
     update_command = update_command.replace('%update%', str(updateobj.id))
     update_command = update_command.replace('%branch%', branch_name)
     try:
-        output = utils.runcmd(update_command, os.path.dirname(os.path.dirname(__file__)))
+        os.makedirs(settings.TASK_LOG_DIR)
+    except FileExistsError:
+        pass
+    logfile = os.path.join(settings.TASK_LOG_DIR, 'task_%s.log' % str(self.request.id))
+    try:
+        output = utils.runcmd(update_command, os.path.dirname(os.path.dirname(__file__)), outfile=logfile)
     except subprocess.CalledProcessError as e:
         output = e.output
     except Exception as e:

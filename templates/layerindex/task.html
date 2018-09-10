@@ -12,10 +12,6 @@
 {% endcomment %}
 
 
-{% block head_extra %}
-{% if not update.finished %}<meta http-equiv="refresh" content="5" />{% endif %}
-{% endblock %}
-
 <!--
 {% block title_append %} - task status{% endblock %}
 -->
@@ -23,13 +19,9 @@
 {% block content %}
 {% autoescape on %}
 
-<p>Task status for {{ update.task_id }} started by {{ update.triggered_by }} {% if update.finished %} on {{ update.started }} (finished in {{ update.started | timesince2:update.finished }}){% else %}{{ update.started | timesince2 }} ago{% endif%}:</p>
+<p>Task status for {{ update.task_id }} started by {{ update.triggered_by }} on {{ update.started }}<span id="task_status_fragment">{% if update.finished %} (finished in {{ update.started | timesince2:update.finished }}){% endif %}</span>:</p>
 
-{% if update.log %}
-<pre>{{ update.log }}</pre>
-{% else %}
-<p>{% if update.finished %}(no output){% else %}(no output - waiting for task to finish){% endif %}
-{% endif %}
+<pre id="task_log" class="vertical-scroll">{{ update.log }}</pre>
 
 {% if update.comparisonrecipeupdate_set.exists %}
 <h3>Updated comparison recipes</h3>
@@ -44,4 +36,46 @@
 {% endblock %}
 
 {% block footer %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+    var posn = 0;
+    var done = '0';
+    var duration = ''
+    var scrolling = true;
+
+    function updateLog() {
+        $.ajax({
+            url: '{{ log_url }}?start=' + posn,
+            success: function( data, code, xhr ) {
+                task_log = $("#task_log")
+                task_log.append(data);
+                if(scrolling) {
+                    task_log.animate({ scrollTop: task_log.prop('scrollHeight') }, "slow");
+                }
+                posn += data.length
+                done = xhr.getResponseHeader('Task-Done')
+                duration = xhr.getResponseHeader('Task-Duration')
+            }
+        }).always(function () {
+            if(done == '1') {
+                $("#task_status_fragment").html(" (finished in " + duration + ")")
+            }
+            else {
+                window.setTimeout(updateLog, 1000);
+            }
+        });
+    }
+
+    $("#task_log").scroll(function() {
+        scrolling = ($(this).scrollTop() + $(this).height() + 50 > $(this).prop('scrollHeight'))
+    });
+
+    $(document).ready(function() {
+        {% if not update.finished %}
+        updateLog();
+        {% endif %}
+    });
+</script>
 {% endblock %}

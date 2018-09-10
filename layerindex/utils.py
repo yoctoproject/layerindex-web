@@ -15,6 +15,7 @@ import fcntl
 import signal
 import codecs
 import re
+from datetime import datetime
 from bs4 import BeautifulSoup
 
 def get_branch(branchname):
@@ -284,33 +285,40 @@ def parse_layer_conf(layerdir, data, logger=None):
     data = parse_conf(conf_file, data)
     data.expandVarref('LAYERDIR')
 
-def runcmd(cmd, destdir=None, printerr=True, logger=None):
+def runcmd(cmd, destdir=None, printerr=True, outfile=None, logger=None):
     """
         execute command, raise CalledProcessError if fail
         return output if succeed
     """
     if logger:
         logger.debug("run cmd '%s' in %s" % (cmd, os.getcwd() if destdir is None else destdir))
-    out = tempfile.TemporaryFile()
+    if outfile:
+        out = open(outfile, 'wb+')
+    else:
+        out = tempfile.TemporaryFile()
     try:
-        subprocess.check_call(cmd, stdout=out, stderr=out, cwd=destdir, shell=True)
-    except subprocess.CalledProcessError as e:
+        try:
+            subprocess.check_call(cmd, stdout=out, stderr=out, cwd=destdir, shell=True)
+        except subprocess.CalledProcessError as e:
+            out.seek(0)
+            output = out.read()
+            output = output.decode('utf-8', errors='replace').strip()
+            if printerr:
+                if logger:
+                    logger.error("%s" % output)
+                else:
+                    sys.stderr.write("%s\n" % output)
+            e.output = output
+            raise e
+
         out.seek(0)
         output = out.read()
         output = output.decode('utf-8', errors='replace').strip()
-        if printerr:
-            if logger:
-                logger.error("%s" % output)
-            else:
-                sys.stderr.write("%s\n" % output)
-        e.output = output
-        raise e
-
-    out.seek(0)
-    output = out.read()
-    output = output.decode('utf-8', errors='replace').strip()
-    if logger:
-        logger.debug("output: %s" % output.rstrip() )
+        if logger:
+            logger.debug("output: %s" % output.rstrip() )
+    finally:
+        if outfile:
+            out.close()
     return output
 
 def setup_django():
@@ -431,3 +439,24 @@ def sanitise_html(html):
 
 def squashspaces(string):
     return re.sub("\s+", " ", string).strip()
+
+def timesince2(date, date2=None):
+    # Based on http://www.didfinishlaunchingwithoptions.com/a-better-timesince-template-filter-for-django/
+    if date2 is None:
+        date2 = datetime.now()
+    if date > date2:
+        return '0 seconds'
+    diff = date2 - date
+    periods = (
+        (diff.days // 365, 'year', 'years'),
+        (diff.days // 30, 'month', 'months'),
+        (diff.days // 7, 'week', 'weeks'),
+        (diff.days, 'day', 'days'),
+        (diff.seconds // 3600, 'hour', 'hours'),
+        (diff.seconds // 60, 'minute', 'minutes'),
+        (diff.seconds, 'second', 'seconds'),
+    )
+    for period, singular, plural in periods:
+        if period:
+            return '%d %s' % (period, singular if period == 1 else plural)
+    return '0 seconds'

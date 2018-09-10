@@ -238,5 +238,8 @@ RABBIT_BACKEND = 'rpc://'
 # Used for fetching repo
 PARALLEL_JOBS = "4"
 
+# Full path to directory to store logs for dynamically executed tasks
+TASK_LOG_DIR = "/tmp/layerindex-task-logs"
+
 # Full path to directory where rrs tools stores logs
 TOOLS_LOG_DIR = ""

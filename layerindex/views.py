@@ -5,6 +5,7 @@
 # Licensed under the MIT license, see COPYING.MIT for details
 
 import sys
+import os
 from pkg_resources import parse_version
 from itertools import islice
 from django.shortcuts import get_object_or_404, get_list_or_404, render
@@ -29,6 +30,8 @@ from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django import forms
+from django.utils.html import escape
+
 from reversion.models import Revision
 from . import utils
 from . import simplesearch
@@ -225,8 +228,6 @@ def bulk_change_edit_view(request, template_name, pk):
     })
 
 def bulk_change_patch_view(request, pk):
-    import os
-    import os.path
     changeset = get_object_or_404(RecipeChangeset, pk=pk)
     # FIXME this couples the web server and machine running the update script together,
     # but given that it's a separate script the way is open to decouple them in future
@@ -1372,8 +1373,36 @@ class TaskStatusView(TemplateView):
         context['task_id'] = task_id
         context['result'] = AsyncResult(task_id)
         context['update'] = get_object_or_404(Update, task_id=task_id)
+        context['log_url'] = reverse_lazy('task_log', args=(task_id,))
         return context
 
+def task_log_view(request, task_id):
+    from celery.result import AsyncResult
+    if not request.user.is_authenticated():
+        raise PermissionDenied
+
+    if '/' in task_id:
+        # Block anything that looks like a path
+        raise Http404
+
+    result = AsyncResult(task_id)
+    start = request.GET.get('start', 0)
+    try:
+        f = open(os.path.join(settings.TASK_LOG_DIR, 'task_%s.log' % task_id), 'rb')
+    except FileNotFoundError:
+        raise Http404
+    f.seek(int(start))
+    # We need to escape this or else things that look like tags in the output
+    # will be interpreted as such by the browser
+    data = escape(f.read())
+    response = HttpResponse(data)
+    if result.ready():
+        response['Task-Done'] = '1'
+        updateobj = get_object_or_404(Update, task_id=task_id)
+        response['Task-Duration'] = utils.timesince2(updateobj.started, updateobj.finished)
+    else:
+        response['Task-Done'] = '0'
+    return response
 
 class ComparisonRecipeSelectView(ClassicRecipeSearchView):
     def _can_edit(self):

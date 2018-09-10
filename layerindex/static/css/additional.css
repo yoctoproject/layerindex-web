@@ -320,3 +320,8 @@ td.info {
     appearance: none;
   }
 }
+
+.vertical-scroll {
+    height: 400px;
+    overflow-y: scroll;
+}
