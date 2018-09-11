@@ -84,6 +84,9 @@
                             {% if rrs_enabled %}
                             <li><a href="{% url 'rrs_frontpage' %}">Recipe Maintenance</a></li>
                             {% endif %}
+                            {% if user.is_staff %}
+                            <li><a href="{% url 'admin:index' %}">Admin</a></li>
+                            {% endif %}
                         </ul>
                     </li>
                     {% endif %}
