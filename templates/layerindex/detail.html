@@ -100,6 +100,12 @@
                         {% endif %}
                     </p>
 
+                    {% if layerbranch.actual_branch %}
+                    <p>
+                        <span class="muted">(actual branch {{ layerbranch.actual_branch }})</span>
+                    </p>
+                    {% endif %}
+
                     {% if layerbranch.vcs_subdir %}
                         <h4>Subdirectory</h4>
                         <p><span data-toggle="tooltip" title="Select subdirectory"><i class="glyphicon glyphicon-circle-arrow-right selectallicon" for="vcs_subdir" id="vcs_subdir_select" aria-hidden="true"></i></span><span id="vcs_subdir" class="copyable">{{ layerbranch.vcs_subdir }}</span>
