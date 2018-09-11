@@ -243,9 +243,7 @@ def checkout_repo(repodir, commit, logger, force=False):
         runcmd("git checkout %s" % commit, repodir, logger=logger)
 
 def checkout_layer_branch(layerbranch, repodir, logger=None):
-    branchname = layerbranch.branch.name
-    if layerbranch.actual_branch:
-        branchname = layerbranch.actual_branch
+    branchname = layerbranch.get_checkout_branch()
     checkout_repo(repodir, 'origin/%s' % branchname, logger)
 
 def is_layer_valid(layerdir):

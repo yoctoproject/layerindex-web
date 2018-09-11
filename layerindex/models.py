@@ -205,7 +205,7 @@ class LayerRecipeExtraURL(models.Model):
         url = url.replace('%pn%', recipe.pn)
         url = url.replace('%pv%', recipe.pv)
         url = url.replace('%branch%', recipe.layerbranch.branch.name)
-        url = url.replace('%actual_branch%', recipe.layerbranch.actual_branch)
+        url = url.replace('%actual_branch%', recipe.layerbranch.get_checkout_branch())
         return url
 
     def __str__(self):
@@ -311,11 +311,7 @@ class LayerBranch(models.Model):
     def commit_url(self, commit_hash):
         url = self.layer.vcs_web_commit_url
         url = url.replace('%hash%', commit_hash)
-        if self.actual_branch:
-            branchname = self.actual_branch
-        else:
-            branchname = self.branch.name
-        url = url.replace('%branch%', branchname)
+        url = url.replace('%branch%', self.get_checkout_branch())
         return url
 
     def test_tree_url(self):
@@ -323,6 +319,13 @@ class LayerBranch(models.Model):
 
     def test_file_url(self):
         return self.file_url('conf/layer.conf')
+
+    def get_checkout_branch(self):
+        """Get the branch that we actually need to check out in the repo"""
+        if self.actual_branch:
+            return self.actual_branch
+        else:
+            return self.branch.name
 
     def get_usage_url(self):
         usage_url = self.layer.usage_url
