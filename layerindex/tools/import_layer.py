@@ -178,6 +178,22 @@ def get_github_layerinfo(layer_url, username = None, password = None):
 
     return (json_data, owner_json_data)
 
+def get_layer_type_choices():
+    """
+    Return help string and choices for --type.
+    """
+    from layerindex.models import LayerItem
+    help_str = "Specify layer type."
+    choices = []
+    for i in LayerItem.LAYER_TYPE_CHOICES:
+        key, description = i
+        help_str += ' %s: %s,' % (key, description)
+        choices.append(key)
+
+    help_str = help_str.rstrip(',')
+    choices.append('')
+
+    return (help_str, choices)
 
 def main():
     valid_layer_name = re.compile('[-\w]+$')
@@ -186,9 +202,16 @@ def main():
         usage = """
     %prog [options] <url> [name]""")
 
+    utils.setup_django()
+    layer_type_help, layer_type_choices = get_layer_type_choices()
+
     parser.add_option("-s", "--subdir",
             help = "Specify subdirectory",
             action="store", dest="subdir")
+    parser.add_option("-t", "--type",
+            help = layer_type_help,
+            choices = layer_type_choices,
+            action="store", dest="layer_type", default='')
     parser.add_option("-n", "--dry-run",
             help = "Don't write any data back to the database",
             action="store_true", dest="dryrun")
@@ -238,7 +261,6 @@ def main():
         github_login = None
         github_password = None
 
-    utils.setup_django()
     import settings
     from layerindex.models import LayerItem, LayerBranch, LayerDependency, LayerMaintainer
     from django.db import transaction
@@ -263,7 +285,6 @@ def main():
             layer = LayerItem()
             layer.name = layer_name
             layer.status = 'P'
-            layer.layer_type = 'M'
             layer.summary = 'tempvalue'
             layer.description = layer.summary
 
@@ -349,11 +370,18 @@ def main():
 
 
                 logger.info('Creating layer %s' % layer.name)
-                # Guess layer type
-                if glob.glob(os.path.join(layerdir, 'conf/distro/*.conf')):
+                # Guess layer type if not specified
+                if options.layer_type:
+                    layer.layer_type = options.layer_type
+                elif layer.name in ['openembedded-core', 'meta-oe']:
+                    layer.layer_type = 'A'
+                elif glob.glob(os.path.join(layerdir, 'conf/distro/*.conf')):
                     layer.layer_type = 'D'
                 elif glob.glob(os.path.join(layerdir, 'conf/machine/*.conf')):
                     layer.layer_type = 'B'
+                else:
+                    layer.layer_type = 'M'
+
                 layer.save()
                 layerbranch = LayerBranch()
                 layerbranch.layer = layer
@@ -411,11 +439,9 @@ def main():
 
                 if layer.name == 'openembedded-core':
                     layer.summary = 'Core metadata'
-                    layer.layer_type = 'A'
                 elif layer.name == 'meta-oe':
                     layer.summary = 'Additional shared OE metadata'
                     layer.description = layer.summary
-                    layer.layer_type = 'A'
 
                 if maintainers:
                     maint_re = re.compile(r'^"?([^"@$<>]+)"? *<([^<> ]+)>[ -]*(.+)?$')
