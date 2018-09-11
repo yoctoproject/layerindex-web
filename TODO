@@ -35,7 +35,6 @@ Features
 * Add comparison to duplicates page
 * Create simple script to check for unlisted layer subdirectories in all repos
 * Auto-detect more values from github pages?
-* Ability for submitters to get email notification about publication?
 * Update script could send warnings when parsing layers to maintainers? (optional)
 * Click on OE-Classic graph element to go to query?
 * Use bar instead of pie graphs for OE-Classic statistics
