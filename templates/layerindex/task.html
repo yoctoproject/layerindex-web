@@ -30,6 +30,10 @@
 </div>
 {% endif %}
 
+{% if not update.finished %}
+<button id="stopbutton" class="btn btn-danger pull-right">Stop</a>
+{% endif %}
+
 {% if update.comparisonrecipeupdate_set.exists %}
 <h3>Updated comparison recipes</h3>
 <ul>
@@ -92,6 +96,7 @@
         }).always(function () {
             if(done == '1') {
                 $("#task_status_fragment").html(" (finished in " + duration + ")")
+                $("#stopbutton").hide()
             }
             else {
                 window.setTimeout(updateLog, 1000);
@@ -101,6 +106,12 @@
 
     $("#task_log").scroll(function() {
         scrolling = ($(this).scrollTop() + $(this).height() + 50 > $(this).prop('scrollHeight'))
+    });
+
+    $("#stopbutton").click(function() {
+        $.ajax({
+            url: "{% url 'task_stop' update.task_id %}"
+        });
     });
 
     $(document).ready(function() {

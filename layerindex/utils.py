@@ -285,6 +285,7 @@ def parse_layer_conf(layerdir, data, logger=None):
     data = parse_conf(conf_file, data)
     data.expandVarref('LAYERDIR')
 
+child_pid = 0
 def runcmd(cmd, destdir=None, printerr=True, outfile=None, logger=None):
     """
         execute command, raise CalledProcessError if fail
@@ -296,10 +297,17 @@ def runcmd(cmd, destdir=None, printerr=True, outfile=None, logger=None):
         out = open(outfile, 'wb+')
     else:
         out = tempfile.TemporaryFile()
+
+    def onsigusr2(sig, frame):
+        # Kill the child process
+        os.kill(child_pid, signal.SIGTERM)
+    signal.signal(signal.SIGUSR2, onsigusr2)
     try:
-        try:
-            subprocess.check_call(cmd, stdout=out, stderr=out, cwd=destdir, shell=True)
-        except subprocess.CalledProcessError as e:
+        proc = subprocess.Popen(cmd, stdout=out, stderr=out, cwd=destdir, shell=True)
+        global child_pid
+        child_pid = proc.pid
+        proc.communicate()
+        if proc.returncode:
             out.seek(0)
             output = out.read()
             output = output.decode('utf-8', errors='replace').strip()
@@ -308,6 +316,7 @@ def runcmd(cmd, destdir=None, printerr=True, outfile=None, logger=None):
                     logger.error("%s" % output)
                 else:
                     sys.stderr.write("%s\n" % output)
+            e = subprocess.CalledProcessError(proc.returncode, cmd)
             e.output = output
             raise e
 
@@ -317,6 +326,7 @@ def runcmd(cmd, destdir=None, printerr=True, outfile=None, logger=None):
         if logger:
             logger.debug("output: %s" % output.rstrip() )
     finally:
+        signal.signal(signal.SIGUSR2, signal.SIG_DFL)
         if outfile:
             out.close()
     return output

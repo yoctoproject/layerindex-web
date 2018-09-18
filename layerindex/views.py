@@ -1412,6 +1412,17 @@ def task_log_view(request, task_id):
         response['Task-Progress'] = preader.read()
     return response
 
+def task_stop_view(request, task_id):
+    from celery.result import AsyncResult
+    import signal
+    if not request.user.is_authenticated():
+        raise PermissionDenied
+
+    result = AsyncResult(task_id)
+    result.revoke(terminate=True, signal=signal.SIGUSR2)
+    return HttpResponse('terminated')
+
+
 class ComparisonRecipeSelectView(ClassicRecipeSearchView):
     def _can_edit(self):
         if self.request.user.is_authenticated():
