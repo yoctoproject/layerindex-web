@@ -337,6 +337,7 @@ def check_branch_layer(args):
 
 
 def get_update_obj(args):
+    from layerindex.models import Update
     updateobj = None
     if args.update:
         updateobj = Update.objects.filter(id=int(args.update))
@@ -350,7 +351,7 @@ def get_update_obj(args):
 def import_pkgspec(args):
     utils.setup_django()
     import settings
-    from layerindex.models import LayerItem, LayerBranch, Recipe, ClassicRecipe, Machine, BBAppend, BBClass
+    from layerindex.models import LayerItem, LayerBranch, Recipe, ClassicRecipe, Machine, BBAppend, BBClass, ComparisonRecipeUpdate
     from django.db import transaction
 
     ret, layerbranch = check_branch_layer(args)
