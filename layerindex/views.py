@@ -1400,8 +1400,11 @@ def task_log_view(request, task_id):
         response['Task-Done'] = '1'
         updateobj = get_object_or_404(Update, task_id=task_id)
         response['Task-Duration'] = utils.timesince2(updateobj.started, updateobj.finished)
+        response['Task-Progress'] = 100
     else:
         response['Task-Done'] = '0'
+        preader = utils.ProgressReader(settings.TASK_LOG_DIR, task_id)
+        response['Task-Progress'] = preader.read()
     return response
 
 class ComparisonRecipeSelectView(ClassicRecipeSearchView):

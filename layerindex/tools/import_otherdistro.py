@@ -359,6 +359,11 @@ def import_pkgspec(args):
         return ret
 
     updateobj = get_update_obj(args)
+    logdir = getattr(settings, 'TASK_LOG_DIR')
+    if updateobj and updateobj.task_id and logdir:
+        pwriter = utils.ProgressWriter(logdir, updateobj.task_id, logger=logger)
+    else:
+        pwriter = None
 
     metapath = args.pkgdir
 
@@ -367,7 +372,9 @@ def import_pkgspec(args):
             layerrecipes = ClassicRecipe.objects.filter(layerbranch=layerbranch)
 
             existing = list(layerrecipes.filter(deleted=False).values_list('filepath', 'filename'))
-            for entry in os.listdir(metapath):
+            dirlist = os.listdir(metapath)
+            total = len(dirlist)
+            for count, entry in enumerate(dirlist):
                 if os.path.exists(os.path.join(metapath, entry, 'dead.package')):
                     logger.info('Skipping dead package %s' % entry)
                     continue
@@ -398,6 +405,8 @@ def import_pkgspec(args):
                             rupdate.save()
                 else:
                     logger.warn('Missing spec file in %s' % os.path.join(metapath, entry))
+                if pwriter:
+                    pwriter.write(int(count / total * 100))
 
             if existing:
                 fpaths = ['%s/%s' % (pth, fn) for pth, fn in existing]

@@ -460,3 +460,43 @@ def timesince2(date, date2=None):
         if period:
             return '%d %s' % (period, singular if period == 1 else plural)
     return '0 seconds'
+
+class ProgressWriter():
+    def __init__(self, logdir, task_id, logger=None):
+        self.logger = logger
+        self.fn = os.path.join(logdir, '%s.progress' % task_id)
+        self.last_value = None
+        self.write('')
+
+    def write(self, value):
+        if self.fn is None:
+            return
+        if value == self.last_value:
+            return
+        try:
+            with open(self.fn + '.temp', 'w') as f:
+                f.write(str(value))
+            os.rename(self.fn + '.temp', self.fn)
+        except Exception as e:
+            if self.logger is not None:
+                self.logger.warning('Failed to write to progress file %s: %s' % (self.fn, str(e)))
+
+class ProgressReader():
+    def __init__(self, logdir, task_id, logger=None):
+        self.fn = os.path.join(logdir, '%s.progress' % task_id)
+        self.fd = None
+        self.logger = logger
+        self.last_mtime = None
+        self.last_value = None
+
+    def read(self):
+        result = None
+        try:
+            mtime = os.path.getmtime(self.fn)
+            if mtime != self.last_mtime:
+                with open(self.fn, 'r') as f:
+                    result = f.read()
+        except Exception as e:
+            if self.logger is not None:
+                self.logger.warning('Failed to read progress: %s' % str(e))
+        return result
