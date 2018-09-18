@@ -47,13 +47,22 @@ def run_update_command(self, branch_name, update_command):
     except FileExistsError:
         pass
     logfile = os.path.join(settings.TASK_LOG_DIR, 'task_%s.log' % str(self.request.id))
+    retcode = 0
+    erroutput = None
     try:
         output = utils.runcmd(update_command, os.path.dirname(os.path.dirname(__file__)), outfile=logfile)
     except subprocess.CalledProcessError as e:
         output = e.output
+        erroutput = output
+        retcode = e.returncode
     except Exception as e:
+        print('ERROR: %s' % str(e))
         output = str(e)
+        erroutput = output
+        retcode = -1
     finally:
         updateobj.log = output
         updateobj.finished = datetime.now()
+        updateobj.retcode = retcode
         updateobj.save()
+    return {'retcode': retcode, 'output': erroutput}

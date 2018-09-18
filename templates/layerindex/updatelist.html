@@ -37,7 +37,10 @@
                 {% for update in updates %}
                 {% with error_count=update.error_count warning_count=update.warning_count %}
                 <tr>
-                    <td><a href="{% url 'update' update.id %}">{{ update.started }}{% if update.reload %} (reload){% endif %}</a></td>
+                    <td>
+                        <a href="{% url 'update' update.id %}">{{ update.started }}{% if update.reload %} (reload){% endif %}</a>
+                        {% if update.finished and update.retcode %}<span id="status-label" class="label label-danger">{% if update.retcode < 0 %}TERMINATED{% elif update.retcode %}FAILED{% endif %}{% endif %}
+                    </td>
                     <td>{% if update.finished %}{{ update.started|timesince2:update.finished }}{% else %}(in progress){% endif %}</td>
                     <td>{% if error_count %}<span class="badge badge-important">{{ error_count }}</span>{% endif %}</td>
                     <td>{% if warning_count %}<span class="badge badge-warning">{{ warning_count }}</span>{% endif %}</td>

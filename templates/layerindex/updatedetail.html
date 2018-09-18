@@ -24,7 +24,9 @@
         </ul>
 
 
-<h2>{{ update.started }} {% if update.reload %}(reload){% endif %}</h2>
+<h2>{{ update.started }} {% if update.reload %}(reload){% endif %}
+<span id="status-label" class="label {% if update.finished %}{% if update.retcode %}label-danger{% else %}label-success{% endif %}{% endif %} pull-right">{% if update.finished %}{% if update.retcode < 0 %}TERMINATED ({{ update.retcode }}){% elif update.retcode %}FAILED{% endif %}{% endif %}</span>
+</h2>
 
 {% if update.log %}
     <pre>{{ update.log }}</pre>

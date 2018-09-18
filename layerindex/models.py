@@ -97,6 +97,7 @@ class Update(models.Model):
     reload = models.BooleanField('Reloaded', default=False, help_text='Was this update a reload?')
     task_id = models.CharField(max_length=50, blank=True, db_index=True)
     triggered_by = models.ForeignKey(User, blank=True, null=True, on_delete=models.SET_NULL)
+    retcode = models.IntegerField(default=0)
 
     def error_count(self):
         sums = self.layerupdate_set.aggregate(errors=models.Sum('errors'))

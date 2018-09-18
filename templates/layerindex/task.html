@@ -19,7 +19,7 @@
 {% block content %}
 {% autoescape on %}
 
-<p>Task status for {{ update.task_id }} started by {{ update.triggered_by }} on {{ update.started }}<span id="task_status_fragment">{% if update.finished %} (finished in {{ update.started | timesince2:update.finished }}){% endif %}</span>:</p>
+<p>Task status for {{ update.task_id }} started by {{ update.triggered_by }} on {{ update.started }}<span id="task_status_fragment">{% if update.finished %} (finished in {{ update.started | timesince2:update.finished }}){% endif %}</span>:<span id="status-label" class="label {% if update.finished %}{% if update.retcode %}label-danger{% else %}label-success{% endif %}{% endif %} pull-right">{% if update.finished %}{% if update.retcode < 0 %}TERMINATED ({{ update.retcode }}){% elif update.retcode %}FAILED{% else %}SUCCEEDED{% endif %}{% endif %}</span></p>
 
 <pre id="task_log" class="vertical-scroll">{{ update.log }}</pre>
 
@@ -68,6 +68,25 @@
                 if(progress) {
                     $('#progressbar').css('width', progress + '%').attr('aria-valuenow', progress);
                     $("#progressbar").html(progress + '%')
+                }
+                result = xhr.getResponseHeader('Task-Result');
+                if(result && result != 0) {
+                    progress = 100
+                    $('#progressbar').css('width', progress + '%').attr('aria-valuenow', progress);
+                    if(result < 0) {
+                        failstr = "TERMINATED (" + result + ")";
+                    }
+                    else {
+                        failstr = "FAILED";
+                    }
+                    $("#progressbar").html(failstr);
+                    $("#progressbar").removeClass('progress-bar-info').addClass('progress-bar-danger');
+                    $("#status-label").html(failstr);
+                    $("#status-label").addClass('label-danger');
+                }
+                else if(done == '1') {
+                    $("#status-label").html('SUCCEEDED');
+                    $("#status-label").addClass('label-success');
                 }
             }
         }).always(function () {

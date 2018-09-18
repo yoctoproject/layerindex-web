@@ -1401,6 +1401,11 @@ def task_log_view(request, task_id):
         updateobj = get_object_or_404(Update, task_id=task_id)
         response['Task-Duration'] = utils.timesince2(updateobj.started, updateobj.finished)
         response['Task-Progress'] = 100
+        if result.info:
+            if isinstance(result.info, dict):
+                response['Task-Result'] = result.info.get('retcode', None)
+            else:
+                response['Task-Result'] = -1
     else:
         response['Task-Done'] = '0'
         preader = utils.ProgressReader(settings.TASK_LOG_DIR, task_id)
