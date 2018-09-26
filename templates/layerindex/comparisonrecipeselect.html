@@ -30,7 +30,7 @@
                                                 <div class="modal-content">
                                                     <div class="modal-header">
                                                         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                                                        <h3 id="selectRecipeDialogLabel">Select <span id="id_span_select_recipe">recipe</span> to match {{ select_for.pn }}</h3>
+                                                        <h3 id="selectRecipeDialogLabel">Dialog title</h3>
                                                     </div>
                                                     <div class="modal-body">
                                                             {% csrf_token %}
@@ -95,19 +95,13 @@
         // FIXME this does tend to cause items to re-sort
 
         $('#id_selectrecipedialog-cover_status').append($('#id_hidden_selectbox').children());
-        if( !pn ) {
-            $('#id_hidden_selectbox').append($('#id_selectrecipedialog-cover_status option[value="D"]'));
-            $('#id_hidden_selectbox').append($('#id_selectrecipedialog-cover_status option[value="E"]'));
-        }
-        else {
+        if( pn ) {
             $('#id_hidden_selectbox').append($('#id_selectrecipedialog-cover_status option[value="N"]'));
             $('#id_hidden_selectbox').append($('#id_selectrecipedialog-cover_status option[value="S"]'));
             $('#id_hidden_selectbox').append($('#id_selectrecipedialog-cover_status option[value="U"]'));
-        }
-        $('#id_span_select_recipe').text(pn);
-        $('#id_selectrecipedialog-cover_pn').val(pn);
-        $('#id_selectrecipedialog-cover_layerbranch').val($(this).attr('recipe-layerbranch'));
-        if( pn ) {
+            $('#selectRecipeDialogLabel').html('Select ' + pn + ' to match {{ select_for.pn }}');
+            $('#id_selectrecipedialog-cover_pn').val(pn);
+            $('#id_selectrecipedialog-cover_layerbranch').val($(this).attr('recipe-layerbranch'));
             {% if existing_cover_recipe %}
             $('#id_selectrecipedialog-cover_status').val('{{ select_for.cover_status }}');
             {% else %}
@@ -115,6 +109,9 @@
             {% endif %}
         }
         else {
+            $('#id_hidden_selectbox').append($('#id_selectrecipedialog-cover_status option[value="D"]'));
+            $('#id_hidden_selectbox').append($('#id_selectrecipedialog-cover_status option[value="E"]'));
+            $('#selectRecipeDialogLabel').html('Specify no match for {{ select_for.pn }}');
             $('#id_selectrecipedialog-cover_status').val('N');
         }
     });
