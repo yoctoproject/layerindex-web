@@ -263,10 +263,6 @@ td.info {
     background-color: #d9edf7 !important;
 }
 
-.hidden-select {
-    display: none !important;
-}
-
 .pre-plain {
     background-color: transparent;
     border-style: none;
