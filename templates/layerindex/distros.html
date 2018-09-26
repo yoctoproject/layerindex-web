@@ -34,10 +34,10 @@
                 <div class="bottom-margin">
                     <form id="filter-form" action="{% url 'distro_search' url_branch %}" method="get">
                         <div class="input-group col-md-6">
-                            <input type="text" class="form-control" id="appendedInputButtons" placeholder="Search distros" name="q" value="{{ search_keyword }}" />
+                            <input type="text" class="form-control" id="id_search_text" placeholder="Search distros" name="q" value="{{ search_keyword }}" />
                             <div class="input-group-btn">
                                 <button class="btn btn-default" type="submit" name="search" value="1">search</button>
-                                <button class="btn btn-default" type="submit" name="browse" value="1">browse</button>
+                                <button class="btn btn-default" type="submit" name="browse" value="1" id="id_browse_btn">browse</button>
                             </div>
                         </div>
                     </form>
@@ -87,5 +87,9 @@
         $("#filter-form input:text").first().select().focus();
     });
     {% endif %}
+
+    $("#id_browse_btn").click(function() {
+        $("#id_search_text").val("");
+    });
 </script>
 {% endblock %}

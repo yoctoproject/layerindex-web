@@ -35,7 +35,7 @@
                         <div class="form-group" id="searchfield">
                             <div class="controls">
                                 <div class="input-group col-md-6">
-                                    <input type="text" class="form-control" id="appendedInputButtons" placeholder="Search recipes" name="q" value="{{ search_keyword }}" />
+                                    <input type="text" class="form-control" id="id_search_text" placeholder="Search recipes" name="q" value="{{ search_keyword }}" />
                                     <div class="input-group-btn">
                                         <button class="btn btn-default" type="submit">search</button>
                                     </div>
@@ -97,7 +97,7 @@
     });
 
     function validate(){
-        if (!$("#appendedInputButtons").val()){
+        if (!$("#id_search_text").val()){
             $("#errortext").html("<p>Please specify search text</p>");
             $("#searchfield").addClass("has-error");
             return false;
