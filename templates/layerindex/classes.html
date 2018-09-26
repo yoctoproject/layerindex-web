@@ -75,3 +75,14 @@
 {% endautoescape %}
 
 {% endblock %}
+
+
+{% block scripts %}
+<script>
+    {% if not class_list %}
+    $(document).ready(function() {
+        $("#filter-form input:text").first().select().focus();
+    });
+    {% endif %}
+</script>
+{% endblock %}
