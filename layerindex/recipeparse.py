@@ -70,6 +70,11 @@ def init_parser(settings, branch, bitbakepath, enable_tracking=False, nocheckout
     tempdir = tempfile.mkdtemp(dir=settings.TEMP_BASE_DIR)
     saved_cwd = os.getcwd()
     os.chdir(tempdir)
+    # We need to create a dummy bblayers.conf to avoid bitbake-cookerdaemon.log being created in <oecore>/meta/
+    # (see findTopdir() in bitbake/lib/bb/cookerdata.py)
+    os.mkdir(os.path.join(tempdir, 'conf'))
+    with open(os.path.join(tempdir, 'conf', 'bblayers.conf'), 'w') as f:
+        pass
 
     if logger:
         tinfoil = utils.setup_tinfoil(bitbakepath, enable_tracking, loglevel=logger.getEffectiveLevel())

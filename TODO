@@ -1,8 +1,6 @@
 TODO:
 
 Bugs
-* Directory where bitbake-cookerdaemon.log is placed isn't right (meta dir)
-* bitbake-cookerdaemon.log should be cleared out every time
 * Duplication of first maintainer when editing to add a second?
 * Remote patches in SRC_URI trigger errors
 * We're wasting time gathering layer info at the start for layers that have not changed
