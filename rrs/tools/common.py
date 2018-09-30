@@ -101,7 +101,7 @@ def load_recipes(layerbranch, bitbakepath, fetchdir, settings, logger,
     layerdir = os.path.join(repodir, str(layerbranch.vcs_subdir))
 
     d = recipeparse.setup_layer(tinfoil.config_data, fetchdir, layerdir,
-            layer, layerbranch)
+            layer, layerbranch, logger)
 
     if recipe_files is None:
         recipe_files = get_recipe_files(layerdir)

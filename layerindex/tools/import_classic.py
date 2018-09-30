@@ -168,7 +168,7 @@ def main():
             layerclasses = BBClass.objects.filter(layerbranch=layerbranch)
 
             try:
-                config_data_copy = recipeparse.setup_layer(tinfoil.config_data, fetchdir, oeclassicpath, layer, layerbranch)
+                config_data_copy = recipeparse.setup_layer(tinfoil.config_data, fetchdir, oeclassicpath, layer, layerbranch, logger)
             except recipeparse.RecipeParseError as e:
                 logger.error(str(e))
                 sys.exit(1)

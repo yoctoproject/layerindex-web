@@ -94,7 +94,7 @@ def init_parser(settings, branch, bitbakepath, enable_tracking=False, nocheckout
 
     return (tinfoil, tempdir)
 
-def setup_layer(config_data, fetchdir, layerdir, layer, layerbranch):
+def setup_layer(config_data, fetchdir, layerdir, layer, layerbranch, logger):
     # Parse layer.conf files for this layer and its dependencies
     # This is necessary not just because BBPATH needs to be set in order
     # for include/require/inherit to work outside of the current directory

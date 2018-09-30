@@ -469,7 +469,7 @@ def main():
                 layerbranch.save()
 
                 try:
-                    config_data_copy = recipeparse.setup_layer(tinfoil.config_data, fetchdir, layerdir, layer, layerbranch)
+                    config_data_copy = recipeparse.setup_layer(tinfoil.config_data, fetchdir, layerdir, layer, layerbranch, logger)
                 except recipeparse.RecipeParseError as e:
                     logger.error(str(e))
                     sys.exit(1)
