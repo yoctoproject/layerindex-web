@@ -50,7 +50,7 @@ class YPCompatibleVersionAdmin(CompareVersionAdmin):
 class LayerItemAdmin(CompareVersionAdmin):
     list_filter = ['status', 'layer_type']
     save_as = True
-    search_fields = ['name', 'summary']
+    search_fields = ['name', 'summary', 'vcs_url']
     formfield_overrides = {
         models.URLField: {'widget': TextInput(attrs={'size':'100'})},
         models.CharField: {'widget': TextInput(attrs={'size':'100'})},
@@ -58,6 +58,7 @@ class LayerItemAdmin(CompareVersionAdmin):
 
 class LayerBranchAdmin(CompareVersionAdmin):
     list_filter = ['layer__name']
+    search_fields = ['layer__name', 'layer__vcs_url']
     readonly_fields = ('vcs_last_fetch', 'vcs_last_rev', 'vcs_last_commit')
     inlines = [
         LayerDependencyInline,
