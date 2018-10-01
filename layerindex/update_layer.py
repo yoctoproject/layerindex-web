@@ -17,6 +17,7 @@ import re
 import tempfile
 import shutil
 import errno
+import codecs
 from distutils.version import LooseVersion
 import itertools
 import utils
@@ -77,7 +78,7 @@ def collect_patch(recipe, patchfn, layerdir_start, stop_on_error):
     try:
         for encoding in ['utf-8', 'latin-1']:
             try:
-                with open(patchfn, 'r', encoding=encoding) as f:
+                with codecs.open(patchfn, 'r', encoding=encoding) as f:
                     for line in f:
                         line = line.rstrip()
                         if line.startswith('Index: ') or line.startswith('diff -') or line.startswith('+++ '):
