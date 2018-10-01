@@ -85,7 +85,9 @@
                             <li><a href="{% url 'rrs_frontpage' %}">Recipe Maintenance</a></li>
                             {% endif %}
                             {% if user.is_staff %}
+                            <li class="divider"></li>
                             <li><a href="{% url 'admin:index' %}">Admin</a></li>
+                            <li><a href="{% url 'email_test' %}">Test email</a></li>
                             {% endif %}
                         </ul>
                     </li>

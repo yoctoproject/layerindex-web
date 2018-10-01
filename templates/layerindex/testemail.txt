@@ -1,0 +1,7 @@
+Hi {{ user_name }},
+
+This is a test email from {{ site_name }} at {{ site_host }} to ensure that the email setup is working.
+
+The help contact for this site is {% if help_contact.first_name and help_contact.last_name %}{{ help_contact.first_name }} {{ help_contact.last_name}}{% else %}{{ help_contact.username }}{% endif %} <{{ help_contact.email }}> (usually defined as the first active staff user who isn't "root").
+
+Have a nice day!

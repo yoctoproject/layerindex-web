@@ -31,6 +31,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django import forms
 from django.utils.html import escape
+from django.contrib.sites.models import Site
 
 from reversion.models import Revision
 from . import utils
@@ -266,6 +267,15 @@ def _check_url_branch(kwargs):
             raise Http404
         branch = get_object_or_404(Branch, name=branchname)
 
+def _get_help_contact():
+    # find appropriate help contact
+    help_contact = None
+    for user in User.objects.all():
+        if user.username != 'root' and (user.is_staff or user.is_superuser) and user.is_active:
+            help_contact = user
+            break
+    return help_contact
+
 def publish_view(request, name):
     if not (request.user.is_authenticated() and request.user.has_perm('layerindex.publish_layer')):
         raise PermissionDenied
@@ -279,12 +289,6 @@ def publish_view(request, name):
         subjecttext = get_template('layerindex/publishemailsubject.txt')
         bodytext = get_template('layerindex/publishemail.txt')
         maintainer_names = [m.name for m in maintainers]
-        # find appropriate help contact
-        help_contact = None
-        for user in User.objects.all():
-            if user.username != 'root' and (user.is_staff or user.is_superuser) and user.is_active:
-                help_contact = user
-                break
 
         # create subject from subject template
         d = {
@@ -298,7 +302,7 @@ def publish_view(request, name):
             'maintainers': maintainer_names,
             'layer_name': layeritem.name,
             'layer_url': layer_url,
-            'help_contact': help_contact,
+            'help_contact': _get_help_contact(),
         }
         body = bodytext.render(d)
 
@@ -1421,6 +1425,34 @@ def task_stop_view(request, task_id):
     result = AsyncResult(task_id)
     result.revoke(terminate=True, signal=signal.SIGUSR2)
     return HttpResponse('terminated')
+
+
+def email_test_view(request):
+    if not request.user.is_authenticated() and request.user.is_staff():
+        raise PermissionDenied
+
+    plaintext = get_template('layerindex/testemail.txt')
+    if request.user.first_name:
+        user_name = request.user.first_name
+    else:
+        user_name = request.user.username
+    site = Site.objects.get_current()
+    if site:
+        site_name = site.name
+    else:
+        site_name = 'OE Layer Index'
+    d = {
+        'user_name': user_name,
+        'site_name': site_name,
+        'site_host': request.META['HTTP_HOST'],
+        'help_contact': _get_help_contact(),
+    }
+    subject = '%s: test email' % site_name
+    from_email = settings.SUBMIT_EMAIL_FROM
+    to_email = request.user.email
+    text_content = plaintext.render(d)
+    tasks.send_email.apply_async((subject, text_content, from_email, [to_email]))
+    return HttpResponse('Test email sent to %s' % to_email)
 
 
 class ComparisonRecipeSelectView(ClassicRecipeSearchView):
