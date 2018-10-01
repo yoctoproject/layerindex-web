@@ -15,6 +15,7 @@ from collections import namedtuple
 import os.path
 import re
 import posixpath
+import codecs
 
 from . import utils
 
@@ -541,6 +542,7 @@ class Source(models.Model):
     def __str__(self):
         return '%s - %s - %s' % (self.recipe.layerbranch, self.recipe.pn, self.url)
 
+patch_status_re = re.compile(r"^[\t ]*(Upstream[-_ ]Status:?)[\t ]*(\w+)([\t ]+.*)?", re.IGNORECASE | re.MULTILINE)
 
 class Patch(models.Model):
     PATCH_STATUS_CHOICES = [
@@ -564,6 +566,33 @@ class Patch(models.Model):
     def vcs_web_url(self):
         url = self.recipe.layerbranch.file_url(self.path)
         return url or ''
+
+    def read_status_from_file(self, patchfn, logger=None):
+        for encoding in ['utf-8', 'latin-1']:
+            try:
+                with codecs.open(patchfn, 'r', encoding=encoding) as f:
+                    for line in f:
+                        line = line.rstrip()
+                        if line.startswith('Index: ') or line.startswith('diff -') or line.startswith('+++ '):
+                            break
+                        res = patch_status_re.match(line)
+                        if res:
+                            status = res.group(2).lower()
+                            for key, value in dict(Patch.PATCH_STATUS_CHOICES).items():
+                                if status == value.lower():
+                                    self.status = key
+                                    if res.group(3):
+                                        self.status_extra = res.group(3).strip()
+                                    break
+                            else:
+                                if logger:
+                                    logger.warn('Invalid upstream status in %s: %s' % (patchfn, line))
+            except UnicodeDecodeError:
+                continue
+            break
+        else:
+            if logger:
+                logger.error('Unable to find suitable encoding to read patch %s' % patchfn)
 
     def __str__(self):
         return "%s - %s" % (self.recipe, self.src_path)

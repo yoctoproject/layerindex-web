@@ -17,7 +17,6 @@ import re
 import tempfile
 import shutil
 import errno
-import codecs
 from distutils.version import LooseVersion
 import itertools
 import utils
@@ -57,8 +56,6 @@ def split_recipe_fn(path):
         pv = "1.0"
     return (pn, pv)
 
-patch_status_re = re.compile(r"^[\t ]*(Upstream[-_ ]Status:?)[\t ]*(\w+)([\t ]+.*)?", re.IGNORECASE | re.MULTILINE)
-
 def collect_patch(recipe, patchfn, layerdir_start, stop_on_error):
     from django.db import DatabaseError
     from layerindex.models import Patch
@@ -68,29 +65,7 @@ def collect_patch(recipe, patchfn, layerdir_start, stop_on_error):
     patchrec.path = os.path.relpath(patchfn, layerdir_start)
     patchrec.src_path = os.path.relpath(patchrec.path, recipe.filepath)
     try:
-        for encoding in ['utf-8', 'latin-1']:
-            try:
-                with codecs.open(patchfn, 'r', encoding=encoding) as f:
-                    for line in f:
-                        line = line.rstrip()
-                        if line.startswith('Index: ') or line.startswith('diff -') or line.startswith('+++ '):
-                            break
-                        res = patch_status_re.match(line)
-                        if res:
-                            status = res.group(2).lower()
-                            for key, value in dict(Patch.PATCH_STATUS_CHOICES).items():
-                                if status == value.lower():
-                                    patchrec.status = key
-                                    if res.group(3):
-                                        patchrec.status_extra = res.group(3).strip()
-                                    break
-                            else:
-                                logger.warn('Invalid upstream status in %s: %s' % (patchfn, line))
-            except UnicodeDecodeError:
-                continue
-            break
-        else:
-            logger.error('Unable to find suitable encoding to read patch %s' % patchfn)
+        patchrec.read_status_from_file(patchfn, logger)
         patchrec.save()
     except DatabaseError:
         raise
