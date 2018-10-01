@@ -128,7 +128,7 @@ class EditLayerForm(StyledModelForm):
 
     def clean_vcs_url(self):
         url = self.cleaned_data['vcs_url'].strip()
-        val = RegexValidator(regex=r'[a-z]+://.*', message='Please enter a valid repository URL, e.g. git://server.name/path')
+        val = RegexValidator(regex=r'^[a-z]+://[^ ]+$', message='Please enter a valid repository URL, e.g. git://server.name/path')
         val(url)
         return url
 
