@@ -153,3 +153,45 @@ def detect_file_type(path, subdir_start):
 
     return (None, None, None)
 
+
+def handle_recipe_depends(recipe, depends, packageconfig_opts):
+    from layerindex.models import StaticBuildDep, PackageConfig, DynamicBuildDep
+
+    # Handle static build dependencies for this recipe
+    for dep in depends.split():
+        static_build_dependency, created = StaticBuildDep.objects.get_or_create(name=dep)
+        if created:
+            static_build_dependency.save()
+        static_build_dependency.recipes.add(recipe)
+
+    # Handle the PACKAGECONFIG variables for this recipe
+    PackageConfig.objects.filter(recipe=recipe).delete()
+    for key, value in packageconfig_opts.items():
+        if key == "doc":
+            continue
+        package_config = PackageConfig()
+        package_config.feature = key
+        package_config.recipe = recipe
+        package_config_vals = value.split(",")
+        try:
+            package_config.build_deps = package_config_vals[2]
+        except IndexError:
+            pass
+        try:
+            package_config.with_option = package_config_vals[0]
+        except IndexError:
+            pass
+        try:
+            package_config.without_option = package_config_vals[1]
+        except IndexError:
+            pass
+        package_config.save()
+        # Handle the dynamic dependencies for the PACKAGECONFIG variable
+        if package_config.build_deps:
+            for dep in package_config.build_deps.split():
+                dynamic_build_dependency, created = DynamicBuildDep.objects.get_or_create(name=dep)
+                if created:
+                    dynamic_build_dependency.save()
+                dynamic_build_dependency.package_configs.add(package_config)
+                dynamic_build_dependency.recipes.add(recipe)
+    

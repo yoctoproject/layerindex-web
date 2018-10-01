@@ -123,14 +123,6 @@ def update_recipe_file(tinfoil, data, path, recipe, layerdir_start, repodir, sto
         recipe.blacklisted = envdata.getVarFlag('PNBLACKLIST', recipe.pn, True) or ""
         recipe.save()
 
-        # Handle static build dependencies for this recipe
-        static_dependencies = envdata.getVar("DEPENDS", True) or ""
-        for dep in static_dependencies.split():
-            static_build_dependency, created = StaticBuildDep.objects.get_or_create(name=dep)
-            if created:
-                static_build_dependency.save()
-            static_build_dependency.recipes.add(recipe)
-
         # Handle sources
         old_urls = list(recipe.source_set.values_list('url', flat=True))
         for url in (envdata.getVar('SRC_URI', True) or '').split():
@@ -144,37 +136,7 @@ def update_recipe_file(tinfoil, data, path, recipe, layerdir_start, repodir, sto
         for url in old_urls:
             recipe.source_set.filter(url=url).delete()
 
-        # Handle the PACKAGECONFIG variables for this recipe
-        PackageConfig.objects.filter(recipe=recipe).delete()
-        package_config_VarFlags = envdata.getVarFlags("PACKAGECONFIG")
-        for key, value in package_config_VarFlags.items():
-            if key == "doc":
-                continue
-            package_config = PackageConfig()
-            package_config.feature = key
-            package_config.recipe = recipe
-            package_config_vals = value.split(",")
-            try:
-                package_config.build_deps = package_config_vals[2]
-            except IndexError:
-                pass
-            try:
-                package_config.with_option = package_config_vals[0]
-            except IndexError:
-                pass
-            try:
-                package_config.without_option = package_config_vals[1]
-            except IndexError:
-                pass
-            package_config.save()
-            # Handle the dynamic dependencies for the PACKAGECONFIG variable
-            if package_config.build_deps:
-                for dep in package_config.build_deps.split():
-                    dynamic_build_dependency, created = DynamicBuildDep.objects.get_or_create(name=dep)
-                    if created:
-                        dynamic_build_dependency.save()
-                    dynamic_build_dependency.package_configs.add(package_config)
-                    dynamic_build_dependency.recipes.add(recipe)
+        recipeparse.handle_recipe_depends(recipe, envdata.getVar('DEPENDS', True) or '', envdata.getVarFlags('PACKAGECONFIG'))
 
         if not skip_patches:
             # Handle patches
