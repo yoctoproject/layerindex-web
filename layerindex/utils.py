@@ -241,7 +241,7 @@ def checkout_repo(repodir, commit, logger, force=False):
         # interfere with operation, e.g. stale pyc files)
         runcmd("git clean -qdfx", repodir, logger=logger)
         # Now check out the revision
-        runcmd("git checkout %s" % commit, repodir, logger=logger)
+        runcmd(['git', 'checkout', commit], repodir, logger=logger, shell=False)
 
 def checkout_layer_branch(layerbranch, repodir, logger=None):
     branchname = layerbranch.get_checkout_branch()
@@ -286,7 +286,7 @@ def parse_layer_conf(layerdir, data, logger=None):
     data.expandVarref('LAYERDIR')
 
 child_pid = 0
-def runcmd(cmd, destdir=None, printerr=True, outfile=None, logger=None):
+def runcmd(cmd, destdir=None, printerr=True, outfile=None, logger=None, shell=True):
     """
         execute command, raise CalledProcessError if fail
         return output if succeed
@@ -303,7 +303,7 @@ def runcmd(cmd, destdir=None, printerr=True, outfile=None, logger=None):
         os.kill(child_pid, signal.SIGTERM)
     signal.signal(signal.SIGUSR2, onsigusr2)
     try:
-        proc = subprocess.Popen(cmd, stdout=out, stderr=out, cwd=destdir, shell=True)
+        proc = subprocess.Popen(cmd, stdout=out, stderr=out, cwd=destdir, shell=shell)
         global child_pid
         child_pid = proc.pid
         proc.communicate()

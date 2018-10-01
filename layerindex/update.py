@@ -103,7 +103,7 @@ def fetch_repo(vcs_url, repodir, urldir, fetchdir, layer_name):
     logger.info("Fetching remote repository %s" % vcs_url)
     try:
         if not os.path.exists(repodir):
-            utils.runcmd("git clone %s %s" % (vcs_url, urldir), fetchdir, logger=logger, printerr=False)
+            utils.runcmd(['git', 'clone', vcs_url, urldir], fetchdir, logger=logger, printerr=False, shell=False)
         else:
             utils.runcmd("git fetch -p", repodir, logger=logger, printerr=False)
         return (vcs_url, None)
