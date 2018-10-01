@@ -66,7 +66,7 @@ class LayerBranchAdmin(CompareVersionAdmin):
     def get_readonly_fields(self, request, obj=None):
         readonly_fields = self.readonly_fields
         if obj:
-            readonly_fields += ('layer', 'branch')
+            readonly_fields += ('layer',)
         if not request.user.has_perm('layerindex.set_yp_compatibility'):
             readonly_fields += ('yp_compatible_version',)
         return readonly_fields
