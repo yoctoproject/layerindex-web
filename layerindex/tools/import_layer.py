@@ -49,6 +49,13 @@ def set_vcs_fields(layer, repoval):
         layer.vcs_web_tree_base_url = 'http://github.com/' + reponame + '/tree/%branch%/'
         layer.vcs_web_file_base_url = 'http://github.com/' + reponame + '/blob/%branch%/'
         layer.vcs_web_commit_url = 'http://github.com/' + reponame + '/commit/%hash%'
+    elif 'gitlab.com/' in repoval:
+        reponame = re.sub('^.*gitlab.com/', '', repoval)
+        reponame = re.sub('.git$', '', reponame)
+        layer.vcs_web_url = 'http://gitlab.com/' + reponame
+        layer.vcs_web_tree_base_url = 'http://gitlab.com/' + reponame + '/tree/%branch%/'
+        layer.vcs_web_file_base_url = 'http://gitlab.com/' + reponame + '/blob/%branch%/'
+        layer.vcs_web_commit_url = 'http://gitlab.com/' + reponame + '/commit/%hash%'
     elif 'bitbucket.org/' in repoval:
         reponame = re.sub('^.*bitbucket.org/', '', repoval)
         reponame = re.sub('.git$', '', reponame)

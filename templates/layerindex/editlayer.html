@@ -216,6 +216,15 @@
             this.vcs_web_commit_url = 'http://github.com/' + reponame + '/commit/%hash%/'
             this.vcs_web_type = '(custom)'
         }
+        else if( repoval.indexOf('gitlab.com/') > -1 ) {
+            reponame = repoval.replace(/^.*gitlab.com\//, '')
+            reponame = reponame.replace(/.git$/, '')
+            this.vcs_web_url = 'http://gitlab.com/' + reponame
+            this.vcs_web_tree_base_url = 'http://gitlab.com/' + reponame + '/tree/%branch%/'
+            this.vcs_web_file_base_url = 'http://gitlab.com/' + reponame + '/blob/%branch%/'
+            this.vcs_web_commit_url = 'http://gitlab.com/' + reponame + '/commit/%hash%/'
+            this.vcs_web_type = '(custom)'
+        }
         else if( repoval.indexOf('bitbucket.org/') > -1 ) {
             reponame = repoval.replace(/^.*bitbucket.org\//, '')
             reponame = reponame.replace(/.git$/, '')
