@@ -436,6 +436,12 @@ def main():
                     deps = extract_value('LAYERDEPENDS', output)
                     recs = extract_value('LAYERRECOMMENDS', output)
 
+                    if not options.nocheckout:
+                        # We need to check this out because we're using stuff from bb.utils
+                        # below, and if we don't it might be a python 2 revision which would
+                        # be an issue
+                        utils.checkout_repo(bitbakepath, 'origin/master', logger=logger)
+
                     deps_dict = utils.explode_dep_versions2(bitbakepath, deps)
                     recs_dict = utils.explode_dep_versions2(bitbakepath, recs)
                     if not (deps_dict or recs_dict):
