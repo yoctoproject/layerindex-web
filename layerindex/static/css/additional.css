@@ -267,6 +267,7 @@ td.info {
     background-color: transparent;
     border-style: none;
     padding: 0;
+    white-space: pre-wrap;
 }
 
 .td-pre {
