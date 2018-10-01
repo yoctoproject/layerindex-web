@@ -32,7 +32,7 @@ def truncate_charfield_values(sender, instance, *args, **kwargs):
         if isinstance(field, models.CharField):
             value = getattr(instance, field.name)
             if value and len(value) > field.max_length:
-                logger.warning('%s.%s: length %s exceeds maximum (%s), truncating' % (instance.__class__.__name__, field.name, len(value), field.max_length))
+                logger.warning('%s.%s: %s: length %s exceeds maximum (%s), truncating' % (instance.__class__.__name__, field.name, str(instance), len(value), field.max_length))
                 setattr(instance, field.name, value[:field.max_length])
 
 
