@@ -550,7 +550,7 @@ def main():
                             elif oldtypename == 'bbappend':
                                 results = layerappends.filter(filepath=oldfilepath).filter(filename=oldfilename)
                                 if len(results):
-                                    logger.debug("Rename bbappend %s to %s" % (results[0], newfilepath))
+                                    logger.debug("Rename bbappend %s to %s" % (results[0], os.path.join(newfilepath, newfilename)))
                                     results[0].filepath = newfilepath
                                     results[0].filename = newfilename
                                     results[0].save()
