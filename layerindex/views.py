@@ -435,6 +435,48 @@ class RecipeSearchView(ListView):
         else:
             return super(ListView, self).render_to_response(context, **kwargs)
 
+    def search_recipe_query(self, init_qs, query_string, preferred=True):
+        """Do a prioritised search using the specified keyword (if any)"""
+        # Lower() here isn't needed for OE recipes since we don't use uppercase
+        # but we use this same code for "recipes" from other distros where
+        # they do
+        order_by = (Lower('pn'), 'layerbranch__layer')
+
+        filtered = False
+        if query_string.strip():
+            # First search by exact name
+            qs0 = init_qs.filter(pn=query_string).order_by(*order_by)
+            if preferred:
+                qs0 = recipes_preferred_count(qs0)
+
+            # Then keyword somewhere in the name
+            entry_query = simplesearch.get_query(query_string, ['pn'])
+            qs1 = init_qs.filter(entry_query).order_by(*order_by)
+            if preferred:
+                qs1 = recipes_preferred_count(qs1)
+
+            # Then keyword somewhere in summary or description
+            entry_query = simplesearch.get_query(query_string, ['description', 'summary'])
+            qs2 = init_qs.filter(entry_query).order_by(*order_by)
+            if preferred:
+                qs2 = recipes_preferred_count(qs2)
+
+            # Now chain the results together and drop any duplicates (e.g.
+            # if the keyword matched in the name and summary)
+            qs = list(utils.chain_unique(qs0, qs1, qs2))
+            filtered = True
+        elif 'q' in self.request.GET:
+            # User clicked search with no query string, return all records
+            qs = init_qs.order_by(*order_by)
+            if preferred:
+                qs = list(recipes_preferred_count(qs))
+        else:
+            # It's a bit too slow to return all records by default, and most people
+            # won't actually want that (if they do they can just hit the search button
+            # with no query string)
+            qs = Recipe.objects.none()
+        return qs, filtered
+
     def get_queryset(self):
         _check_url_branch(self.kwargs)
         query_string = self.request.GET.get('q', '')
@@ -483,32 +525,7 @@ layer name is expected to follow the \"layer:\" prefix without any spaces.')
             for inherit in inherits:
                 init_qs = init_qs.filter(Q(inherits=inherit) | Q(inherits__startswith=inherit + ' ') | Q(inherits__endswith=' ' + inherit) | Q(inherits__contains=' %s ' % inherit))
         query_string = ' '.join(query_terms)
-
-        if query_string.strip():
-            order_by = ('pn', 'layerbranch__layer')
-
-            qs0 = init_qs.filter(pn=query_string).order_by(*order_by)
-            qs0 = recipes_preferred_count(qs0)
-
-            entry_query = simplesearch.get_query(query_string, ['pn'])
-            qs1 = init_qs.filter(entry_query).order_by(*order_by)
-            qs1 = recipes_preferred_count(qs1)
-
-            entry_query = simplesearch.get_query(query_string, ['description', 'summary'])
-            qs2 = init_qs.filter(entry_query).order_by(*order_by)
-            qs2 = recipes_preferred_count(qs2)
-
-            qs = list(utils.chain_unique(qs0, qs1, qs2))
-        else:
-            if 'q' in self.request.GET:
-                qs = init_qs.order_by('pn', 'layerbranch__layer')
-                qs = list(recipes_preferred_count(qs))
-            else:
-                # It's a bit too slow to return all records by default, and most people
-                # won't actually want that (if they do they can just hit the search button
-                # with no query string)
-                return Recipe.objects.none()
-
+        qs, _ = self.search_recipe_query(init_qs, query_string, preferred=False)
         return qs
 
     def get_context_data(self, **kwargs):
@@ -1110,27 +1127,7 @@ class ClassicRecipeSearchView(RecipeSearchView):
             else:
                 init_qs = init_qs.filter(needs_attention=False)
             filtered = True
-        if query_string.strip():
-            order_by = (Lower('pn'), 'layerbranch__layer')
-
-            qs0 = init_qs.filter(pn=query_string).order_by(*order_by)
-
-            entry_query = simplesearch.get_query(query_string, ['pn'])
-            qs1 = init_qs.filter(entry_query).order_by(*order_by)
-
-            entry_query = simplesearch.get_query(query_string, ['summary', 'description'])
-            qs2 = init_qs.filter(entry_query).order_by(*order_by)
-
-            qs = list(utils.chain_unique(qs0, qs1, qs2))
-            filtered = True
-        else:
-            if 'q' in self.request.GET:
-                qs = init_qs.order_by(Lower('pn'), 'layerbranch__layer')
-            else:
-                # It's a bit too slow to return all records by default, and most people
-                # won't actually want that (if they do they can just hit the search button
-                # with no query string)
-                return Recipe.objects.none()
+        qs, filtered = self.search_recipe_query(init_qs, query_string, preferred=False)
         if qreversed:
             init_rqs = Recipe.objects.filter(layerbranch__branch__name='master')
             if layer_ids:
@@ -1497,26 +1494,7 @@ class ComparisonRecipeSelectView(ClassicRecipeSearchView):
         init_qs = Recipe.objects.filter(layerbranch__branch__name='master')
         if layer_ids:
             init_qs = init_qs.filter(layerbranch__layer__in=layer_ids)
-        if query_string.strip():
-            order_by = (Lower('pn'), 'layerbranch__layer')
-
-            qs0 = init_qs.filter(pn=query_string).order_by(*order_by)
-
-            entry_query = simplesearch.get_query(query_string, ['pn'])
-            qs1 = init_qs.filter(entry_query).order_by(*order_by)
-
-            entry_query = simplesearch.get_query(query_string, ['summary', 'description'])
-            qs2 = init_qs.filter(entry_query).order_by(*order_by)
-
-            qs = list(utils.chain_unique(qs0, qs1, qs2))
-        else:
-            if 'q' in self.request.GET:
-                qs = init_qs.order_by(Lower('pn'), 'layerbranch__layer')
-            else:
-                # It's a bit too slow to return all records by default, and most people
-                # won't actually want that (if they do they can just hit the search button
-                # with no query string)
-                return Recipe.objects.none()
+        qs, _ = self.search_recipe_query(init_qs, query_string, preferred=False)
         return qs
 
     def post(self, request, *args, **kwargs):
