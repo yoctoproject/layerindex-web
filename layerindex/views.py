@@ -1258,18 +1258,13 @@ class ClassicRecipeStatsView(TemplateView):
         statuses = []
         status_counts = {}
         for choice, desc in ClassicRecipe.COVER_STATUS_CHOICES:
-            statuses.append(desc)
-            status_counts[desc] = recipes.filter(cover_status=choice).count()
+            count = recipes.filter(cover_status=choice).count()
+            if count > 0:
+                statuses.append(desc)
+                status_counts[desc] = count
         statuses = sorted(statuses, key=lambda status: status_counts[status], reverse=True)
-        chartdata = {'x': statuses, 'y': [status_counts[k] for k in statuses]}
-        context['charttype_status'] = 'pieChart'
-        context['chartdata_status'] = chartdata
-        context['extra_status'] = {
-            'x_is_date': False,
-            'x_axis_format': '',
-            'tag_script_js': True,
-            'jquery_on_ready': False,
-        }
+        context['chart_status_labels'] = statuses
+        context['chart_status_values'] = [status_counts[status] for status in statuses]
         # *** Categories chart ***
         categories = ['obsoletedir', 'nonworkingdir']
         uniquevals = recipes.exclude(classic_category='').values_list('classic_category', flat=True).distinct()
@@ -1296,15 +1291,8 @@ class ClassicRecipeStatsView(TemplateView):
         # Eliminate categories with zero count
         categories = [cat for cat in categories if catcounts[cat] > 0]
         categories = sorted(categories, key=lambda cat: catcounts[cat], reverse=True)
-        chartdata_category = {'x': categories, 'y': [catcounts[k] for k in categories]}
-        context['charttype_category'] = 'pieChart'
-        context['chartdata_category'] = chartdata_category
-        context['extra_category'] = {
-            'x_is_date': False,
-            'x_axis_format': '',
-            'tag_script_js': True,
-            'jquery_on_ready': False,
-        }
+        context['chart_category_labels'] = categories
+        context['chart_category_values'] = [catcounts[k] for k in categories]
         return context
 
 

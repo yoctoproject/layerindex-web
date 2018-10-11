@@ -912,15 +912,8 @@ class MaintenanceStatsView(TemplateView):
         status_counts['Unknown'] = self.milestone_statistics['unknown']
 
         statuses = sorted(statuses, key=lambda status: status_counts[status], reverse=True)
-        chartdata = {'x': statuses, 'y': [status_counts[k] for k in statuses]}
-        context['charttype_status'] = 'discreteBarChart'
-        context['chartdata_status'] = chartdata
-        context['extra_status'] = {
-            'x_is_date': False,
-            'x_axis_format': '',
-            'tag_script_js': True,
-            'jquery_on_ready': False,
-        }
+        context['chart_upstream_status_labels'] = statuses
+        context['chart_upstream_status_values'] = [status_counts[k] for k in statuses]
 
         # *** Patch status chart ***
         patch_statuses = []
@@ -934,15 +927,8 @@ class MaintenanceStatsView(TemplateView):
                 patch_status_counts[desc] = patch_status_counts.get(desc, 0) + patches.filter(status=choice).count()
 
         patch_statuses = sorted(patch_statuses, key=lambda status: patch_status_counts[status], reverse=True)
-        chartdata = {'x': patch_statuses, 'y': [patch_status_counts[k] for k in patch_statuses]}
-        context['charttype_patchstatus'] = 'discreteBarChart'
-        context['chartdata_patchstatus'] = chartdata
-        context['extra_patchstatus'] = {
-            'x_is_date': False,
-            'x_axis_format': '',
-            'tag_script_js': True,
-            'jquery_on_ready': False,
-        }
+        context['chart_patch_status_labels'] = patch_statuses
+        context['chart_patch_status_values'] = [patch_status_counts[k] for k in patch_statuses]
 
         return context
 

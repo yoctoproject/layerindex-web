@@ -154,7 +154,6 @@ INSTALLED_APPS = (
     'captcha',
     'rest_framework',
     'corsheaders',
-    'django_nvd3'
 )
 
 REST_FRAMEWORK = {

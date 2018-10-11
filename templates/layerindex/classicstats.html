@@ -1,6 +1,5 @@
 {% extends "layerindex/classic_base.html" %}
 {% load i18n %}
-{% load nvd3_tags %}
 {% load staticfiles %}
 
 {% comment %}
@@ -38,10 +37,16 @@
             {% endif %}
 
             <h3>Comparison status</h3>
-            {% include_container "chart_status" 400 600 %}
+            <div>
+                <canvas id="chart_status">
+                </canvas>
+            </div>
 
             <h3>Unavailable recipes by category</h3>
-            {% include_container "chart_category" 400 600 %}
+            <div>
+                <canvas id="chart_category">
+                </canvas>
+            </div>
 
         </div>
 
@@ -50,11 +55,56 @@
 {% endblock %}
 
 {% block scripts %}
+    <script src="{% static "js/Chart.js" %}"></script>
+    <script>
+        $(document).ready(function() {
+            chartColors = {
+                red: 'rgb(255, 99, 132)',
+                yellow: 'rgb(255, 205, 86)',
+                green: 'rgb(75, 192, 192)',
+                green2: 'rgb(51, 204, 51)',
+                blue: 'rgb(54, 162, 235)',
+                purple: 'rgb(153, 102, 255)',
+                pink: 'rgb(255, 51, 153)',
+                grey: 'rgb(201, 203, 207)',
+            };
+            chartColorsArray = Object.values(chartColors);
 
-    <link media="all" href="{% static "css/nv.d3.css" %}" type="text/css" rel="stylesheet" />
-    <script src="{% static "js/d3.js" %}" type="text/javascript"></script>
-    <script src="{% static "js/nv.d3.js" %}" type="text/javascript"></script>
+            // --- Status chart ---
+            var config = {
+                type: 'pie',
+                data: {
+                    datasets: [{
+                        data: {{ chart_status_values }},
+                        backgroundColor: chartColorsArray,
+                    }],
+                    labels: {{ chart_status_labels|safe }}
+                },
+                options: {
+                    responsive: true
+                }
+            };
 
-{% load_chart charttype_status chartdata_status "chart_status" extra_status %}
-{% load_chart charttype_category chartdata_category "chart_category" extra_category %}
+            var ctx = document.getElementById('chart_status').getContext('2d');
+            window.myPie = new Chart(ctx, config);
+
+            // --- Categories chart ---
+            var config = {
+                type: 'pie',
+                data: {
+                    datasets: [{
+                        data: {{ chart_category_values }},
+                        backgroundColor: chartColorsArray,
+                    }],
+                    labels: {{ chart_category_labels|safe }}
+                },
+                options: {
+                    responsive: true
+                }
+            };
+
+            var ctx = document.getElementById('chart_category').getContext('2d');
+            new Chart(ctx, config);
+        });
+    </script>
 {% endblock %}
