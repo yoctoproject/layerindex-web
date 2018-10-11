@@ -309,6 +309,12 @@ def main():
                 update_actual_branch(layerquery, fetchdir, branches[0], options, update_bitbake, bitbakepath)
                 return
 
+            # Get a safe bitbake branch to call into from this script (used later on)
+            safe_bitbake_branch = 'origin/master'
+            master_branch = Branch.objects.filter(name='master').first()
+            if master_branch and master_branch.bitbake_branch:
+                safe_bitbake_branch = 'origin/' + master_branch.bitbake_branch
+
             # Process and extract data from each layer
             # We now do this by calling out to a separate script; doing otherwise turned out to be
             # unreliable due to leaking memory (we're using bitbake internals in a manner in which
@@ -440,7 +446,7 @@ def main():
                         # We need to check this out because we're using stuff from bb.utils
                         # below, and if we don't it might be a python 2 revision which would
                         # be an issue
-                        utils.checkout_repo(bitbakepath, 'origin/master', logger=logger)
+                        utils.checkout_repo(bitbakepath, safe_bitbake_branch, logger=logger)
 
                     deps_dict = utils.explode_dep_versions2(bitbakepath, deps)
                     recs_dict = utils.explode_dep_versions2(bitbakepath, recs)
