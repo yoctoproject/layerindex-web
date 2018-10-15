@@ -237,6 +237,10 @@ RABBIT_BACKEND = 'rpc://'
 # Used for fetching repo
 PARALLEL_JOBS = "4"
 
+# Install flite & sox and set these to enable audio for CAPTCHA challenges (for accessibility)
+#CAPTCHA_FLITE_PATH = "/usr/bin/flite"
+#CAPTCHA_SOX_PATH = "/usr/bin/sox"
+
 # Full path to directory to store logs for dynamically executed tasks
 TASK_LOG_DIR = "/tmp/layerindex-task-logs"
 
