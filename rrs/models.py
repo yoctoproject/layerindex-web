@@ -29,7 +29,7 @@ class MaintenancePlan(models.Model):
     email_subject = models.CharField(max_length=255, blank=True, default='[Recipe reporting system] Upgradable recipe name list', help_text='Subject line of automated emails')
     email_from = models.CharField(max_length=255, blank=True, help_text='Sender for automated emails')
     email_to = models.CharField(max_length=255, blank=True, help_text='Recipient for automated emails (separate multiple addresses with ;)')
-    admin = models.ForeignKey(User, blank=True, null=True, help_text='Plan administrator')
+    admin = models.ForeignKey(User, blank=True, null=True, help_text='Plan administrator', on_delete=models.SET_NULL)
     maintainer_style = models.CharField(max_length=1, choices=MAINTENANCEPLAN_MAINTAINER_STYLE, default='L', help_text='Maintainer tracking style for the layers within this plan')
 
     def get_default_release(self):

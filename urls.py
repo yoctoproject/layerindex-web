@@ -8,7 +8,7 @@
 from django.conf.urls import include, url
 from django.core.urlresolvers import reverse_lazy
 from django.views.generic import RedirectView
-from layerindex.auth_views import CaptchaRegistrationView, CaptchaPasswordResetView
+from layerindex.auth_views import CaptchaRegistrationView, CaptchaPasswordResetView, delete_account_view
 
 from django.contrib import admin
 admin.autodiscover()
@@ -25,6 +25,9 @@ urlpatterns = [
         name='auth_password_reset'),
     url(r'^accounts/register/$', CaptchaRegistrationView.as_view(),
         name='registration_register'),
+    url(r'^accounts/delete/$', delete_account_view,
+        {'template_name': 'layerindex/deleteaccount.html'},
+        name='delete_account'),
     url(r'^accounts/', include('registration.backends.default.urls')),
     url(r'^captcha/', include('captcha.urls')),
 ]

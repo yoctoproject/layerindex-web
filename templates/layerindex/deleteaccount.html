@@ -3,24 +3,30 @@
 
 {% comment %}
 
-  layerindex-web - profile page template
+  layerindex-web - delete account confirmation template
 
-  Copyright (C) 2013 Intel Corporation
+  Copyright (C) 2018 Intel Corporation
   Licensed under the MIT license, see COPYING.MIT for details
 
 {% endcomment %}
 
-
 <!--
 {% autoescape on %}
-{% block title_append %} - profile{% endblock %}
+{% block title_append %} - delete account{% endblock %}
 {% endautoescape %}
 -->
 
 {% block content %}
 {% autoescape on %}
 
-<form method="post" action=".">
+<h2>Delete account</h2>
+
+<p>Are you sure you want to delete your account under the name &quot;{{ user.username }}&quot;? <strong>This will remove all associated records and cannot be undone!</strong></p>
+
+<p>To confirm, please enter your password below and then click on <em>Delete account</em>.</p>
+
+<form action="" method="post">
+    {% csrf_token %}
     {% for hidden in form.hidden_fields %}
         {{ hidden }}
     {% endfor %}
@@ -41,10 +47,8 @@
         </div>
     {% endfor %}
 
-  <input type="submit" class="btn btn-default" value="{% trans 'Save' %}" />
-  <a class="btn btn-default" href="{% url 'frontpage' %}">{% trans 'Cancel' %}</a>
-  <a class="btn btn-danger" href="{% url 'delete_account' %}">{% trans 'Delete account' %}</a>
-  {% csrf_token %}
+    <input type="submit" value="Delete account" class="btn btn-danger" />
+    <a href="{% url 'profile' %}" class="btn btn-default">Cancel</a>
 </form>
 
 {% endautoescape %}
