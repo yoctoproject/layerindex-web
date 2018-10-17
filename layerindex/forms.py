@@ -8,6 +8,7 @@ from collections import OrderedDict
 from layerindex.models import LayerItem, LayerBranch, LayerMaintainer, LayerNote, RecipeChangeset, RecipeChange, ClassicRecipe
 from django import forms
 from django.core.validators import URLValidator, RegexValidator, EmailValidator
+from registration.validators import ReservedNameValidator, DEFAULT_RESERVED_NAMES, validate_confusables
 from django.forms.models import inlineformset_factory, modelformset_factory
 from captcha.fields import CaptchaField
 from django.contrib.auth.models import User
@@ -178,9 +179,24 @@ class EditNoteForm(StyledModelForm):
 
 
 class EditProfileForm(StyledModelForm):
+    captcha = CaptchaField(label='Verification', help_text='Please enter the letters displayed for verification purposes', error_messages={'invalid':'Incorrect entry, please try again'})
+
     class Meta:
         model = User
-        fields = ('first_name', 'last_name', 'email')
+        fields = ('username', 'first_name', 'last_name', 'email', 'captcha')
+
+    def clean_username(self):
+        username = self.cleaned_data['username']
+        if 'username' in self.changed_data:
+            try:
+                reserved_validator = ReservedNameValidator(
+                    reserved_names=DEFAULT_RESERVED_NAMES
+                )
+                reserved_validator(username)
+                validate_confusables(username)
+            except forms.ValidationError as v:
+                self.add_error('username', v)
+        return username
 
 
 class ClassicRecipeForm(StyledModelForm):

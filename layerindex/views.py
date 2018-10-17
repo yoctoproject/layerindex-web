@@ -824,15 +824,31 @@ class HistoryListView(ListView):
         return Revision.objects.all().order_by('-date_created')
 
 
-class EditProfileFormView(UpdateView):
+class EditProfileFormView(SuccessMessageMixin, UpdateView):
     form_class = EditProfileForm
 
     def dispatch(self, request, *args, **kwargs):
         self.user = request.user
         return super(EditProfileFormView, self).dispatch(request, *args, **kwargs)
 
+    def get_context_data(self, **kwargs):
+        context = super(EditProfileFormView, self).get_context_data(**kwargs)
+        form = context['form']
+        # Prepare a list of fields with errors
+        # We do this so that if there's a problem with the captcha, that's the only error shown
+        # (since we have a username field, we want to make user enumeration difficult)
+        if 'captcha' in form.errors:
+            error_fields = ['captcha']
+        else:
+            error_fields = form.errors.keys()
+        context['error_fields'] = error_fields
+        return context
+
     def get_object(self, queryset=None):
         return self.user
+
+    def get_success_message(self, cleaned_data):
+        return "Profile saved successfully"
 
     def get_success_url(self):
         return reverse('frontpage')
