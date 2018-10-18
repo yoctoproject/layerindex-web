@@ -152,9 +152,15 @@ INSTALLED_APPS = (
     'reversion',
     'reversion_compare',
     'captcha',
+    'axes',
     'rest_framework',
     'corsheaders',
 )
+
+AUTHENTICATION_BACKENDS = [
+    'axes.backends.AxesModelBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
@@ -240,6 +246,16 @@ PARALLEL_JOBS = "4"
 # Install flite & sox and set these to enable audio for CAPTCHA challenges (for accessibility)
 #CAPTCHA_FLITE_PATH = "/usr/bin/flite"
 #CAPTCHA_SOX_PATH = "/usr/bin/sox"
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+    },
+    'axes_cache': {
+        'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
+    }
+}
+AXES_CACHE = "axes_cache"
 
 # Full path to directory to store logs for dynamically executed tasks
 TASK_LOG_DIR = "/tmp/layerindex-task-logs"
