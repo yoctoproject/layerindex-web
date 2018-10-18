@@ -12,6 +12,7 @@ from registration.validators import ReservedNameValidator, DEFAULT_RESERVED_NAME
 from django.forms.models import inlineformset_factory, modelformset_factory
 from captcha.fields import CaptchaField
 from django.contrib.auth.models import User
+from django.core.cache import cache
 import re
 import settings
 
@@ -188,14 +189,23 @@ class EditProfileForm(StyledModelForm):
     def clean_username(self):
         username = self.cleaned_data['username']
         if 'username' in self.changed_data:
-            try:
-                reserved_validator = ReservedNameValidator(
-                    reserved_names=DEFAULT_RESERVED_NAMES
-                )
-                reserved_validator(username)
-                validate_confusables(username)
-            except forms.ValidationError as v:
-                self.add_error('username', v)
+            key = 'username_attempts_%s' % self.instance.username
+            attempt = cache.get(key) or 0
+            if attempt < 10:
+                try:
+                    reserved_validator = ReservedNameValidator(
+                        reserved_names=DEFAULT_RESERVED_NAMES
+                    )
+                    reserved_validator(username)
+                    validate_confusables(username)
+                except forms.ValidationError as v:
+                    self.add_error('username', v)
+
+                attempt += 1
+                cache.set(key, attempt, 300)
+            else:
+                raise forms.ValidationError('Maximum username change attempts exceeded')
+
         return username
 
 
