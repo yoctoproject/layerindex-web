@@ -20,6 +20,9 @@
             <div class="controls">
                 {{ field }}
             </div>
+        <p>
+        {{ field.help_text|safe }}
+        </p>
         </div>
     {% endfor %}
 
