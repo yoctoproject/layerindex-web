@@ -807,7 +807,7 @@ class ClassSearchView(ListView):
             return init_qs.order_by('name', 'layerbranch__layer')
 
         # Be consistent with RecipeSearchView
-        return Distro.objects.none()
+        return BBClass.objects.none()
 
     def get_context_data(self, **kwargs):
         context = super(ClassSearchView, self).get_context_data(**kwargs)
