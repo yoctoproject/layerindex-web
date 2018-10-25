@@ -8,7 +8,8 @@ OE-Core.
 There are two main methods of setting up this application - within
 a set of Docker containers, or standalone. The Docker-based setup
 is more suited for production whereas standalone is a bit easier
-for development.
+for development. If you simply want to run and use the layer index, 
+please use the docker setup.
 
 
 Docker Setup

@@ -1,49 +1,52 @@
-## Layerindex example docker instructions
+Layerindex Docker Setup Instructions
 
-## This is set up to make a cluster of 5 containers:
-## - layersapp: the application
-## - layersdb: the database
-## - layersweb: NGINX web server (as a proxy and for serving static content)
-## - layerscelery: Celery (for running background jobs)
-## - layersrabbit: RabbitMQ (required by Celery)
+The script setup.py will set up and configure a cluster of 5 docker containers:
 
-## You will need docker and docker-compose installed in order to proceed.
+  - layersapp: the application
+  - layersdb: the database
+  - layersweb: NGINX web server (as a proxy and for serving static content)
+  - layerscelery: Celery (for running background jobs)
+  - layersrabbit: RabbitMQ (required by Celery)
 
-## First, find and replace layers.openembedded.org in the docker-compose.yml with your hostname
-## You'll probably also want to replace the database password "testingpw".
+The script will edit all necessary configuration files, build and launch all containers, and do the initial database setup. It is advised that you start with a .sql database file to prepopulate your database. The following instructions will walk you through the setup.  
 
-## If you want to change any of the application configuration, edit docker/settings.py as desired.
-## Some settings have been set so that values can be passed in via environment variables, so you can set these from the docker-compose.yml if you want to.
-## You will definitely need to set SECRET_KEY and probably EMAIL_HOST.
+1) Install docker and docker-compose per instructions: 
+ 	https://docs.docker.com/compose/install/ 
+	** Note: for latest docker-compose version follow the directions above, rather than using apt. 
 
-## If you are on a network that requires a proxy to get out to the internet, then you'll need to:
-## - Uncomment several lines in Dockerfile (search for "proxy")
-## - Edit docker/.gitconfig and docker/git-proxy
+2) Clone the repo and checkout appropriate branch:
+ 	git clone https://github.intel.com/peggleto/layerindex-web.git
+ 	git checkout origin/dev_snapshot
 
-## Start the containers:
-docker-compose up
+2) Run the setup script (dockerstup.py). You can optionally supply your hostname, proxy settings, a sql database file of layer mappings to import, and a host to container port mapping. For more information, run: 
+ 	./dockersetup.py -h 
 
+	Example command to run containers with a proxy and with a database to import:
+ 	./dockersetup.py -d ~/databasedump.sql -p http://proxy-chain.intel.com:911 
 
-## Apply any pending layerindex migrations / initialize the database
-docker-compose run --rm layersapp /opt/migrate.sh
+ 	During the setup you will be asked for a username, email and password to set up a super user for the database. This will allow you to access the database later, should you need to. 
 
-## For a fresh database, create an admin account
-docker-compose run --rm layersapp /opt/layerindex/manage.py createsuperuser
+3) Once the script completes, open a web browser and navigate to <hostname>:<mapped_port>/layerindex. If you haven't supplied hostname and/or port mapping, this will by default be localhost:8080. 
 
+4) If you have chosen to not supply a prepopulated database and are instead starting fresh, you should now
+follow the instructions in the "Database Setup" section of the main README.
 
-## Set the volume permissions using debian:stretch since we recently fetched it
-docker run --rm -v layerindexweb_layersmeta:/opt/workdir debian:stretch chown 500 /opt/workdir
-docker run --rm -v layerindexweb_layersstatic:/usr/share/nginx/html debian:stretch chown 500 /usr/share/nginx/html
+5) If you need to rerun this script for any reason a second time, make sure to tear the containers down first with docker-compose down. Otherwise, your new automatically generated root database password will not match.
 
-## Generate static assets. Run this command again to regenerate at any time (when static assets in the code are updated)
-docker-compose run --rm -e STATIC_ROOT=/usr/share/nginx/html -v layerindexweb_layersstatic:/usr/share/nginx/html layersapp /opt/layerindex/manage.py collectstatic
+6) To update the layers in the future, you can optionally do the following: 
 
-## Run the layer updates
-docker-compose run --rm layersapp /opt/layerindex/layerindex/update.py
+	Run the layer updates
+	docker-compose run --rm layersapp /opt/layerindex/layerindex/update.py
 
-## Or do a full refresh
-docker-compose run --rm layersapp /opt/layerindex/layerindex/update.py -r
+	Or do a full refresh
+	docker-compose run --rm layersapp /opt/layerindex/layerindex/update.py -r
 
 
-## Once you've finished here, if this is a fresh database, you should now
-## follow the instructions in the "Database Setup" section of the main README.
+TROUBLESHOOTING:
+
+- Network issues behind a proxy when building container: On some Ubuntu systems, /etc/resolv.conf is set to 127.0.0.x, rather than your local DNS server. Docker will look there for your DNS server, and when it fails to find it it will default to using a public one (frequently 8.8.8.8). Many corporate proxies blocks public DNS servers, so you will need to manually supply the DNS server to docker using /etc/docker/daemon.json:
+	{"dns": ["xx.xx.xx.xx] }
+
+
+
+
