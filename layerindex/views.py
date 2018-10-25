@@ -28,6 +28,7 @@ from django.db.models.query import QuerySet
 from django.template.loader import get_template
 from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth import logout
 from django.contrib import messages
 from django import forms
 from django.utils.html import escape
@@ -41,6 +42,7 @@ import settings
 from django.dispatch import receiver
 import reversion
 from django.db.models.signals import pre_save
+from registration.models import RegistrationProfile
 
 def edit_layernote_view(request, template_name, slug, pk=None):
     layeritem = get_object_or_404(LayerItem, name=slug)
@@ -846,6 +848,23 @@ class EditProfileFormView(SuccessMessageMixin, UpdateView):
 
     def get_object(self, queryset=None):
         return self.user
+
+    def form_valid(self, form):
+        self.object = form.save()
+        if 'email' in form.changed_data:
+            # Take a copy of request.user as it is about to be invalidated by logout()
+            user = self.request.user
+            logout(self.request)
+            # Deactivate user and put through registration again
+            user.is_active = False
+            user.save()
+            site = Site.objects.get_current()
+            RegistrationProfile.objects.filter(user=user).delete()
+            registration_profile = RegistrationProfile.objects.create_profile(user)
+            registration_profile.send_activation_email(site)
+            return HttpResponseRedirect(reverse('reregister'))
+
+        return HttpResponseRedirect(self.get_success_url())
 
     def get_success_message(self, cleaned_data):
         return "Profile saved successfully"
