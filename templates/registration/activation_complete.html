@@ -3,12 +3,8 @@
 
 {% block content %}
 
-{% blocktrans %}
-
-Activation is complete.
+{% trans "Your account has been successfully activated." %}
 <br/>
-You can log in now.
-
-{% endblocktrans %}
+{% trans "You can now " %} <a href="{% url 'auth_login' %}">{% trans "log in" %}</a>.
 
 {% endblock %}
