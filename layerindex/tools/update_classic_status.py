@@ -234,6 +234,10 @@ def main():
                                 recipe.classic_category = 'gnome'
                                 recipe.save()
                                 updated = True
+                            elif recipe.pn.startswith('perl-'):
+                                recipe.classic_category = 'perl'
+                                recipe.save()
+                                updated = True
                 if updated and updateobj:
                     rupdate, _ = ComparisonRecipeUpdate.objects.get_or_create(update=updateobj, recipe=recipe)
                     rupdate.link_updated = True
