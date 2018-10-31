@@ -139,7 +139,7 @@ def main():
                     else:
                         if recipe.source_set.exists():
                             source0 = recipe.source_set.first()
-                            if 'pypi.' in source0.url:
+                            if 'pypi.' in source0.url or 'pythonhosted.org' in source0.url:
                                 attempts = ['python3-%s' % sanepn, 'python-%s' % sanepn]
                                 if sanepn.startswith('py'):
                                     attempts.extend(['python3-%s' % sanepn[2:], 'python-%s' % sanepn[2:]])
