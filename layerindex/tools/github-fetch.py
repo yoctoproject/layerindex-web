@@ -60,7 +60,9 @@ def fetchall(args):
                 outpath = os.path.join(args.outdir, name)
                 if os.path.exists(outpath):
                     print('Update %s' % outpath)
-                    ret = subprocess.call(['git', 'pull'], cwd=outpath)
+                    ret = subprocess.call(['git', 'fetch'], cwd=outpath)
+                    if ret == 0:
+                        ret = subprocess.call(['git', 'reset', '--hard', 'FETCH_HEAD'], cwd=outpath)
                 else:
                     print('Fetch %s' % clone_url)
                     ret = subprocess.call(['git', 'clone', clone_url, name], cwd=args.outdir)
