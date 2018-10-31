@@ -84,7 +84,7 @@ def fetchall(args):
 
     deleted = False
     for dirname in existing:
-        dirpath = os.path.join(outpath, dirname)
+        dirpath = os.path.join(args.outdir, dirname)
         print('Marking %s as deleted' % dirname)
         os.rename(dirpath, dirpath + '.deleted')
         deleted = True
