@@ -182,6 +182,10 @@ def main():
                                     recipe.classic_category = 'perl'
                                     recipe.save()
                                     updated = True
+                            elif 'kde.org' in source0.url or 'github.com/KDE' in source0.url:
+                                recipe.classic_category = 'kde'
+                                recipe.save()
+                                updated = True
                         if not found:
                             if recipe.pn.startswith('R-'):
                                 recipe.classic_category = 'R'
