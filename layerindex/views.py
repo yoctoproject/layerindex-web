@@ -1140,7 +1140,7 @@ class ClassicRecipeSearchView(RecipeSearchView):
         cover_null = False
         if cover_status:
             if cover_status == '!':
-                init_qs = init_qs.filter(cover_status__in=['U', 'N', 'S'])
+                init_qs = init_qs.filter(cover_status__in=['U', 'N'])
             elif cover_status == '#':
                 init_qs = init_qs.exclude(cover_status__in=['U', 'N', 'S'])
             else:
