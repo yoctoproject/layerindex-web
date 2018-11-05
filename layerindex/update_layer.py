@@ -347,7 +347,7 @@ def main():
 
     utils.setup_django()
     import settings
-    from layerindex.models import LayerItem, LayerBranch, Recipe, RecipeFileDependency, Machine, Distro, BBAppend, BBClass
+    from layerindex.models import LayerItem, LayerBranch, Recipe, RecipeFileDependency, Machine, Distro, BBAppend, BBClass, IncFile
     from django.db import transaction
 
     logger.setLevel(options.loglevel)
@@ -421,6 +421,7 @@ def main():
             layerdistros = Distro.objects.filter(layerbranch=layerbranch)
             layerappends = BBAppend.objects.filter(layerbranch=layerbranch)
             layerclasses = BBClass.objects.filter(layerbranch=layerbranch)
+            layerincfiles = IncFile.objects.filter(layerbranch=layerbranch)
             if layerbranch.vcs_last_rev != topcommit.hexsha or options.reload or options.initial:
                 # Check out appropriate branch
                 if not options.nocheckout:
@@ -585,6 +586,15 @@ def main():
                                 else:
                                     logger.warn("Renamed class %s could not be found" % oldpath)
                                     other_adds.append(diffitem)
+                            elif oldtypename == 'incfile':
+                                results = layerincfiles.filter(path=os.path.join(oldfilepath, oldfilename))
+                                if len(results):
+                                    logger.debug("Rename inc file %s to %s" % (results[0], newfilename))
+                                    results[0].name = newfilename
+                                    results[0].save()
+                                else:
+                                    logger.warn("Renamed inc file %s could not be found" % oldpath)
+                                    other_adds.append(diffitem)
 
                             deps = RecipeFileDependency.objects.filter(layerbranch=layerbranch).filter(path=oldpath)
                             for dep in deps:
@@ -618,6 +628,8 @@ def main():
                                 layerdistros.filter(name=filename).delete()
                             elif typename == 'bbclass':
                                 layerclasses.filter(name=filename).delete()
+                            elif typename == 'incfile':
+                                layerincfiles.filter(path=os.path.join(filepath, filename)).delete()
 
                     for diffitem in itertools.chain(diff.iter_change_type('A'), other_adds):
                         path = diffitem.b_blob.path
@@ -657,6 +669,11 @@ def main():
                                 bbclass.layerbranch = layerbranch
                                 bbclass.name = filename
                                 bbclass.save()
+                            elif typename == 'incfile':
+                                incfile = IncFile()
+                                incfile.layerbranch = layerbranch
+                                incfile.path = os.path.join(filepath, filename)
+                                incfile.save()
 
                     for diffitem in diff.iter_change_type('M'):
                         path = diffitem.b_blob.path
@@ -773,6 +790,11 @@ def main():
                                 bbclass.layerbranch = layerbranch
                                 bbclass.name = filename
                                 bbclass.save()
+                            elif typename == 'incfile':
+                                incfile = IncFile()
+                                incfile.layerbranch = layerbranch
+                                incfile.path = os.path.relpath(fullpath, layerdir)
+                                incfile.save()
 
                 for added in layerrecipes_add:
                     # This is good enough without actually parsing the file

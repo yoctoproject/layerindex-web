@@ -13,7 +13,7 @@ from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidde
 from django.core.urlresolvers import reverse, reverse_lazy, resolve
 from django.core.exceptions import PermissionDenied
 from django.template import RequestContext
-from layerindex.models import Branch, LayerItem, LayerMaintainer, LayerBranch, LayerDependency, LayerNote, Update, LayerUpdate, Recipe, Machine, Distro, BBClass, BBAppend, RecipeChange, RecipeChangeset, ClassicRecipe, StaticBuildDep, DynamicBuildDep
+from layerindex.models import Branch, LayerItem, LayerMaintainer, LayerBranch, LayerDependency, LayerNote, Update, LayerUpdate, Recipe, Machine, Distro, BBClass, IncFile, BBAppend, RecipeChange, RecipeChangeset, ClassicRecipe, StaticBuildDep, DynamicBuildDep
 from datetime import datetime
 from django.views.generic import TemplateView, DetailView, ListView
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
@@ -555,11 +555,20 @@ class DuplicatesView(TemplateView):
         qs = init_qs.all().filter(name__in=[item['name'] for item in dupes]).order_by('name', 'layerbranch__layer')
         return qs
 
+    def get_incfiles(self, layer_ids):
+        init_qs = IncFile.objects.filter(layerbranch__branch__name=self.kwargs['branch'])
+        if layer_ids:
+            init_qs = init_qs.filter(layerbranch__layer__in=layer_ids)
+        dupes = init_qs.values('path').annotate(Count('layerbranch', distinct=True)).filter(layerbranch__count__gt=1)
+        qs = init_qs.all().filter(path__in=[item['path'] for item in dupes]).order_by('path', 'layerbranch__layer')
+        return qs
+
     def get_context_data(self, **kwargs):
         layer_ids = [int(i) for i in self.request.GET.getlist('l')]
         context = super(DuplicatesView, self).get_context_data(**kwargs)
         context['recipes'] = self.get_recipes(layer_ids)
         context['classes'] = self.get_classes(layer_ids)
+        context['incfiles'] = self.get_incfiles(layer_ids)
         context['url_branch'] = self.kwargs['branch']
         context['this_url_name'] = resolve(self.request.path_info).url_name
         context['layers'] = LayerBranch.objects.filter(branch__name=self.kwargs['branch']).filter(layer__status__in=['P', 'X']).order_by( 'layer__name')

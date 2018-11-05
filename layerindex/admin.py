@@ -168,6 +168,15 @@ class BBClassAdmin(admin.ModelAdmin):
     def has_delete_permission(self, request, obj=None):
         return False
 
+class IncFileAdmin(admin.ModelAdmin):
+    search_fields = ['path']
+    list_filter = ['layerbranch__layer__name', 'layerbranch__branch__name']
+    readonly_fields = [f.name for f in IncFile._meta.get_fields()]
+    def has_add_permission(self, request, obj=None):
+        return False
+    def has_delete_permission(self, request, obj=None):
+        return False
+
 class RecipeChangeInline(admin.StackedInline):
     model = RecipeChange
 
@@ -200,6 +209,7 @@ admin.site.register(Machine, MachineAdmin)
 admin.site.register(Distro, DistroAdmin)
 admin.site.register(BBAppend, BBAppendAdmin)
 admin.site.register(BBClass, BBClassAdmin)
+admin.site.register(IncFile, IncFileAdmin)
 admin.site.register(Patch)
 admin.site.register(LayerRecipeExtraURL)
 admin.site.register(RecipeChangeset, RecipeChangesetAdmin)

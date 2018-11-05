@@ -755,6 +755,18 @@ class BBClass(models.Model):
         return '%s (%s)' % (self.name, self.layerbranch.layer.name)
 
 
+class IncFile(models.Model):
+    layerbranch = models.ForeignKey(LayerBranch)
+    path = models.CharField(max_length=255)
+
+    def vcs_web_url(self):
+        url = self.layerbranch.file_url(self.path)
+        return url or ''
+
+    def __str__(self):
+        return '%s (%s)' % (self.path, self.layerbranch.layer.name)
+
+
 class RecipeChangeset(models.Model):
     user = models.ForeignKey(User)
     name = models.CharField(max_length=255)

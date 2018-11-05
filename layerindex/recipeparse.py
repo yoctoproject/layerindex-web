@@ -126,6 +126,8 @@ def detect_file_type(path, subdir_start):
         typename = 'recipe'
     elif fnmatch.fnmatch(path, "*.bbappend"):
         typename = 'bbappend'
+    elif fnmatch.fnmatch(path, "*.inc"):
+        typename = 'incfile'
     else:
         # Check if it's a machine conf file
         subpath = path[len(subdir_start):]
@@ -142,7 +144,7 @@ def detect_file_type(path, subdir_start):
             typename = 'distro'
             return (typename, None, res.group(1))
 
-    if typename == 'recipe' or typename == 'bbappend':
+    if typename in ['recipe', 'bbappend', 'incfile']:
         if subdir_start:
             filepath = os.path.relpath(os.path.dirname(path), subdir_start)
         else:

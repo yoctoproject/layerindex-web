@@ -110,7 +110,7 @@
                     </tbody>
                 </table>
 {% else %}
-    <p>No duplicate recipes in database.</p>
+    <p>No matching duplicate recipes in database.</p>
 {% endif %}
             </div>
         </div>
@@ -139,7 +139,35 @@
                     </tbody>
                 </table>
 {% else %}
-    <p>No duplicate classes in database.</p>
+    <p>No matching duplicate classes in database.</p>
+{% endif %}
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12">
+                <h2>Duplicate include files</h2>
+{% if incfiles %}
+                <p>Include files with the same name in different layers:</p>
+                <table class="table table-striped table-bordered recipestable">
+                    <thead>
+                        <tr>
+                            <th>Include file</th>
+                            <th>Layer</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for incfile in incfiles %}
+                            <tr>
+                                <td><a href="{{ incfile.vcs_web_url }}">{{ incfile.path }}</a></td>
+                                <td><a href="{% url 'layer_item' 'master' incfile.layerbranch.layer.name %}">{{ incfile.layerbranch.layer.name }}</a></td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+{% else %}
+    <p>No matching duplicate include files in database.</p>
 {% endif %}
             </div>
         </div>
