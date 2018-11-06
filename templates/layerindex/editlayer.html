@@ -1,11 +1,12 @@
 {% extends "base.html" %}
 {% load i18n %}
+{% load static %}
 
 {% comment %}
 
   layerindex-web - layer editing form page template
 
-  Copyright (C) 2013 Intel Corporation
+  Copyright (C) 2013-2018 Intel Corporation
   Licensed under the MIT license, see COPYING.MIT for details
 
 {% endcomment %}
@@ -52,8 +53,12 @@
                 </div>
                 <div class="controls">
                     {% if field.name == 'deps' %}
+                        <div class="form-group has-feedback has-clear">
+                            <input type="text" class="form-control" id="layersearchtext" placeholder="search layers">
+                            <a class="glyphicon glyphicon-remove-sign form-control-feedback form-control-clear" id="layersearchclear" style="pointer-events: auto; text-decoration: none;cursor: pointer;"></a>
+                        </div>
                         <div class="scrolling">
-                            <table><tbody>
+                            <table class="layerstable"><tbody>
                                 {% for deplayer in deplistlayers %}
                                     {% if deplayer.id in form.checked_deps %}
                                         <tr>
@@ -382,6 +387,11 @@
         return false;
     }
 
+    function clearLayerSearch() {
+        $("#layersearchtext").val('');
+        $(".layerstable > tbody > tr").show();
+    }
+
     $(document).ready(function() {
         $('.maintainerform').hide()
 
@@ -408,5 +418,18 @@
         if( ! firstfield.val() )
             firstfield.focus()
     });
+
+    $("#layersearchtext").on("input", function() {
+        var value = $(this).val().toLowerCase();
+        $(".layerstable > tbody > tr").filter(function() {
+            $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+        });
+    });
+
+    $("#layersearchclear").click(function(){
+        clearLayerSearch();
+        $("#layersearchtext").focus();
+    });
+
 </script>
 {% endblock %}
