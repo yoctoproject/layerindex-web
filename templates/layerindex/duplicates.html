@@ -1,5 +1,6 @@
 {% extends "base_toplevel.html" %}
 {% load i18n %}
+{% load static %}
 
 {% comment %}
 
@@ -48,8 +49,12 @@
                     </div>
                     <form action="" method="get">
                         <div class="modal-body">
+                            <div class="form-group has-feedback has-clear">
+                                <input type="text" class="form-control" id="layersearchtext" placeholder="search layers">
+                                <a class="glyphicon glyphicon-remove-sign form-control-feedback form-control-clear" id="layersearchclear" style="pointer-events: auto; text-decoration: none;cursor: pointer;"></a>
+                            </div>
                             <div class="scrolling">
-                                <table><tbody>
+                                <table class="layerstable"><tbody>
                                     {% for layerbranch in layers %}
                                         <tr>
                                             <td class="checkboxtd"><input
@@ -186,17 +191,34 @@
             firstfield.focus()
     });
     $('#id_select_all').click(function (e) {
-        $('.filterlayercheckbox').prop('checked', true);
+        $('.layerstable').find('tr:visible').find('.filterlayercheckbox').prop('checked', true);
     });
     $('#id_select_none').click(function (e) {
-        $('.filterlayercheckbox').prop('checked', false);
+        $('.layerstable').find('tr:visible').find('.filterlayercheckbox').prop('checked', false);
     });
+
+    function clearLayerSearch() {
+        $("#layersearchtext").val('');
+        $(".layerstable > tbody > tr").show();
+    }
+
     $('#id_cancel').click(function (e) {
         $('.filterlayercheckbox').prop('checked', false);
         showlayers = {{ showlayers }}
         for(i in showlayers) {
             $('#id_layer_' + showlayers[i]).prop('checked', true);
         }
+        clearLayerSearch();
+    });
+    $("#layersearchtext").on("input", function() {
+        var value = $(this).val().toLowerCase();
+        $(".layerstable > tbody > tr").filter(function() {
+            $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+        });
+    });
+    $("#layersearchclear").click(function(){
+        clearLayerSearch();
+        $("#layersearchtext").focus();
     });
 </script>
 {% endblock %}

@@ -1,5 +1,6 @@
 {% extends "layerindex/classic_base.html" %}
 {% load i18n %}
+{% load static %}
 
 {% comment %}
 
@@ -94,6 +95,10 @@
                                                         <h3 id="layerDialogLabel">Select layers to include</h3>
                                                     </div>
                                                     <div class="modal-body">
+                                                        <div class="form-group has-feedback has-clear">
+                                                            <input type="text" class="form-control" id="layersearchtext" placeholder="search layers">
+                                                            <a class="glyphicon glyphicon-remove-sign form-control-feedback form-control-clear" id="layersearchclear" style="pointer-events: auto; text-decoration: none;cursor: pointer;"></a>
+                                                        </div>
                                                         <div class="scrolling" id="id_layerdialog_list">
                                                         </div>
                                                         <div class="buttonblock">
@@ -402,6 +407,10 @@
             });
         }
     }
+    function clearLayerSearch() {
+        $("#layersearchtext").val('');
+        $(".layerstable > tbody > tr").show();
+    }
     $(document).ready(function() {
         $('#id_selectedlayers_display').prop('readonly', true)
         $('#id_excludeclasses_display').prop('readonly', true)
@@ -412,16 +421,17 @@
             firstfield.focus()
     });
     $('#id_layerdialog_select_all').click(function (e) {
-        $('.filterlayercheckbox').prop('checked', true);
+        $('.layerstable').find('tr:visible').find('.filterlayercheckbox').prop('checked', true);
     });
     $('#id_layerdialog_select_none').click(function (e) {
-        $('.filterlayercheckbox').prop('checked', false);
+        $('.layerstable').find('tr:visible').find('.filterlayercheckbox').prop('checked', false);
     });
     $('#id_layerdialog_ok').click(function (e) {
         update_selected_layer_display()
     });
     $('#id_select_layers').click(function (e) {
-        setup_layer_list()
+        clearLayerSearch();
+        setup_layer_list();
     });
     $('#id_excludeclassdialog_select_none').click(function (e) {
         $('.filterclasscheckbox').prop('checked', false);
@@ -434,6 +444,16 @@
     });
     $('#id_reversed').click(function (e) {
         update_filters_enabled()
+    });
+    $("#layersearchtext").on("input", function() {
+        var value = $(this).val().toLowerCase();
+        $(".layerstable > tbody > tr").filter(function() {
+            $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+        });
+    });
+    $("#layersearchclear").click(function(){
+        clearLayerSearch();
+        $("#layersearchtext").focus();
     });
 {% block scripts_extra %}
 {% endblock %}
