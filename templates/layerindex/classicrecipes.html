@@ -341,10 +341,10 @@
         }
     }
     select_layer_checkboxes = function() {
-        $('.filterlayercheckbox').attr('checked', false);
+        $('.filterlayercheckbox').prop('checked', false);
         selectedlayers = $('#id_selectedlayers').val().split(',');
         for(i in selectedlayers) {
-            $('#id_layercheckbox_' + selectedlayers[i]).attr('checked', true);
+            $('#id_layercheckbox_' + selectedlayers[i]).prop('checked', true);
         }
     }
     setup_layer_list = function() {
@@ -372,10 +372,10 @@
         }
     }
     select_excludeclass_checkboxes = function() {
-        $('.filterclasscheckbox').attr('checked', false);
+        $('.filterclasscheckbox').prop('checked', false);
         excludeclasses = $('#id_excludeclasses').val().split(',');
         for(i in excludeclasses) {
-            $('#id_classcheckbox_' + excludeclasses[i]).attr('checked', true);
+            $('#id_classcheckbox_' + excludeclasses[i]).prop('checked', true);
         }
     }
     setup_excludeclass_list = function() {
@@ -412,10 +412,10 @@
             firstfield.focus()
     });
     $('#id_layerdialog_select_all').click(function (e) {
-        $('.filterlayercheckbox').attr('checked', true);
+        $('.filterlayercheckbox').prop('checked', true);
     });
     $('#id_layerdialog_select_none').click(function (e) {
-        $('.filterlayercheckbox').attr('checked', false);
+        $('.filterlayercheckbox').prop('checked', false);
     });
     $('#id_layerdialog_ok').click(function (e) {
         update_selected_layer_display()
@@ -424,7 +424,7 @@
         setup_layer_list()
     });
     $('#id_excludeclassdialog_select_none').click(function (e) {
-        $('.filterclasscheckbox').attr('checked', false);
+        $('.filterclasscheckbox').prop('checked', false);
     });
     $('#id_excludeclassdialog_ok').click(function (e) {
         update_excludeclasses_display()

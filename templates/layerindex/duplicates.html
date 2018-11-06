@@ -186,16 +186,16 @@
             firstfield.focus()
     });
     $('#id_select_all').click(function (e) {
-        $('.filterlayercheckbox').attr('checked', true);
+        $('.filterlayercheckbox').prop('checked', true);
     });
     $('#id_select_none').click(function (e) {
-        $('.filterlayercheckbox').attr('checked', false);
+        $('.filterlayercheckbox').prop('checked', false);
     });
     $('#id_cancel').click(function (e) {
-        $('.filterlayercheckbox').attr('checked', false);
+        $('.filterlayercheckbox').prop('checked', false);
         showlayers = {{ showlayers }}
         for(i in showlayers) {
-            $('#id_layer_' + showlayers[i]).attr('checked', true);
+            $('#id_layer_' + showlayers[i]).prop('checked', true);
         }
     });
 </script>
