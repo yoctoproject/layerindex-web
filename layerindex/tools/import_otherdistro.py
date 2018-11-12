@@ -410,8 +410,8 @@ def import_pkgspec(args):
                     pwriter.write(int(count / total * 100))
 
             if existing:
-                fpaths = ['%s/%s' % (pth, fn) for pth, fn in existing]
-                logger.info('Marking as deleted: %s' % ', '.join(fpaths))
+                fpaths = sorted(['%s/%s' % (pth, fn) for pth, fn in existing])
+                logger.info('Marking as deleted:\n  %s' % '\n  '.join(fpaths))
                 for entry in existing:
                     layerrecipes.filter(filepath=entry[0], filename=entry[1]).update(deleted=True)
 
