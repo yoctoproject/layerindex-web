@@ -415,6 +415,15 @@ def import_pkgspec(args):
                 for entry in existing:
                     layerrecipes.filter(filepath=entry[0], filename=entry[1]).update(deleted=True)
 
+            if args.description:
+                logger.debug('Setting description to "%s"' % args.description)
+                branch = layerbranch.branch
+                branch.short_description = args.description
+                branch.save()
+                layer = layerbranch.layer
+                layer.summary = args.description
+                layer.save()
+
             layerbranch.vcs_last_fetch = datetime.now()
             layerbranch.save()
 
@@ -579,6 +588,7 @@ def main():
     parser_pkgspec.add_argument('branch', help='Branch to import into')
     parser_pkgspec.add_argument('layer', help='Layer to import into')
     parser_pkgspec.add_argument('pkgdir', help='Top level directory containing package subdirectories')
+    parser_pkgspec.add_argument('--description', help='Set branch/layer description')
     parser_pkgspec.add_argument('-u', '--update', help='Specify update record to link to')
     parser_pkgspec.add_argument('-n', '--dry-run', help='Don\'t write any data back to the database', action='store_true')
     parser_pkgspec.set_defaults(func=import_pkgspec)
