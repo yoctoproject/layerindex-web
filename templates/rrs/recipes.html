@@ -142,7 +142,6 @@ th.headerSortDown {
 {% endblock %}
 
 {% block scripts %}
-<script src="{% static "js/uitablefilter.js" %}"></script>
 <script src="{% static "js/jquery.tablesorter.js" %}"></script>
 <script>
 (function($) {
@@ -278,7 +277,10 @@ $(document).ready(function() {
 
         queryString = ''
         if (search != '') {
-            $.uiTableFilter(recipesTable, search);
+            var value = search.toLowerCase();
+            $("#recipestable > tbody > tr").filter(function() {
+                $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+            });
             queryString = '?search=' + search
         } else {
             if (upstreamStatus != 'All' && maintainer != 'All') {

@@ -166,16 +166,13 @@ th.headerSortDown {
 {% endblock %}
 
 {% block scripts %}
-<script src="{% static "js/uitablefilter.js" %}"></script>
 <script src="{% static "js/jquery.tablesorter.js" %}"></script>
 <script>
 $(document).ready(function() {
-    statisticsTable = $('#statistics-table');
     var totals = []
     $("#statistics-table th").each(function(i){  
         totals.push(0);
     });
-    
 
     function updateMaintainerCount() {
         $('#statistics-table').show()
@@ -200,17 +197,19 @@ $(document).ready(function() {
     }
 
     $("#form-search").submit(function( event ) {
-        search_text = $("#filter").val()
-        $.uiTableFilter(statisticsTable, search_text);
+        search_text = $("#filter").val().toLowerCase();
+        $("#statistics-table > tbody > tr").filter(function() {
+            $(this).toggle($(this).text().toLowerCase().indexOf(search_text) > -1)
+        });
         updateMaintainerCount()
         $("#clear-search-btn").show()
         event.preventDefault();
     });
 
     function clearSearch() {
-        $.uiTableFilter(statisticsTable, '');
+        $("#filter").val('');
+        $("#statistics-table > tbody > tr").show();
         $("#clear-search-btn").hide()
-        $("#filter").val('')
         updateMaintainerCount()
     }
 

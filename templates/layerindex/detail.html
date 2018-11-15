@@ -222,7 +222,10 @@
                                 <a href="{% url 'layer_export_recipes_csv' layerbranch.branch.name layerbranch.layer.name %}" class="btn btn-default navbar-btn"><i class="glyphicon glyphicon-file" aria-hidden="true"></i> Export CSV</a>
 
                                 <form action="" class="navbar-form pull-right" id="filter-form">
-                                    <input type="text" placeholder="Search recipes" class="form-control" id="filter">
+                                    <div class="form-group has-feedback has-clear">
+                                        <input type="text" placeholder="Search recipes" class="form-control" id="recipesearchtext">
+                                        <a class="glyphicon glyphicon-remove-sign form-control-feedback form-control-clear" id="recipesearchclear" style="pointer-events: auto; text-decoration: none;cursor: pointer;"></a>
+                                    </div>
                                 </form>
                             </div>
                         </div>
@@ -381,8 +384,6 @@
 
 
 {% block scripts %}
-    <script src="{% static "js/uitablefilter.js" %}"></script>
-
     <script>
         // selectText plugin Borrowed from http://jsfiddle.net/edelman/KcX6A/1506/
         jQuery.fn.selectText = function() {
@@ -403,19 +404,25 @@
             }
         };
 
+        function clearRecipeSearch() {
+            $("#recipesearchtext").val('');
+            $(".recipestable > tbody > tr").show();
+        }
+
         $(document).ready(function() {
 
             $(function() {
-                var theTable = $('table.recipestable');
+                $("#recipesearchtext").on("input", function() {
+                    var value = $(this).val().toLowerCase();
+                    $(".recipestable > tbody > tr").filter(function() {
+                        $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+                    });
+                });
 
-                $("#filter").keyup(function() {
-                $.uiTableFilter( theTable, this.value );
-                })
-
-                $('#filter-form').submit(function(){
-                theTable.find("tbody > tr:visible > td:eq(1)").mousedown();
-                return false;
-                }).focus(); //Give focus to input field
+                $("#recipesearchclear").click(function(){
+                    clearRecipeSearch();
+                    $("#recipesearchtext").focus();
+                });
 
                 $('.selectallicon').mouseup(function() {
                     $('#' + $(this).attr('for')).selectText();
@@ -430,6 +437,8 @@
                 $('.glyphicon-hdd').tooltip({title:"Inherits image"});
                 $('.label-inverse').tooltip();
             });
+
+            clearRecipeSearch();
         });
     </script>
 {% endblock %}

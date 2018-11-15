@@ -33,8 +33,11 @@
 {% if layerbranch_list %}
 
             <div class="col-md-6 no-left-pad bottom-margin">
-                <form id="filter-form">
-                    <input type="text" class="form-control" id="filter" placeholder="Search layers">
+                <form id="filter-form" action="">
+                    <div class="form-group has-feedback has-clear">
+                        <input type="text" class="form-control" id="layersearchtext" placeholder="Search layers">
+                        <a class="glyphicon glyphicon-remove-sign form-control-feedback form-control-clear" id="layersearchclear" style="pointer-events: auto; text-decoration: none;cursor: pointer;"></a>
+                    </div>
                 </form>
             </div>
 
@@ -48,7 +51,7 @@
                         {% for choice_id, choice_label in layer_type_choices %}
                         <li><a tabindex="-1" href="#">
                             <label class="checkbox">
-                                <input type="checkbox" checked value="{{ choice_id }}">{{ choice_label }}
+                                <input type="checkbox" class="filterlayertypecheckbox" checked value="{{ choice_id }}">{{ choice_label }}
                             </label>
                         </a></li>
                         {% endfor %}
@@ -115,40 +118,74 @@
 
 
 {% block scripts %}
-<script src="{% static "js/uitablefilter.js" %}"></script>
-
 <script>
+    var refreshTimer = 0;
+
+    function clearLayerSearch() {
+        $("#layersearchtext").val('');
+        $(".layerstable > tbody > tr").show();
+    }
+
+    function refreshLayerSearch() {
+        var classes = [];
+
+        $('.filterlayertypecheckbox:not(":checked")').each(function() {
+            classes.push('layertype_' + $(this).val());
+        });
+
+        var value = $("#layersearchtext").val().toLowerCase();
+        $(".layerstable > tbody > tr").each(function() {
+            var visible = true;
+            if($(this).text().toLowerCase().indexOf(value) == -1) {
+                visible = false;
+            }
+            else {
+                var row = $(this)
+                classes.forEach(function (className) {
+                    if( row.hasClass(className) ) {
+                        visible = false;
+                        return false;
+                    }
+                });
+            }
+            $(this).toggle(visible)
+        });
+    }
+
+    function refreshTimeout() {
+        // Search text:       $("#layersearchtext").val()
+        // Number of matches: $(".layerstable > tbody > tr:visible").length
+    }
+
     $(document).ready(function() {
-        $("input:checkbox").change();
-
+        $("input:checkbox").change()
         $("input:checkbox").change(function(){
-                var selectedType = $(this).val();
-                if($(this).is(":checked")){
-                    $(".layertype_"+selectedType).show();
-                }
-                else{
-                    $(".layertype_"+selectedType).hide();
-                }
-
+            refreshLayerSearch();
         });
 
         $(function() {
             var theTable = $('table.layerstable');
 
-            $("#filter").keyup(function() {
-            $.uiTableFilter( theTable, this.value );
-            })
+            $("#layersearchtext").on("input", function() {
+                refreshLayerSearch();
+                if(refreshTimer) {
+                    window.clearTimeout(refreshTimer);
+                }
+                refreshTimer = window.setTimeout(refreshTimeout, 1000);
+            });
+
+            $("#layersearchclear").click(function(){
+                $("#layersearchtext").val('');
+                refreshLayerSearch();
+                $("#layersearchtext").focus();
+            });
 
             $('.dropdown-menu input, .dropdown-menu label').click(function(e) {
             e.stopPropagation();
             })
-
-            $('#filter-form').submit(function(){
-            theTable.find("tbody > tr:visible > td:eq(1)").mousedown();
-            return false;
-            }).focus(); //Give focus to input field
         });
 
+        refreshLayerSearch();
     });
 </script>
 {% endblock %}
