@@ -844,6 +844,7 @@ class EditProfileFormView(SuccessMessageMixin, UpdateView):
         else:
             error_fields = form.errors.keys()
         context['error_fields'] = error_fields
+        context['return_url'] = self.get_success_url()
         return context
 
     def get_object(self, queryset=None):
@@ -870,7 +871,7 @@ class EditProfileFormView(SuccessMessageMixin, UpdateView):
         return "Profile saved successfully"
 
     def get_success_url(self):
-        return reverse('frontpage')
+        return self.request.GET.get('return_to', reverse('frontpage'))
 
 
 @receiver(pre_save, sender=reversion.models.Version)
