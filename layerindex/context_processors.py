@@ -16,6 +16,10 @@ def layerindex_context(request):
         site_name = site.name
     else:
         site_name = 'OpenEmbedded Layer Index'
+    if request.path.startswith('/accounts'):
+        login_return_url = ''
+    else:
+        login_return_url = request.path
     return {
         'all_branches': Branch.objects.exclude(comparison=True).order_by('sort_priority'),
         'unpublished_count': LayerItem.objects.filter(status='N').count(),
@@ -23,4 +27,5 @@ def layerindex_context(request):
         'rrs_enabled': 'rrs' in settings.INSTALLED_APPS,
         'notices': SiteNotice.objects.filter(disabled=False).filter(Q(expires__isnull=True) | Q(expires__gte=datetime.now())),
         'comparison_branches': Branch.objects.filter(comparison=True),
+        'login_return_url': login_return_url,
     }
