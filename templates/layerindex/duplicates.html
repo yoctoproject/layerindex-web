@@ -22,12 +22,12 @@
         <div class="row">
             <div class="col-md-12">
 
-    <div class="pull-right">
-        <a href="#" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+    <div class="pull-right dropdown">
+        <button class="btn btn-default dropdown-toggle" data-toggle="dropdown">
         Branch: <b>{{ url_branch }}</b>
         <b class="caret"></b>
-        </a>
-        <ul class="dropdown-menu">
+        </button>
+        <ul class="dropdown-menu" style="right: auto;">
             {% for branch in all_branches %}
                 <li><a href="{% url this_url_name branch.name %}">
                     {% if branch.name == url_branch %}<b>{% endif %}
