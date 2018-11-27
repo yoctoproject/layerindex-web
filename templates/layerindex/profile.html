@@ -25,6 +25,12 @@
         {{ hidden }}
     {% endfor %}
 
+    {% if form.non_field_errors %}
+        <div class="form-group alert alert-danger">
+            {{ form.non_field_errors }}
+        </div>
+    {% endif %}
+
     {% for field in form.visible_fields %}
         {% if field.name in error_fields %}
         <div class="form-group alert alert-danger">

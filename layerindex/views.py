@@ -36,8 +36,8 @@ from django.views.generic import DetailView, ListView, TemplateView
 from django.views.generic.base import RedirectView
 from django.views.generic.edit import (CreateView, DeleteView, FormView,
                                        UpdateView)
-
 from django_registration.backends.activation.views import RegistrationView
+from pkg_resources import parse_version
 from reversion.models import Revision
 
 import settings
@@ -51,7 +51,9 @@ from layerindex.models import (BBAppend, BBClass, Branch, ClassicRecipe,
                                LayerDependency, LayerItem, LayerMaintainer,
                                LayerNote, LayerUpdate, Machine, Patch, Recipe,
                                RecipeChange, RecipeChangeset, Source, StaticBuildDep,
-                               Update)
+                               Update, SecurityQuestion, SecurityQuestionAnswer,
+                               UserProfile)
+
 
 from . import simplesearch, tasks, utils
 
@@ -891,6 +893,31 @@ class EditProfileFormView(SuccessMessageMixin, UpdateView):
 
     def form_valid(self, form):
         self.object = form.save()
+
+        if'answer_1' in form.changed_data:
+            # If one security answer has changed, they all have. Delete current questions and add new ones.
+            # Don't throw an error if we are editing the super user and they don't have security questions yet.
+            try:
+                self.user.userprofile.securityquestionanswer_set.all().delete()
+                user = self.user.userprofile
+            except UserProfile.DoesNotExist:
+                user = UserProfile.objects.create(user=self.user)
+
+            security_question_1 = SecurityQuestion.objects.get(question=form.cleaned_data.get("security_question_1"))
+            security_question_2 = SecurityQuestion.objects.get(question=form.cleaned_data.get("security_question_2"))
+            security_question_3 = SecurityQuestion.objects.get(question=form.cleaned_data.get("security_question_3"))
+            answer_1 = form.cleaned_data.get("answer_1").replace(" ", "").lower()
+            answer_2 = form.cleaned_data.get("answer_2").replace(" ", "").lower()
+            answer_3 = form.cleaned_data.get("answer_3").replace(" ", "").lower()
+
+            # Answers are hashed using Django's password hashing function make_password()
+            SecurityQuestionAnswer.objects.create(user=user, security_question=security_question_1,
+                                                  answer=make_password(answer_1))
+            SecurityQuestionAnswer.objects.create(user=user, security_question=security_question_2,
+                                                  answer=make_password(answer_2))
+            SecurityQuestionAnswer.objects.create(user=user, security_question=security_question_3,
+                                                  answer=make_password(answer_3))
+
         if 'email' in form.changed_data:
             # Take a copy of request.user as it is about to be invalidated by logout()
             user = self.request.user

@@ -1,20 +1,28 @@
 # layerindex-web - form definitions
 #
-# Copyright (C) 2013 Intel Corporation
+# Copyright (C) 2013, 2016-2019 Intel Corporation
 #
 # Licensed under the MIT license, see COPYING.MIT for details
 
+import re
 from collections import OrderedDict
-from layerindex.models import LayerItem, LayerBranch, LayerMaintainer, LayerNote, RecipeChangeset, RecipeChange, ClassicRecipe
-from django import forms
-from django.core.validators import URLValidator, RegexValidator, EmailValidator
-from django_registration.validators import ReservedNameValidator, DEFAULT_RESERVED_NAMES, validate_confusables
-from django.forms.models import inlineformset_factory, modelformset_factory
+
 from captcha.fields import CaptchaField
+from django import forms
 from django.contrib.auth.models import User
 from django.core.cache import cache
-import re
+from django.core.validators import EmailValidator, RegexValidator, URLValidator
+from django.forms.models import inlineformset_factory, modelformset_factory
+from django_registration.forms import RegistrationForm
+from django_registration.validators import (DEFAULT_RESERVED_NAMES,
+                                            ReservedNameValidator,
+                                            validate_confusables)
+
 import settings
+from layerindex.models import (Branch, ClassicRecipe,
+                               LayerBranch, LayerItem, LayerMaintainer,
+                               LayerNote, RecipeChange, RecipeChangeset,
+                               SecurityQuestion, UserProfile)
 
 
 class StyledForm(forms.Form):
@@ -181,10 +189,30 @@ class EditNoteForm(StyledModelForm):
 
 class EditProfileForm(StyledModelForm):
     captcha = CaptchaField(label='Verification', help_text='Please enter the letters displayed for verification purposes', error_messages={'invalid':'Incorrect entry, please try again'})
+    security_question_1 = forms.ModelChoiceField(queryset=SecurityQuestion.objects.all())
+    answer_1 = forms.CharField(widget=forms.TextInput(), label='Answer', initial="*****")
+    security_question_2 = forms.ModelChoiceField(queryset=SecurityQuestion.objects.all())
+    answer_2 = forms.CharField(widget=forms.TextInput(), label='Answer', initial="*****")
+    security_question_3 = forms.ModelChoiceField(queryset=SecurityQuestion.objects.all())
+    answer_3 = forms.CharField(widget=forms.TextInput(), label='Answer', initial="*****")
 
     class Meta:
         model = User
         fields = ('username', 'first_name', 'last_name', 'email', 'captcha')
+
+    def __init__(self, *args, **kwargs):
+        super(EditProfileForm, self ).__init__(*args, **kwargs)
+        user = kwargs.get("instance")
+        try:
+            self.fields['security_question_1'].initial=user.userprofile.securityquestionanswer_set.all()[0].security_question
+            self.fields['security_question_2'].initial=user.userprofile.securityquestionanswer_set.all()[1].security_question
+            self.fields['security_question_3'].initial=user.userprofile.securityquestionanswer_set.all()[2].security_question
+        except UserProfile.DoesNotExist:
+            # The super user won't have had security questions created already
+            self.fields['security_question_1'].initial=SecurityQuestion.objects.all()[0]
+            self.fields['security_question_2'].initial=SecurityQuestion.objects.all()[1]
+            self.fields['security_question_3'].initial=SecurityQuestion.objects.all()[2]
+            pass
 
     def clean_username(self):
         username = self.cleaned_data['username']
@@ -207,6 +235,25 @@ class EditProfileForm(StyledModelForm):
                 raise forms.ValidationError('Maximum username change attempts exceeded')
 
         return username
+
+    def clean(self):
+        cleaned_data = super(EditProfileForm, self).clean()
+        for data in self.changed_data:
+            # Check if a security answer has been updated. If one is updated, they must all be
+            # and each security question must be unique.
+            if 'answer' in data:
+                if 'answer_1' not in self.changed_data \
+                  or 'answer_2' not in self.changed_data \
+                  or 'answer_3' not in self.changed_data:
+                    raise forms.ValidationError("Please answer three security questions.")
+                security_question_1 = self.cleaned_data["security_question_1"]
+                security_question_2 = self.cleaned_data["security_question_2"]
+                security_question_3 = self.cleaned_data["security_question_3"]
+                if security_question_1 == security_question_2:
+                    raise forms.ValidationError({'security_question_2': ["Questions may only be chosen once."]})
+                if security_question_1 == security_question_3 or security_question_2 == security_question_3:
+                    raise forms.ValidationError({'security_question_3': ["Questions may only be chosen once."]})
+        return cleaned_data
 
 
 class ClassicRecipeForm(StyledModelForm):
