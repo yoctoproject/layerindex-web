@@ -31,7 +31,7 @@ def get_args():
     parser.add_argument('-p', '--http-proxy', type=str, help='http proxy in the format http://<myproxy:port>', required=False)
     parser.add_argument('-s', '--https-proxy', type=str, help='https proxy in the format http://<myproxy:port>', required=False)
     parser.add_argument('-d', '--databasefile', type=str, help='Location of your database file to import. Must be a .sql file.', required=False)
-    parser.add_argument('-m', '--portmapping', type=str, help='Port mapping in the format HOST:CONTAINER. Default is set to 8080:80', required=False, default = '8080:80')
+    parser.add_argument('-m', '--portmapping', type=str, help='Port mapping in the format HOST:CONTAINER. Default is %(default)s', required=False, default='8080:80')
     args = parser.parse_args()
     port = proxymod = ""
     try:
@@ -84,15 +84,19 @@ def edit_gitproxy(proxymod, port):
 # Add hostname, secret key, db info, and email host in docker-compose.yml
 def edit_dockercompose(hostname, dbpassword, secretkey, portmapping):
     filedata= readfile("docker-compose.yml")
-    portflag = False
+    in_layersweb = False
+    in_layersweb_ports = False
     newlines = []
     lines = filedata.splitlines()
     for line in lines:
-        if portflag == True :
+        if in_layersweb_ports:
             format = line[0:line.find("-")].replace("#", "")
-            print (format)
             newlines.append(format + '- "' + portmapping + '"' + "\n")
-            portflag = False
+            in_layersweb_ports = False
+            in_layersweb = False
+        elif "layersweb:" in line:
+            in_layersweb = True
+            newlines.append(line + "\n")
         elif "hostname:" in line:
             format = line[0:line.find("hostname")].replace("#", "")
             newlines.append(format +"hostname: " + hostname + "\n")
@@ -106,8 +110,9 @@ def edit_dockercompose(hostname, dbpassword, secretkey, portmapping):
             format = line[0:line.find("- MYSQL_ROOT_PASSWORD")].replace("#", "")
             newlines.append(format +"- MYSQL_ROOT_PASSWORD=" + dbpassword + "\n")
         elif "ports:" in line:
+            if in_layersweb:
+                in_layersweb_ports = True
             newlines.append(line + "\n")
-            portflag = True
         else:
             newlines.append(line + "\n")
     writefile("docker-compose.yml", ''.join(newlines))
@@ -183,3 +188,11 @@ return_code = subprocess.call("docker-compose run --rm -e STATIC_ROOT=/usr/share
 if return_code != 0:
     print("Collecting static files failed")
     sys.exit(1)
+
+print("")
+ports = portmapping.split(':')
+if ports[1] == '443':
+    protocol = 'https'
+else:
+    protocol = 'http'
+print("The application should now be accessible at %s://%s:%s" % (protocol, hostname, ports[0]))
