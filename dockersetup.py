@@ -17,6 +17,7 @@
 #
 # It will build and run these containers and set up the database.
 
+import sys
 import argparse
 import re
 import subprocess
@@ -142,6 +143,9 @@ edit_dockercompose(hostname, dbpassword, secretkey, portmapping)
 
 ## Start up containers
 return_code = subprocess.call("docker-compose up -d", shell=True)
+if return_code != 0:
+    print("docker-compose up failed")
+    sys.exit(1)
 
 # Apply any pending layerindex migrations / initialize the database. Database might not be ready yet; have to wait then poll.
 time.sleep(8)
@@ -156,15 +160,26 @@ while True:
 # Import the user's supplied data
 if dbfile:
     return_code = subprocess.call("docker exec -i layersdb mysql -uroot -p" + dbpassword + " layersdb " + " < " + dbfile, shell=True)
+    if return_code != 0:
+        print("Database import failed")
+        sys.exit(1)
 
 ## For a fresh database, create an admin account
 print("Creating database superuser. Input user name, email, and password when prompted.")
 return_code = subprocess.call("docker-compose run --rm layersapp /opt/layerindex/manage.py createsuperuser", shell=True)
+if return_code != 0:
+    print("Creating superuser failed")
+    sys.exit(1)
 
 ## Set the volume permissions using debian:stretch since we recently fetched it
 return_code = subprocess.call("docker run --rm -v layerindexweb_layersmeta:/opt/workdir debian:stretch chown 500 /opt/workdir && \
          docker run --rm -v layerindexweb_layersstatic:/usr/share/nginx/html debian:stretch chown 500 /usr/share/nginx/html", shell=True)
-
+if return_code != 0:
+    print("Setting volume permissions failed")
+    sys.exit(1)
 
 ## Generate static assets. Run this command again to regenerate at any time (when static assets in the code are updated)
 return_code = subprocess.call("docker-compose run --rm -e STATIC_ROOT=/usr/share/nginx/html -v layerindexweb_layersstatic:/usr/share/nginx/html layersapp /opt/layerindex/manage.py collectstatic --noinput", shell = True)
+if return_code != 0:
+    print("Collecting static files failed")
+    sys.exit(1)
