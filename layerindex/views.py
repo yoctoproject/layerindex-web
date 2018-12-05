@@ -114,6 +114,7 @@ def edit_layer_view(request, template_name, branch='master', slug=None):
         if not (request.user.is_authenticated() and (request.user.has_perm('layerindex.publish_layer') or layeritem.user_can_edit(request.user))):
             raise PermissionDenied
         layerbranch = get_object_or_404(LayerBranch, layer=layeritem, branch=branchobj)
+        old_maintainers = list(layerbranch.layermaintainer_set.values_list('email', flat=True))
         deplistlayers = LayerItem.objects.filter(comparison=False).exclude(id=layeritem.id).order_by('name')
         returnto = request.GET.get('returnto', 'layer_item')
         if returnto:
@@ -196,6 +197,33 @@ def edit_layer_view(request, template_name, branch='master', slug=None):
                         text_content = plaintext.render(d)
                         tasks.send_email.apply_async((subject, text_content, from_email, [to_email]))
                     return HttpResponseRedirect(reverse('submit_layer_thanks'))
+
+            # Email any new maintainers (that aren't us)
+            new_maintainers = layerbranch.layermaintainer_set.exclude(email__in=old_maintainers + [request.user.email])
+            if new_maintainers:
+                for maintainer in new_maintainers:
+                    layer_url = request.build_absolute_uri(reverse('layer_item', args=(layerbranch.branch.name, layeritem.name,)))
+                    subjecttext = get_template('layerindex/maintemailsubject.txt')
+                    bodytext = get_template('layerindex/maintemail.txt')
+                    from_email = settings.SUBMIT_EMAIL_FROM
+                    # create subject from subject template
+                    d = {
+                        'layer_name': layeritem.name,
+                        'site_name': request.META['HTTP_HOST'],
+                    }
+                    subject = subjecttext.render(d).rstrip()
+
+                    #create body from body template
+                    d = {
+                        'maintainer_name': maintainer.name,
+                        'layer_name': layeritem.name,
+                        'layer_url': layer_url,
+                        'help_contact': _get_help_contact(),
+                    }
+                    body = bodytext.render(d)
+
+                    tasks.send_email.apply_async((subject, body, from_email, [maintainer.email]))
+
             messages.success(request, 'Layer %s saved successfully.' % layeritem.name)
             if return_url:
                 if returnto == 'layer_review':

@@ -1,0 +1,9 @@
+Hi {{ maintainer_name }},
+
+This is an automated notification to let you know that you have been added as a maintainer of the layer {{ layer_name }}. You can view the layer here:
+
+ {{ layer_url }}
+
+If you think this change is in error or otherwise need any assistance, please contact {% if help_contact.first_name and help_contact.last_name %}{{ help_contact.first_name }} {{ help_contact.last_name}}{% else %}{{ help_contact.username }}{% endif %} <{{ help_contact.email }}>.
+
+Thanks!

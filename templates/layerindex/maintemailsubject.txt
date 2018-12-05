@@ -1,0 +1,1 @@
+{{ site_name }}: You have been added as maintainer of {{ layer_name }}
