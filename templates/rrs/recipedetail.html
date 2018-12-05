@@ -144,6 +144,33 @@
         {% else %}
         <p>None</p>
         {% endif %}
+
+        {% if otherbranch_recipes %}
+        <h2>Other branches</h2>
+        <p>This recipe in other branches of {{ recipe.layerbranch.layer.name }}:</p>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th class="col-md-4">Branch</th>
+                    <th>Recipe</th>
+                </tr>
+            </thead>
+        {% for other in otherbranch_recipes %}
+            <tr>
+                <td>
+                    {{ other.layerbranch.branch }}
+                </td>
+                <td>
+                    {% if other == recipe %}
+                    {{ other.pn }} {{ other.pv }} (this recipe)
+                    {% else %}
+                    <a href="{% url 'recipe' other.id %}">{{ other.pn }} {{ other.pv }}</a>
+                    {% endif %}
+                </td>
+            </tr>
+        {% endfor %}
+        </table>
+        {% endif %}
     </div>
 
     <div class="col-md-4">

@@ -974,6 +974,7 @@ class RecipeDetailView(DetailView):
                 if dep.path.endswith('.inc'):
                     extrafiles.append(dep)
             context['extrafiles'] = extrafiles
+            context['otherbranch_recipes'] = Recipe.objects.filter(layerbranch__layer=recipe.layerbranch.layer, layerbranch__branch__comparison=False, pn=recipe.pn).order_by('layerbranch__branch__sort_priority')
         return context
 
 

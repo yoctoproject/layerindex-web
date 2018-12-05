@@ -740,6 +740,8 @@ class RecipeDetailView(DetailView):
 
         context['recipe_distros'] = RecipeDistro.get_distros_by_recipe(recipe)
 
+        context['otherbranch_recipes'] = Recipe.objects.filter(layerbranch__layer=recipe.layerbranch.layer, layerbranch__branch__comparison=False, pn=recipe.pn).order_by('layerbranch__branch__sort_priority')
+
         return context
 
 class MaintainerList():
