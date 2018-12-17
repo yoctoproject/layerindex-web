@@ -100,15 +100,15 @@ def edit_dockercompose(hostname, dbpassword, secretkey, portmapping):
         elif "hostname:" in line:
             format = line[0:line.find("hostname")].replace("#", "")
             newlines.append(format +"hostname: " + hostname + "\n")
-        elif "- SECRET_KEY" in line:
-            format = line[0:line.find("- SECRET_KEY")].replace("#", "")
-            newlines.append(format +"- SECRET_KEY=" + secretkey + "\n")
-        elif "- DATABASE_PASSWORD" in line:
-            format = line[0:line.find("- DATABASE_PASSWORD")].replace("#", "")
-            newlines.append(format +"- DATABASE_PASSWORD=" + dbpassword + "\n")
-        elif "- MYSQL_ROOT_PASSWORD" in line:
-            format = line[0:line.find("- MYSQL_ROOT_PASSWORD")].replace("#", "")
-            newlines.append(format +"- MYSQL_ROOT_PASSWORD=" + dbpassword + "\n")
+        elif '- "SECRET_KEY' in line:
+            format = line[0:line.find('- "SECRET_KEY')].replace("#", "")
+            newlines.append(format + '- "SECRET_KEY=' + secretkey + '"\n')
+        elif '- "DATABASE_PASSWORD' in line:
+            format = line[0:line.find('- "DATABASE_PASSWORD')].replace("#", "")
+            newlines.append(format + '- "DATABASE_PASSWORD=' + dbpassword + '"\n')
+        elif '- "MYSQL_ROOT_PASSWORD' in line:
+            format = line[0:line.find('- "MYSQL_ROOT_PASSWORD')].replace("#", "")
+            newlines.append(format + '- "MYSQL_ROOT_PASSWORD=' + dbpassword + '"\n')
         elif "ports:" in line:
             if in_layersweb:
                 in_layersweb_ports = True

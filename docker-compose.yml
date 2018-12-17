@@ -4,8 +4,8 @@ services:
     image: mariadb:10.2
     command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     environment:
-     - MYSQL_DATABASE=layersdb
-     - MYSQL_ROOT_PASSWORD=testingpw
+     - "MYSQL_DATABASE=layersdb"
+     - "MYSQL_ROOT_PASSWORD=testingpw"
     container_name: layersdb
   layersapp:
     depends_on:
@@ -16,11 +16,11 @@ services:
     volumes:
      - layersmeta:/opt/workdir
     environment:
-     #- SECRET_KEY=<set this here>
-     - DATABASE_PASSWORD=testingpw
-     - DATABASE_HOST=layersdb
-     #- EMAIL_HOST=<set this here>
-     #- DEBUG=1
+     #- "SECRET_KEY=<set this here>"
+     - "DATABASE_PASSWORD=testingpw"
+     - "DATABASE_HOST=layersdb"
+     #- "EMAIL_HOST=<set this here>"
+     #- "DEBUG=1"
     container_name: layersapp
   layersweb:
     depends_on:
@@ -51,11 +51,11 @@ services:
     volumes:
      - layersmeta:/opt/workdir
     environment:
-     #- SECRET_KEY=<set this here>
-     - DATABASE_PASSWORD=testingpw
-     - DATABASE_HOST=layersdb
-     #- EMAIL_HOST=<set this here>
-     #- DEBUG=1
+     #- "SECRET_KEY=<set this here>"
+     - "DATABASE_PASSWORD=testingpw"
+     - "DATABASE_HOST=layersdb"
+     #- "EMAIL_HOST=<set this here>"
+     #- "DEBUG=1"
     container_name: layerscelery
     command: /usr/local/bin/celery -A layerindex.tasks worker --loglevel=info --workdir=/opt/layerindex
 
