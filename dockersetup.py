@@ -226,6 +226,26 @@ if not (http_port or https_port):
     print("Port mapping must include a mapping to port 80 or 443 inside the container (or both)")
     sys.exit(1)
 
+print("""
+OE Layer Index Docker setup script
+----------------------------------
+
+This script will set up a cluster of Docker containers needed to run the
+OpenEmbedded layer index application.
+
+Configuration is controlled by command-line arguments. If you need to check
+which options you need to specify, press Ctrl+C now and then run the script
+again with the --help argument.
+
+Note that this script does have interactive prompts, so be prepared to
+provide information as needed.
+""")
+try:
+    input('Press Enter to begin setup (or Ctrl+C to exit)...')
+except KeyboardInterrupt:
+    print('')
+    sys.exit(2)
+
 if http_proxy:
     edit_gitproxy(proxymod, port)
 if http_proxy or https_proxy:
