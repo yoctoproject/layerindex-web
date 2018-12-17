@@ -37,7 +37,7 @@ services:
     # - "443:443"
     volumes:
      - layersstatic:/usr/share/nginx/html
-    # - layerscerts:/etc/letsencrypt
+     - ./docker/certs:/opt/cert
     container_name: layersweb
   layersrabbit:
     image: rabbitmq:alpine
@@ -62,4 +62,3 @@ services:
 volumes:
   layersmeta:
   layersstatic:
-  layerscerts:

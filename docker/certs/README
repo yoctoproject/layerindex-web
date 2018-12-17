@@ -1,0 +1,7 @@
+This directory will be mounted as a volume in the Docker container setup to
+contain SSL certificates for the web server.
+
+If you run dockersetup.py and specify a certificate with --cert and
+corresponding key with --key then they will be copied here; alternatively
+let the setup script generate a self-signed certificate and key and they
+will be written here as well.
