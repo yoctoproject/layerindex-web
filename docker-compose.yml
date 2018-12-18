@@ -38,6 +38,8 @@ services:
     volumes:
      - layersstatic:/usr/share/nginx/html
      - ./docker/certs:/opt/cert
+     - certbotwww:/var/www/certbot:z
+    command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
     container_name: layersweb
   layersrabbit:
     image: rabbitmq:alpine
@@ -58,7 +60,15 @@ services:
      #- "DEBUG=1"
     container_name: layerscelery
     command: /usr/local/bin/celery -A layerindex.tasks worker --loglevel=info --workdir=/opt/layerindex
+  #layerscertbot:
+  #  image: certbot/certbot
+  #  volumes:
+  #   - ./docker/certs:/opt/cert
+  #   - certbotwww:/var/www/certbot:z
+  #  container_name: layerscertbot
+  #  entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
 
 volumes:
   layersmeta:
   layersstatic:
+  certbotwww:

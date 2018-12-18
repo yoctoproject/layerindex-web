@@ -25,6 +25,7 @@ import subprocess
 import time
 import random
 import shutil
+import tempfile
 
 def get_args():
     parser = argparse.ArgumentParser(description='Script sets up the Layer Index tool with Docker Containers.')
@@ -37,6 +38,7 @@ def get_args():
     parser.add_argument('--no-https', action="store_true", default=False, help='Disable HTTPS (HTTP only) for web server')
     parser.add_argument('--cert', type=str, help='Existing SSL certificate to use for HTTPS web serving', required=False)
     parser.add_argument('--cert-key', type=str, help='Existing SSL certificate key to use for HTTPS web serving', required=False)
+    parser.add_argument('--letsencrypt', action="store_true", default=False, help='Use Let\'s Encrypt for HTTPS')
 
     args = parser.parse_args()
 
@@ -54,8 +56,11 @@ def get_args():
             raise argparse.ArgumentTypeError("Port mapping must in the format HOST:CONTAINER. Ex: 8080:80. Multiple mappings should be separated by commas.")
 
     if args.no_https:
+        if args.cert or args.cert_key or args.letsencrypt:
+            raise argparse.ArgumentTypeError("--no-https and --cert/--cert-key/--letsencrypt options are mutually exclusive")
+    if args.letsencrypt:
         if args.cert or args.cert_key:
-            raise argparse.ArgumentTypeError("--no-https and --cert/--cert-key options are mutually exclusive")
+            raise argparse.ArgumentTypeError("--letsencrypt and --cert/--cert-key options are mutually exclusive")
     if args.cert and not os.path.exists(args.cert):
         raise argparse.ArgumentTypeError("Specified certificate file %s does not exist" % args.cert)
     if args.cert_key and not os.path.exists(args.cert_key):
@@ -68,7 +73,7 @@ def get_args():
         if not os.path.exists(cert_key):
             raise argparse.ArgumentTypeError("Could not find certificate key, please use --cert-key to specify it")
 
-    return args.hostname, args.http_proxy, args.https_proxy, args.databasefile, port, proxymod, args.portmapping, args.no_https, args.cert, cert_key
+    return args.hostname, args.http_proxy, args.https_proxy, args.databasefile, port, proxymod, args.portmapping, args.no_https, args.cert, cert_key, args.letsencrypt
 
 # Edit http_proxy and https_proxy in Dockerfile
 def edit_dockerfile(http_proxy, https_proxy):
@@ -103,13 +108,41 @@ def edit_gitproxy(proxymod, port):
     newdata = filedata.replace("#gitproxy", "gitproxy")
     writefile("docker/.gitconfig", newdata)
 
+def yaml_uncomment(line):
+    out = ''
+    for i, ch in enumerate(line):
+        if ch == ' ':
+            out += ch
+        elif ch != '#':
+            out += line[i:]
+            break
+    return out
+
+def yaml_comment(line):
+    out = ''
+    commented = False
+    for i, ch in enumerate(line):
+        if ch == '#':
+            commented = True
+            out += line[i:]
+            break
+        elif ch != ' ':
+            if not commented:
+                out += '#'
+            out += line[i:]
+            break
+        else:
+            out += ch
+    return out
+
 
 # Add hostname, secret key, db info, and email host in docker-compose.yml
-def edit_dockercompose(hostname, dbpassword, secretkey, portmapping):
+def edit_dockercompose(hostname, dbpassword, secretkey, portmapping, letsencrypt):
     filedata= readfile("docker-compose.yml")
     in_layersweb = False
     in_layersweb_ports = False
     in_layersweb_ports_format = None
+    in_layerscertbot_format = None
     newlines = []
     lines = filedata.splitlines()
     for line in lines:
@@ -126,7 +159,25 @@ def edit_dockercompose(hostname, dbpassword, secretkey, portmapping):
                 for portmap in portmapping.split(','):
                     newlines.append(format + '- "' + portmap + '"' + "\n")
                 continue
-        if "layersweb:" in line:
+        if in_layerscertbot_format:
+            ucline = yaml_uncomment(line)
+            format = re.match(r'^( *)', ucline).group(0)
+            if len(format) <= len(in_layerscertbot_format):
+                in_layerscertbot_format = False
+            elif letsencrypt:
+                newlines.append(ucline + '\n')
+                continue
+            else:
+                newlines.append(yaml_comment(line) + '\n')
+                continue
+        if "layerscertbot:" in line:
+            ucline = yaml_uncomment(line)
+            in_layerscertbot_format = re.match(r'^( *)', ucline).group(0)
+            if letsencrypt:
+                newlines.append(ucline + '\n')
+            else:
+                newlines.append(yaml_comment(line) + '\n')
+        elif "layersweb:" in line:
             in_layersweb = True
             newlines.append(line + "\n")
         elif "hostname:" in line:
@@ -145,6 +196,8 @@ def edit_dockercompose(hostname, dbpassword, secretkey, portmapping):
             if in_layersweb:
                 in_layersweb_ports = True
             newlines.append(line + "\n")
+        elif letsencrypt and "./docker/certs:/" in line:
+            newlines.append(line.split(':')[0] + ':/etc/letsencrypt\n')
         else:
             newlines.append(line + "\n")
     writefile("docker-compose.yml", ''.join(newlines))
@@ -165,6 +218,9 @@ def edit_nginx_ssl_conf(hostname, https_port, certdir, certfile, keyfile):
             newlines.append(format + 'ssl_dhparam ' + os.path.join(certdir, 'dhparam.pem') + ';\n')
         elif 'https://layers.openembedded.org' in line:
             line = line.replace('https://layers.openembedded.org', 'https://%s:%s' % (hostname, https_port))
+            newlines.append(line + "\n")
+        elif 'http://layers.openembedded.org' in line:
+            line = line.replace('http://layers.openembedded.org', 'http://%s:%s' % (hostname, http_port))
             newlines.append(line + "\n")
         else:
             line = line.replace('layers.openembedded.org', hostname)
@@ -209,7 +265,7 @@ secretkey = generatepasswords(50)
 dbpassword = generatepasswords(10)
 
 ## Get user arguments and modify config files
-hostname, http_proxy, https_proxy, dbfile, port, proxymod, portmapping, no_https, cert, cert_key = get_args()
+hostname, http_proxy, https_proxy, dbfile, port, proxymod, portmapping, no_https, cert, cert_key, letsencrypt = get_args()
 
 https_port = None
 http_port = None
@@ -222,8 +278,8 @@ for portmap in portmapping.split(','):
 if (not https_port) and (not no_https):
     print("No HTTPS port mapping (to port 443 inside the container) was specified and --no-https was not specified")
     sys.exit(1)
-if not (http_port or https_port):
-    print("Port mapping must include a mapping to port 80 or 443 inside the container (or both)")
+if not http_port:
+    print("Port mapping must include a mapping to port 80 inside the container")
     sys.exit(1)
 
 print("""
@@ -251,13 +307,31 @@ if http_proxy:
 if http_proxy or https_proxy:
     edit_dockerfile(http_proxy, https_proxy)
 
-edit_dockercompose(hostname, dbpassword, secretkey, portmapping)
+edit_dockercompose(hostname, dbpassword, secretkey, portmapping, letsencrypt)
 
 edit_dockerfile_web(hostname, no_https)
 
+emailaddr = None
 if not no_https:
     local_cert_dir = os.path.abspath('docker/certs')
-    if cert:
+    container_cert_dir = '/opt/cert'
+    if letsencrypt:
+        # Get email address
+        emailaddr = input('Enter your email address (for letsencrypt): ')
+
+        # Create dummy cert
+        container_cert_dir = '/etc/letsencrypt'
+        letsencrypt_cert_subdir = 'live/' + hostname
+        local_letsencrypt_cert_dir = os.path.join(local_cert_dir, letsencrypt_cert_subdir)
+        if not os.path.isdir(local_letsencrypt_cert_dir):
+            os.makedirs(local_letsencrypt_cert_dir)
+        keyfile = os.path.join(letsencrypt_cert_subdir, 'privkey.pem')
+        certfile = os.path.join(letsencrypt_cert_subdir, 'fullchain.pem')
+        return_code = subprocess.call("openssl req -x509 -nodes -newkey rsa:1024 -days 1 -keyout %s -out %s -subj '/CN=localhost'" % (os.path.join(local_cert_dir, keyfile), os.path.join(local_cert_dir, certfile)), shell=True)
+        if return_code != 0:
+            print("Dummy certificate generation failed")
+            sys.exit(1)
+    elif cert:
         if os.path.abspath(os.path.dirname(cert)) != local_cert_dir:
             shutil.copy(cert, local_cert_dir)
         certfile = os.path.basename(cert)
@@ -278,7 +352,67 @@ if not no_https:
         print("DH group generation failed")
         sys.exit(1)
 
-    edit_nginx_ssl_conf(hostname, https_port, '/opt/cert', certfile, keyfile)
+    edit_nginx_ssl_conf(hostname, https_port, container_cert_dir, certfile, keyfile)
+
+    if letsencrypt:
+        return_code = subprocess.call("docker-compose up -d --build layersweb", shell=True)
+        if return_code != 0:
+            print("docker-compose up layersweb failed")
+            sys.exit(1)
+        tempdir = tempfile.mkdtemp()
+        try:
+            # Wait for web server to start
+            while True:
+                time.sleep(2)
+                return_code = subprocess.call("wget -q --no-check-certificate http://%s:%s/" % (hostname, http_port), shell=True, cwd=tempdir)
+                if return_code == 0 or return_code > 4:
+                    break
+                else:
+                    print("Web server may not be ready; will try again.")
+
+            # Delete temp cert now that the server is up
+            shutil.rmtree(os.path.join(local_cert_dir, 'live'))
+
+            # Create a test file and fetch it to ensure web server is working (for http)
+            return_code = subprocess.call("docker-compose exec layersweb /bin/sh -c 'mkdir -p /var/www/certbot/.well-known/acme-challenge/ ; echo something > /var/www/certbot/.well-known/acme-challenge/test.txt'", shell=True)
+            if return_code != 0:
+                print("Creating test file failed")
+                sys.exit(1)
+            return_code = subprocess.call("wget -nv http://%s:%s/.well-known/acme-challenge/test.txt" % (hostname, http_port), shell=True, cwd=tempdir)
+            if return_code != 0:
+                print("Reading test file from web server failed")
+                sys.exit(1)
+            return_code = subprocess.call("docker-compose exec layersweb /bin/sh -c 'rm -rf /var/www/certbot/.well-known'", shell=True)
+            if return_code != 0:
+                print("Removing test file failed")
+                sys.exit(1)
+        finally:
+            shutil.rmtree(tempdir)
+
+        # Now run certbot to register SSL certificate
+        staging_arg = '--staging'
+        if emailaddr:
+            email_arg = '--email %s' % emailaddr
+        else:
+            email_arg = '--register-unsafely-without-email'
+        return_code = subprocess.call('docker-compose run --rm --entrypoint "\
+  certbot certonly --webroot -w /var/www/certbot \
+    %s \
+    %s \
+    -d %s \
+    --rsa-key-size 4096 \
+    --agree-tos \
+    --force-renewal" layerscertbot' % (staging_arg, email_arg, hostname), shell=True)
+        if return_code != 0:
+            print("Running certbot failed")
+            sys.exit(1)
+
+        # Stop web server (so it can effectively be restarted with the new certificate)
+        return_code = subprocess.call("docker-compose stop layersweb", shell=True)
+        if return_code != 0:
+            print("docker-compose stop failed")
+            sys.exit(1)
+
 
 ## Start up containers
 return_code = subprocess.call("docker-compose up -d", shell=True)
