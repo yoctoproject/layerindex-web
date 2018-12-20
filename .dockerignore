@@ -1,6 +1,14 @@
 *.db3
 *.db3.*
+*.sql
+*.sql.gz
 tmp
 layers
+tests
 __pycache__
 *.pyc
+.dockerignore
+Dockerfile
+Dockerfile.web
+docker-compose.yml
+dockersetup.py
