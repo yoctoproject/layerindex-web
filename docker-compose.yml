@@ -19,6 +19,8 @@ services:
      #- "SECRET_KEY=<set this here>"
      - "DATABASE_PASSWORD=testingpw"
      - "DATABASE_HOST=layersdb"
+     - "RABBITMQ_DEFAULT_USER=guest"
+     - "RABBITMQ_DEFAULT_PASS=guest"
      #- "EMAIL_HOST=<set this here>"
      #- "DEBUG=1"
     container_name: layersapp
@@ -44,6 +46,9 @@ services:
   layersrabbit:
     image: rabbitmq:alpine
     container_name: layersrabbit
+    environment:
+     - "RABBITMQ_DEFAULT_USER=guest"
+     - "RABBITMQ_DEFAULT_PASS=guest"
   layerscelery:
     depends_on:
       - layersdb
@@ -56,6 +61,8 @@ services:
      #- "SECRET_KEY=<set this here>"
      - "DATABASE_PASSWORD=testingpw"
      - "DATABASE_HOST=layersdb"
+     - "RABBITMQ_DEFAULT_USER=guest"
+     - "RABBITMQ_DEFAULT_PASS=guest"
      #- "EMAIL_HOST=<set this here>"
      #- "DEBUG=1"
     container_name: layerscelery

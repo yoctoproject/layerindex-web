@@ -137,7 +137,7 @@ def yaml_comment(line):
 
 
 # Add hostname, secret key, db info, and email host in docker-compose.yml
-def edit_dockercompose(hostname, dbpassword, secretkey, portmapping, letsencrypt):
+def edit_dockercompose(hostname, dbpassword, secretkey, rmqpassword, portmapping, letsencrypt):
     filedata= readfile("docker-compose.yml")
     in_layersweb = False
     in_layersweb_ports = False
@@ -192,6 +192,12 @@ def edit_dockercompose(hostname, dbpassword, secretkey, portmapping, letsencrypt
         elif '- "MYSQL_ROOT_PASSWORD' in line:
             format = line[0:line.find('- "MYSQL_ROOT_PASSWORD')].replace("#", "")
             newlines.append(format + '- "MYSQL_ROOT_PASSWORD=' + dbpassword + '"\n')
+        elif '- "RABBITMQ_DEFAULT_USER' in line:
+            format = line[0:line.find('- "RABBITMQ_DEFAULT_USER')].replace("#", "")
+            newlines.append(format + '- "RABBITMQ_DEFAULT_USER=layermq"\n')
+        elif '- "RABBITMQ_DEFAULT_PASS' in line:
+            format = line[0:line.find('- "RABBITMQ_DEFAULT_PASS')].replace("#", "")
+            newlines.append(format + '- "RABBITMQ_DEFAULT_PASS=' + rmqpassword + '"\n')
         elif "ports:" in line:
             if in_layersweb:
                 in_layersweb_ports = True
@@ -263,6 +269,7 @@ def writefile(filename, data):
 # Generate secret key and database password
 secretkey = generatepasswords(50)
 dbpassword = generatepasswords(10)
+rmqpassword = generatepasswords(10)
 
 ## Get user arguments and modify config files
 hostname, http_proxy, https_proxy, dbfile, port, proxymod, portmapping, no_https, cert, cert_key, letsencrypt = get_args()
@@ -307,7 +314,7 @@ if http_proxy:
 if http_proxy or https_proxy:
     edit_dockerfile(http_proxy, https_proxy)
 
-edit_dockercompose(hostname, dbpassword, secretkey, portmapping, letsencrypt)
+edit_dockercompose(hostname, dbpassword, secretkey, rmqpassword, portmapping, letsencrypt)
 
 edit_dockerfile_web(hostname, no_https)
 
