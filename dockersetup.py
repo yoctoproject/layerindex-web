@@ -251,75 +251,8 @@ def edit_dockerfile_web(hostname, no_https):
     writefile("Dockerfile.web", ''.join(newlines))
 
 
-def generatepasswords(passwordlength):
-    return ''.join([random.SystemRandom().choice('abcdefghijklmnopqrstuvwxyz0123456789!@#%^&*-_=+') for i in range(passwordlength)])
-
-def readfile(filename):
-    f = open(filename,'r')
-    filedata = f.read()
-    f.close()
-    return filedata
-
-def writefile(filename, data):
-    f = open(filename,'w')
-    f.write(data)
-    f.close()
-
-
-# Generate secret key and database password
-secretkey = generatepasswords(50)
-dbpassword = generatepasswords(10)
-rmqpassword = generatepasswords(10)
-
-## Get user arguments and modify config files
-hostname, http_proxy, https_proxy, dbfile, port, proxymod, portmapping, no_https, cert, cert_key, letsencrypt = get_args()
-
-https_port = None
-http_port = None
-for portmap in portmapping.split(','):
-    outport, inport = portmap.split(':', 1)
-    if inport == '443':
-        https_port = outport
-    elif inport == '80':
-        http_port = outport
-if (not https_port) and (not no_https):
-    print("No HTTPS port mapping (to port 443 inside the container) was specified and --no-https was not specified")
-    sys.exit(1)
-if not http_port:
-    print("Port mapping must include a mapping to port 80 inside the container")
-    sys.exit(1)
-
-print("""
-OE Layer Index Docker setup script
-----------------------------------
-
-This script will set up a cluster of Docker containers needed to run the
-OpenEmbedded layer index application.
-
-Configuration is controlled by command-line arguments. If you need to check
-which options you need to specify, press Ctrl+C now and then run the script
-again with the --help argument.
-
-Note that this script does have interactive prompts, so be prepared to
-provide information as needed.
-""")
-try:
-    input('Press Enter to begin setup (or Ctrl+C to exit)...')
-except KeyboardInterrupt:
-    print('')
-    sys.exit(2)
-
-if http_proxy:
-    edit_gitproxy(proxymod, port)
-if http_proxy or https_proxy:
-    edit_dockerfile(http_proxy, https_proxy)
-
-edit_dockercompose(hostname, dbpassword, secretkey, rmqpassword, portmapping, letsencrypt)
-
-edit_dockerfile_web(hostname, no_https)
-
-emailaddr = None
-if not no_https:
+def setup_https(hostname, http_port, https_port, letsencrypt, cert, cert_key):
+    emailaddr = None
     local_cert_dir = os.path.abspath('docker/certs')
     container_cert_dir = '/opt/cert'
     if letsencrypt:
@@ -420,6 +353,76 @@ if not no_https:
             print("docker-compose stop failed")
             sys.exit(1)
 
+
+def generatepasswords(passwordlength):
+    return ''.join([random.SystemRandom().choice('abcdefghijklmnopqrstuvwxyz0123456789!@#%^&*-_=+') for i in range(passwordlength)])
+
+def readfile(filename):
+    f = open(filename,'r')
+    filedata = f.read()
+    f.close()
+    return filedata
+
+def writefile(filename, data):
+    f = open(filename,'w')
+    f.write(data)
+    f.close()
+
+
+# Generate secret key and database password
+secretkey = generatepasswords(50)
+dbpassword = generatepasswords(10)
+rmqpassword = generatepasswords(10)
+
+## Get user arguments and modify config files
+hostname, http_proxy, https_proxy, dbfile, port, proxymod, portmapping, no_https, cert, cert_key, letsencrypt = get_args()
+
+https_port = None
+http_port = None
+for portmap in portmapping.split(','):
+    outport, inport = portmap.split(':', 1)
+    if inport == '443':
+        https_port = outport
+    elif inport == '80':
+        http_port = outport
+if (not https_port) and (not no_https):
+    print("No HTTPS port mapping (to port 443 inside the container) was specified and --no-https was not specified")
+    sys.exit(1)
+if not http_port:
+    print("Port mapping must include a mapping to port 80 inside the container")
+    sys.exit(1)
+
+print("""
+OE Layer Index Docker setup script
+----------------------------------
+
+This script will set up a cluster of Docker containers needed to run the
+OpenEmbedded Layer Index application.
+
+Configuration is controlled by command-line arguments. If you need to check
+which options you need to specify, press Ctrl+C now and then run the script
+again with the --help argument.
+
+Note that this script does have interactive prompts, so be prepared to
+provide information as needed.
+""")
+try:
+    input('Press Enter to begin setup (or Ctrl+C to exit)...')
+except KeyboardInterrupt:
+    print('')
+    sys.exit(2)
+
+if http_proxy:
+    edit_gitproxy(proxymod, port)
+if http_proxy or https_proxy:
+    edit_dockerfile(http_proxy, https_proxy)
+
+edit_dockercompose(hostname, dbpassword, secretkey, rmqpassword, portmapping, letsencrypt)
+
+edit_dockerfile_web(hostname, no_https)
+
+if not no_https:
+    setup_https(hostname, http_port, https_port, letsencrypt, cert, cert_key)
 
 ## Start up containers
 return_code = subprocess.call("docker-compose up -d", shell=True)
