@@ -363,7 +363,7 @@ def setup_https(hostname, http_port, https_port, letsencrypt, cert, cert_key):
 
 
 def generatepasswords(passwordlength):
-    return ''.join([random.SystemRandom().choice('abcdefghijklmnopqrstuvwxyz0123456789!@#%^&*-_=+') for i in range(passwordlength)])
+    return ''.join([random.SystemRandom().choice('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@%^&*-_+') for i in range(passwordlength)])
 
 def readfile(filename):
     f = open(filename,'r')
