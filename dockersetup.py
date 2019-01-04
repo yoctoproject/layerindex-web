@@ -30,6 +30,8 @@ import tempfile
 def get_args():
     parser = argparse.ArgumentParser(description='Script sets up the Layer Index tool with Docker Containers.')
 
+    parser.add_argument('-u', '--update', action="store_true", default=False, help='Update existing installation instead of installing')
+    parser.add_argument('-r', '--reinstall', action="store_true", default=False, help='Reinstall over existing installation (wipes database!)')
     parser.add_argument('-o', '--hostname', type=str, help='Hostname of your machine. Defaults to localhost if not set.', required=False, default = "localhost")
     parser.add_argument('-p', '--http-proxy', type=str, help='http proxy in the format http://<myproxy:port>', required=False)
     parser.add_argument('-s', '--https-proxy', type=str, help='https proxy in the format http://<myproxy:port>', required=False)
@@ -41,6 +43,12 @@ def get_args():
     parser.add_argument('--letsencrypt', action="store_true", default=False, help='Use Let\'s Encrypt for HTTPS')
 
     args = parser.parse_args()
+
+    if args.update:
+        if args.http_proxy or args.https_proxy or args.databasefile or args.no_https or args.cert or args.cert_key or args.letsencrypt:
+            raise argparse.ArgumentTypeError("The -u/--update option will not update configuration or database content, and thus none of the other configuration options can be used in conjunction with it")
+        if args.reinstall:
+            raise argparse.ArgumentTypeError("The -u/--update and -r/--reinstall options are mutually exclusive")
 
     port = proxymod = ""
     try:
@@ -73,7 +81,7 @@ def get_args():
         if not os.path.exists(cert_key):
             raise argparse.ArgumentTypeError("Could not find certificate key, please use --cert-key to specify it")
 
-    return args.hostname, args.http_proxy, args.https_proxy, args.databasefile, port, proxymod, args.portmapping, args.no_https, args.cert, cert_key, args.letsencrypt
+    return args.update, args.reinstall, args.hostname, args.http_proxy, args.https_proxy, args.databasefile, port, proxymod, args.portmapping, args.no_https, args.cert, cert_key, args.letsencrypt
 
 # Edit http_proxy and https_proxy in Dockerfile
 def edit_dockerfile(http_proxy, https_proxy):
@@ -375,21 +383,44 @@ dbpassword = generatepasswords(10)
 rmqpassword = generatepasswords(10)
 
 ## Get user arguments and modify config files
-hostname, http_proxy, https_proxy, dbfile, port, proxymod, portmapping, no_https, cert, cert_key, letsencrypt = get_args()
+updatemode, reinstmode, hostname, http_proxy, https_proxy, dbfile, port, proxymod, portmapping, no_https, cert, cert_key, letsencrypt = get_args()
 
 https_port = None
 http_port = None
-for portmap in portmapping.split(','):
-    outport, inport = portmap.split(':', 1)
-    if inport == '443':
-        https_port = outport
-    elif inport == '80':
-        http_port = outport
-if (not https_port) and (not no_https):
-    print("No HTTPS port mapping (to port 443 inside the container) was specified and --no-https was not specified")
-    sys.exit(1)
-if not http_port:
-    print("Port mapping must include a mapping to port 80 inside the container")
+if not updatemode:
+    for portmap in portmapping.split(','):
+        outport, inport = portmap.split(':', 1)
+        if inport == '443':
+            https_port = outport
+        elif inport == '80':
+            http_port = outport
+    if (not https_port) and (not no_https):
+        print("No HTTPS port mapping (to port 443 inside the container) was specified and --no-https was not specified")
+        sys.exit(1)
+    if not http_port:
+        print("Port mapping must include a mapping to port 80 inside the container")
+        sys.exit(1)
+
+## Check if it's installed
+installed = False
+return_code = subprocess.call("docker ps -a | grep -q layersapp", shell=True)
+if return_code == 0:
+    installed = True
+
+if updatemode:
+    if not installed:
+        print("Application container not found - update mode can only be used on an existing installation")
+        sys.exit(1)
+    with open('docker-compose.yml', 'r') as f:
+        for line in f:
+            if 'DATABASE_PASSWORD=' in line:
+                pw = line.split('=')[1].rstrip().rstrip('"')
+                if pw == 'testingpw':
+                    print("Update mode can only be used when previous configuration is still present in docker-compose.yml and other files")
+                    sys.exit(1)
+                break
+elif installed and not reinstmode:
+    print('Application already installed. Please use -u/--update to update or -r/--reinstall to reinstall')
     sys.exit(1)
 
 print("""
@@ -406,26 +437,41 @@ again with the --help argument.
 Note that this script does have interactive prompts, so be prepared to
 provide information as needed.
 """)
+
+if reinstmode:
+    print("""  WARNING: continuing will wipe out any existing data in the database and set
+  up the application from scratch! Press Ctrl+C now if this is not what you
+  want.
+""")
+
 try:
-    input('Press Enter to begin setup (or Ctrl+C to exit)...')
+    if updatemode:
+        promptstr = 'Press Enter to begin update (or Ctrl+C to exit)...'
+    else:
+        promptstr = 'Press Enter to begin setup (or Ctrl+C to exit)...'
+    input(promptstr)
 except KeyboardInterrupt:
     print('')
     sys.exit(2)
 
-if http_proxy:
-    edit_gitproxy(proxymod, port)
-if http_proxy or https_proxy:
-    edit_dockerfile(http_proxy, https_proxy)
+if reinstmode:
+    return_code = subprocess.call("docker-compose down -v", shell=True)
 
-edit_dockercompose(hostname, dbpassword, secretkey, rmqpassword, portmapping, letsencrypt)
+if not updatemode:
+    if http_proxy:
+        edit_gitproxy(proxymod, port)
+    if http_proxy or https_proxy:
+        edit_dockerfile(http_proxy, https_proxy)
 
-edit_dockerfile_web(hostname, no_https)
+    edit_dockercompose(hostname, dbpassword, secretkey, rmqpassword, portmapping, letsencrypt)
 
-if not no_https:
-    setup_https(hostname, http_port, https_port, letsencrypt, cert, cert_key)
+    edit_dockerfile_web(hostname, no_https)
+
+    if not no_https:
+        setup_https(hostname, http_port, https_port, letsencrypt, cert, cert_key)
 
 ## Start up containers
-return_code = subprocess.call("docker-compose up -d", shell=True)
+return_code = subprocess.call("docker-compose up -d --build", shell=True)
 if return_code != 0:
     print("docker-compose up failed")
     sys.exit(1)
@@ -440,26 +486,27 @@ while True:
     else:
         print("Database server may not be ready; will try again.")
 
-# Import the user's supplied data
-if dbfile:
-    return_code = subprocess.call("docker exec -i layersdb mysql -uroot -p" + dbpassword + " layersdb " + " < " + dbfile, shell=True)
+if not updatemode:
+    # Import the user's supplied data
+    if dbfile:
+        return_code = subprocess.call("docker exec -i layersdb mysql -uroot -p" + dbpassword + " layersdb " + " < " + dbfile, shell=True)
+        if return_code != 0:
+            print("Database import failed")
+            sys.exit(1)
+
+    ## For a fresh database, create an admin account
+    print("Creating database superuser. Input user name, email, and password when prompted.")
+    return_code = subprocess.call("docker-compose run --rm layersapp /opt/layerindex/manage.py createsuperuser", shell=True)
     if return_code != 0:
-        print("Database import failed")
+        print("Creating superuser failed")
         sys.exit(1)
 
-## For a fresh database, create an admin account
-print("Creating database superuser. Input user name, email, and password when prompted.")
-return_code = subprocess.call("docker-compose run --rm layersapp /opt/layerindex/manage.py createsuperuser", shell=True)
-if return_code != 0:
-    print("Creating superuser failed")
-    sys.exit(1)
-
-## Set the volume permissions using debian:stretch since we recently fetched it
-return_code = subprocess.call("docker run --rm -v layerindexweb_layersmeta:/opt/workdir debian:stretch chown 500 /opt/workdir && \
-         docker run --rm -v layerindexweb_layersstatic:/usr/share/nginx/html debian:stretch chown 500 /usr/share/nginx/html", shell=True)
-if return_code != 0:
-    print("Setting volume permissions failed")
-    sys.exit(1)
+    ## Set the volume permissions using debian:stretch since we recently fetched it
+    return_code = subprocess.call("docker run --rm -v layerindexweb_layersmeta:/opt/workdir debian:stretch chown 500 /opt/workdir && \
+            docker run --rm -v layerindexweb_layersstatic:/usr/share/nginx/html debian:stretch chown 500 /usr/share/nginx/html", shell=True)
+    if return_code != 0:
+        print("Setting volume permissions failed")
+        sys.exit(1)
 
 ## Generate static assets. Run this command again to regenerate at any time (when static assets in the code are updated)
 return_code = subprocess.call("docker-compose run --rm -e STATIC_ROOT=/usr/share/nginx/html -v layerindexweb_layersstatic:/usr/share/nginx/html layersapp /opt/layerindex/manage.py collectstatic --noinput", shell = True)
@@ -467,11 +514,14 @@ if return_code != 0:
     print("Collecting static files failed")
     sys.exit(1)
 
-print("")
-if https_port and not no_https:
-    protocol = 'https'
-    port = https_port
+if updatemode:
+    print("Update complete")
 else:
-    protocol = 'http'
-    port = http_port
-print("The application should now be accessible at %s://%s:%s" % (protocol, hostname, port))
+    print("")
+    if https_port and not no_https:
+        protocol = 'https'
+        port = https_port
+    else:
+        protocol = 'http'
+        port = http_port
+    print("The application should now be accessible at %s://%s:%s" % (protocol, hostname, port))
