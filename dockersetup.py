@@ -148,7 +148,7 @@ def yaml_comment(line):
 
 
 # Add hostname, secret key, db info, and email host in docker-compose.yml
-def edit_dockercompose(hostname, dbpassword, secretkey, rmqpassword, portmapping, letsencrypt):
+def edit_dockercompose(hostname, dbpassword, dbapassword, secretkey, rmqpassword, portmapping, letsencrypt):
     filedata= readfile("docker-compose.yml")
     in_layersweb = False
     in_layersweb_ports = False
@@ -197,12 +197,15 @@ def edit_dockercompose(hostname, dbpassword, secretkey, rmqpassword, portmapping
         elif '- "SECRET_KEY' in line:
             format = line[0:line.find('- "SECRET_KEY')].replace("#", "")
             newlines.append(format + '- "SECRET_KEY=' + secretkey + '"\n')
+        elif '- "DATABASE_USER' in line:
+            format = line[0:line.find('- "DATABASE_USER')].replace("#", "")
+            newlines.append(format + '- "DATABASE_USER=layers"\n')
         elif '- "DATABASE_PASSWORD' in line:
             format = line[0:line.find('- "DATABASE_PASSWORD')].replace("#", "")
             newlines.append(format + '- "DATABASE_PASSWORD=' + dbpassword + '"\n')
         elif '- "MYSQL_ROOT_PASSWORD' in line:
             format = line[0:line.find('- "MYSQL_ROOT_PASSWORD')].replace("#", "")
-            newlines.append(format + '- "MYSQL_ROOT_PASSWORD=' + dbpassword + '"\n')
+            newlines.append(format + '- "MYSQL_ROOT_PASSWORD=' + dbapassword + '"\n')
         elif '- "RABBITMQ_DEFAULT_USER' in line:
             format = line[0:line.find('- "RABBITMQ_DEFAULT_USER')].replace("#", "")
             newlines.append(format + '- "RABBITMQ_DEFAULT_USER=layermq"\n')
@@ -380,13 +383,21 @@ def writefile(filename, data):
     f.close()
 
 
-# Generate secret key and database password
-secretkey = generatepasswords(50)
-dbpassword = generatepasswords(10)
-rmqpassword = generatepasswords(10)
-
 ## Get user arguments and modify config files
 updatemode, reinstmode, hostname, http_proxy, https_proxy, dbfile, port, proxymod, portmapping, no_https, cert, cert_key, letsencrypt = get_args()
+
+if updatemode:
+    with open('docker-compose.yml', 'r') as f:
+        for line in f:
+            if 'MYSQL_ROOT_PASSWORD=' in line:
+                dbapassword = line.split('=')[1].rstrip().rstrip('"')
+                break
+else:
+    # Generate secret key and database password
+    secretkey = generatepasswords(50)
+    dbapassword = generatepasswords(10)
+    dbpassword = generatepasswords(10)
+    rmqpassword = generatepasswords(10)
 
 https_port = None
 http_port = None
@@ -414,14 +425,9 @@ if updatemode:
     if not installed:
         print("Application container not found - update mode can only be used on an existing installation")
         sys.exit(1)
-    with open('docker-compose.yml', 'r') as f:
-        for line in f:
-            if 'DATABASE_PASSWORD=' in line:
-                pw = line.split('=')[1].rstrip().rstrip('"')
-                if pw == 'testingpw':
-                    print("Update mode can only be used when previous configuration is still present in docker-compose.yml and other files")
-                    sys.exit(1)
-                break
+    if dbapassword == 'testingpw':
+        print("Update mode can only be used when previous configuration is still present in docker-compose.yml and other files")
+        sys.exit(1)
 elif installed and not reinstmode:
     print('Application already installed. Please use -u/--update to update or -r/--reinstall to reinstall')
     sys.exit(1)
@@ -466,7 +472,7 @@ if not updatemode:
     if http_proxy or https_proxy:
         edit_dockerfile(http_proxy, https_proxy)
 
-    edit_dockercompose(hostname, dbpassword, secretkey, rmqpassword, portmapping, letsencrypt)
+    edit_dockercompose(hostname, dbpassword, dbapassword, secretkey, rmqpassword, portmapping, letsencrypt)
 
     edit_dockerfile_web(hostname, no_https)
 
@@ -483,16 +489,42 @@ if return_code != 0:
 time.sleep(8)
 while True:
     time.sleep(2)
-    return_code = subprocess.call("docker-compose run --rm layersapp /opt/migrate.sh", shell=True)
+    # Pass credentials through environment for slightly better security
+    # (avoids password being visible through ps or /proc/<pid>/cmdline)
+    env = os.environ.copy()
+    env['DATABASE_USER'] = 'root'
+    env['DATABASE_PASSWORD'] = dbapassword
+    return_code = subprocess.call("docker-compose run --rm -e DATABASE_USER -e DATABASE_PASSWORD layersapp /opt/migrate.sh", shell=True, env=env)
     if return_code == 0:
         break
     else:
         print("Database server may not be ready; will try again.")
 
 if not updatemode:
+    # Create normal database user for app to use
+    with tempfile.NamedTemporaryFile('w', dir=os.getcwd(), delete=False) as tf:
+        sqlscriptfile = tf.name
+        tf.write("DROP USER IF EXISTS layers;")
+        tf.write("CREATE USER layers IDENTIFIED BY '%s';\n" % dbpassword)
+        tf.write("GRANT SELECT, UPDATE, INSERT, DELETE ON layersdb.* TO layers;\n")
+        tf.write("FLUSH PRIVILEGES;\n")
+    try:
+        # Pass credentials through environment for slightly better security
+        # (avoids password being visible through ps or /proc/<pid>/cmdline)
+        env = os.environ.copy()
+        env['MYSQL_PWD'] = dbapassword
+        return_code = subprocess.call("docker exec -i -e MYSQL_PWD layersdb mysql -uroot layersdb < " + sqlscriptfile, shell=True, env=env)
+        if return_code != 0:
+            print("Creating database user failed")
+            sys.exit(1)
+    finally:
+        os.remove(sqlscriptfile)
+
     # Import the user's supplied data
     if dbfile:
-        return_code = subprocess.call("docker exec -i layersdb mysql -uroot -p" + dbpassword + " layersdb " + " < " + dbfile, shell=True)
+        env = os.environ.copy()
+        env['MYSQL_PWD'] = dbapassword
+        return_code = subprocess.call("docker exec -i -e MYSQL_PWD layersdb mysql -uroot layersdb < " + dbfile, shell=True, env=env)
         if return_code != 0:
             print("Database import failed")
             sys.exit(1)

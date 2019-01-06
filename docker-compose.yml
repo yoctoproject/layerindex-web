@@ -17,6 +17,7 @@ services:
      - layersmeta:/opt/workdir
     environment:
      #- "SECRET_KEY=<set this here>"
+     - "DATABASE_USER=root"
      - "DATABASE_PASSWORD=testingpw"
      - "DATABASE_HOST=layersdb"
      - "RABBITMQ_DEFAULT_USER=guest"

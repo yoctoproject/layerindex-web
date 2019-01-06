@@ -17,7 +17,7 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'layersdb',
-        'USER': 'root',
+        'USER': os.getenv('DATABASE_USER', 'root'),
         'PASSWORD': os.getenv('DATABASE_PASSWORD', 'testingpw'),
         'HOST': os.getenv('DATABASE_HOST', 'layersdb'),
         'PORT': '',
