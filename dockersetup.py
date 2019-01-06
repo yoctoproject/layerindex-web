@@ -59,6 +59,9 @@ def get_args():
     except IndexError:
         raise argparse.ArgumentTypeError("http_proxy must be in format http://<myproxy:port>")
 
+    if args.http_proxy and not args.https_proxy:
+        print('WARNING: http proxy specified without https proxy, this is likely to be incorrect')
+
     for entry in args.portmapping.split(','):
         if len(entry.split(":")) != 2:
             raise argparse.ArgumentTypeError("Port mapping must in the format HOST:CONTAINER. Ex: 8080:80. Multiple mappings should be separated by commas.")
