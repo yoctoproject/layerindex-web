@@ -8,6 +8,7 @@ from layerindex.models import *
 from django.contrib import admin
 from reversion_compare.admin import CompareVersionAdmin
 from django.forms import TextInput
+from django.contrib.sites.models import Site
 
 class LayerMaintainerInline(admin.StackedInline):
     model = LayerMaintainer
@@ -199,6 +200,15 @@ class ComparisonRecipeUpdateAdmin(admin.ModelAdmin):
     model = ComparisonRecipeUpdate
     list_filter = ['update']
 
+class SiteAdmin(admin.ModelAdmin):
+    fields = ('id', 'name', 'domain')
+    readonly_fields = ('id',)
+    list_display = ('id', 'name', 'domain')
+    list_display_links = ('name',)
+    search_fields = ('name', 'domain')
+
+admin.site.unregister(Site)
+admin.site.register(Site, SiteAdmin)
 admin.site.register(Branch, BranchAdmin)
 admin.site.register(YPCompatibleVersion, YPCompatibleVersionAdmin)
 admin.site.register(LayerItem, LayerItemAdmin)
