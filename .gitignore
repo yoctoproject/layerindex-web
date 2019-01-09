@@ -3,3 +3,8 @@
 *.swp
 .pytest_cache
 venv/
+*.sql
+*.sql.gz
+static/
+layers/
+logs/
