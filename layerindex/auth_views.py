@@ -10,7 +10,7 @@ from django.core.exceptions import PermissionDenied
 from django.shortcuts import render
 from django.contrib import messages
 from django.contrib.auth import logout
-from registration.backends.model_activation.views import RegistrationView
+from django_registration.backends.activation.views import RegistrationView
 from django.contrib.auth.views import PasswordResetView
 from layerindex.auth_forms import CaptchaRegistrationForm, CaptchaPasswordResetForm, DeleteAccountForm
 

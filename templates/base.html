@@ -53,14 +53,14 @@
                             <b class="caret"></b>
                         </button>
                         <ul class="dropdown-menu">
-                            <li><a href="{% url 'auth_logout' %}">{% trans "Log out" %}</a></li>
-                            <li><a href="{% url 'auth_password_change' %}">{% trans "Change password" %}</a></li>
+                            <li><a href="{% url 'logout' %}">{% trans "Log out" %}</a></li>
+                            <li><a href="{% url 'password_change' %}">{% trans "Change password" %}</a></li>
                             <li><a href="{% url 'profile' %}?return_to={{ request.path }}">{% trans "Edit profile" %}</a></li>
                         </ul>
                     </div>
                 {% else %}
                     <div class="pull-right nav-spacer">
-                        <a class="btn btn-default navbar-btn" href="{% url 'auth_login' %}{% if login_return_url %}?next={{ login_return_url }}{% endif %}">{% trans "Log in" %}</a>
+                        <a class="btn btn-default navbar-btn" href="{% url 'login' %}{% if login_return_url %}?next={{ login_return_url }}{% endif %}">{% trans "Log in" %}</a>
                     </div>
                 {% endif %}
                 {% endblock %}

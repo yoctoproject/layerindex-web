@@ -6,7 +6,7 @@
 
 from django import forms
 from captcha.fields import CaptchaField
-from registration.forms import RegistrationForm
+from django_registration.forms import RegistrationForm
 from django.contrib.auth.forms import PasswordResetForm
 from django.contrib.auth.models import User
 from django.contrib.auth.hashers import check_password

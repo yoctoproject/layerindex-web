@@ -4,45 +4,56 @@
 #
 # Licensed under the MIT license, see COPYING.MIT for details
 
-import sys
 import os
-from pkg_resources import parse_version
-from itertools import islice
-from django.shortcuts import get_object_or_404, get_list_or_404, render
-from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidden, Http404
-from django.core.urlresolvers import reverse, reverse_lazy, resolve
-from django.core.exceptions import PermissionDenied
-from django.template import RequestContext
-from layerindex.models import Branch, LayerItem, LayerMaintainer, LayerBranch, LayerDependency, LayerNote, Update, LayerUpdate, Recipe, Machine, Distro, BBClass, IncFile, BBAppend, RecipeChange, RecipeChangeset, ClassicRecipe, StaticBuildDep, DynamicBuildDep
+import sys
 from datetime import datetime
-from django.views.generic import TemplateView, DetailView, ListView
-from django.views.generic.edit import CreateView, DeleteView, UpdateView
-from django.views.generic.base import RedirectView
+from itertools import islice
+from pkg_resources import parse_version
+
+import reversion
+from django import forms
+from django.contrib import messages
+from django.contrib.auth import logout
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.hashers import make_password
+from django.contrib.auth.models import Permission, User
 from django.contrib.messages.views import SuccessMessageMixin
-from layerindex.forms import EditLayerForm, LayerMaintainerFormSet, EditNoteForm, EditProfileForm, RecipeChangesetForm, AdvancedRecipeSearchForm, BulkChangeEditFormSet, ClassicRecipeForm, ClassicRecipeSearchForm, ComparisonRecipeSelectForm
+from django.contrib.sites.models import Site
+from django.core.exceptions import PermissionDenied
+from django.core.urlresolvers import resolve, reverse, reverse_lazy
 from django.db import transaction
-from django.contrib.auth.models import User, Permission
-from django.db.models import Q, Count, Sum
+from django.db.models import Count, Q
 from django.db.models.functions import Lower
 from django.db.models.query import QuerySet
+from django.db.models.signals import pre_save
+from django.dispatch import receiver
+from django.http import Http404, HttpResponse, HttpResponseRedirect
+from django.shortcuts import get_list_or_404, get_object_or_404, render
 from django.template.loader import get_template
 from django.utils.decorators import method_decorator
-from django.contrib.auth.decorators import login_required
-from django.contrib.auth import logout
-from django.contrib import messages
-from django import forms
 from django.utils.html import escape
-from django.contrib.sites.models import Site
+from django.views.generic import DetailView, ListView, TemplateView
+from django.views.generic.base import RedirectView
+from django.views.generic.edit import (CreateView, DeleteView, FormView,
+                                       UpdateView)
 
+from django_registration.backends.activation.views import RegistrationView
 from reversion.models import Revision
-from . import utils
-from . import simplesearch
-from . import tasks
+
 import settings
-from django.dispatch import receiver
-import reversion
-from django.db.models.signals import pre_save
-from registration.models import RegistrationProfile
+from layerindex.forms import (AdvancedRecipeSearchForm, BulkChangeEditFormSet,
+                              ClassicRecipeForm, ClassicRecipeSearchForm,
+                              ComparisonRecipeSelectForm, EditLayerForm,
+                              EditNoteForm, EditProfileForm,
+                              LayerMaintainerFormSet, RecipeChangesetForm)
+from layerindex.models import (BBAppend, BBClass, Branch, ClassicRecipe,
+                               Distro, DynamicBuildDep, IncFile, LayerBranch,
+                               LayerDependency, LayerItem, LayerMaintainer,
+                               LayerNote, LayerUpdate, Machine, Patch, Recipe,
+                               RecipeChange, RecipeChangeset, Source, StaticBuildDep,
+                               Update)
+
+from . import simplesearch, tasks, utils
 
 def edit_layernote_view(request, template_name, slug, pk=None):
     layeritem = get_object_or_404(LayerItem, name=slug)
@@ -887,10 +898,9 @@ class EditProfileFormView(SuccessMessageMixin, UpdateView):
             # Deactivate user and put through registration again
             user.is_active = False
             user.save()
-            site = Site.objects.get_current()
-            RegistrationProfile.objects.filter(user=user).delete()
-            registration_profile = RegistrationProfile.objects.create_profile(user)
-            registration_profile.send_activation_email(site)
+            view = RegistrationView()
+            view.request = self.request
+            view.send_activation_email(user)
             return HttpResponseRedirect(reverse('reregister'))
 
         return HttpResponseRedirect(self.get_success_url())
@@ -1611,4 +1621,3 @@ class ComparisonRecipeSelectDetailView(DetailView):
             messages.error(request, 'Failed to save changes: %s' % form.errors)
 
         return self.get(request, *args, **kwargs)
-

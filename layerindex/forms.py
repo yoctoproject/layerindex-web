@@ -8,7 +8,7 @@ from collections import OrderedDict
 from layerindex.models import LayerItem, LayerBranch, LayerMaintainer, LayerNote, RecipeChangeset, RecipeChange, ClassicRecipe
 from django import forms
 from django.core.validators import URLValidator, RegexValidator, EmailValidator
-from registration.validators import ReservedNameValidator, DEFAULT_RESERVED_NAMES, validate_confusables
+from django_registration.validators import ReservedNameValidator, DEFAULT_RESERVED_NAMES, validate_confusables
 from django.forms.models import inlineformset_factory, modelformset_factory
 from captcha.fields import CaptchaField
 from django.contrib.auth.models import User

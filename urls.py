@@ -21,17 +21,18 @@ urlpatterns = [
     url(r'^accounts/password/reset/$',
         CaptchaPasswordResetView.as_view(
             email_template_name='registration/password_reset_email.txt',
-            success_url=reverse_lazy('auth_password_reset_done')),
-        name='auth_password_reset'),
+            success_url=reverse_lazy('password_reset_done')),
+        name='password_reset'),
     url(r'^accounts/register/$', CaptchaRegistrationView.as_view(),
-        name='registration_register'),
+        name='django_registration_register'),
     url(r'^accounts/delete/$', delete_account_view,
         {'template_name': 'layerindex/deleteaccount.html'},
         name='delete_account'),
     url(r'^accounts/reregister/$', TemplateView.as_view(
         template_name='registration/reregister.html'),
         name='reregister'),
-    url(r'^accounts/', include('registration.backends.default.urls')),
+    url(r'^accounts/', include('django_registration.backends.activation.urls')),
+    url(r'^accounts/', include('django.contrib.auth.urls')),
     url(r'^captcha/', include('captcha.urls')),
 ]
 
