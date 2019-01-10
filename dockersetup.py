@@ -519,9 +519,14 @@ if not updatemode:
 
     # Import the user's supplied data
     if dbfile:
+        return_code = subprocess.call("gunzip -t %s > /dev/null 2>&1" % dbfile, shell=True)
+        if return_code == 0:
+            catcmd = 'zcat'
+        else:
+            catcmd = 'cat'
         env = os.environ.copy()
         env['MYSQL_PWD'] = dbapassword
-        return_code = subprocess.call("docker exec -i -e MYSQL_PWD layersdb mysql -uroot layersdb < " + dbfile, shell=True, env=env)
+        return_code = subprocess.call("%s %s | docker exec -i -e MYSQL_PWD layersdb mysql -uroot layersdb" % (catcmd, dbfile), shell=True, env=env)
         if return_code != 0:
             print("Database import failed")
             sys.exit(1)
