@@ -6,6 +6,7 @@ services:
     environment:
      - "MYSQL_DATABASE=layersdb"
      - "MYSQL_ROOT_PASSWORD=testingpw"
+    restart: unless-stopped
     container_name: layersdb
   layersapp:
     depends_on:
@@ -24,6 +25,7 @@ services:
      - "RABBITMQ_DEFAULT_PASS=guest"
      #- "EMAIL_HOST=<set this here>"
      #- "DEBUG=1"
+    restart: unless-stopped
     container_name: layersapp
   layersweb:
     depends_on:
@@ -43,9 +45,11 @@ services:
      - ./docker/certs:/opt/cert
      - certbotwww:/var/www/certbot:z
     command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
+    restart: unless-stopped
     container_name: layersweb
   layersrabbit:
     image: rabbitmq:alpine
+    restart: unless-stopped
     container_name: layersrabbit
     environment:
      - "RABBITMQ_DEFAULT_USER=guest"
@@ -66,6 +70,7 @@ services:
      - "RABBITMQ_DEFAULT_PASS=guest"
      #- "EMAIL_HOST=<set this here>"
      #- "DEBUG=1"
+    restart: unless-stopped
     container_name: layerscelery
     command: /usr/local/bin/celery -A layerindex.tasks worker --loglevel=info --workdir=/opt/layerindex
   #layerscertbot:
