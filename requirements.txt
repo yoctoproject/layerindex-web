@@ -4,7 +4,7 @@ beautifulsoup4==4.6.3
 billiard==3.5.0.4
 celery==4.2.1
 confusable-homoglyphs==3.2.0
-Django>1.11.0,<1.12
+Django>=1.11.11,<1.12
 django-appconf==1.0.2
 django-axes==4.4.2
 django-cors-headers==2.4.0
