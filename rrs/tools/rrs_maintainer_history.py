@@ -102,27 +102,28 @@ def maintainers_inc_history(options, logger, maintplan, layerbranch, repodir, la
                 utils.runcmd("git checkout %s -f" % commit,
                         repodir, logger=logger)
 
-                lines = [line.strip() for line in open(maintainers_full_path)]
-                for line in lines:
-                    res = get_recipe_maintainer(line, logger)
-                    if res:
-                        (pn, name, email) = res
-                        qry = Recipe.objects.filter(pn = pn, layerbranch = layerbranch)
+                with open(maintainers_full_path, 'r') as f:
+                    for line in f:
+                        line = line.strip()
+                        res = get_recipe_maintainer(line, logger)
+                        if res:
+                            (pn, name, email) = res
+                            qry = Recipe.objects.filter(pn = pn, layerbranch = layerbranch)
 
-                        if qry:
-                            m = Maintainer.create_or_update(name, email)
+                            if qry:
+                                m = Maintainer.create_or_update(name, email)
 
-                            rm = RecipeMaintainer()
-                            rm.recipe = qry[0]
-                            rm.maintainer = m
-                            rm.history = rms
-                            rm.save()
+                                rm = RecipeMaintainer()
+                                rm.recipe = qry[0]
+                                rm.maintainer = m
+                                rm.history = rms
+                                rm.save()
 
-                            logger.debug("%s: Change maintainer to %s in commit %s." % \
-                                    (pn, m.name, commit))
-                        else:
-                            logger.debug("%s: Not found in %s." % \
-                                    (pn, layerbranch))
+                                logger.debug("%s: Change maintainer to %s in commit %s." % \
+                                        (pn, m.name, commit))
+                            else:
+                                logger.debug("%s: Not found in %s." % \
+                                        (pn, layerbranch))
 
                 # set missing recipes to no maintainer
                 for recipe in layerbranch.recipe_set.all():

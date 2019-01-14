@@ -69,15 +69,13 @@ def search_package_in_distros(pkglst_dir, recipe, data):
         else:
             pn = recipe_name
 
-        f = open(os.path.join(pkglst_dir, distro_file), "r")
-        for line in f:
-            (pkg, section) = line.split(":")
-            if pn == pkg:
-                distro_complete = distro + "-" + section[:-1]
-                distros[distro_complete] = pn
-                f.close()
-                break
-        f.close()
+        with open(os.path.join(pkglst_dir, distro_file), "r") as f:
+            for line in f:
+                (pkg, section) = line.split(":")
+                if pn == pkg:
+                    distro_complete = distro + "-" + section[:-1]
+                    distros[distro_complete] = pn
+                    break
 
     return distros
 

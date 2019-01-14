@@ -55,17 +55,21 @@ def generate_patches(tinfoil, fetchdir, changeset, outputdir):
         (tmptarfd, tmptarname) = tempfile.mkstemp('.tar.gz', 'bulkchange-', outputdir)
         tmptarfile = os.fdopen(tmptarfd, "wb")
         tar = tarfile.open(None, "w:gz", tmptarfile)
-        for patch in patches:
-            patchfn = os.path.join(tmpoutdir, patch)
-            tar.add(patchfn, arcname=patch)
-        tar.close()
+        try:
+            for patch in patches:
+                patchfn = os.path.join(tmpoutdir, patch)
+                tar.add(patchfn, arcname=patch)
+        finally:
+            tar.close()
         ret = tmptarname
     elif len(patches) == 1:
         (tmppatchfd, tmppatchname) = tempfile.mkstemp('.patch', 'bulkchange-', outputdir)
         tmppatchfile = os.fdopen(tmppatchfd, "wb")
-        with open(os.path.join(tmpoutdir, patches[0]), "rb") as patchfile:
-            shutil.copyfileobj(patchfile, tmppatchfile)
-        tmppatchfile.close()
+        try:
+            with open(os.path.join(tmpoutdir, patches[0]), "rb") as patchfile:
+                shutil.copyfileobj(patchfile, tmppatchfile)
+        finally:
+            tmppatchfile.close()
         ret = tmppatchname
 
     shutil.rmtree(tmpoutdir)

@@ -1457,25 +1457,28 @@ def task_log_view(request, task_id):
         f = open(os.path.join(settings.TASK_LOG_DIR, 'task_%s.log' % task_id), 'rb')
     except FileNotFoundError:
         raise Http404
-    f.seek(int(start))
-    # We need to escape this or else things that look like tags in the output
-    # will be interpreted as such by the browser
-    data = escape(f.read())
-    response = HttpResponse(data)
-    if result.ready():
-        response['Task-Done'] = '1'
-        updateobj = get_object_or_404(Update, task_id=task_id)
-        response['Task-Duration'] = utils.timesince2(updateobj.started, updateobj.finished)
-        response['Task-Progress'] = 100
-        if result.info:
-            if isinstance(result.info, dict):
-                response['Task-Result'] = result.info.get('retcode', None)
-            else:
-                response['Task-Result'] = -1
-    else:
-        response['Task-Done'] = '0'
-        preader = utils.ProgressReader(settings.TASK_LOG_DIR, task_id)
-        response['Task-Progress'] = preader.read()
+    try:
+        f.seek(int(start))
+        # We need to escape this or else things that look like tags in the output
+        # will be interpreted as such by the browser
+        data = escape(f.read())
+        response = HttpResponse(data)
+        if result.ready():
+            response['Task-Done'] = '1'
+            updateobj = get_object_or_404(Update, task_id=task_id)
+            response['Task-Duration'] = utils.timesince2(updateobj.started, updateobj.finished)
+            response['Task-Progress'] = 100
+            if result.info:
+                if isinstance(result.info, dict):
+                    response['Task-Result'] = result.info.get('retcode', None)
+                else:
+                    response['Task-Result'] = -1
+        else:
+            response['Task-Done'] = '0'
+            preader = utils.ProgressReader(settings.TASK_LOG_DIR, task_id)
+            response['Task-Progress'] = preader.read()
+    finally:
+        f.close()
     return response
 
 def task_stop_view(request, task_id):
