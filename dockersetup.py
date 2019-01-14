@@ -372,15 +372,12 @@ def generatepasswords(passwordlength):
     return ''.join([random.SystemRandom().choice('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@%^&*-_+') for i in range(passwordlength)])
 
 def readfile(filename):
-    f = open(filename,'r')
-    filedata = f.read()
-    f.close()
-    return filedata
+    with open(filename, 'r') as f:
+        return f.read()
 
 def writefile(filename, data):
-    f = open(filename,'w')
-    f.write(data)
-    f.close()
+    with open(filename, 'w') as f:
+        f.write(data)
 
 
 ## Get user arguments and modify config files
