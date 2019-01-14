@@ -32,6 +32,7 @@ from django.shortcuts import get_list_or_404, get_object_or_404, render
 from django.template.loader import get_template
 from django.utils.decorators import method_decorator
 from django.utils.html import escape
+from django.views.decorators.cache import never_cache
 from django.views.generic import DetailView, ListView, TemplateView
 from django.views.generic.base import RedirectView
 from django.views.generic.edit import (CreateView, DeleteView, FormView,
@@ -870,6 +871,7 @@ class HistoryListView(ListView):
 class EditProfileFormView(SuccessMessageMixin, UpdateView):
     form_class = EditProfileForm
 
+    @method_decorator(never_cache)
     def dispatch(self, request, *args, **kwargs):
         self.user = request.user
         return super(EditProfileFormView, self).dispatch(request, *args, **kwargs)

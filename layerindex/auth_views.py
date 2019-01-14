@@ -15,6 +15,8 @@ from django.core.exceptions import PermissionDenied
 from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect, HttpResponse
 from django.shortcuts import render
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import never_cache
 from django_registration import signals
 from django_registration.backends.activation.views import RegistrationView
 
@@ -26,6 +28,7 @@ from .models import SecurityQuestion, SecurityQuestionAnswer, UserProfile
 from . import tasks
 import settings
 
+@method_decorator(never_cache, name='dispatch')
 class CaptchaRegistrationView(RegistrationView):
     form_class = CaptchaRegistrationForm
 
@@ -68,6 +71,7 @@ class CaptchaRegistrationView(RegistrationView):
         return context
 
 
+@method_decorator(never_cache, name='dispatch')
 class CaptchaPasswordResetView(PasswordResetView):
     form_class = CaptchaPasswordResetForm
 
