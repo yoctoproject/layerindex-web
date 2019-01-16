@@ -71,7 +71,7 @@ def send_email(maintplan, recipes, options):
         urldir = layer.get_fetch_dir()
         repodir = os.path.join(fetchdir, urldir)
         # FIXME this assumes the correct branch is checked out
-        topcommitdesc = utils.runcmd("git log -1 --oneline", repodir).strip()
+        topcommitdesc = utils.runcmd(['git', 'log', '-1', '--oneline'], repodir).strip()
         commits.append('%s: %s' % (layerbranch.layer.name, topcommitdesc))
 
     # Render the subject as a template (to allow a bit of flexibility)

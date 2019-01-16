@@ -231,19 +231,19 @@ def checkout_repo(repodir, commit, logger, force=False):
             # git clone <url>
             # warning: remote HEAD refers to nonexistent ref, unable to checkout.
             # So check and avoid that
-            currentref = runcmd("git rev-parse HEAD", repodir, logger=logger).strip()
+            currentref = runcmd(['git', 'rev-parse', 'HEAD'], repodir, logger=logger).strip()
         except Exception as esc:
             logger.warn(esc)
             currentref = ''
     if currentref != commit:
         # Reset in case there are added but uncommitted changes
-        runcmd("git reset --hard", repodir, logger=logger)
+        runcmd(['git', 'reset', '--hard'], repodir, logger=logger)
         # Drop any untracked files in case these cause problems (either because
         # they will exist in the revision we're checking out, or will otherwise
         # interfere with operation, e.g. stale pyc files)
-        runcmd("git clean -qdfx", repodir, logger=logger)
+        runcmd(['git', 'clean', '-qdfx'], repodir, logger=logger)
         # Now check out the revision
-        runcmd(['git', 'checkout', commit], repodir, logger=logger, shell=False)
+        runcmd(['git', 'checkout', commit], repodir, logger=logger)
 
 def checkout_layer_branch(layerbranch, repodir, logger=None):
     branchname = layerbranch.get_checkout_branch()
@@ -289,7 +289,7 @@ def parse_layer_conf(layerdir, data, logger=None):
     data.expandVarref('LAYERDIR')
 
 child_pid = 0
-def runcmd(cmd, destdir=None, printerr=True, outfile=None, logger=None, shell=True):
+def runcmd(cmd, destdir=None, printerr=True, outfile=None, logger=None, shell=False):
     """
         execute command, raise CalledProcessError if fail
         return output if succeed

@@ -54,7 +54,7 @@ def run_internal(maintplanlayerbranch, commit, commitdate, options, logger, bitb
         else:
             cmdprefix = 'python3'
 
-    bitbake_rev = utils.runcmd('git rev-list -1 --before="%s" origin/master' % str(commitdate),
+    bitbake_rev = utils.runcmd(['git', 'rev-list', '-1', '--before=%s' % str(commitdate), 'origin/master'],
                     bitbakepath, logger=logger)
     check_rev = bitbake_map.get(bitbake_rev, None)
     if check_rev:
@@ -128,29 +128,29 @@ def upgrade_history(options, logger):
                 if options.commit:
                     initial = False
                     since = options.commit
-                    since_option = '%s^..%s' % (options.commit, options.commit)
+                    since_option = ['%s^..%s' % (options.commit, options.commit)]
                 elif maintplanbranch.upgrade_rev and not options.fullreload:
                     initial = False
                     since = maintplanbranch.upgrade_date
-                    since_option = '%s..origin/master' % maintplanbranch.upgrade_rev
+                    since_option = ['%s..origin/master' % maintplanbranch.upgrade_rev]
                 else:
                     initial = True
                     since = options.since
-                    since_option = '--since="%s" origin/master' % since
+                    since_option = ['--since=%s' % since, 'origin/master']
 
                 repo = git.Repo(repodir)
                 if repo.bare:
                     logger.error('Repository %s is bare, not supported' % repodir)
                     continue
 
-                commits = utils.runcmd("git log %s --format='%%H %%ct' --reverse" % since_option,
+                commits = utils.runcmd(['git', 'log'] + since_option + ['--format=%H %ct', '--reverse'],
                                     repodir,
                                     logger=logger)
                 commit_list = commits.split('\n')
 
                 bitbake_map = {}
                 # Filter out some bad commits
-                bitbake_commits = utils.runcmd("git rev-list fef18b445c0cb6b266cd939b9c78d7cbce38663f^..39780b1ccbd76579db0fc6fb9369c848a3bafa9d^",
+                bitbake_commits = utils.runcmd(['git', 'rev-list', 'fef18b445c0cb6b266cd939b9c78d7cbce38663f^..39780b1ccbd76579db0fc6fb9369c848a3bafa9d^'],
                                     bitbakepath,
                                     logger=logger)
                 bitbake_commit_list = bitbake_commits.splitlines()

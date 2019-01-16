@@ -78,8 +78,8 @@ def maintainers_inc_history(options, logger, maintplan, layerbranch, repodir, la
 
     logger.debug('Checking maintainers.inc history for %s' % layerbranch)
 
-    commits = utils.runcmd("git log --format='%%H' --reverse --date=rfc origin/master %s"
-                        % os.path.join(layerbranch.vcs_subdir, MAINTAINERS_INCLUDE_PATH),
+    commits = utils.runcmd(['git', 'log', '--format=%H', '--reverse', '--date=rfc', 'origin/master',
+                        os.path.join(layerbranch.vcs_subdir, MAINTAINERS_INCLUDE_PATH)],
                         repodir, logger=logger)
 
     no_maintainer, _ = Maintainer.objects.get_or_create(name='No maintainer')
@@ -93,7 +93,7 @@ def maintainers_inc_history(options, logger, maintplan, layerbranch, repodir, la
                 logger.debug("Analysing commit %s ..." % (commit))
 
                 (author_name, author_email, date, title) = \
-                    get_commit_info(utils.runcmd("git show " + commit, repodir,
+                    get_commit_info(utils.runcmd(['git', 'show', commit], repodir,
                         logger=logger), logger)
 
                 author = Maintainer.create_or_update(author_name, author_email)
@@ -101,7 +101,7 @@ def maintainers_inc_history(options, logger, maintplan, layerbranch, repodir, la
                         sha1=commit, layerbranch=layerbranch)
                 rms.save()
 
-                utils.runcmd("git checkout %s -f" % commit,
+                utils.runcmd(['git', 'checkout', commit, '-f'],
                         repodir, logger=logger)
 
                 with open(maintainers_full_path, 'r') as f:

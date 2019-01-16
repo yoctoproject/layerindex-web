@@ -77,7 +77,7 @@ class ImportProject:
     def add_layer(self, layer):
         self.logger.debug("Processing layer %s" % layer)
         try:
-            git_dir = utils.runcmd("git rev-parse --show-toplevel", destdir=layer, logger=self.logger)
+            git_dir = utils.runcmd(['git', 'rev-parse', '--show-toplevel'], destdir=layer, logger=self.logger)
         except Exception as e:
             self.logger.error("Cannot get root dir for layer %s: %s - Skipping." % (layer, str(e)))
             return 1
@@ -93,20 +93,20 @@ class ImportProject:
         layer_name = self.get_layer_name(layer)
 
         for i in [1, 2, 3]:
-            remote = utils.runcmd("git remote", destdir=git_dir, logger=self.logger)
+            remote = utils.runcmd(['git', 'remote'], destdir=git_dir, logger=self.logger)
             if not remote:
                 self.logger.warning("Cannot find remote git for %s" % layer_name)
                 return 1
 
             try:
-                git_url = utils.runcmd("git config --get remote.%s.url" % remote, destdir=git_dir, logger=self.logger)
+                git_url = utils.runcmd(['git', 'config', '--get', 'remote.%s.url' % remote], destdir=git_dir, logger=self.logger)
             except Exception as e:
                 self.logger.info("Cannot get remote.%s.url for git dir %s: %s" % (remote, git_dir, str(e)))
 
             if not os.path.exists(git_url):
                 # Assume this is remote.
                 self.logger.debug("Found git url = %s" % git_url)
-                remote_branch = utils.runcmd( "git rev-parse --abbrev-ref --symbolic-full-name @\{u\}", destdir=git_dir, logger=self.logger)
+                remote_branch = utils.runcmd(['git', 'rev-parse', '--abbrev-ref', '--symbolic-full-name', '@{u}'], destdir=git_dir, logger=self.logger)
                 if remote_branch.startswith(remote):
                     actual_branch = remote_branch[len(remote) + 1:]
                 break

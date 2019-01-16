@@ -302,9 +302,9 @@ def main():
             out = None
             try:
                 if not os.path.exists(repodir):
-                    out = utils.runcmd("git clone %s %s" % (layer.vcs_url, urldir), fetchdir, logger=logger)
+                    out = utils.runcmd(['git', 'clone', layer.vcs_url, urldir], fetchdir, logger=logger)
                 else:
-                    out = utils.runcmd("git fetch", repodir, logger=logger)
+                    out = utils.runcmd(['git', 'fetch'], repodir, logger=logger)
             except Exception as e:
                 logger.error("Fetch failed: %s" % str(e))
                 sys.exit(1)
@@ -313,10 +313,10 @@ def main():
             if (options.actual_branch):
                 actual_branch = options.actual_branch
             try:
-                out = utils.runcmd("git checkout origin/%s" % actual_branch, repodir, logger=logger)
+                out = utils.runcmd(['git', 'checkout', 'origin/%s' % actual_branch], repodir, logger=logger)
             except subprocess.CalledProcessError:
                 actual_branch = None
-                branches = utils.runcmd("git branch -r", repodir, logger=logger)
+                branches = utils.runcmd(['git', 'branch', '-r'], repodir, logger=logger)
                 for line in branches.splitlines():
                     if 'origin/HEAD ->' in line:
                         actual_branch = line.split('-> origin/')[-1]
@@ -324,7 +324,7 @@ def main():
                 if not actual_branch:
                     logger.error("Repository has no master branch nor origin/HEAD")
                     sys.exit(1)
-                out = utils.runcmd("git checkout origin/%s" % actual_branch, repodir, logger=logger)
+                out = utils.runcmd(['git', 'checkout', 'origin/%s' % actual_branch], repodir, logger=logger)
 
             layer_paths = []
             if options.subdir:

@@ -122,7 +122,7 @@ def _get_recipes_filenames(ct, repodir, layerdir, logger):
     ct_files = []
     layerdir_start = os.path.normpath(layerdir) + os.sep
 
-    files = utils.runcmd("git log --name-only --format='%n' -n 1 " + ct,
+    files = utils.runcmd(['git', 'log', '--name-only', '--format=%n', '-n', '1', ct],
                             repodir, logger=logger)
 
     incdirs = []
@@ -161,7 +161,7 @@ def checkout_layer_deps(layerbranch, commit, fetchdir, logger):
         repodir = os.path.join(fetchdir, urldir)
         if not repodir in done_repos:
             if not lcommit:
-                lcommit = utils.runcmd('git rev-list -1 --before="%s" origin/master' % lcommitdate, repodir, logger=logger).strip()
+                lcommit = utils.runcmd(['git', 'rev-list', '-1', '--before=%s' % lcommitdate, 'origin/master'], repodir, logger=logger).strip()
             utils.checkout_repo(repodir, lcommit, logger, force)
             done_repos.append(repodir)
 
@@ -170,7 +170,7 @@ def checkout_layer_deps(layerbranch, commit, fetchdir, logger):
     checkout_layer(layerbranch, commit, force=True)
     layer_urldir = str(layerbranch.layer.get_fetch_dir())
     layer_repodir = os.path.join(fetchdir, layer_urldir)
-    commitdate = utils.runcmd("git show -s --format=%ci", layer_repodir, logger=logger)
+    commitdate = utils.runcmd(['git', 'show', '-s', '--format=%ci'], layer_repodir, logger=logger)
 
     for dep in layerbranch.get_recursive_dependencies():
         checkout_layer(dep, lcommitdate=commitdate)
@@ -210,7 +210,7 @@ def generate_history(options, layerbranch_id, commit, logger):
             # Branch name, need to check out detached
             bitbake_rev = 'origin/%s' % bitbake_rev
     else:
-        bitbake_rev = utils.runcmd('git rev-list -1 --before="%s" origin/master' % commitdate, bitbakepath, logger=logger).strip()
+        bitbake_rev = utils.runcmd(['git', 'rev-list', '-1', '--before=%s' % commitdate, 'origin/master'], bitbakepath, logger=logger).strip()
     utils.checkout_repo(bitbakepath, bitbake_rev, logger)
     sys.path.insert(0, os.path.join(bitbakepath, 'lib'))
 
@@ -221,14 +221,12 @@ def generate_history(options, layerbranch_id, commit, logger):
 
         if options.initial:
             title = options.initial
-            info = 'No maintainer;;' + utils.runcmd("git log  --format='%ad;%cd' --date=rfc -n 1 " \
-                            + commit, destdir=repodir, logger=logger)
+            info = 'No maintainer;;' + utils.runcmd(['git', 'log', '--format=%ad;%cd', '--date=rfc', '-n', '1', commit], destdir=repodir, logger=logger)
             recordcommit = ''
         else:
-            title = utils.runcmd("git log --format='%s' -n 1 " + commit,
+            title = utils.runcmd(['git', 'log', '--format=%s', '-n', '1', commit],
                                             repodir, logger=logger)
-            info = utils.runcmd("git log  --format='%an;%ae;%ad;%cd' --date=rfc -n 1 " \
-                            + commit, destdir=repodir, logger=logger)
+            info = utils.runcmd(['git', 'log', '--format=%an;%ae;%ad;%cd', '--date=rfc', '-n', '1', commit], destdir=repodir, logger=logger)
             recordcommit = commit
 
         try:

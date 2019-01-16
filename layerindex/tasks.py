@@ -50,7 +50,7 @@ def run_update_command(self, branch_name, update_command):
     retcode = 0
     erroutput = None
     try:
-        output = utils.runcmd(update_command, os.path.dirname(os.path.dirname(__file__)), outfile=logfile)
+        output = utils.runcmd(update_command, os.path.dirname(os.path.dirname(__file__)), outfile=logfile, shell=True)
     except subprocess.CalledProcessError as e:
         output = e.output
         erroutput = output

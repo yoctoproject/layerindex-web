@@ -277,7 +277,7 @@ def bulk_change_patch_view(request, pk):
     # FIXME this couples the web server and machine running the update script together,
     # but given that it's a separate script the way is open to decouple them in future
     try:
-        ret = utils.runcmd('%s bulkchange.py %d %s' % (sys.executable, int(pk), settings.TEMP_BASE_DIR), os.path.dirname(__file__))
+        ret = utils.runcmd([sys.executable, 'bulkchange.py', str(int(pk)), settings.TEMP_BASE_DIR], os.path.dirname(__file__), shell=False)
         if ret:
             fn = ret.splitlines()[-1]
             if os.path.exists(fn):
