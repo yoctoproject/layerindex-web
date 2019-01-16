@@ -259,7 +259,8 @@ def is_branch_valid(layerdir, branch):
     import git
 
     g = git.cmd.Git(layerdir)
-    assert g.rev_parse('--is-bare-repository') == 'false'
+    if g.rev_parse('--is-bare-repository') != 'false':
+        raise Exception('is_branch_valid: git repository is a bare repository')
     try:
         g.rev_parse('--verify', 'origin/%s' % branch)
     except git.exc.GitCommandError:

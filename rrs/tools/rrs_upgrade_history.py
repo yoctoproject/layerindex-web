@@ -139,7 +139,9 @@ def upgrade_history(options, logger):
                     since_option = '--since="%s" origin/master' % since
 
                 repo = git.Repo(repodir)
-                assert repo.bare == False
+                if repo.bare:
+                    logger.error('Repository %s is bare, not supported' % repodir)
+                    continue
 
                 commits = utils.runcmd("git log %s --format='%%H %%ct' --reverse" % since_option,
                                     repodir,

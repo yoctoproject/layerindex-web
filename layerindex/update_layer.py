@@ -371,7 +371,9 @@ def main():
 
     # Collect repo info
     repo = git.Repo(repodir)
-    assert repo.bare == False
+    if repo.bare:
+        logger.error('Repository %s is bare, not supported' % repodir)
+        sys.exit(1)
     topcommit = repo.commit('origin/%s' % branchname)
     if options.nocheckout:
         topcommit = repo.commit('HEAD')

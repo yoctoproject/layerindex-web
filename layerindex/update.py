@@ -369,7 +369,9 @@ def main():
                     urldir = layer.get_fetch_dir()
                     repodir = os.path.join(fetchdir, urldir)
                     repo = git.Repo(repodir)
-                    assert repo.bare == False
+                    if repo.bare:
+                        logger.error('Repository %s is bare, not supported' % repodir)
+                        continue
                     try:
                         # Always get origin/branchname, so it raises error when branch doesn't exist when nocheckout
                         topcommit = repo.commit('origin/%s' % branchname)
