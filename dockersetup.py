@@ -482,20 +482,44 @@ if return_code != 0:
     print("docker-compose up failed")
     sys.exit(1)
 
-# Apply any pending layerindex migrations / initialize the database. Database might not be ready yet; have to wait then poll.
+# Database might not be ready yet; have to wait then poll.
 time.sleep(8)
 while True:
     time.sleep(2)
     # Pass credentials through environment for slightly better security
     # (avoids password being visible through ps or /proc/<pid>/cmdline)
     env = os.environ.copy()
-    env['DATABASE_USER'] = 'root'
-    env['DATABASE_PASSWORD'] = dbapassword
-    return_code = subprocess.call("docker-compose run --rm -e DATABASE_USER -e DATABASE_PASSWORD layersapp /opt/migrate.sh", shell=True, env=env)
+    env['MYSQL_PWD'] = dbapassword
+    # Dummy command, we just want to establish that the db can be connected to
+    return_code = subprocess.call("echo | docker exec -i -e MYSQL_PWD layersdb mysql -uroot layersdb", shell=True, env=env)
     if return_code == 0:
         break
     else:
         print("Database server may not be ready; will try again.")
+
+if not updatemode:
+    # Import the user's supplied data
+    if dbfile:
+        return_code = subprocess.call("gunzip -t %s > /dev/null 2>&1" % dbfile, shell=True)
+        if return_code == 0:
+            catcmd = 'zcat'
+        else:
+            catcmd = 'cat'
+        env = os.environ.copy()
+        env['MYSQL_PWD'] = dbapassword
+        return_code = subprocess.call("%s %s | docker exec -i -e MYSQL_PWD layersdb mysql -uroot layersdb" % (catcmd, dbfile), shell=True, env=env)
+        if return_code != 0:
+            print("Database import failed")
+            sys.exit(1)
+
+# Apply any pending layerindex migrations / initialize the database.
+env = os.environ.copy()
+env['DATABASE_USER'] = 'root'
+env['DATABASE_PASSWORD'] = dbapassword
+return_code = subprocess.call("docker-compose run --rm -e DATABASE_USER -e DATABASE_PASSWORD layersapp /opt/migrate.sh", shell=True, env=env)
+if return_code != 0:
+    print("Applying migrations failed")
+    sys.exit(1)
 
 if not updatemode:
     # Create normal database user for app to use
@@ -516,20 +540,6 @@ if not updatemode:
             sys.exit(1)
     finally:
         os.remove(sqlscriptfile)
-
-    # Import the user's supplied data
-    if dbfile:
-        return_code = subprocess.call("gunzip -t %s > /dev/null 2>&1" % dbfile, shell=True)
-        if return_code == 0:
-            catcmd = 'zcat'
-        else:
-            catcmd = 'cat'
-        env = os.environ.copy()
-        env['MYSQL_PWD'] = dbapassword
-        return_code = subprocess.call("%s %s | docker exec -i -e MYSQL_PWD layersdb mysql -uroot layersdb" % (catcmd, dbfile), shell=True, env=env)
-        if return_code != 0:
-            print("Database import failed")
-            sys.exit(1)
 
     ## For a fresh database, create an admin account
     print("Creating database superuser. Input user name, email, and password when prompted.")
