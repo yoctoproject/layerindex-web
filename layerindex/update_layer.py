@@ -41,14 +41,6 @@ class DryRunRollbackException(Exception):
     pass
 
 
-def rm_tempdir_onerror(fn, fullname, exc_info):
-    # Avoid errors when we're racing against bitbake deleting bitbake.lock/bitbake.sock
-    # (and anything else it happens to create in our temporary build directory in future)
-    if isinstance(exc_info[1], OSError) and exc_info[1].errno == errno.ENOENT:
-        pass
-    else:
-        raise
-
 def check_machine_conf(path, subdir_start):
     subpath = path[len(subdir_start):]
     res = conf_re.match(subpath)
@@ -860,7 +852,7 @@ def main():
             logger.debug('Preserving temp directory %s' % tempdir)
         else:
             logger.debug('Deleting temp directory')
-            shutil.rmtree(tempdir, onerror=rm_tempdir_onerror)
+            utils.rmtree_force(tempdir)
     sys.exit(0)
 
 

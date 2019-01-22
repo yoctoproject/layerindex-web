@@ -13,6 +13,8 @@ import logging
 import time
 import fcntl
 import signal
+import errno
+import shutil
 import codecs
 import re
 from datetime import datetime
@@ -382,6 +384,22 @@ def lock_file(fn, timeout=30, logger=None):
 
 def unlock_file(lock):
     fcntl.flock(lock, fcntl.LOCK_UN)
+
+
+def rmtree_force(pth):
+    """
+    Delete a directory tree ignoring any ENOENT errors.
+    Mainly used to avoid errors when we're racing against bitbake deleting bitbake.lock/bitbake.sock
+    (and anything else it happens to create in our temporary build directory in future)
+    """
+    def rmtree_force_onerror(fn, fullname, exc_info):
+        if isinstance(exc_info[1], OSError) and exc_info[1].errno == errno.ENOENT:
+            pass
+        else:
+            raise
+
+    shutil.rmtree(pth, onerror=rmtree_force_onerror)
+
 
 def chain_unique(*iterables):
     """Chain unique objects in a list of querysets, preserving order"""

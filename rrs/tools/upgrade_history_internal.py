@@ -16,7 +16,6 @@ import optparse
 import logging
 import re
 from distutils.version import LooseVersion
-import shutil
 
 sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__))))
 from common import common_setup, get_pv_type, load_recipes, \
@@ -245,7 +244,7 @@ def generate_history(options, layerbranch_id, commit, logger):
     finally:
         if tinfoil and hasattr(tinfoil, 'shutdown') and (LooseVersion(bb.__version__) > LooseVersion("1.27")):
             tinfoil.shutdown()
-        shutil.rmtree(tempdir)
+        utils.rmtree_force(tempdir)
 
 
 if __name__=="__main__":

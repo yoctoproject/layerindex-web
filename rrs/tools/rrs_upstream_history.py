@@ -12,7 +12,6 @@ import os.path
 import optparse
 import logging
 from datetime import datetime
-import shutil
 
 sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__))))
 from common import common_setup, load_recipes, \
@@ -228,7 +227,7 @@ if __name__=="__main__":
 
                         finally:
                             tinfoil.shutdown()
-                            shutil.rmtree(tempdir)
+                            utils.rmtree_force(tempdir)
                         if options.dry_run:
                             raise DryRunRollbackException
                 except DryRunRollbackException:
