@@ -69,6 +69,8 @@ def get_commit_info(info, logger):
 
 
 def maintainers_inc_history(options, logger, maintplan, layerbranch, repodir, layerdir):
+    utils.checkout_layer_branch(layerbranch, repodir, logger=logger)
+
     maintainers_full_path = os.path.join(layerdir, MAINTAINERS_INCLUDE_PATH)
     if not os.path.exists(maintainers_full_path):
         logger.warning('Maintainer style is maintainers.inc for plan %s but no maintainers.inc exists in for %s' % (maintplan, layerbranch))
