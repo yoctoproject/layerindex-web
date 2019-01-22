@@ -541,13 +541,6 @@ if not updatemode:
     finally:
         os.remove(sqlscriptfile)
 
-    ## For a fresh database, create an admin account
-    print("Creating database superuser. Input user name, email, and password when prompted.")
-    return_code = subprocess.call("docker-compose run --rm layersapp /opt/layerindex/manage.py createsuperuser", shell=True)
-    if return_code != 0:
-        print("Creating superuser failed")
-        sys.exit(1)
-
     ## Set the volume permissions using debian:stretch since we recently fetched it
     return_code = subprocess.call("docker run --rm -v layerindexweb_layersmeta:/opt/workdir debian:stretch chown 500 /opt/workdir && \
             docker run --rm -v layerindexweb_layersstatic:/usr/share/nginx/html debian:stretch chown 500 /usr/share/nginx/html", shell=True)
@@ -560,6 +553,15 @@ return_code = subprocess.call("docker-compose run --rm -e STATIC_ROOT=/usr/share
 if return_code != 0:
     print("Collecting static files failed")
     sys.exit(1)
+
+if not updatemode:
+    ## For a fresh database, create an admin account
+    print("Creating database superuser. Input user name, email, and password when prompted.")
+    return_code = subprocess.call("docker-compose run --rm layersapp /opt/layerindex/manage.py createsuperuser", shell=True)
+    if return_code != 0:
+        print("Creating superuser failed")
+        sys.exit(1)
+
 
 if updatemode:
     print("Update complete")
