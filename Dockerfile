@@ -33,6 +33,7 @@ RUN apt-get update \
 	locales \
 	netcat-openbsd \
 	curl \
+	wget \
 	git-core \
 	vim \
     && echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen \
