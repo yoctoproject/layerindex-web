@@ -1,0 +1,121 @@
+Standalone Setup
+----------------
+
+NOTE: The standalone setup is most suitable for development and is not
+recommended for production; for production use the Docker-based setup
+covered in the main README.
+
+In order to run this application standalone, you will need:
+
+* Python 3.4+
+* Django 1.11.x (not compatible with 2.0 or newer)
+* RabbitMQ 3.7.x
+* For production usage, a web server set up to host Django applications
+  (not needed for local-only testing/development)
+* A database supported by Django (SQLite, MySQL, etc.). Django takes
+  care of creating the database itself, you just need to ensure that the
+  database server (if not using SQLite) is configured and running.
+* Third-party Django/python modules as detailed by requirements.txt.
+  If you're using pip, you can install these by running:
+    pip install -r requirements.txt
+* On the machine that will run the backend update script (which does not
+  have to be the same machine as the web server, however it does still
+  have to have Django installed, have the same or similar configuration
+  in settings.py and have access to the database used by the web
+  application):
+  * Python 2.7.6+ / Python 3.4+ to match with the version of BitBake
+    for the OpenEmbedded branch being parsed (for modern versions it's
+    Python 3.)
+  * Python dependencies as per requirements.txt (we still need Django
+    etc. here since we interact with the database through Django's ORM.)
+
+Example virtualenv-based setup for the above:
+
+Python's virtualenv provides an easy way to isolate the python dependencies
+of applications such as the layer index. Here's an example of setting up a
+virtualenv for the layer index that's particularly useful for development.
+(This assumes a Debian-based distribution, adjust accordingly for other
+distros).
+
+1. Install required host distro packages (some of these are required by
+   pip to build the dependencies; it's also assumed you want MariaDB as
+   the database backend):
+
+   sudo apt-get install virtualenv libmariadb-client-lgpl-dev build-essential python3-dev libjpeg-dev libz-dev libfreetype6-dev mariadb-server rabbitmq-server
+
+2. Work around path issues (you may not need this):
+
+   sudo ln -s /usr/bin/mariadb_config /usr/bin/mysql_config
+
+3. Create a Python 3 virtualenv (path can be anywhere you like):
+
+   python3 -m venv /path/to/desired/venv
+
+4. Activate the virtualenv:
+
+   . /path/to/desired/venv/bin/activate
+
+5. Install requirements:
+
+   pip install -r requirements.txt
+
+
+Configuration and running:
+
+1. Edit settings.py to specify a database, EMAIL_HOST, SECRET_KEY and
+   other settings specific to your installation. Ensure you set
+   LAYER_FETCH_DIR to an absolute path to a location with sufficient
+   space for fetching layer repositories. Modify RABBIT_BROKER
+   and RABBIT_BACKEND to reflect the settings used by your RabbitMQ
+   server.
+
+2. Run the following commands within the layerindex-web directory to
+   initialise the database:
+
+   ./manage.py migrate
+   ./manage.py createsuperuser
+
+3. You can test the web application locally by setting DEBUG = True in
+   settings.py and running the following:
+
+   ./manage.py runserver
+
+   Then visit http://127.0.0.1:8000/layerindex/ with your browser. As
+   with all Django applications there is an admin interface available
+   at http://127.0.0.1:8000/admin/ also. The initial login and password
+   will be those you entered in the step above when creating an admin
+   account.
+
+   NOTE: This local server should only be used for testing - for
+   production you need to use a proper web server and have DEBUG set
+   to False (or use the Docker-based setup).
+
+   3.1. In order to process asynchronous tasks like sending email,
+        you will need to run a Celery worker:
+
+        celery -A layerindex.tasks worker --loglevel=info
+
+4. To import layer data from the public instance at layers.openembedded.org
+   you can run the following (defaults to the master branch only):
+
+   layerindex/tools/import_layers.py -d https://layers.openembedded.org
+
+   Alternatively you can add layers individually using the separate
+   layerindex/tools/import_layer.py script or through the admin interface.
+
+
+Updating OpenEmbedded data
+--------------------------
+
+You will likely want to update the OpenEmbedded layer information on a regular
+basis. To do that:
+
+   Incremental update:
+
+       layerindex/update.py
+
+   Reload all data (should only be needed if the database structure has
+   changed as part of an upgrade of the application code):
+
+       layerindex/update.py -r
+

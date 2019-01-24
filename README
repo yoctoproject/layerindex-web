@@ -8,113 +8,88 @@ OE-Core.
 There are two main methods of setting up this application - within
 a set of Docker containers, or standalone. The Docker-based setup
 is more suited for production whereas standalone is a bit easier
-for development. If you simply want to run and use the layer index, 
-please use the docker setup.
+for development. This document will consider only the Docker-based
+setup; for standalone please see README.devel.
 
 
 Docker Setup
 ------------
 
-To use layerindex-web hosted within Docker containers, refer to
-docker/README keeping in mind you'll need to set up Docker properly
-as part of the setup process. Once you've run through those
-instructions you'll need to return to this document and follow the
-instructions in the section "Database Setup" below.
+The dockersetup.py script will set up and configure a cluster of 5 or 6
+docker containers:
+
+  - layersapp: the application
+  - layersdb: the database
+  - layersweb: NGINX web server (as a proxy and for serving static content)
+  - layerscelery: Celery (for running background jobs)
+  - layersrabbit: RabbitMQ (required by Celery)
+  - layerscertbot: Runs certbot to keep letsencrypt certificates up-to-date
+                   (optional, default disabled)
+
+The script will edit all necessary configuration files, build and launch all
+containers, and do the initial database setup. It is advised that you start
+with a .sql database file to prepopulate your database. The following
+instructions will walk you through the setup.
+
+1) Install docker and docker-compose per instructions:
+
+        https://docs.docker.com/compose/install/
+
+   ** Note: for latest docker-compose version follow the directions above,
+      rather than using a perhaps outdated one provided by your distribution.
+
+2) Run the setup script (dockersetup.py). You can optionally supply your
+   hostname, proxy settings, a sql database file of layer mappings to import,
+   and a host to container port mapping. For more information, run:
+
+        ./dockersetup.py -h
+
+   Example command to run containers with a proxy and with a database to
+   import:
+
+        ./dockersetup.py -d ~/databasedump.sql -p http://<proxyserver>:<port>
+
+   NOTE: If you want email sending to work (required for user registration and
+   password resets), you should use the -e/--email-host option to specify your
+   outgoing email server.
+
+   During the setup you will be asked for a username, email and password to
+   set up a super user for the database.
+
+3) Once the script completes, open a web browser and navigate to the URL
+   printed out by the script. By default that would be: https://localhost:8081
+
+4) If you have chosen to not supply a prepopulated database and are instead
+   starting fresh, you should now follow the instructions in the
+   "Database Setup" section of the main README.
+
+5) If you need to rerun this script for any reason a second time, you'll need
+   to choose between two modes:
+
+   A) Updating (-u/--update) - updates the code and runs any database upgrades
+      if applicable, or
+
+   B) Reinstalling (-r/--reinstall) - deletes the containers and reinstalls
+      from scratch. Be warned that this will throw away all data in the
+      database.
+
+   Note that updating with -u/--update will only work if the configuration
+   changes originally made by dockersetup.py upon installation (e.g. passwords,
+   hostname, etc.) are still present in the source tree.
 
 
-Standalone Setup
-----------------
 
-In order to run this application standalone you will need:
+TROUBLESHOOTING:
 
-* Python 3.4+
-* Django 1.11.x - tested with 1.11.12; newer versions may work, but
-  the application has not been tested with 2.0 or newer.
-* RabbitMQ 3.6.x - tested with 3.6.10.
-* For production usage, a web server set up to host Django applications
-  (not needed for local-only testing/development)
-* A database supported by Django (SQLite, MySQL, etc.). Django takes
-  care of creating the database itself, you just need to ensure that the
-  database server (if not using SQLite) is configured and running.
-* Third-party Django/python modules as detailed by requirements.txt.
-  If you're using pip, you can install these by running:
-    pip install -r requirements.txt
-* On the machine that will run the backend update script (which does not
-  have to be the same machine as the web server, however it does still
-  have to have Django installed, have the same or similar configuration
-  in settings.py and have access to the database used by the web
-  application):
-  * Python 2.7.6+ / Python 3.4+ to match with the version of BitBake
-    for the OpenEmbedded branch being parsed (for modern versions it's
-    Python 3.)
-  * Python dependencies as per requirements.txt (we still need Django
-    etc. here since we interact with the database through Django's ORM.)
+- Network issues behind a proxy when building container: On some systems
+  (particularly where dnsmasq is installed), /etc/resolv.conf is set to
+  127.0.0.x, rather than your local DNS server. Docker will look there for
+  your DNS server, and when it fails to find it it will default to using a
+  public one (frequently 8.8.8.8). Many corporate proxies blocks public DNS
+  servers, so you will need to manually supply the DNS server to docker using
+  /etc/docker/daemon.json:
 
-Example virtualenv-based setup for the above:
-
-Python's virtualenv provides an easy way to isolate the python dependencies
-of applications such as the layer index. Here's an example of setting up a
-virtualenv for the layer index that's particularly useful for development.
-(This assumes a Debian-based distribution, adjust accordingly for other
-distros).
-
-1. Install required host distro packages (some of these are required by
-   pip to build the dependencies; it's also assumed you want MariaDB as
-   the database backend):
-
-   sudo apt-get install virtualenv libmariadb-client-lgpl-dev build-essential python3-dev libjpeg-dev libz-dev libfreetype6-dev mariadb-server rabbitmq-server
-
-2. Work around path issues (you may not need this):
-
-   sudo ln -s /usr/bin/mariadb_config /usr/bin/mysql_config
-
-3. Create a Python 3 virtualenv (path can be anywhere you like):
-
-   virtualenv -p python3 /path/to/desired/venv
-
-4. Activate the virtualenv:
-
-   . /path/to/desired/venv/bin/activate
-
-5. Install requirements:
-
-   pip install -r requirements.txt
-
-
-Configuration and running:
-
-1. Edit settings.py to specify a database, EMAIL_HOST, SECRET_KEY and
-   other settings specific to your installation. Ensure you set
-   LAYER_FETCH_DIR to an absolute path to a location with sufficient
-   space for fetching layer repositories. Modify RABBIT_BROKER
-   and RABBIT_BACKEND to reflect the settings used by your RabbitMQ
-   server.
-
-2. Run the following commands within the layerindex-web directory to
-   initialise the database:
-
-   python3 manage.py migrate
-   python3 manage.py createsuperuser
-
-3. You can test the web application locally by setting DEBUG = True in
-   settings.py and running the following:
-
-   python3 manage.py runserver
-
-   Then visit http://127.0.0.1:8000/layerindex/ with your browser. As
-   with all Django applications there is an admin interface available
-   at http://127.0.0.1:8000/admin/ also. The initial login and password
-   will be those you entered in the step above when creating an admin
-   account.
-
-   NOTE: This local server should only be used for testing - for
-   production you need to use a proper web server and have DEBUG set
-   to False (or use the Docker-based setup).
-
-   3.1. In order to process asynchronous tasks like sending email,
-        you will need to run a Celery worker:
-
-        celery -A layerindex.tasks worker --loglevel=info
+        {"dns": ["xx.xx.xx.xx] }
 
 
 
@@ -128,12 +103,11 @@ setup within it:
    database, or some equivalent that contains conf/bitbake.conf for
    the base system configuration. To add this, follow these steps:
 
-   1.1. With the server running, go to the main page -
-        http://127.0.0.1:8000/admin/ (or http://localhost:8080/admin/
-        for the docker-compose setup - the hostname must match what
-        the web server is configured for). Then click on the "Log in"
-        button on the top right and use the login/password for the
-        admin account you added previously.
+   1.1. With the server running, go to the admin page -
+        http://localhost:8080/admin/ by default (the hostname must
+        match what the web server is configured for i.e. what you
+        specified when running dockersetup.py). Use the login/password
+        for the admin account specified during setup.
 
    1.2. Click on the "Submit Layer" button in the top right and
         enter the details for the core layer. To use the real
@@ -153,7 +127,7 @@ setup within it:
         unless you change CORE_LAYER_NAME in settings.py to match
         whatever alternative name you use here.
 
-   2.3. The layer has been added but is not yet published. (For the
+   1.3. The layer has been added but is not yet published. (For the
         public index this provides some protection against spam and
         malformed entries.) To publish it, click on the orange number
         next to your login name at the top right, click on the
@@ -181,35 +155,32 @@ setup within it:
 
 
 
-Usage
------
+Updating OpenEmbedded data
+--------------------------
 
-On a regular basis you need to run the update script:
+You will likely want to update the OpenEmbedded layer information on a regular
+basis. To do that:
 
-path/to/layerindex/update.py
+   Incremental update:
 
-This will fetch all of the layer repositories, analyse their contents
-and update the database with the results. Run the script with --help for
-further information on available options.
+       docker-compose run --rm layersapp /opt/layerindex/layerindex/update.py
+
+   Reload all data (should only be needed if the database structure has
+   changed as part of an upgrade of the application code):
+
+       docker-compose run --rm layersapp /opt/layerindex/layerindex/update.py -r
+
 
 
 Upgrading from an earlier version
 ---------------------------------
 
-This application uses Django's migrations functionality to allow changes
-in the database structure whilst preserving existing data. When upgrading
-with an existing database, you just need to invoke the migration command.
+To upgrade the Docker-based setup from a previous release, simply run:
 
-If you're migrating from a version prior to the Django 1.8 upgrade, you
-need to use the following command so that the initial migration (which
-takes care of creating the database structure and initial data) is
-skipped:
+./dockersetup.py -u
 
-python3 manage.py migrate --fake-initial
+This will update the code and run any required database migrations.
 
-Otherwise, you can just run the plain migration command:
-
-python3 manage.py migrate
 
 
 Support for OE-Classic
@@ -258,6 +229,7 @@ the OE-Classic recipe detail pages within the website, which is useful
 for example when there's a replacement recipe in another layer that
 doesn't have the same name, so the update_classic_status.py script
 wouldn't be able to pick it up.
+
 
 
 Setting up other distro comparisons
@@ -333,6 +305,90 @@ shown for this under the detail page for each package in the other distro.
 If you have the rrs application enabled the link will also be shown in the
 "Distros" section of the maintenance detail page for the covering recipe.
 
+
+
+Security Considerations
+-----------------------
+
+Some things to be aware of from a security perspective:
+
+* By default, anyone can register themselves an account. If you wish to
+  disable new user registration and manage users manually through the admin
+  interface instead, then add the following line to docker/settings.py:
+
+REGISTRATION_OPEN = False
+
+  Then, assuming you have already run dockersetup.py to install the
+  application, run the following command to update it:
+
+./dockersetup.py -u
+
+* By default, dockersetup.py enables connection to the web server via
+  HTTPS using a self-signed certificate; connections via HTTP are
+  re-directed to HTTPS. However, the self-signed certificate is only
+  intended to provide a minimum level of security, but will result in
+  browser warnings and is not recommended for production - instead,
+  obtain and use your own certificate/key pair corresponding to the
+  domain which will be used to access the application in production,
+  or alternatively if the application is accessible to the internet you
+  can use Let's Encrypt.
+
+* If you provide your own certificates for HTTPS, you should probably
+  also enable HSTS in your configuration. Refer to the Django Security
+  guide for details on how to do that:
+
+  https://docs.djangoproject.com/en/1.11/topics/security/#ssl-https
+
+* To reset a forgotten account password, you can either use the password
+  reset function ( /accounts/password_reset/ ) or alternatively from the
+  backend you can run the following command:
+
+  docker-compose exec layersapp /opt/layerindex/manage.py changepassword <username>
+
+* The web-based password reset function will ask the user answers to
+  security questions they selected and answered when they created the
+  account. Admins can configure the selectable security questions in
+  the admin interface under "Security questions"; however, be cautious
+  about deleting or substantially changing a question if you already
+  have user accounts that have given answers to that question, as doing
+  so will invalidate the user-set answers. You can check this if you go
+  to delete the security question in the admin interface - any user
+  answers will show up as "Security question answers" listed to be
+  deleted along with the question.
+
+  Note: the superuser created during setup will not have answers to
+  security questions set, so if you think you might need to use the
+  password reset function later you will need to set these by logging
+  into the application and then going to Edit Profile on the top-right
+  user drop-down menu.
+
+* Security question answers are stored using the same mechanism as
+  for passwords, i.e. a secure one-way hash; thus answers cannot be
+  retrieved from the database once set. Additionally, if a user wants
+  to change one of their answers via the Edit Profile function, they
+  will be required to re-specify all of them.
+
+* Account lockout: this application will lock out the user in two ways:
+
+  - By IP address (using django-axes) after too many invalid login attempts.
+    (default 4, resets after an hour). The lockout can be removed
+    immediately using the following command:
+
+    docker-compose exec layersapp /opt/layerindex/manage.py axes_reset
+
+    If you wish to disable this, remove or comment out "axes" in
+    INSTALLED_APPS. For more information on configuring axes, see:
+
+    https://django-axes.readthedocs.io/en/latest/
+
+  - By account for too many incorrect password reset attempts. To remove
+    this lockout, log into the admin interface, go to Users, click on the
+    the user, tick the Active checkbox and then save.
+
+* The REST API inherited from the OpenEmbedded layerindex upon which this
+  application is based has been disabled, since it has no access controls
+  on querying data (since the OE layer index operates entirely on publicly
+  accessible information, whereas this application may not in actual usage).
 
 
 
