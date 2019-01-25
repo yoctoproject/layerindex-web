@@ -36,6 +36,7 @@ def get_args():
     parser.add_argument('-p', '--http-proxy', type=str, help='http proxy in the format http://<myproxy:port>', required=False)
     parser.add_argument('-s', '--https-proxy', type=str, help='https proxy in the format http://<myproxy:port>', required=False)
     parser.add_argument('-d', '--databasefile', type=str, help='Location of your database file to import. Must be a .sql file.', required=False)
+    parser.add_argument('-e', '--email-host', type=str, help='Email host for sending messages (optionally with :port if not 25)', required=False)
     parser.add_argument('-m', '--portmapping', type=str, help='Port mapping in the format HOST:CONTAINER. Default is %(default)s', required=False, default='8080:80,8081:443')
     parser.add_argument('--no-https', action="store_true", default=False, help='Disable HTTPS (HTTP only) for web server')
     parser.add_argument('--cert', type=str, help='Existing SSL certificate to use for HTTPS web serving', required=False)
@@ -84,7 +85,15 @@ def get_args():
         if not os.path.exists(cert_key):
             raise argparse.ArgumentTypeError("Could not find certificate key, please use --cert-key to specify it")
 
-    return args.update, args.reinstall, args.hostname, args.http_proxy, args.https_proxy, args.databasefile, port, proxymod, args.portmapping, args.no_https, args.cert, cert_key, args.letsencrypt
+    email_host = None
+    email_port = None
+    if args.email_host:
+        email_host_split = args.email_host.split(':')
+        email_host = email_host_split[0]
+        if len(email_host_split) > 1:
+            email_port = email_host_split[1]
+
+    return args.update, args.reinstall, args.hostname, args.http_proxy, args.https_proxy, args.databasefile, port, proxymod, args.portmapping, args.no_https, args.cert, cert_key, args.letsencrypt, email_host, email_port
 
 # Edit http_proxy and https_proxy in Dockerfile
 def edit_dockerfile(http_proxy, https_proxy):
@@ -148,7 +157,7 @@ def yaml_comment(line):
 
 
 # Add hostname, secret key, db info, and email host in docker-compose.yml
-def edit_dockercompose(hostname, dbpassword, dbapassword, secretkey, rmqpassword, portmapping, letsencrypt):
+def edit_dockercompose(hostname, dbpassword, dbapassword, secretkey, rmqpassword, portmapping, letsencrypt, email_host, email_port):
     filedata= readfile("docker-compose.yml")
     in_layersweb = False
     in_layersweb_ports = False
@@ -212,6 +221,18 @@ def edit_dockercompose(hostname, dbpassword, dbapassword, secretkey, rmqpassword
         elif '- "RABBITMQ_DEFAULT_PASS' in line:
             format = line[0:line.find('- "RABBITMQ_DEFAULT_PASS')].replace("#", "")
             newlines.append(format + '- "RABBITMQ_DEFAULT_PASS=' + rmqpassword + '"\n')
+        elif '- "EMAIL_HOST' in line:
+            format = line[0:line.find('- "EMAIL_HOST')].replace("#", "")
+            if email_host:
+                newlines.append(format + '- "EMAIL_HOST=' + email_host + '"\n')
+            else:
+                newlines.append(format + '#- "EMAIL_HOST=<set this here>"\n')
+        elif '- "EMAIL_PORT' in line:
+            format = line[0:line.find('- "EMAIL_PORT')].replace("#", "")
+            if email_port:
+                newlines.append(format + '- "EMAIL_PORT=' + email_port + '"\n')
+            else:
+                newlines.append(format + '#- "EMAIL_PORT=<set this here if not the default>"\n')
         elif "ports:" in line:
             if in_layersweb:
                 in_layersweb_ports = True
@@ -381,7 +402,7 @@ def writefile(filename, data):
 
 
 ## Get user arguments and modify config files
-updatemode, reinstmode, hostname, http_proxy, https_proxy, dbfile, port, proxymod, portmapping, no_https, cert, cert_key, letsencrypt = get_args()
+updatemode, reinstmode, hostname, http_proxy, https_proxy, dbfile, port, proxymod, portmapping, no_https, cert, cert_key, letsencrypt, email_host, email_port = get_args()
 
 if updatemode:
     with open('docker-compose.yml', 'r') as f:
@@ -469,7 +490,7 @@ if not updatemode:
     if http_proxy or https_proxy:
         edit_dockerfile(http_proxy, https_proxy)
 
-    edit_dockercompose(hostname, dbpassword, dbapassword, secretkey, rmqpassword, portmapping, letsencrypt)
+    edit_dockercompose(hostname, dbpassword, dbapassword, secretkey, rmqpassword, portmapping, letsencrypt, email_host, email_port)
 
     edit_dockerfile_web(hostname, no_https)
 
@@ -555,6 +576,9 @@ if return_code != 0:
     sys.exit(1)
 
 if not updatemode:
+    ## Set site name
+    return_code = subprocess.call("docker-compose run --rm layersapp /opt/layerindex/layerindex/tools/site_name.py %s 'OpenEmbedded Layer Index'" % hostname, shell=True)
+
     ## For a fresh database, create an admin account
     print("Creating database superuser. Input user name, email, and password when prompted.")
     return_code = subprocess.call("docker-compose run --rm layersapp /opt/layerindex/manage.py createsuperuser", shell=True)

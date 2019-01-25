@@ -24,6 +24,7 @@ services:
      - "RABBITMQ_DEFAULT_USER=guest"
      - "RABBITMQ_DEFAULT_PASS=guest"
      #- "EMAIL_HOST=<set this here>"
+     #- "EMAIL_PORT=<set this here if not the default>"
      #- "DEBUG=1"
     restart: unless-stopped
     container_name: layersapp
@@ -69,6 +70,7 @@ services:
      - "RABBITMQ_DEFAULT_USER=guest"
      - "RABBITMQ_DEFAULT_PASS=guest"
      #- "EMAIL_HOST=<set this here>"
+     #- "EMAIL_PORT=<set this here if not the default>"
      #- "DEBUG=1"
     restart: unless-stopped
     container_name: layerscelery
