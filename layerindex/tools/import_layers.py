@@ -73,7 +73,7 @@ def main():
     if not layerindex_url.endswith('/'):
         layerindex_url += '/'
     if not '/layerindex/api/' in layerindex_url:
-        layerindex_url += '/layerindex/api/'
+        layerindex_url += 'layerindex/api/'
 
     rq = urllib.request.Request(layerindex_url)
     data = urllib.request.urlopen(rq).read()
