@@ -42,6 +42,7 @@ def get_args():
     parser.add_argument('--cert', type=str, help='Existing SSL certificate to use for HTTPS web serving', required=False)
     parser.add_argument('--cert-key', type=str, help='Existing SSL certificate key to use for HTTPS web serving', required=False)
     parser.add_argument('--letsencrypt', action="store_true", default=False, help='Use Let\'s Encrypt for HTTPS')
+    parser.add_argument('--no-migrate', action="store_true", default=False, help='Skip running database migrations')
 
     args = parser.parse_args()
 
@@ -93,7 +94,7 @@ def get_args():
         if len(email_host_split) > 1:
             email_port = email_host_split[1]
 
-    return args.update, args.reinstall, args.hostname, args.http_proxy, args.https_proxy, args.databasefile, port, proxymod, args.portmapping, args.no_https, args.cert, cert_key, args.letsencrypt, email_host, email_port
+    return args.update, args.reinstall, args.hostname, args.http_proxy, args.https_proxy, args.databasefile, port, proxymod, args.portmapping, args.no_https, args.cert, cert_key, args.letsencrypt, email_host, email_port, args.no_migrate
 
 # Edit http_proxy and https_proxy in Dockerfile
 def edit_dockerfile(http_proxy, https_proxy):
@@ -402,7 +403,7 @@ def writefile(filename, data):
 
 
 ## Get user arguments and modify config files
-updatemode, reinstmode, hostname, http_proxy, https_proxy, dbfile, port, proxymod, portmapping, no_https, cert, cert_key, letsencrypt, email_host, email_port = get_args()
+updatemode, reinstmode, hostname, http_proxy, https_proxy, dbfile, port, proxymod, portmapping, no_https, cert, cert_key, letsencrypt, email_host, email_port, no_migrate = get_args()
 
 if updatemode:
     with open('docker-compose.yml', 'r') as f:
@@ -533,14 +534,15 @@ if not updatemode:
             print("Database import failed")
             sys.exit(1)
 
-# Apply any pending layerindex migrations / initialize the database.
-env = os.environ.copy()
-env['DATABASE_USER'] = 'root'
-env['DATABASE_PASSWORD'] = dbapassword
-return_code = subprocess.call("docker-compose run --rm -e DATABASE_USER -e DATABASE_PASSWORD layersapp /opt/migrate.sh", shell=True, env=env)
-if return_code != 0:
-    print("Applying migrations failed")
-    sys.exit(1)
+if not no_migrate:
+    # Apply any pending layerindex migrations / initialize the database.
+    env = os.environ.copy()
+    env['DATABASE_USER'] = 'root'
+    env['DATABASE_PASSWORD'] = dbapassword
+    return_code = subprocess.call("docker-compose run --rm -e DATABASE_USER -e DATABASE_PASSWORD layersapp /opt/migrate.sh", shell=True, env=env)
+    if return_code != 0:
+        print("Applying migrations failed")
+        sys.exit(1)
 
 if not updatemode:
     # Create normal database user for app to use
