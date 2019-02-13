@@ -56,7 +56,7 @@ def split_recipe_fn(path):
         pv = "1.0"
     return (pn, pv)
 
-def collect_patch(recipe, patchfn, layerdir_start, stop_on_error):
+def collect_patch(recipe, patchfn, index, layerdir_start, stop_on_error):
     from django.db import DatabaseError
     from layerindex.models import Patch
 
@@ -64,6 +64,7 @@ def collect_patch(recipe, patchfn, layerdir_start, stop_on_error):
     patchrec.recipe = recipe
     patchrec.path = os.path.relpath(patchfn, layerdir_start)
     patchrec.src_path = os.path.relpath(patchrec.path, recipe.filepath)
+    patchrec.apply_order = index
     try:
         patchrec.read_status_from_file(patchfn, logger)
         patchrec.save()
@@ -87,11 +88,11 @@ def collect_patches(recipe, envdata, layerdir_start, stop_on_error):
 
     Patch.objects.filter(recipe=recipe).delete()
     patches = oe.recipeutils.get_recipe_patches(envdata)
-    for patch in patches:
+    for i, patch in enumerate(patches):
         if not patch.startswith(layerdir_start):
             # Likely a remote patch, skip it
             continue
-        collect_patch(recipe, patch, layerdir_start, stop_on_error)
+        collect_patch(recipe, patch, i, layerdir_start, stop_on_error)
 
 def update_recipe_file(tinfoil, data, path, recipe, layerdir_start, repodir, stop_on_error, skip_patches=False):
     from django.db import DatabaseError

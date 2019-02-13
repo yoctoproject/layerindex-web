@@ -272,7 +272,7 @@ def update_recipe_file(path, recipe, repodir, raiseexceptions=False):
             elif key == 'license':
                 recipe.license = expand(value)
             elif key.startswith('patch'):
-                patches.append(expand(value))
+                patches.append((int(key[5:] or '0'), expand(value)))
             elif key.startswith('source'):
                 sources.append(expand(value))
 
@@ -280,10 +280,11 @@ def update_recipe_file(path, recipe, repodir, raiseexceptions=False):
         recipe.save()
 
         saved_patches = []
-        for patchfn in patches:
+        for index, patchfn in patches:
             patchpath = os.path.join(os.path.relpath(os.path.dirname(path), repodir), patchfn)
             patch, _ = Patch.objects.get_or_create(recipe=recipe, path=patchpath)
             patch.src_path = patchfn
+            patch.apply_order = index
             patch.save()
             saved_patches.append(patch.id)
         recipe.patch_set.exclude(id__in=saved_patches).delete()

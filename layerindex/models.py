@@ -559,9 +559,11 @@ class Patch(models.Model):
     src_path = models.CharField(max_length=255)
     status = models.CharField(max_length=1, choices=PATCH_STATUS_CHOICES, default='U')
     status_extra = models.CharField(max_length=255, blank=True)
+    apply_order = models.IntegerField(blank=True, null=True)
 
     class Meta:
         verbose_name_plural = 'Patches'
+        ordering = ['recipe', 'apply_order']
 
     def vcs_web_url(self):
         url = self.recipe.layerbranch.file_url(self.path)
