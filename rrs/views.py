@@ -422,59 +422,59 @@ def _get_recipe_list(milestone):
                 for ma in maintainers_all:
                     maintainers_dict_all[ma['recipe_id']] = ma['name']
 
-    for recipe in recipes:
-        upstream_version = ''
-        upstream_status = ''
-        no_update_reason = ''
-        outdated = ''
+        for recipe in recipes:
+            upstream_version = ''
+            upstream_status = ''
+            no_update_reason = ''
+            outdated = ''
 
-        if recipe_upstream_history:
-            recipe_upstream = recipe_upstream_dict_all.get(recipe['id'])
-            if not recipe_upstream:
-                recipe_add =  Recipe.objects.filter(id = recipe['id'])[0]
-                recipe_upstream_add = RecipeUpstream()
-                recipe_upstream_add.history = recipe_upstream_history
-                recipe_upstream_add.recipe = recipe_add
-                recipe_upstream_add.version = ''
-                recipe_upstream_add.type = 'M' # Manual
-                recipe_upstream_add.status = 'U' # Unknown
-                recipe_upstream_add.no_update_reason = ''
-                recipe_upstream_add.date = recipe_upstream_history.end_date
-                recipe_upstream_add.save()
-                recipe_upstream = {'version': '', 'status': 'U', 'type': 'M',
-                        'no_update_reason': ''}
+            if recipe_upstream_history:
+                recipe_upstream = recipe_upstream_dict_all.get(recipe['id'])
+                if not recipe_upstream:
+                    recipe_add =  Recipe.objects.filter(id = recipe['id'])[0]
+                    recipe_upstream_add = RecipeUpstream()
+                    recipe_upstream_add.history = recipe_upstream_history
+                    recipe_upstream_add.recipe = recipe_add
+                    recipe_upstream_add.version = ''
+                    recipe_upstream_add.type = 'M' # Manual
+                    recipe_upstream_add.status = 'U' # Unknown
+                    recipe_upstream_add.no_update_reason = ''
+                    recipe_upstream_add.date = recipe_upstream_history.end_date
+                    recipe_upstream_add.save()
+                    recipe_upstream = {'version': '', 'status': 'U', 'type': 'M',
+                            'no_update_reason': ''}
 
-            if recipe_upstream['status'] == 'N' and recipe_upstream['no_update_reason']:
-                recipe_upstream['status'] = 'C'
-            upstream_status = \
-                    RecipeUpstream.RECIPE_UPSTREAM_STATUS_CHOICES_DICT[
-                        recipe_upstream['status']]
-            if upstream_status == 'Downgrade':
-                upstream_status = 'Unknown' # Downgrade is displayed as Unknown
-            upstream_version = recipe_upstream['version']
-            no_update_reason = recipe_upstream['no_update_reason']
+                if recipe_upstream['status'] == 'N' and recipe_upstream['no_update_reason']:
+                    recipe_upstream['status'] = 'C'
+                upstream_status = \
+                        RecipeUpstream.RECIPE_UPSTREAM_STATUS_CHOICES_DICT[
+                            recipe_upstream['status']]
+                if upstream_status == 'Downgrade':
+                    upstream_status = 'Unknown' # Downgrade is displayed as Unknown
+                upstream_version = recipe_upstream['version']
+                no_update_reason = recipe_upstream['no_update_reason']
 
-            #Get how long the recipe hasn't been updated
-            recipe_last_updated = \
-                recipe_last_updated_dict_all.get(recipe['id'])
-            if recipe_last_updated:
-                recipe_date = recipe_last_updated['date']
-                outdated = recipe_date.date().isoformat()
-            else:
-                outdated = ""
+                #Get how long the recipe hasn't been updated
+                recipe_last_updated = \
+                    recipe_last_updated_dict_all.get(recipe['id'])
+                if recipe_last_updated:
+                    recipe_date = recipe_last_updated['date']
+                    outdated = recipe_date.date().isoformat()
+                else:
+                    outdated = ""
 
-        maintainer_name =  maintainers_dict_all.get(recipe['id'], '')
-        recipe_list_item = RecipeList(recipe['id'], recipe['pn'], recipe['summary'])
-        recipe_list_item.version = recipe['version']
-        recipe_list_item.upstream_status = upstream_status
-        recipe_list_item.upstream_version = upstream_version
-        recipe_list_item.outdated = outdated
-        patches = Patch.objects.filter(recipe__id=recipe['id'])
-        recipe_list_item.patches_total = patches.count()
-        recipe_list_item.patches_pending = patches.filter(status='P').count()
-        recipe_list_item.maintainer_name = maintainer_name
-        recipe_list_item.no_update_reason = no_update_reason
-        recipe_list.append(recipe_list_item)
+            maintainer_name =  maintainers_dict_all.get(recipe['id'], '')
+            recipe_list_item = RecipeList(recipe['id'], recipe['pn'], recipe['summary'])
+            recipe_list_item.version = recipe['version']
+            recipe_list_item.upstream_status = upstream_status
+            recipe_list_item.upstream_version = upstream_version
+            recipe_list_item.outdated = outdated
+            patches = Patch.objects.filter(recipe__id=recipe['id'])
+            recipe_list_item.patches_total = patches.count()
+            recipe_list_item.patches_pending = patches.filter(status='P').count()
+            recipe_list_item.maintainer_name = maintainer_name
+            recipe_list_item.no_update_reason = no_update_reason
+            recipe_list.append(recipe_list_item)
 
     return recipe_list
 
