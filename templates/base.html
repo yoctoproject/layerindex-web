@@ -68,9 +68,13 @@
                     <li class="divider-vertical"></li>
                 </ul>
                 {% block topfunctions %}
+                {% block topfunctions_extra %}
+                {% endblock %}
+                {% block submitlayer %}
                 <div class="pull-right nav-spacer">
                     <a class="btn btn-info navbar-btn" href="{% url 'submit_layer' %}">Submit layer</a>
                 </div>
+                {% endblock %}
                 <ul class="nav navbar-nav pull-right">
                     {% if user.is_authenticated %}
                     <li class="dropdown">

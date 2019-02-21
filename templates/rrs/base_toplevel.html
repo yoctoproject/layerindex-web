@@ -13,7 +13,9 @@
 
 {% block contenttag %}<div id="content" class="container-fluid top-padded">{% endblock %}
 
-{% block topfunctions %}
+{% block submitlayer %}
+{% endblock %}
+{% block topfunctions_extra %}
 <ul class="nav navbar-nav">
 <li class="divider-vertical" style="display; list-item;"/>
 {% block maintplan_selector %}
@@ -68,7 +70,6 @@
     </li>
 {% endblock %}
 </ul>
-                    <a href="{% url 'rrs_recipesreport' maintplan_name release_name milestone_name %}" class="btn btn-default navbar-btn pull-right">Export recipe list</a>
 {% endblock %}
 
 {% block head_extra %}
