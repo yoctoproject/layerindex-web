@@ -15,7 +15,7 @@ from django.core.exceptions import ValidationError
 from rrs.models import Release, Milestone, Maintainer, RecipeMaintainerHistory, \
         RecipeMaintainer, RecipeDistro, RecipeUpgrade, RecipeUpstream, \
         RecipeUpstreamHistory, MaintenancePlan, MaintenancePlanLayerBranch, \
-        RecipeMaintenanceLink
+        RecipeMaintenanceLink, RecipeSymbol
 
 class MaintenancePlanLayerBranchFormSet(BaseInlineFormSet):
     def __init__(self, *args, **kwargs):
@@ -160,8 +160,8 @@ class RecipeMaintainerHistoryAdmin(admin.ModelAdmin):
     model = RecipeMaintainerHistory
 
 class RecipeMaintainerAdmin(admin.ModelAdmin):
-    search_fields = ['recipe__pn']
-    list_filter = ['recipe__layerbranch__layer__name', 'history', 'maintainer__name']
+    search_fields = ['recipesymbol__pn']
+    list_filter = ['recipesymbol__layerbranch__layer__name', 'history', 'maintainer__name']
     model = RecipeMaintainer
 
 class RecipeDistroAdmin(admin.ModelAdmin):
@@ -170,8 +170,8 @@ class RecipeDistroAdmin(admin.ModelAdmin):
     model = RecipeDistro
 
 class RecipeUpgradeAdmin(admin.ModelAdmin):
-    search_fields = ['recipe__pn']
-    list_filter = ['recipe__layerbranch__layer__name',
+    search_fields = ['recipesymbol__pn']
+    list_filter = ['recipesymbol__layerbranch__layer__name',
             ('commit_date', DateFieldListFilter), 'maintainer__name']
     model = RecipeUpgrade
 
@@ -184,13 +184,18 @@ class RecipeUpstreamHistoryAdmin(admin.ModelAdmin):
     model = RecipeUpstreamHistory
 
 class RecipeUpstreamAdmin(admin.ModelAdmin):
-    search_fields = ['recipe__pn']
-    list_filter = ['recipe__layerbranch__layer__name', 'status',
+    search_fields = ['recipesymbol__pn']
+    list_filter = ['recipesymbol__layerbranch__layer__name', 'status',
             'type', ('date', DateFieldListFilter), 'history']
     model = RecipeUpstream
 
 class RecipeMaintenanceLinkAdmin(admin.ModelAdmin):
     model = RecipeMaintenanceLink
+
+class RecipeSymbolAdmin(admin.ModelAdmin):
+    model = RecipeSymbol
+    search_fields = ['pn']
+    list_filter = ['layerbranch']
 
 admin.site.register(MaintenancePlan, MaintenancePlanAdmin)
 admin.site.register(Release, ReleaseAdmin)
@@ -203,3 +208,4 @@ admin.site.register(RecipeUpgrade, RecipeUpgradeAdmin)
 admin.site.register(RecipeUpstreamHistory, RecipeUpstreamHistoryAdmin)
 admin.site.register(RecipeUpstream, RecipeUpstreamAdmin)
 admin.site.register(RecipeMaintenanceLink, RecipeMaintenanceLinkAdmin)
+admin.site.register(RecipeSymbol, RecipeSymbolAdmin)

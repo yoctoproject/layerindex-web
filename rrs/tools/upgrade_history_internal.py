@@ -28,9 +28,9 @@ from layerindex.update_layer import split_recipe_fn
 """
     Store upgrade into RecipeUpgrade model.
 """
-def _save_upgrade(recipe, pv, commit, title, info, logger):
+def _save_upgrade(recipe_data, layerbranch, pv, commit, title, info, logger):
     from email.utils import parsedate_tz, mktime_tz
-    from rrs.models import Maintainer, RecipeUpgrade
+    from rrs.models import Maintainer, RecipeUpgrade, RecipeSymbol
 
     maintainer_name = info.split(';')[0]
     maintainer_email = info.split(';')[1]
@@ -40,7 +40,8 @@ def _save_upgrade(recipe, pv, commit, title, info, logger):
     maintainer = Maintainer.create_or_update(maintainer_name, maintainer_email)
 
     upgrade = RecipeUpgrade()
-    upgrade.recipe = recipe
+    summary = recipe_data.getVar('SUMMARY', True) or recipe_data.getVar('DESCRIPTION', True)
+    upgrade.recipesymbol = RecipeSymbol.symbol(recipe_data.getVar('PN', True), layerbranch, summary=summary)
     upgrade.maintainer = maintainer
     upgrade.author_date = datetime.utcfromtimestamp(mktime_tz(
                                     parsedate_tz(author_date)))
@@ -55,8 +56,7 @@ def _save_upgrade(recipe, pv, commit, title, info, logger):
     Create upgrade receives new recipe_data and cmp versions.
 """
 def _create_upgrade(recipe_data, layerbranch, ct, title, info, logger, initial=False):
-    from layerindex.models import Recipe
-    from rrs.models import RecipeUpgrade
+    from rrs.models import RecipeUpgrade, RecipeSymbol
     from bb.utils import vercmp_string
 
     pn = recipe_data.getVar('PN', True)
@@ -66,16 +66,11 @@ def _create_upgrade(recipe_data, layerbranch, ct, title, info, logger, initial=F
         logger.warn('Invalid version for recipe %s in commit %s, ignoring' % (recipe_data.getVar('FILE', True), ct))
         return
 
-    recipes = Recipe.objects.filter(pn=pn, layerbranch=layerbranch).order_by('id')
-    if not recipes:
-        logger.warn("%s: Not found in Layer branch %s." %
-                    (pn, str(layerbranch)))
-        return
-    recipe = recipes[0]
+    rsym = RecipeSymbol.objects.filter(pn=pn, layerbranch=layerbranch)
 
     try:
         latest_upgrade = RecipeUpgrade.objects.filter(
-                recipe = recipe).order_by('-commit_date')[0]
+                recipesymbol=rsym).order_by('-commit_date')[0]
         prev_pv = latest_upgrade.version
     except KeyboardInterrupt:
         raise
@@ -83,8 +78,8 @@ def _create_upgrade(recipe_data, layerbranch, ct, title, info, logger, initial=F
         prev_pv = None
 
     if prev_pv is None:
-        logger.debug("%s: Initial upgrade ( -> %s)." % (recipe.pn, pv))
-        _save_upgrade(recipe, pv, ct, title, info, logger)
+        logger.debug("%s: Initial upgrade ( -> %s)." % (pn, pv))
+        _save_upgrade(recipe_data, layerbranch, pv, ct, title, info, logger)
     else:
         from common import get_recipe_pv_without_srcpv
 
@@ -95,18 +90,17 @@ def _create_upgrade(recipe_data, layerbranch, ct, title, info, logger, initial=F
 
         try:
             if npv == 'git':
-                logger.debug("%s: Avoiding upgrade to unversioned git." % \
-                        (recipe.pn)) 
+                logger.debug("%s: Avoiding upgrade to unversioned git." % pn)
             elif ppv == 'git' or vercmp_string(ppv, npv) == -1:
                 if initial is True:
                     logger.debug("%s: Update initial upgrade ( -> %s)." % \
-                            (recipe.pn, pv)) 
+                            (pn, pv)) 
                     latest_upgrade.version = pv
                     latest_upgrade.save()
                 else:
                     logger.debug("%s: detected upgrade (%s -> %s)" \
                             " in ct %s." % (pn, prev_pv, pv, ct))
-                    _save_upgrade(recipe, pv, ct, title, info, logger)
+                    _save_upgrade(recipe_data, layerbranch, pv, ct, title, info, logger)
         except KeyboardInterrupt:
             raise
         except Exception as e:

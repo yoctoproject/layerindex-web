@@ -193,6 +193,29 @@ class Milestone(models.Model):
     def __str__(self):
         return '%s: %s %s' % (self.release.plan.name, self.release.name, self.name)
 
+
+class RecipeSymbol(models.Model):
+    layerbranch = models.ForeignKey(LayerBranch)
+    pn = models.CharField(max_length=100, blank=True)
+    summary = models.CharField(max_length=200, blank=True)
+
+    @staticmethod
+    def symbol(pn, layerbranch, summary=None):
+        rsym, created = RecipeSymbol.objects.get_or_create(pn=pn, layerbranch=layerbranch)
+        if created:
+            if summary:
+                rsym.summary = summary
+            else:
+                recipe = Recipe.objects.filter(pn=pn, layerbranch=layerbranch).first()
+                if recipe:
+                    rsym.summary = recipe.summary
+            rsym.save()
+        return rsym
+
+    def __str__(self):
+        return "%s: %s" % (str(self.layerbranch), self.pn)
+
+
 class Maintainer(models.Model):
     name = models.CharField(max_length=255, unique=True)
     email = models.CharField(max_length=255, blank=True)
@@ -261,14 +284,14 @@ class RecipeMaintainerHistory(models.Model):
         return "%s: %s, %s" % (self.date, self.author.name, self.sha1[:10])
 
 class RecipeMaintainer(models.Model):
-    recipe = models.ForeignKey(Recipe)
+    recipesymbol = models.ForeignKey(RecipeSymbol)
     maintainer = models.ForeignKey(Maintainer)
     history = models.ForeignKey(RecipeMaintainerHistory)
 
     @staticmethod
     def get_maintainer_by_recipe_and_history(recipe, history):
-        qry = RecipeMaintainer.objects.filter(recipe = recipe,
-                history = history)
+        qry = RecipeMaintainer.objects.filter(recipesymbol__pn=recipe.pn,
+                history=history)
 
         if qry:
             return qry[0].maintainer
@@ -276,7 +299,7 @@ class RecipeMaintainer(models.Model):
             return None
 
     def __str__(self):
-        return "%s: %s <%s>" % (self.recipe.pn, self.maintainer.name,
+        return "%s: %s <%s>" % (self.recipesymbol.pn, self.maintainer.name,
                                 self.maintainer.email)
 
 class RecipeUpstreamHistory(models.Model):
@@ -335,7 +358,7 @@ class RecipeUpstream(models.Model):
     )
     RECIPE_UPSTREAM_TYPE_CHOICES_DICT = dict(RECIPE_UPSTREAM_TYPE_CHOICES)
 
-    recipe = models.ForeignKey(Recipe)
+    recipesymbol = models.ForeignKey(RecipeSymbol)
     history = models.ForeignKey(RecipeUpstreamHistory)
     version = models.CharField(max_length=100, blank=True)
     type = models.CharField(max_length=1, choices=RECIPE_UPSTREAM_TYPE_CHOICES, blank=True, db_index=True)
@@ -373,8 +396,8 @@ class RecipeUpstream(models.Model):
         return qry
 
     @staticmethod
-    def get_by_recipe_and_history(recipe, history):
-        ru = RecipeUpstream.objects.filter(recipe = recipe, history = history)
+    def get_by_recipe_and_history(recipesymbol, history):
+        ru = RecipeUpstream.objects.filter(recipesymbol=recipesymbol, history=history)
         return ru[0] if ru else None
 
     def needs_upgrade(self):
@@ -384,7 +407,7 @@ class RecipeUpstream(models.Model):
             return False
 
     def __str__(self):
-        return '%s: (%s, %s, %s)' % (self.recipe.pn, self.status,
+        return '%s: (%s, %s, %s)' % (self.recipesymbol.pn, self.status,
                 self.version, self.date)
 
 class RecipeDistro(models.Model):
@@ -407,7 +430,7 @@ class RecipeDistro(models.Model):
 
 
 class RecipeUpgrade(models.Model):
-    recipe = models.ForeignKey(Recipe)
+    recipesymbol = models.ForeignKey(RecipeSymbol)
     maintainer = models.ForeignKey(Maintainer, blank=True)
     sha1 = models.CharField(max_length=40, blank=True)
     title = models.CharField(max_length=1024, blank=True)
@@ -417,7 +440,8 @@ class RecipeUpgrade(models.Model):
 
     @staticmethod
     def get_by_recipe_and_date(recipe, end_date):
-        ru = RecipeUpgrade.objects.filter(recipe = recipe,
+        ru = RecipeUpgrade.objects.filter(recipesymbol__pn=recipe.pn,
+                recipesymbol__layerbranch=recipe.layerbranch,
                 commit_date__lte = end_date)
         return ru[len(ru) - 1] if ru else None
 
@@ -425,10 +449,10 @@ class RecipeUpgrade(models.Model):
         return self.sha1[0:6]
 
     def commit_url(self):
-        return self.recipe.layerbranch.commit_url(self.sha1)
+        return self.recipesymbol.layerbranch.commit_url(self.sha1)
 
     def __str__(self):
-        return '%s: (%s, %s)' % (self.recipe.pn, self.version,
+        return '%s: (%s, %s)' % (self.recipesymbol.pn, self.version,
                         self.commit_date)
 
 
@@ -443,7 +467,7 @@ class RecipeMaintenanceLink(models.Model):
             if fnmatch.fnmatch(pn, rml.pn_match):
                 recipe_link_objs = rmh.layerbranch.recipe_set.filter(pn=rml.pn_target)
                 if recipe_link_objs:
-                    lrm = RecipeMaintainer.objects.filter(recipe=recipe_link_objs[0], history=rmh)
+                    lrm = RecipeMaintainer.objects.filter(recipesymbol__pn=recipe_link_objs[0].pn, history=rmh)
                     if lrm:
                         return lrm[0]
         return None

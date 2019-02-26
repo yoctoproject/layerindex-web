@@ -14,7 +14,7 @@ from django.contrib import messages
 from layerindex.models import Recipe, StaticBuildDep, Patch
 from rrs.models import Release, Milestone, Maintainer, RecipeMaintainerHistory, \
         RecipeMaintainer, RecipeUpstreamHistory, RecipeUpstream, \
-        RecipeDistro, RecipeUpgrade, MaintenancePlan
+        RecipeDistro, RecipeUpgrade, MaintenancePlan, RecipeSymbol
 
 
 
@@ -83,7 +83,7 @@ class Raw():
         recipes = []
         cur = connection.cursor()
 
-        cur.execute("""SELECT DISTINCT rema.recipe_id
+        cur.execute("""SELECT DISTINCT rema.recipesymbol_id
                         FROM rrs_recipemaintainer AS rema
                         INNER JOIN rrs_maintainer AS ma
                         ON rema.maintainer_id = ma.id
@@ -101,12 +101,12 @@ class Raw():
         stats = []
 
         if date_id:
-            qry = """SELECT rema.recipe_id, ma.name
+            qry = """SELECT rema.recipesymbol_id, ma.name
                     FROM rrs_recipemaintainer AS rema
                     INNER JOIN rrs_maintainer AS ma
                     ON rema.maintainer_id = ma.id
                     WHERE rema.history_id = %s
-                    AND rema.recipe_id IN %s;"""
+                    AND rema.recipesymbol_id IN %s;"""
             cur = connection.cursor()
             cur.execute(qry, [str(date_id), tuple(recipes_id)])
             stats = Raw.dictfetchall(cur)
@@ -132,7 +132,7 @@ class Raw():
             qry = """SELECT id, status, no_update_reason
                     FROM rrs_recipeupstream
                     WHERE history_id = %s
-                    AND recipe_id IN %s;"""
+                    AND recipesymbol_id IN %s;"""
             cur = connection.cursor()
             cur.execute(qry, [str(date_id.id), tuple(recipes)])
 
@@ -155,10 +155,10 @@ class Raw():
         stats = []
 
         if date_id:
-            qry = """SELECT recipe_id, status, no_update_reason, version
+            qry = """SELECT recipesymbol_id, status, no_update_reason, version
                     FROM rrs_recipeupstream
                     WHERE history_id = %s
-                    AND recipe_id IN %s;"""
+                    AND recipesymbol_id IN %s;"""
             cur = connection.cursor()
             cur.execute(qry, [str(date_id), tuple(recipes_id)])
             stats = Raw.dictfetchall(cur)
@@ -169,13 +169,13 @@ class Raw():
     def get_reup_by_last_updated(layerbranch_id, date):
         """ Get last time the Recipes were upgraded """
         cur = connection.cursor()
-        cur.execute("""SELECT recipe_id, MAX(commit_date) AS date
+        cur.execute("""SELECT recipesymbol_id, MAX(commit_date) AS date
                        FROM rrs_recipeupgrade
-                       INNER JOIN layerindex_recipe AS re
-                       ON rrs_recipeupgrade.recipe_id = re.id
+                       INNER JOIN rrs_recipesymbol AS rs
+                       ON rrs_recipeupgrade.recipesymbol_id = rs.id
                        WHERE commit_date <= %s
-                       AND re.layerbranch_id = %s
-                       GROUP BY recipe_id;
+                       AND rs.layerbranch_id = %s
+                       GROUP BY recipesymbol_id;
                     """, [date, layerbranch_id])
         return Raw.dictfetchall(cur)
 
@@ -183,7 +183,7 @@ class Raw():
     def get_reup_by_date(date_id):
         """ Get Recipes not up to date based on Recipe Upstream History """
         cur = connection.cursor()
-        cur.execute("""SELECT DISTINCT recipe_id
+        cur.execute("""SELECT DISTINCT recipesymbol_id
                         FROM rrs_recipeupstream
                         WHERE status = 'N'
                         AND history_id = %s
@@ -194,18 +194,18 @@ class Raw():
     def get_reupg_by_date(layerbranch_id, date):
         """ Get info for Recipes for the milestone """
         cur = connection.cursor()
-        cur.execute("""SELECT re.id, re.pn, re.summary, te.version, rownum FROM (
-                            SELECT recipe_id, version, commit_date, ROW_NUMBER() OVER(
-                                PARTITION BY recipe_id
+        cur.execute("""SELECT rs.id, rs.pn, rs.summary, te.version, rownum FROM (
+                            SELECT recipesymbol_id, version, commit_date, ROW_NUMBER() OVER(
+                                PARTITION BY recipesymbol_id
                                 ORDER BY commit_date DESC
                             ) AS rownum
                         FROM rrs_recipeupgrade
                         WHERE commit_date <= %s) AS te
-                        INNER JOIN layerindex_recipe AS re
-                        ON te.recipe_id = re.id
+                        INNER JOIN rrs_recipesymbol AS rs
+                        ON te.recipesymbol_id = rs.id
                         WHERE rownum = 1
-                        AND re.layerbranch_id = %s
-                        ORDER BY re.pn;
+                        AND rs.layerbranch_id = %s
+                        ORDER BY rs.pn;
                         """, [date, layerbranch_id])
         return Raw.dictfetchall(cur)
 
@@ -213,11 +213,11 @@ class Raw():
     def get_reupg_by_dates_and_recipes(start_date, end_date, recipes_id):
         """  Get Recipe Upgrade for the milestone based on Recipes """
         cur = connection.cursor()
-        qry = """SELECT DISTINCT recipe_id
+        qry = """SELECT DISTINCT recipesymbol_id
                 FROM rrs_recipeupgrade
                 WHERE commit_date >= %s
                 AND commit_date <= %s
-                AND recipe_id IN %s;"""
+                AND recipesymbol_id IN %s;"""
         cur.execute(qry, [start_date, end_date, tuple(recipes_id)])
         return Raw.dictfetchall(cur)
 
@@ -408,33 +408,33 @@ def _get_recipe_list(milestone):
             recipe_last_updated = Raw.get_reup_by_last_updated(
                     layerbranch.id, milestone.end_date)
             for rela in recipe_last_updated:
-                recipe_last_updated_dict_all[rela['recipe_id']] = rela
+                recipe_last_updated_dict_all[rela['recipesymbol_id']] = rela
 
             if recipe_upstream_history:
                 recipe_upstream_all = Raw.get_reup_by_recipes_and_date(
                     recipes_ids, recipe_upstream_history.id)
                 for reup in recipe_upstream_all:
-                    recipe_upstream_dict_all[reup['recipe_id']] = reup
+                    recipe_upstream_dict_all[reup['recipesymbol_id']] = reup
 
             if recipe_maintainer_history:
                 maintainers_all = Raw.get_ma_by_recipes_and_date(
                     recipes_ids, recipe_maintainer_history[0])
                 for ma in maintainers_all:
-                    maintainers_dict_all[ma['recipe_id']] = ma['name']
+                    maintainers_dict_all[ma['recipesymbol_id']] = ma['name']
 
         for recipe in recipes:
             upstream_version = ''
             upstream_status = ''
             no_update_reason = ''
             outdated = ''
+            recipesymbol = RecipeSymbol.objects.filter(id=recipe['id']).first()
 
             if recipe_upstream_history:
                 recipe_upstream = recipe_upstream_dict_all.get(recipe['id'])
                 if not recipe_upstream:
-                    recipe_add =  Recipe.objects.filter(id = recipe['id'])[0]
                     recipe_upstream_add = RecipeUpstream()
                     recipe_upstream_add.history = recipe_upstream_history
-                    recipe_upstream_add.recipe = recipe_add
+                    recipe_upstream_add.recipesymbol = recipesymbol
                     recipe_upstream_add.version = ''
                     recipe_upstream_add.type = 'M' # Manual
                     recipe_upstream_add.status = 'U' # Unknown
@@ -469,9 +469,14 @@ def _get_recipe_list(milestone):
             recipe_list_item.upstream_status = upstream_status
             recipe_list_item.upstream_version = upstream_version
             recipe_list_item.outdated = outdated
-            patches = Patch.objects.filter(recipe__id=recipe['id'])
-            recipe_list_item.patches_total = patches.count()
-            recipe_list_item.patches_pending = patches.filter(status='P').count()
+            recipeobj = recipesymbol.layerbranch.recipe_set.filter(pn=recipesymbol.pn, layerbranch=recipesymbol.layerbranch).first()
+            if recipeobj:
+                patches = recipeobj.patch_set
+                recipe_list_item.patches_total = patches.count()
+                recipe_list_item.patches_pending = patches.filter(status='P').count()
+            else:
+                recipe_list_item.patches_total = 0
+                recipe_list_item.patches_pending = 0
             recipe_list_item.maintainer_name = maintainer_name
             recipe_list_item.no_update_reason = no_update_reason
             recipe_list.append(recipe_list_item)
@@ -643,7 +648,7 @@ def _get_recipe_upgrade_detail(maintplan, recipe_upgrade):
         if milestone:
             milestone_name = milestone.name
             recipe_maintainer_history = RecipeMaintainerHistory.get_by_end_date(
-                recipe_upgrade.recipe.layerbranch,
+                recipe_upgrade.recipesymbol.layerbranch,
                 milestone.end_date)
 
     is_recipe_maintainer = False
@@ -659,7 +664,7 @@ def _get_recipe_upgrade_detail(maintplan, recipe_upgrade):
 
     commit_date = recipe_upgrade.commit_date.date().isoformat()
     commit = recipe_upgrade.sha1[:10]
-    commit_url = recipe_upgrade.recipe.layerbranch.commit_url(recipe_upgrade.sha1)
+    commit_url = recipe_upgrade.recipesymbol.layerbranch.commit_url(recipe_upgrade.sha1)
 
     rud = RecipeUpgradeDetail(recipe_upgrade.title, recipe_upgrade.version, \
             maintplan.name, release_name, milestone_name, commit_date, maintainer_name, \
@@ -668,7 +673,7 @@ def _get_recipe_upgrade_detail(maintplan, recipe_upgrade):
     return rud
 
 class RecipeDetailView(DetailView):
-    model = Recipe
+    model = RecipeSymbol
 
     def get_queryset(self):
         self.maintplan_name = self.kwargs['maintplan_name']
@@ -676,9 +681,12 @@ class RecipeDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super(RecipeDetailView, self).get_context_data(**kwargs)
-        recipe = self.get_object()
-        if not recipe:
+        recipesymbol = self.get_object()
+        if not recipesymbol:
             raise django.http.Http404
+
+        recipe = recipesymbol.layerbranch.recipe_set.filter(pn=recipesymbol.pn, layerbranch=recipesymbol.layerbranch).last()
+        context['recipe'] = recipe
 
         maintplan = get_object_or_404(MaintenancePlan, name=self.maintplan_name)
         context['maintplan_name'] = maintplan.name
@@ -692,13 +700,13 @@ class RecipeDetailView(DetailView):
         context['upstream_version'] = ''
         context['upstream_no_update_reason'] = ''
         recipe_upstream_history = RecipeUpstreamHistory.get_last_by_date_range(
-            recipe.layerbranch,
+            recipesymbol.layerbranch,
             milestone.start_date,
             milestone.end_date
         )
         if recipe_upstream_history:
             recipe_upstream = RecipeUpstream.get_by_recipe_and_history(
-                recipe, recipe_upstream_history)
+                recipesymbol, recipe_upstream_history)
             if recipe_upstream:
                 if recipe_upstream.status == 'N' and recipe_upstream.no_update_reason:
                     recipe_upstream.status = 'C'
@@ -709,9 +717,9 @@ class RecipeDetailView(DetailView):
                 context['upstream_version'] = recipe_upstream.version
                 context['upstream_no_update_reason'] = recipe_upstream.no_update_reason
 
-        self.recipe_maintainer_history = RecipeMaintainerHistory.get_last(recipe.layerbranch)
-        recipe_maintainer = RecipeMaintainer.objects.filter(recipe = recipe,
-                history = self.recipe_maintainer_history)
+        self.recipe_maintainer_history = RecipeMaintainerHistory.get_last(recipesymbol.layerbranch)
+        recipe_maintainer = RecipeMaintainer.objects.filter(recipesymbol=recipesymbol,
+                history=self.recipe_maintainer_history)
         if recipe_maintainer:
             maintainer = recipe_maintainer[0].maintainer
             context['maintainer_name'] = maintainer.name
@@ -719,23 +727,26 @@ class RecipeDetailView(DetailView):
             context['maintainer_name'] = 'No maintainer'
 
         context['recipe_upgrade_details'] = []
-        for ru in RecipeUpgrade.objects.filter(recipe =
-                recipe).order_by('-commit_date'): 
+        for ru in RecipeUpgrade.objects.filter(recipesymbol=recipesymbol).order_by('-commit_date'): 
             context['recipe_upgrade_details'].append(_get_recipe_upgrade_detail(maintplan, ru))
         context['recipe_upgrade_detail_count'] = len(context['recipe_upgrade_details'])
 
         context['recipe_layer_branch_url'] = _get_layer_branch_url(
-                recipe.layerbranch.branch.name, recipe.layerbranch.layer.name)
+                recipesymbol.layerbranch.branch.name, recipesymbol.layerbranch.layer.name)
 
         context['recipe_provides'] = []
-        for p in recipe.provides.split():
-            context['recipe_provides'].append(p)
+        if recipe:
+            for p in recipe.provides.split():
+                context['recipe_provides'].append(p)
 
-        context['recipe_depends'] = StaticBuildDep.objects.filter(recipes__id=recipe.id).values_list('name', flat=True)
+            context['recipe_depends'] = StaticBuildDep.objects.filter(recipes__id=recipe.id).values_list('name', flat=True)
 
-        context['recipe_distros'] = RecipeDistro.get_distros_by_recipe(recipe)
+            context['recipe_distros'] = RecipeDistro.get_distros_by_recipe(recipe)
+        else:
+            context['recipe_depends'] = []
+            context['recipe_distros'] = []
 
-        context['otherbranch_recipes'] = Recipe.objects.filter(layerbranch__layer=recipe.layerbranch.layer, layerbranch__branch__comparison=False, pn=recipe.pn).order_by('layerbranch__branch__sort_priority')
+        context['otherbranch_recipes'] = Recipe.objects.filter(layerbranch__layer=recipesymbol.layerbranch.layer, layerbranch__branch__comparison=False, pn=recipesymbol.pn).order_by('layerbranch__branch__sort_priority')
 
         return context
 

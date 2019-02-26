@@ -35,7 +35,7 @@ bitbakepath = os.path.join(fetchdir, 'bitbake')
 sys.path.insert(0, os.path.join(bitbakepath, 'lib'))
 
 from layerindex.models import Recipe, LayerBranch
-from rrs.models import RecipeUpstream, RecipeUpstreamHistory, MaintenancePlan
+from rrs.models import RecipeUpstream, RecipeUpstreamHistory, MaintenancePlan, RecipeSymbol
 
 def set_regexes(d):
     """
@@ -86,15 +86,11 @@ def get_upstream_info(layerbranch, recipe_data, result):
             get_recipe_pv_without_srcpv
 
     pn = recipe_data.getVar('PN', True)
-    recipes = Recipe.objects.filter(layerbranch=layerbranch, pn=pn)
-    if not recipes:
-        logger.warning("%s: in layer branch %s not found." % \
-                (pn, str(layerbranch)))
-        return
-    recipe = recipes[0]
 
     ru = RecipeUpstream()
-    ru.recipe = recipe
+    summary = recipe_data.getVar('SUMMARY', True) or recipe_data.getVar('DESCRIPTION', True)
+    ru.recipesymbol = RecipeSymbol.symbol(pn, layerbranch, summary=summary)
+    recipe_pv = recipe_data.getVar('PV', True)
 
     ru_info = None
     try:
@@ -108,8 +104,8 @@ def get_upstream_info(layerbranch, recipe_data, result):
         ru.type = ru_info['type']
         ru.date = ru_info['datetime']
 
-        pv, _, _ = get_recipe_pv_without_srcpv(recipe.pv, 
-                get_pv_type(recipe.pv)) 
+        pv, _, _ = get_recipe_pv_without_srcpv(recipe_pv,
+                get_pv_type(recipe_pv)) 
         upv, _, _ = get_recipe_pv_without_srcpv(ru_info['version'],
                 get_pv_type(ru_info['version']))
 
@@ -122,7 +118,7 @@ def get_upstream_info(layerbranch, recipe_data, result):
             elif cmp_ver == 1:
                 ru.status = 'D' # Downgrade, need to review why
         else:
-            logger.debug('Unable to determine upgrade status for %s: %s -> %s' % (recipe.pn, pv, upv))
+            logger.debug('Unable to determine upgrade status for %s: %s -> %s' % (pn, pv, upv))
             ru.status = 'U' # Unknown
     else:
         ru.version = ''
@@ -149,6 +145,10 @@ if __name__=="__main__":
     parser.add_option("--dry-run",
             help = "Do not write any data back to the database",
             action="store_true", dest="dry_run", default=False)
+
+    parser.add_option("--recipe",
+            help = "Recipe IDs to operate on",
+            action="store", dest="recipe", default=None)
 
     options, args = parser.parse_args(sys.argv)
     logger.setLevel(options.loglevel)
@@ -187,7 +187,11 @@ if __name__=="__main__":
                         layerdir = os.path.join(repodir, layerbranch.vcs_subdir)
 
                         recipe_files = []
-                        for recipe in layerbranch.recipe_set.all():
+                        if options.recipe:
+                            recipe_qry = layerbranch.recipe_set.filter(id__in=options.recipe.split(','))
+                        else:
+                            recipe_qry = layerbranch.recipe_set.all()
+                        for recipe in recipe_qry:
                             file = str(os.path.join(layerdir, recipe.full_path()))
                             recipe_files.append(file)
 
@@ -216,14 +220,12 @@ if __name__=="__main__":
                             history.end_date = datetime.now()
                             history.save()
 
-                            for res in result:
-                                (recipe, ru) = res
-
+                            logger.debug('Results for layerbranch %s:' % str(layerbranch))
+                            for ru in result:
                                 ru.history = history
                                 ru.save()
 
-                                logger.debug('%s: layer branch %s, pv %s, upstream (%s)' % (recipe.pn,
-                                    str(layerbranch), recipe.pv, str(ru)))
+                                logger.debug(str(ru))
 
                         finally:
                             tinfoil.shutdown()

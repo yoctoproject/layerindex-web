@@ -22,7 +22,7 @@ from django.db import transaction
 import settings
 
 from layerindex.models import Recipe, LayerBranch, LayerItem
-from rrs.models import MaintenancePlan, Maintainer, RecipeMaintainerHistory, RecipeMaintainer, RecipeMaintenanceLink
+from rrs.models import MaintenancePlan, Maintainer, RecipeSymbol, RecipeMaintainerHistory, RecipeMaintainer, RecipeMaintenanceLink
 from django.core.exceptions import ObjectDoesNotExist
 
 # FIXME we shouldn't be hardcoded to expect RECIPE_MAINTAINER to be set in this file,
@@ -110,28 +110,22 @@ def maintainers_inc_history(options, logger, maintplan, layerbranch, repodir, la
                         res = get_recipe_maintainer(line, logger)
                         if res:
                             (pn, name, email) = res
-                            qry = Recipe.objects.filter(pn = pn, layerbranch = layerbranch)
+                            m = Maintainer.create_or_update(name, email)
 
-                            if qry:
-                                m = Maintainer.create_or_update(name, email)
+                            rm = RecipeMaintainer()
+                            rm.recipesymbol = RecipeSymbol.symbol(pn, layerbranch)
+                            rm.maintainer = m
+                            rm.history = rms
+                            rm.save()
 
-                                rm = RecipeMaintainer()
-                                rm.recipe = qry[0]
-                                rm.maintainer = m
-                                rm.history = rms
-                                rm.save()
-
-                                logger.debug("%s: Change maintainer to %s in commit %s." % \
-                                        (pn, m.name, commit))
-                            else:
-                                logger.debug("%s: Not found in %s." % \
-                                        (pn, layerbranch))
+                            logger.debug("%s: Change maintainer to %s in commit %s." % \
+                                    (pn, m.name, commit))
 
                 # set missing recipes to no maintainer
                 for recipe in layerbranch.recipe_set.all():
-                    if not RecipeMaintainer.objects.filter(recipe = recipe, history = rms):
+                    if not RecipeMaintainer.objects.filter(recipesymbol__pn=recipe.pn, history=rms):
                         rm = RecipeMaintainer()
-                        rm.recipe = recipe
+                        rm.recipesymbol = RecipeSymbol.symbol(recipe.pn, layerbranch, summary=recipe.summary)
                         link_maintainer = RecipeMaintenanceLink.link_maintainer(recipe.pn, rms)
                         if link_maintainer:
                             rm.maintainer = link_maintainer.maintainer
@@ -148,9 +142,9 @@ def maintainers_inc_history(options, logger, maintplan, layerbranch, repodir, la
             # set new recipes to no maintainer if don't have one
             rms = RecipeMaintainerHistory.get_last(layerbranch)
             for recipe in layerbranch.recipe_set.all():
-                if not RecipeMaintainer.objects.filter(recipe = recipe, history = rms):
+                if not RecipeMaintainer.objects.filter(recipesymbol__pn=recipe.pn, history=rms):
                     rm = RecipeMaintainer()
-                    rm.recipe = recipe
+                    rm.recipesymbol = RecipeSymbol.symbol(recipe.pn, layerbranch, summary=recipe.summary)
                     link_maintainer = RecipeMaintenanceLink.link_maintainer(recipe.pn, rms)
                     if link_maintainer:
                         rm.maintainer = link_maintainer.maintainer

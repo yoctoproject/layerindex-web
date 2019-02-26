@@ -119,7 +119,7 @@ def upgrade_history(options, logger):
             for maintplanbranch in maintplan.maintenanceplanlayerbranch_set.all():
                 layerbranch = maintplanbranch.layerbranch
                 if options.fullreload and not options.dry_run:
-                    RecipeUpgrade.objects.filter(recipe__layerbranch=layerbranch).delete()
+                    RecipeUpgrade.objects.filter(recipesymbol__layerbranch=layerbranch).delete()
                 layer = layerbranch.layer
                 urldir = layer.get_fetch_dir()
                 repodir = os.path.join(fetchdir, urldir)
