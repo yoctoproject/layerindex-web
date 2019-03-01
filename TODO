@@ -1,12 +1,19 @@
 TODO:
 
 Bugs
+* Check weird stuff with from/to revisions on update page (only showing first? shouldn't show if reload?)
+* Check that reload scripts/instructions are with -q
 * Duplication of first maintainer when editing to add a second?
 * Remote patches in SRC_URI trigger errors
 * We're wasting time gathering layer info at the start for layers that have not changed
 * import_layer on OE-Core then a layer that depends on core does not work
+* If a submitted layer does not have a master branch it can end up with no maintainer records
+* Check if EMAIL_HOST set before trying to send an email and show a proper error if not
+* Delete note on review page takes you back to normal layer detail page instead of review
+* Default axes configuration is too aggressive
 
 Features
+* Auth contact on login forms?
 * Auto-detect dead layers and visually mark
   * Formal deprecation process?
   * Email people when status will change?
@@ -62,3 +69,12 @@ RRS:
 * Display outstanding patches on recipe detail? (keyword search from patchwork?)
 * Record update logs for all scripts
 * Sorting by patch count should sort numerically
+* Pop-up message explaining patch column in RRS recipe list
+* Rendering glitch with a search term on RRS recipe list
+* Allow sorting by maintainer on recipe list page
+* Show maintainer count on maintainers page
+* Proper patch count history tracking
+* Default hide recipes with no source e.g. packagegroups, images
+* Re-group upgrade records (and remark downgrades) if rules change
+* Find old recipe names by searching? e.g. dpdk in meta-intel
+* sed detail shows gplv2 items at the top
