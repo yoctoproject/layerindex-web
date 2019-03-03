@@ -272,6 +272,28 @@ def edit_nginx_ssl_conf(hostname, https_port, certdir, certfile, keyfile):
     writefile("docker/nginx-ssl-edited.conf", ''.join(newlines))
 
 
+def edit_settings_py(emailaddr):
+    filedata = readfile('docker/settings.py')
+    newlines = []
+    lines = filedata.splitlines()
+    in_admins = False
+    for line in lines:
+        if in_admins:
+            if line.strip() == ')':
+                in_admins = False
+            continue
+        elif line.lstrip().startswith('ADMINS = ('):
+            if line.count('(') > line.count(')'):
+                in_admins = True
+            newlines.append("ADMINS = (\n")
+            if emailaddr:
+                newlines.append("  ('Admin', '%s'),\n" % emailaddr)
+            newlines.append(")\n")
+            continue
+        newlines.append(line + "\n")
+    writefile("docker/settings.py", ''.join(newlines))
+
+
 def edit_dockerfile_web(hostname, no_https):
     filedata = readfile('Dockerfile.web')
     newlines = []
@@ -287,14 +309,10 @@ def edit_dockerfile_web(hostname, no_https):
     writefile("Dockerfile.web", ''.join(newlines))
 
 
-def setup_https(hostname, http_port, https_port, letsencrypt, cert, cert_key):
-    emailaddr = None
+def setup_https(hostname, http_port, https_port, letsencrypt, cert, cert_key, emailaddr):
     local_cert_dir = os.path.abspath('docker/certs')
     container_cert_dir = '/opt/cert'
     if letsencrypt:
-        # Get email address
-        emailaddr = input('Enter your email address (for letsencrypt): ')
-
         # Create dummy cert
         container_cert_dir = '/etc/letsencrypt'
         letsencrypt_cert_subdir = 'live/' + hostname
@@ -482,6 +500,15 @@ except KeyboardInterrupt:
     print('')
     sys.exit(2)
 
+if not updatemode:
+    # Get email address
+    print('')
+    if letsencrypt:
+        print('You will now be asked for an email address. This will be used for the superuser account, to send error reports to and for Let\'s Encrypt.')
+    else:
+        print('You will now be asked for an email address. This will be used for the superuser account and to send error reports to.')
+    emailaddr = input('Enter your email address: ')
+
 if reinstmode:
     return_code = subprocess.call("docker-compose down -v", shell=True)
 
@@ -495,8 +522,10 @@ if not updatemode:
 
     edit_dockerfile_web(hostname, no_https)
 
+    edit_settings_py(emailaddr)
+
     if not no_https:
-        setup_https(hostname, http_port, https_port, letsencrypt, cert, cert_key)
+        setup_https(hostname, http_port, https_port, letsencrypt, cert, cert_key, emailaddr)
 
 ## Start up containers
 return_code = subprocess.call("docker-compose up -d --build", shell=True)
@@ -582,8 +611,8 @@ if not updatemode:
     return_code = subprocess.call("docker-compose run --rm layersapp /opt/layerindex/layerindex/tools/site_name.py %s 'OpenEmbedded Layer Index'" % hostname, shell=True)
 
     ## For a fresh database, create an admin account
-    print("Creating database superuser. Input user name, email, and password when prompted.")
-    return_code = subprocess.call("docker-compose run --rm layersapp /opt/layerindex/manage.py createsuperuser", shell=True)
+    print("Creating database superuser. Input user name and password when prompted.")
+    return_code = subprocess.call("docker-compose run --rm layersapp /opt/layerindex/manage.py createsuperuser --email %s" % emailaddr, shell=True)
     if return_code != 0:
         print("Creating superuser failed")
         sys.exit(1)
