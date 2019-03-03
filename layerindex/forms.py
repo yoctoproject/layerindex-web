@@ -202,6 +202,10 @@ class EditProfileForm(StyledModelForm):
 
     def __init__(self, *args, **kwargs):
         super(EditProfileForm, self ).__init__(*args, **kwargs)
+        for field in ['captcha', 'security_question_1', 'security_question_2', 'security_question_3', 'answer_1', 'answer_2', 'answer_3']:
+            self.fields[field].widget.attrs.update({
+                'autocomplete': 'off'
+            })
         user = kwargs.get("instance")
         try:
             self.fields['security_question_1'].initial=user.userprofile.securityquestionanswer_set.all()[0].security_question
