@@ -8,7 +8,6 @@
 #
 # Licensed under the MIT license, see COPYING.MIT for details
 
-from datetime import datetime
 
 import sys
 import os
@@ -17,6 +16,9 @@ import logging
 import re
 from distutils.version import LooseVersion
 import git
+from datetime import datetime
+import calendar
+from email.utils import parsedate_tz
 
 sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__))))
 from common import common_setup, get_pv_type, load_recipes, \
@@ -26,11 +28,19 @@ common_setup()
 from layerindex import utils, recipeparse
 from layerindex.update_layer import split_recipe_fn
 
+
+def rfc2822_time_to_utc_datetime(ds):
+    tt = parsedate_tz(ds)
+    if tt is None:
+        return None
+    timestamp = calendar.timegm(tt) - tt[9]
+    return datetime.utcfromtimestamp(timestamp)
+
+
 """
     Store upgrade into RecipeUpgrade model.
 """
 def _save_upgrade(recipesymbol, layerbranch, pv, commit, title, info, filepath, logger, upgrade_type=None):
-    from email.utils import parsedate_tz, mktime_tz
     from rrs.models import Maintainer, RecipeUpgrade, RecipeSymbol
 
     maintainer_name = info.split(';')[0]
@@ -43,10 +53,8 @@ def _save_upgrade(recipesymbol, layerbranch, pv, commit, title, info, filepath, 
     upgrade = RecipeUpgrade()
     upgrade.recipesymbol = recipesymbol
     upgrade.maintainer = maintainer
-    upgrade.author_date = datetime.utcfromtimestamp(mktime_tz(
-                                    parsedate_tz(author_date)))
-    upgrade.commit_date = datetime.utcfromtimestamp(mktime_tz(
-                                    parsedate_tz(commit_date)))
+    upgrade.author_date = rfc2822_time_to_utc_datetime(author_date)
+    upgrade.commit_date = rfc2822_time_to_utc_datetime(commit_date)
     upgrade.version = pv
     upgrade.sha1 = commit
     upgrade.title = title.strip()
