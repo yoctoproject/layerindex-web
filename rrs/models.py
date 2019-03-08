@@ -430,6 +430,12 @@ class RecipeDistro(models.Model):
 
 
 class RecipeUpgrade(models.Model):
+    UPGRADE_TYPE_CHOICES = (
+        ('U', 'Upgrade'),
+        ('N', 'Delete'),
+        ('R', 'Delete (final)'),
+    )
+
     recipesymbol = models.ForeignKey(RecipeSymbol)
     maintainer = models.ForeignKey(Maintainer, blank=True)
     sha1 = models.CharField(max_length=40, blank=True)
@@ -437,6 +443,8 @@ class RecipeUpgrade(models.Model):
     version = models.CharField(max_length=100, blank=True)
     author_date = models.DateTimeField(db_index=True)
     commit_date = models.DateTimeField(db_index=True)
+    upgrade_type = models.CharField(max_length=1, choices=UPGRADE_TYPE_CHOICES, default='U', db_index=True)
+    filepath = models.CharField(max_length=512, blank=True)
 
     @staticmethod
     def get_by_recipe_and_date(recipe, end_date):
@@ -452,8 +460,15 @@ class RecipeUpgrade(models.Model):
         return self.recipesymbol.layerbranch.commit_url(self.sha1)
 
     def __str__(self):
-        return '%s: (%s, %s)' % (self.recipesymbol.pn, self.version,
-                        self.commit_date)
+        if self.upgrade_type == 'R':
+            return '%s: deleted [final] (%s)' % (self.recipesymbol.pn,
+                            self.commit_date)
+        elif self.upgrade_type == 'N':
+            return '%s: deleted (%s)' % (self.recipesymbol.pn,
+                            self.commit_date)
+        else:
+            return '%s: (%s, %s)' % (self.recipesymbol.pn, self.version,
+                            self.commit_date)
 
 
 class RecipeMaintenanceLink(models.Model):

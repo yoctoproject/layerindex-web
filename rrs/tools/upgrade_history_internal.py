@@ -16,6 +16,7 @@ import optparse
 import logging
 import re
 from distutils.version import LooseVersion
+import git
 
 sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__))))
 from common import common_setup, get_pv_type, load_recipes, \
@@ -28,7 +29,7 @@ from layerindex.update_layer import split_recipe_fn
 """
     Store upgrade into RecipeUpgrade model.
 """
-def _save_upgrade(recipe_data, layerbranch, pv, commit, title, info, logger):
+def _save_upgrade(recipesymbol, layerbranch, pv, commit, title, info, filepath, logger, upgrade_type=None):
     from email.utils import parsedate_tz, mktime_tz
     from rrs.models import Maintainer, RecipeUpgrade, RecipeSymbol
 
@@ -40,8 +41,7 @@ def _save_upgrade(recipe_data, layerbranch, pv, commit, title, info, logger):
     maintainer = Maintainer.create_or_update(maintainer_name, maintainer_email)
 
     upgrade = RecipeUpgrade()
-    summary = recipe_data.getVar('SUMMARY', True) or recipe_data.getVar('DESCRIPTION', True)
-    upgrade.recipesymbol = RecipeSymbol.symbol(recipe_data.getVar('PN', True), layerbranch, summary=summary)
+    upgrade.recipesymbol = recipesymbol
     upgrade.maintainer = maintainer
     upgrade.author_date = datetime.utcfromtimestamp(mktime_tz(
                                     parsedate_tz(author_date)))
@@ -50,12 +50,15 @@ def _save_upgrade(recipe_data, layerbranch, pv, commit, title, info, logger):
     upgrade.version = pv
     upgrade.sha1 = commit
     upgrade.title = title.strip()
+    upgrade.filepath = filepath
+    if upgrade_type:
+        upgrade.upgrade_type = upgrade_type
     upgrade.save()
 
 """
     Create upgrade receives new recipe_data and cmp versions.
 """
-def _create_upgrade(recipe_data, layerbranch, ct, title, info, logger, initial=False):
+def _create_upgrade(recipe_data, layerbranch, ct, title, info, filepath, logger, initial=False):
     from rrs.models import RecipeUpgrade, RecipeSymbol
     from bb.utils import vercmp_string
 
@@ -66,11 +69,12 @@ def _create_upgrade(recipe_data, layerbranch, ct, title, info, logger, initial=F
         logger.warn('Invalid version for recipe %s in commit %s, ignoring' % (recipe_data.getVar('FILE', True), ct))
         return
 
-    rsym = RecipeSymbol.objects.filter(pn=pn, layerbranch=layerbranch)
+    summary = recipe_data.getVar('SUMMARY', True) or recipe_data.getVar('DESCRIPTION', True)
+    recipesymbol = RecipeSymbol.symbol(recipe_data.getVar('PN', True), layerbranch, summary=summary)
 
     try:
         latest_upgrade = RecipeUpgrade.objects.filter(
-                recipesymbol=rsym).order_by('-commit_date')[0]
+                recipesymbol=recipesymbol).order_by('-commit_date')[0]
         prev_pv = latest_upgrade.version
     except KeyboardInterrupt:
         raise
@@ -79,7 +83,7 @@ def _create_upgrade(recipe_data, layerbranch, ct, title, info, logger, initial=F
 
     if prev_pv is None:
         logger.debug("%s: Initial upgrade ( -> %s)." % (pn, pv))
-        _save_upgrade(recipe_data, layerbranch, pv, ct, title, info, logger)
+        _save_upgrade(recipesymbol, layerbranch, pv, ct, title, info, filepath, logger)
     else:
         from common import get_recipe_pv_without_srcpv
 
@@ -95,12 +99,13 @@ def _create_upgrade(recipe_data, layerbranch, ct, title, info, logger, initial=F
                 if initial is True:
                     logger.debug("%s: Update initial upgrade ( -> %s)." % \
                             (pn, pv)) 
+                    latest_upgrade.filepath = filepath
                     latest_upgrade.version = pv
                     latest_upgrade.save()
                 else:
                     logger.debug("%s: detected upgrade (%s -> %s)" \
                             " in ct %s." % (pn, prev_pv, pv, ct))
-                    _save_upgrade(recipe_data, layerbranch, pv, ct, title, info, logger)
+                    _save_upgrade(recipesymbol, layerbranch, pv, ct, title, info, filepath, logger)
         except KeyboardInterrupt:
             raise
         except Exception as e:
@@ -111,39 +116,46 @@ def _create_upgrade(recipe_data, layerbranch, ct, title, info, logger, initial=F
 """
     Returns a list containing the fullpaths to the recipes from a commit.
 """
-def _get_recipes_filenames(ct, repodir, layerdir, logger):
+def _get_recipes_filenames(ct, repo, repodir, layersubdir_start, logger):
     import glob
     ct_files = []
-    layerdir_start = os.path.normpath(layerdir) + os.sep
-
-    files = utils.runcmd(['git', 'log', '--name-only', '--format=%n', '-n', '1', ct],
-                            repodir, logger=logger)
+    deleted = []
+    moved_files = []
 
     incdirs = []
-    for f in files.split("\n"):
-        if f != "":
-            fullpath = os.path.join(repodir, f)
-            # Skip deleted files in commit
-            if not os.path.exists(fullpath):
+    commitobj = repo.commit(ct)
+    for parent in commitobj.parents:
+        diff = parent.diff(commitobj)
+        for diffitem in diff:
+            if layersubdir_start and not (diffitem.a_path.startswith(layersubdir_start) or diffitem.b_path.startswith(layersubdir_start)):
+                # Not in this layer, skip it
                 continue
-            if not fullpath.startswith(layerdir_start):
-                # Ignore files in repo that are outside of the layer
+
+            (typename, _, _) = recipeparse.detect_file_type(diffitem.a_path,
+                                        layersubdir_start)
+
+            if not diffitem.b_path or diffitem.deleted_file or not diffitem.b_path.startswith(layersubdir_start):
+                # Deleted, or moved out of the layer (which we treat as a delete)
+                if typename == 'recipe':
+                    deleted.append(diffitem.a_path)
                 continue
-            (typename, _, filename) = recipeparse.detect_file_type(fullpath,
-                                        layerdir_start)
+
             if typename == 'recipe':
-                ct_files.append(fullpath)
-            elif fullpath.endswith('.inc'):
-                fpath = os.path.dirname(fullpath)
+                ct_files.append(os.path.join(repodir, diffitem.b_path))
+                if diffitem.a_path != diffitem.b_path:
+                    moved_files.append((diffitem.a_path, diffitem.b_path))
+            elif typename == 'incfile':
+                fpath = os.path.dirname(os.path.join(repodir, diffitem.a_path))
                 if not fpath in incdirs:
                     incdirs.append(fpath)
+
     for fpath in incdirs:
         # Let's just assume that all .bb files next to a .inc need to be checked
         for f in glob.glob(os.path.join(fpath, '*.bb')):
             if not f in ct_files:
                 ct_files.append(f)
 
-    return ct_files
+    return ct_files, deleted, moved_files
 
 
 def checkout_layer_deps(layerbranch, commit, fetchdir, logger):
@@ -174,7 +186,7 @@ def checkout_layer_deps(layerbranch, commit, fetchdir, logger):
 
 def generate_history(options, layerbranch_id, commit, logger):
     from layerindex.models import LayerBranch
-    from rrs.models import Release
+    from rrs.models import Release, RecipeUpgrade
     layerbranch = LayerBranch.objects.get(id=layerbranch_id)
 
     fetchdir = settings.LAYER_FETCH_DIR
@@ -187,13 +199,27 @@ def generate_history(options, layerbranch_id, commit, logger):
     repodir = os.path.join(fetchdir, urldir)
     layerdir = os.path.join(repodir, str(layerbranch.vcs_subdir))
 
+    if layerbranch.vcs_subdir:
+        layersubdir_start = layerbranch.vcs_subdir
+        if not layersubdir_start.endswith('/'):
+            layersubdir_start += '/'
+    else:
+        layersubdir_start = ''
+
+    repo = git.Repo(repodir)
+    if repo.bare:
+        logger.error('Repository %s is bare, not supported' % repodir)
+        sys.exit(1)
+
     commitdate = checkout_layer_deps(layerbranch, commit, fetchdir, logger)
 
     if options.initial:
         fns = None
+        deleted = []
+        moved = []
     else:
-        fns = _get_recipes_filenames(commit, repodir, layerdir, logger)
-        if not fns:
+        fns, deleted, moved = _get_recipes_filenames(commit, repo, repodir, layersubdir_start, logger)
+        if not (fns or deleted or moved):
             return
 
     # setup bitbake
@@ -223,11 +249,62 @@ def generate_history(options, layerbranch_id, commit, logger):
             info = utils.runcmd(['git', 'log', '--format=%an;%ae;%ad;%cd', '--date=rfc', '-n', '1', commit], destdir=repodir, logger=logger)
             recordcommit = commit
 
+        fn_data = {}
+        for recipe_data in recipes:
+            fn = os.path.relpath(recipe_data.getVar('FILE', True), repodir)
+            fn_data[fn] = recipe_data
+
+        seen_pns = []
         try:
             with transaction.atomic():
+                for a, b in moved:
+                    logger.debug('Move %s -> %s' % (a,b))
+                    rus = RecipeUpgrade.objects.filter(recipesymbol__layerbranch=layerbranch, filepath=a).order_by('-commit_date')
+                    recipe_data = fn_data.get(b, None)
+                    if recipe_data:
+                        pn = recipe_data.getVar('PN', True)
+                        ru = rus.first()
+                        if ru and ru.recipesymbol.pn != pn:
+                            # PN has been changed! We need to mark the old record as deleted
+                            logger.debug('PN changed: %s -> %s' % (ru.recipesymbol.pn, pn))
+                            if a not in deleted:
+                                deleted.append(a)
+                    else:
+                        logger.warning('Unable to find parsed data for recipe %s' % b)
+
+                    if a not in deleted:
+                        # Need to keep filepath up-to-date, otherwise we won't be able to
+                        # find the record if we need to mark it as deleted later
+                        for ru in rus:
+                            ru.filepath = b
+                            ru.save()
+
                 for recipe_data in recipes:
+                    filepath = os.path.relpath(recipe_data.getVar('FILE', True), repodir)
                     _create_upgrade(recipe_data, layerbranch, recordcommit, title,
-                            info, logger, initial=options.initial)
+                            info, filepath, logger, initial=options.initial)
+                    seen_pns.append(recipe_data.getVar('PN', True))
+
+                for df in deleted:
+                    rus = RecipeUpgrade.objects.filter(recipesymbol__layerbranch=layerbranch, filepath=df).order_by('-commit_date')
+                    for ru in rus:
+                        other_rus = RecipeUpgrade.objects.filter(recipesymbol=ru.recipesymbol, commit_date__gt=ru.commit_date).exclude(filepath=df).order_by('-commit_date')
+                        # We make a distinction between deleting just one version and the entire recipe being deleted
+                        upgrade_type = 'R'
+                        for other_ru in other_rus:
+                            if other_ru.upgrade_type == 'R':
+                                logger.debug('There is a delete: %s' % other_ru)
+                                upgrade_type = ''
+                                break
+                            if os.path.exists(os.path.join(repodir, other_ru.filepath)):
+                                upgrade_type = 'N'
+                        if not upgrade_type:
+                            continue
+                        if ru.upgrade_type != upgrade_type and ru.recipesymbol.pn not in seen_pns:
+                            logger.debug("%s: marking as deleted (%s)" % (ru.recipesymbol.pn, ru.filepath))
+                            _save_upgrade(ru.recipesymbol, layerbranch, ru.version, recordcommit, title, info, df, logger, upgrade_type=upgrade_type)
+                            break
+
                 if options.dry_run:
                     raise DryRunRollbackException
         except DryRunRollbackException:

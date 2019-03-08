@@ -12,7 +12,7 @@
 {% endcomment %}
 
 {% autoescape on %}
-{% block title_append %} - {{ recipe.pn }}{% endblock %}
+{% block title_append %} - {% if recipe %}{{ recipe.name }}{% else %}{{ recipesymbol.pn }}{% endif %}{% endblock %}
 {% endautoescape %}
 
 {% block topfunctions %}
@@ -26,13 +26,17 @@
 
 <ul class="breadcrumb">
     <li><a href="{% url 'rrs_maintplan' maintplan_name %}">{{ maintplan_name }}</a></li>
-    <li><a href="{% url 'layer_item' recipe.layerbranch.branch.name recipe.layerbranch.layer.name %}">{{ recipe.layerbranch.layer.name }}</a></li>
-    <li class="active">{{ recipe.name }}</li>
+    <li><a href="{% url 'layer_item' recipesymbol.layerbranch.branch.name recipesymbol.layerbranch.layer.name %}">{{ recipesymbol.layerbranch.layer.name }}</a></li>
+    <li class="active">{% if recipe %}{{ recipe.name }}{% else %}{{ recipesymbol.pn }}{% endif %}</li>
 </ul>
 
 <div class="page-header">
     <h1>
+        {% if recipe %}
         {{ recipe.name }} {{ recipe.pv }}
+        {% else %}
+        {{ recipesymbol.pn }} <span class="label label-default">deleted</span>
+        {% endif %}
     </h1>
 </div>
 
@@ -91,7 +95,7 @@
                 {% for rud in recipe_upgrade_details %}
                 <tr>
                     <td>{{ rud.title }}</td>
-                    <td>{{ rud.version }}</td>
+                    <td>{% if rud.upgrade_type != 'R' %}{{ rud.version }}{% endif %}</td>
                     {% if rud.milestone_name %}
                     <td>
                         <a href="{% url 'rrs_recipes' rud.maintplan_name rud.release_name rud.milestone_name %}">
@@ -123,6 +127,7 @@
         </table>
         {% endif %}
 
+        {% if recipe %}
         <h2>Patches</h2>
         {% if recipe.patch_set.exists %}
         <table class="table table-striped table-bordered">
@@ -143,6 +148,7 @@
         </table>
         {% else %}
         <p>None</p>
+        {% endif %}
         {% endif %}
 
         {% if otherbranch_recipes %}
@@ -178,21 +184,25 @@
         <div class="well well-transparent">
             <dl>
                 <dt>Summary</dt>
-                <dd>{{ recipe.summary }}</dd>
+                <dd>{% if recipe %}{{ recipe.summary }}{% else %}{{ recipesymbol.summary }}{% endif %}</dd>
                 <dt>Section</dt>
                 <dd>{{ recipe.section }}</dd>
                 <dt>License</dt>
                 <dd>{{ recipe.license }}</dd>
                 <dt>Recipe file</dt>
                 <dd>
+                {% if recipe %}
                 {% if recipe.vcs_web_url %}
                     <a href="{{ recipe.vcs_web_url }}">{{ recipe.full_path }}</a>
                 {% else %}
                     {{ recipe.full_path }}
                 {% endif %}
+                {% else %}
+                    {{ last_filepath }}
+                {% endif %}
                 </dd>
                 <dt>Layer</dd>
-                <dd><a href="{{ recipe_layer_branch_url }}">{{ recipe.layerbranch.layer.name }} ({{ recipe.layerbranch.branch.name}} branch)</a></dd>
+                <dd><a href="{{ recipe_layer_branch_url }}">{{ recipesymbol.layerbranch.layer.name }} ({{ recipesymbol.layerbranch.branch.name}} branch)</a></dd>
 
                 {% if recipe.homepage %}
                 <dt>Homepage</dt>

@@ -195,15 +195,17 @@ class Raw():
         """ Get info for Recipes for the milestone """
         cur = connection.cursor()
         cur.execute("""SELECT rs.id, rs.pn, rs.summary, te.version, rownum FROM (
-                            SELECT recipesymbol_id, version, commit_date, ROW_NUMBER() OVER(
+                            SELECT recipesymbol_id, version, commit_date, upgrade_type, ROW_NUMBER() OVER(
                                 PARTITION BY recipesymbol_id
                                 ORDER BY commit_date DESC
                             ) AS rownum
                         FROM rrs_recipeupgrade
-                        WHERE commit_date <= %s) AS te
+                        WHERE commit_date <= %s
+                        AND upgrade_type <> 'N') AS te
                         INNER JOIN rrs_recipesymbol AS rs
                         ON te.recipesymbol_id = rs.id
                         WHERE rownum = 1
+                        AND te.upgrade_type <> 'R'
                         AND rs.layerbranch_id = %s
                         ORDER BY rs.pn;
                         """, [date, layerbranch_id])
@@ -621,9 +623,10 @@ class RecipeUpgradeDetail():
     is_recipe_maintainer = None
     commit = None
     commit_url = None
+    upgrade_type = None
 
     def __init__(self, title, version, maintplan_name, release_name, milestone_name, date, 
-            maintainer_name, is_recipe_maintainer, commit, commit_url):
+            maintainer_name, is_recipe_maintainer, commit, commit_url, upgrade_type):
         self.title = title
         self.version = version
         self.maintplan_name = maintplan_name
@@ -634,6 +637,7 @@ class RecipeUpgradeDetail():
         self.is_recipe_maintainer = is_recipe_maintainer
         self.commit = commit
         self.commit_url = commit_url
+        self.upgrade_type = upgrade_type
 
 def _get_recipe_upgrade_detail(maintplan, recipe_upgrade):
     release_name = ''
@@ -668,7 +672,7 @@ def _get_recipe_upgrade_detail(maintplan, recipe_upgrade):
 
     rud = RecipeUpgradeDetail(recipe_upgrade.title, recipe_upgrade.version, \
             maintplan.name, release_name, milestone_name, commit_date, maintainer_name, \
-            is_recipe_maintainer, commit, commit_url)
+            is_recipe_maintainer, commit, commit_url, recipe_upgrade.upgrade_type)
 
     return rud
 
@@ -730,6 +734,11 @@ class RecipeDetailView(DetailView):
         for ru in RecipeUpgrade.objects.filter(recipesymbol=recipesymbol).order_by('-commit_date'): 
             context['recipe_upgrade_details'].append(_get_recipe_upgrade_detail(maintplan, ru))
         context['recipe_upgrade_detail_count'] = len(context['recipe_upgrade_details'])
+
+        if not recipe:
+            ru = RecipeUpgrade.objects.filter(recipesymbol=recipesymbol).order_by('-commit_date').first()
+            if ru:
+                context['last_filepath'] = ru.filepath
 
         context['recipe_layer_branch_url'] = _get_layer_branch_url(
                 recipesymbol.layerbranch.branch.name, recipesymbol.layerbranch.layer.name)
