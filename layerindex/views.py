@@ -1319,9 +1319,8 @@ class ClassicRecipeSearchView(RecipeSearchView):
 
 
 
-class ClassicRecipeDetailView(SuccessMessageMixin, UpdateView):
+class ClassicRecipeDetailView(SuccessMessageMixin, DetailView):
     model = ClassicRecipe
-    form_class = ClassicRecipeForm
     context_object_name = 'recipe'
 
     def _can_edit(self):
