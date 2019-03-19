@@ -69,3 +69,68 @@
                         </tr>
                         {% endif %}
                         {% endblock %}
+
+                                    {% block patch_status_heading %}
+                                    {% if rcp.layerbranch.branch.comparison %}
+                                        {% if can_disposition_patches %}
+                                    <th class="col-md-3">Disposition</th>
+                                    <th></th>
+                                        {% endif %}
+                                    {% else %}
+                                    <th class="col-md-3">Status</th>
+                                    {% endif %}
+                                    {% endblock %}
+
+                                    {% block patch_status %}
+                                    {% if rcp.layerbranch.branch.comparison %}
+                                        {% if can_disposition_patches %}
+                                        <td>{{ patch.patchdisposition.get_disposition_display }}</td>
+                                        <td><a href="#patchDialog{{ patch.id }}" role="button" data-toggle="modal" class="btn btn-default pull-right patch_disposition_button" patch-id="{{ patch.id }}" patch-name="{{ patch.src_path }}">...</a></td>
+                                        {% endif %}
+                                    {% else %}
+                                    <td>{{ patch.get_status_display }} {{ patch.status_extra | urlize }}</td>
+                                    {% endif %}
+                                    {% endblock %}
+
+{% block content_extra %}
+{% if can_disposition_patches %}
+{% for form in patch_formset %}
+    {% with patch_id=form.patch.initial %}
+    <form id="patch_form_{{ patch_id }}" method="post">
+        <div id="patchDialog{{ patch_id }}" class="modal fade patchdialog" tabindex="-1" role="dialog" aria-labelledby="patchDialogLabel{{ patch_id }}">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                        <h3 id="patchDialogLabel{{ patch_id }}">Dialog title</h3>
+                    </div>
+                    <div class="modal-body">
+                        {% csrf_token %}
+                        {{ form }}
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-primary patchdialog-save" data-dismiss="modal" patch-id="{{ patch_id }}">Save</button>
+                        <button class="btn btn-default" data-dismiss="modal">Cancel</button>
+                    </div>
+                </div><!-- /.modal-content -->
+            </div><!-- /.modal-dialog -->
+        </div>
+    </form>
+    {% endwith %}
+{% endfor %}
+{% endif %}
+{% endblock %}
+
+{% block scripts_extra %}
+    $('.patch_disposition_button').click(function (e) {
+        patch_id = $(this).attr('patch-id');
+        patch_name = $(this).attr('patch-name');
+        $('#patchDialogLabel' + patch_id).html('Disposition patch ' + patch_name);
+    });
+    $('.patchdialog-save').click(function (e) {
+        patch_id = $(this).attr('patch-id');
+        $('#patch_form_' + patch_id).submit()
+        $('#patchDialog' + patch_id).modal('hide')
+    });
+{% endblock %}
+

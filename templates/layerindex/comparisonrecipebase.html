@@ -179,14 +179,22 @@
                             <thead>
                                 <tr>
                                     <th>Patch</th>
+                                    {% block patch_status_heading %}
+                                    {% if not rcp.layerbranch.branch.comparison %}
                                     <th class="col-md-3">Status</th>
+                                    {% endif %}
+                                    {% endblock %}
                                 </tr>
                             </thead>
                             <tbody>
                                 {% for patch in rcp.patch_set.all %}
                                 <tr>
                                     <td><a href="{{ patch.vcs_web_url }}">{{ patch.src_path }}</a></td>
+                                    {% block patch_status %}
+                                    {% if not rcp.layerbranch.branch.comparison %}
                                     <td>{{ patch.get_status_display }} {{ patch.status_extra | urlize }}</td>
+                                    {% endif %}
+                                    {% endblock %}
                                 </tr>
                                 {% endfor %}
                             </tbody>
@@ -200,6 +208,9 @@
                 </table>
             </div>
         </div>
+
+{% block content_extra %}
+{% endblock %}
 
 {% endautoescape %}
 
@@ -225,5 +236,7 @@
                 $('#id_span_cover_opts').removeClass('text-muted');
             }
         }
+{% block scripts_extra %}
+{% endblock %}
     </script>
 {% endblock %}

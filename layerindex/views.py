@@ -46,14 +46,15 @@ from layerindex.forms import (AdvancedRecipeSearchForm, BulkChangeEditFormSet,
                               ClassicRecipeForm, ClassicRecipeSearchForm,
                               ComparisonRecipeSelectForm, EditLayerForm,
                               EditNoteForm, EditProfileForm,
-                              LayerMaintainerFormSet, RecipeChangesetForm)
+                              LayerMaintainerFormSet, RecipeChangesetForm,
+                              PatchDispositionForm, PatchDispositionFormSet)
 from layerindex.models import (BBAppend, BBClass, Branch, ClassicRecipe,
                                Distro, DynamicBuildDep, IncFile, LayerBranch,
                                LayerDependency, LayerItem, LayerMaintainer,
                                LayerNote, LayerUpdate, Machine, Patch, Recipe,
                                RecipeChange, RecipeChangeset, Source, StaticBuildDep,
                                Update, SecurityQuestion, SecurityQuestionAnswer,
-                               UserProfile)
+                               UserProfile, PatchDisposition)
 
 
 from . import simplesearch, tasks, utils
@@ -1331,6 +1332,14 @@ class ClassicRecipeDetailView(SuccessMessageMixin, DetailView):
             return False
         return True
 
+    def _can_disposition_patches(self):
+        if self.request.user.is_authenticated():
+            if not self.request.user.has_perm('layerindex.patch_disposition'):
+                return False
+        else:
+            return False
+        return True
+
     def get_context_data(self, **kwargs):
         context = super(ClassicRecipeDetailView, self).get_context_data(**kwargs)
         context['can_edit'] = self._can_edit()
@@ -1346,7 +1355,45 @@ class ClassicRecipeDetailView(SuccessMessageMixin, DetailView):
         context['layerbranch_desc'] = str(recipe.layerbranch.branch)
         context['to_desc'] = 'OpenEmbedded'
         context['recipes'] = [recipe, cover_recipe]
+
+        context['can_disposition_patches'] = self._can_disposition_patches()
+        if context['can_disposition_patches']:
+            nodisposition_ids = list(recipe.patch_set.filter(patchdisposition__isnull=True).values_list('id', flat=True))
+            patch_initial = [{'patch': p} for p in nodisposition_ids]
+            patch_formset = PatchDispositionFormSet(queryset=PatchDisposition.objects.filter(patch__recipe=recipe), initial=patch_initial, prefix='patchdispositiondialog')
+            patch_formset.extra = len(patch_initial)
+            context['patch_formset'] = patch_formset
         return context
+
+    def post(self, request, *args, **kwargs):
+        if not self._can_disposition_patches():
+            raise PermissionDenied
+
+        recipe = get_object_or_404(ClassicRecipe, pk=self.kwargs['pk'])
+        # What follows is a bit hacky, because we are receiving the form fields
+        # for just one of the forms in the formset which isn't really supported
+        # by Django
+        for field in request.POST:
+            if field.startswith('patchdispositiondialog'):
+                prefix = '-'.join(field.split('-')[:2])
+                instance = None
+                patchdisposition_id = request.POST.get('%s-id' % prefix, '')
+                if patchdisposition_id != '':
+                    instance = get_object_or_404(PatchDisposition, pk=int(patchdisposition_id))
+
+                form = PatchDispositionForm(request.POST, prefix=prefix, instance=instance)
+                if form.is_valid():
+                    instance = form.save(commit=False)
+                    instance.user = request.user
+                    instance.save()
+                    messages.success(request, 'Changes to patch %s saved successfully.' % instance.patch.src_path)
+                    return HttpResponseRedirect(reverse('comparison_recipe', args=(recipe.id,)))
+                else:
+                    # FIXME this is ugly because HTML gets escaped
+                    messages.error(request, 'Failed to save changes: %s' % form.errors)
+                break
+
+        return self.get(request, *args, **kwargs)
 
 
 class ClassicRecipeStatsView(TemplateView):

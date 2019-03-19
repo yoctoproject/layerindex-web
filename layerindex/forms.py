@@ -22,7 +22,7 @@ import settings
 from layerindex.models import (Branch, ClassicRecipe,
                                LayerBranch, LayerItem, LayerMaintainer,
                                LayerNote, RecipeChange, RecipeChangeset,
-                               SecurityQuestion, UserProfile)
+                               SecurityQuestion, UserProfile, PatchDisposition)
 
 
 class StyledForm(forms.Form):
@@ -344,3 +344,13 @@ class ComparisonRecipeSelectForm(StyledForm):
     q = forms.CharField(label='Keyword', max_length=255, required=False)
     oe_layer = forms.ModelChoiceField(label='OE Layer', queryset=LayerItem.objects.filter(comparison=False).filter(status__in=['P', 'X']).order_by('name'), empty_label="(any)", required=False)
 
+
+class PatchDispositionForm(StyledModelForm):
+    class Meta:
+        model = PatchDisposition
+        fields = ('patch', 'disposition', 'comment')
+        widgets = {
+            'patch': forms.HiddenInput(),
+        }
+
+PatchDispositionFormSet = modelformset_factory(PatchDisposition, form=PatchDispositionForm, extra=0)

@@ -178,6 +178,10 @@ class PatchAdmin(admin.ModelAdmin):
     def has_delete_permission(self, request, obj=None):
         return False
 
+class PatchDispositionAdmin(admin.ModelAdmin):
+    search_fields = ['patch__path']
+    list_filter = ['patch__recipe__layerbranch__layer__name', 'patch__recipe__layerbranch__branch__name']
+
 class IncFileAdmin(admin.ModelAdmin):
     search_fields = ['path']
     list_filter = ['layerbranch__layer__name', 'layerbranch__branch__name']
@@ -230,6 +234,7 @@ admin.site.register(BBAppend, BBAppendAdmin)
 admin.site.register(BBClass, BBClassAdmin)
 admin.site.register(IncFile, IncFileAdmin)
 admin.site.register(Patch, PatchAdmin)
+admin.site.register(PatchDisposition, PatchDispositionAdmin)
 admin.site.register(LayerRecipeExtraURL)
 admin.site.register(RecipeChangeset, RecipeChangesetAdmin)
 admin.site.register(ClassicRecipe, ClassicRecipeAdmin)

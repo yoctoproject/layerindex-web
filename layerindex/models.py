@@ -882,3 +882,26 @@ class SecurityQuestionAnswer(models.Model):
     user = models.ForeignKey(UserProfile, on_delete=models.CASCADE)
     security_question = models.ForeignKey(SecurityQuestion)
     answer = models.CharField(max_length = 250, null=False)
+
+
+class PatchDisposition(models.Model):
+    PATCH_DISPOSITION_CHOICES = (
+        ('A', 'Apply'),
+        ('R', 'Further review'),
+        ('E', 'Existing'),
+        ('N', 'Not needed'),
+        ('V', 'Different version'),
+        ('I', 'Invalid'),
+    )
+    patch = models.OneToOneField(Patch, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, null=True, on_delete=models.SET_NULL)
+    disposition = models.CharField(max_length=1, choices=PATCH_DISPOSITION_CHOICES, default='A')
+    comment = models.TextField(blank=True)
+
+    class Meta:
+        permissions = (
+            ("patch_disposition", "Can disposition patches"),
+        )
+
+    def __str__(self):
+        return '%s - %s' % (self.patch, self.get_disposition_display())
