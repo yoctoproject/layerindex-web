@@ -65,4 +65,4 @@ COPY docker/.gitconfig /home/layers/.gitconfig
 COPY docker/git-proxy /opt/bin/git-proxy
 
 # Start Gunicorn
-CMD ["/usr/local/bin/gunicorn", "wsgi:application", "--workers=4", "--bind=:5000", "--log-level=debug", "--chdir=/opt/layerindex"]
+CMD ["/usr/local/bin/gunicorn", "wsgi:application", "--workers=4", "--bind=:5000", "--timeout=60", "--log-level=debug", "--chdir=/opt/layerindex"]
