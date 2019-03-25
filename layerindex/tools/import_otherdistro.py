@@ -349,6 +349,52 @@ def get_update_obj(args):
     return updateobj
 
 
+def import_specdir(metapath, layerbranch, existing, updateobj, pwriter):
+    dirlist = os.listdir(metapath)
+    total = len(dirlist)
+    for count, entry in enumerate(dirlist):
+        if os.path.exists(os.path.join(metapath, entry, 'dead.package')):
+            logger.info('Skipping dead package %s' % entry)
+            continue
+        specfiles = glob.glob(os.path.join(metapath, entry, '*.spec'))
+        if specfiles:
+            import_specfiles(specfiles, layerbranch, existing, updateobj, metapath)
+        else:
+            logger.warn('Missing spec file in %s' % os.path.join(metapath, entry))
+        if pwriter:
+            pwriter.write(int(count / total * 100))
+
+
+def import_specfiles(specfiles, layerbranch, existing, updateobj, reldir):
+    from layerindex.models import ClassicRecipe, ComparisonRecipeUpdate
+    recipes = []
+    for specfile in specfiles:
+        specfn = os.path.basename(specfile)
+        specpath = os.path.relpath(os.path.dirname(specfile), reldir)
+        recipe, created = ClassicRecipe.objects.get_or_create(layerbranch=layerbranch, filepath=specpath, filename=specfn)
+        if created:
+            logger.info('Importing %s' % specfn)
+        elif recipe.deleted:
+            logger.info('Restoring and updating %s' % specpath)
+            recipe.deleted = False
+        else:
+            logger.info('Updating %s' % specpath)
+        recipe.layerbranch = layerbranch
+        recipe.filename = specfn
+        recipe.filepath = specpath
+        update_recipe_file(specfile, recipe, reldir)
+        recipe.save()
+        existingentry = (specpath, specfn)
+        if existingentry in existing:
+            existing.remove(existingentry)
+        if updateobj:
+            rupdate, _ = ComparisonRecipeUpdate.objects.get_or_create(update=updateobj, recipe=recipe)
+            rupdate.meta_updated = True
+            rupdate.save()
+        recipes.append(recipe)
+    return recipes
+
+
 def import_pkgspec(args):
     utils.setup_django()
     import settings
@@ -371,43 +417,8 @@ def import_pkgspec(args):
     try:
         with transaction.atomic():
             layerrecipes = ClassicRecipe.objects.filter(layerbranch=layerbranch)
-
             existing = list(layerrecipes.filter(deleted=False).values_list('filepath', 'filename'))
-            dirlist = os.listdir(metapath)
-            total = len(dirlist)
-            for count, entry in enumerate(dirlist):
-                if os.path.exists(os.path.join(metapath, entry, 'dead.package')):
-                    logger.info('Skipping dead package %s' % entry)
-                    continue
-                specfiles = glob.glob(os.path.join(metapath, entry, '*.spec'))
-                if specfiles:
-                    for specfile in specfiles:
-                        specfn = os.path.basename(specfile)
-                        specpath = os.path.relpath(os.path.dirname(specfile), metapath)
-                        recipe, created = ClassicRecipe.objects.get_or_create(layerbranch=layerbranch, filepath=specpath, filename=specfn)
-                        if created:
-                            logger.info('Importing %s' % specfn)
-                        elif recipe.deleted:
-                            logger.info('Restoring and updating %s' % specpath)
-                            recipe.deleted = False
-                        else:
-                            logger.info('Updating %s' % specpath)
-                        recipe.layerbranch = layerbranch
-                        recipe.filename = specfn
-                        recipe.filepath = specpath
-                        update_recipe_file(specfile, recipe, metapath)
-                        recipe.save()
-                        existingentry = (specpath, specfn)
-                        if existingentry in existing:
-                            existing.remove(existingentry)
-                        if updateobj:
-                            rupdate, _ = ComparisonRecipeUpdate.objects.get_or_create(update=updateobj, recipe=recipe)
-                            rupdate.meta_updated = True
-                            rupdate.save()
-                else:
-                    logger.warn('Missing spec file in %s' % os.path.join(metapath, entry))
-                if pwriter:
-                    pwriter.write(int(count / total * 100))
+            import_specdir(metapath, layerbranch, existing, updateobj, pwriter)
 
             if existing:
                 fpaths = sorted(['%s/%s' % (pth, fn) for pth, fn in existing])
