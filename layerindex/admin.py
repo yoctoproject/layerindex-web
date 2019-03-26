@@ -179,8 +179,16 @@ class PatchAdmin(admin.ModelAdmin):
         return False
 
 class PatchDispositionAdmin(admin.ModelAdmin):
+    fields = ['patch', 'user', 'disposition', 'comment']
     search_fields = ['patch__path']
     list_filter = ['patch__recipe__layerbranch__layer__name', 'patch__recipe__layerbranch__branch__name']
+    def get_readonly_fields(self, request, obj=None):
+        readonly_fields = ['user']
+        if obj:
+            readonly_fields.append('patch')
+            if not (request.user == obj.user or request.user.is_superuser):
+                readonly_fields.append('disposition', 'comment')
+        return readonly_fields
 
 class IncFileAdmin(admin.ModelAdmin):
     search_fields = ['path']
