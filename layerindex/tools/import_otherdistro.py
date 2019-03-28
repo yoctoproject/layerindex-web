@@ -312,23 +312,38 @@ def update_recipe_file(path, recipe, repodir, raiseexceptions=False):
 
 
 def check_branch_layer(args):
-    from layerindex.models import LayerItem, LayerBranch
+    from layerindex.models import Branch, LayerItem, LayerBranch
 
     branch = utils.get_branch(args.branch)
-    if not branch:
-        logger.error("Specified branch %s is not valid" % args.branch)
-        return 1, None
-
-    res = list(LayerItem.objects.filter(name=args.layer)[:1])
-    if res:
-        layer = res[0]
+    if branch:
+        if not branch.comparison:
+            logger.error("Specified branch %s is not a comparison branch" % args.branch)
+            return 1, None
     else:
-        logger.error('Cannot find specified layer "%s"' % args.layer)
-        return 1, None
+        branch = Branch()
+        branch.name = args.branch
+        branch.bitbake_branch = '-'
+        branch.short_description = '' # FIXME
+        branch.updates_enabled = False
+        branch.comparison = True
+        branch.save()
+
+    layer = LayerItem.objects.filter(name=args.layer).first()
+    if layer:
+        if not layer.comparison:
+            logger.error("Specified layer %s is not a comparison layer" % args.branch)
+            return 1, None
+    else:
+        layer = LayerItem()
+        layer.name = args.layer
+        layer.layer_type = 'M'
+        layer.summary = layer.name
+        layer.description = layer.name
+        layer.comparison = True
+        layer.save()
 
     layerbranch = layer.get_layerbranch(args.branch)
     if not layerbranch:
-        # LayerBranch doesn't exist for this branch, create it
         layerbranch = LayerBranch()
         layerbranch.layer = layer
         layerbranch.branch = branch
