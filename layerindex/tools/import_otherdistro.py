@@ -352,6 +352,7 @@ def get_update_obj(args):
 def import_specdir(metapath, layerbranch, existing, updateobj, pwriter):
     dirlist = os.listdir(metapath)
     total = len(dirlist)
+    speccount = 0
     for count, entry in enumerate(dirlist):
         if os.path.exists(os.path.join(metapath, entry, 'dead.package')):
             logger.info('Skipping dead package %s' % entry)
@@ -359,10 +360,12 @@ def import_specdir(metapath, layerbranch, existing, updateobj, pwriter):
         specfiles = glob.glob(os.path.join(metapath, entry, '*.spec'))
         if specfiles:
             import_specfiles(specfiles, layerbranch, existing, updateobj, metapath)
+            speccount += len(specfiles)
         else:
             logger.warn('Missing spec file in %s' % os.path.join(metapath, entry))
         if pwriter:
             pwriter.write(int(count / total * 100))
+    return speccount
 
 
 def import_specfiles(specfiles, layerbranch, existing, updateobj, reldir):
@@ -418,7 +421,11 @@ def import_pkgspec(args):
         with transaction.atomic():
             layerrecipes = ClassicRecipe.objects.filter(layerbranch=layerbranch)
             existing = list(layerrecipes.filter(deleted=False).values_list('filepath', 'filename'))
-            import_specdir(metapath, layerbranch, existing, updateobj, pwriter)
+            count = import_specdir(metapath, layerbranch, existing, updateobj, pwriter)
+
+            if count == 0:
+                logger.error('No spec files found in directory %s' % metapath)
+                return 1
 
             if existing:
                 fpaths = sorted(['%s/%s' % (pth, fn) for pth, fn in existing])
