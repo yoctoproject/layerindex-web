@@ -524,6 +524,7 @@ class Recipe(models.Model):
 class Source(models.Model):
     recipe = models.ForeignKey(Recipe)
     url = models.CharField(max_length=255)
+    sha256sum = models.CharField(max_length=64, blank=True)
 
     def web_url(self):
         def drop_dotgit(url):
