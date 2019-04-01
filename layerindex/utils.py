@@ -469,6 +469,14 @@ def sanitise_html(html):
 def squashspaces(string):
     return re.sub("\s+", " ", string).strip()
 
+def sha256_file(ifn):
+    import hashlib
+    shash = hashlib.sha256()
+    with open(ifn, 'rb') as f:
+        for line in f:
+            shash.update(line)
+    return shash.hexdigest()
+
 def timesince2(date, date2=None):
     # Based on http://www.didfinishlaunchingwithoptions.com/a-better-timesince-template-filter-for-django/
     if date2 is None:

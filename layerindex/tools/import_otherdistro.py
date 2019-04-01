@@ -292,6 +292,12 @@ def update_recipe_file(path, recipe, repodir, raiseexceptions=False):
         existing_ids = list(recipe.source_set.values_list('id', flat=True))
         for src in sources:
             srcobj, _ = Source.objects.get_or_create(recipe=recipe, url=src)
+            if not '://' in src:
+                sourcepath = os.path.join(os.path.dirname(path), src)
+                if os.path.exists(sourcepath):
+                    srcobj.sha256sum = utils.sha256_file(sourcepath)
+                else:
+                    srcobj.sha256sum = ''
             srcobj.save()
             if srcobj.id in existing_ids:
                 existing_ids.remove(srcobj.id)
