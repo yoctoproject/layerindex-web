@@ -507,7 +507,13 @@ if not updatemode:
         print('You will now be asked for an email address. This will be used for the superuser account, to send error reports to and for Let\'s Encrypt.')
     else:
         print('You will now be asked for an email address. This will be used for the superuser account and to send error reports to.')
-    emailaddr = input('Enter your email address: ')
+    emailaddr = None
+    while True:
+        emailaddr = input('Enter your email address: ')
+        if '@' in emailaddr:
+            break
+        else:
+            print('Entered email address is not valid')
 
 if reinstmode:
     return_code = subprocess.call("docker-compose down -v", shell=True)
