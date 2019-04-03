@@ -49,6 +49,8 @@ def update_recipe_file(path, recipe, repodir, raiseexceptions=False):
     # yes, yes, I know this is all crude as hell, but it gets the job done.
     # At the end of the day we are scraping the spec file, we aren't trying to build it
 
+    pnum_re = re.compile('-p[\s]*([0-9]+)')
+
     try:
         logger.debug('Updating recipe %s' % path)
         recipe.pn = os.path.splitext(recipe.filename)[0]
@@ -191,13 +193,23 @@ def update_recipe_file(path, recipe, repodir, raiseexceptions=False):
                 else:
                     return res
 
+            applypatches = {}
+            autopatch = None
             conds = []
             reading = True
+            inprep = False
+            applyextra = []
             for line in f:
-                if line.startswith('%package'):
-                    # Assume it's OK to stop when we hit the first package
+                if line.startswith('%build'):
+                    # Assume it's OK to stop when we hit %build
                     break
-                if line.startswith(('%gometa', '%gocraftmeta')):
+                if line.startswith('%autopatch') or line.startswith('%autosetup'):
+                    pnum = pnum_re.search(line)
+                    if pnum:
+                        autopatch = pnum.groups()[0]
+                    else:
+                        autopatch = -1
+                elif line.startswith(('%gometa', '%gocraftmeta')):
                     goipath = globaldefs.get('goipath', '')
                     if not goipath:
                         goipath = globaldefs.get('gobaseipath', '')
@@ -241,6 +253,22 @@ def update_recipe_file(path, recipe, repodir, raiseexceptions=False):
                     if name in defines:
                         del defines[name]
                     continue
+                elif line.startswith('%patch'):
+                    patchsplit = line.split()
+                    if '-P' in line:
+                        # Old style
+                        patchid = re.search('-P[\s]*([0-9]+)', line)
+                        if patchid:
+                            patchid = patchid.groups()[0]
+                        else:
+                            # FIXME not sure if this is correct...
+                            patchid = 0
+                    else:
+                        patchid = int(patchsplit[0][6:])
+                    applypatches[patchid] = ' '.join(patchsplit[1:])
+                elif line.startswith('%prep'):
+                    inprep = True
+                    continue
                 elif line.strip() == '%description':
                     indesc = True
                     continue
@@ -253,6 +281,11 @@ def update_recipe_file(path, recipe, repodir, raiseexceptions=False):
                     elif not line.startswith('#'):
                         desc.append(line)
                     continue
+                if inprep:
+                    if line.startswith(('%build', '%install')):
+                        inprep = False
+                    elif 'git apply' in line:
+                        applyextra.append(line)
 
                 if ':' in line and not line.startswith('%'):
                     key, value = line.split(':', 1)
@@ -289,6 +322,23 @@ def update_recipe_file(path, recipe, repodir, raiseexceptions=False):
         for index, patchfn in patches:
             patchpath = os.path.join(os.path.relpath(os.path.dirname(path), repodir), patchfn)
             patch, _ = Patch.objects.get_or_create(recipe=recipe, path=patchpath)
+            if autopatch is not None:
+                patch.striplevel = int(autopatch)
+            elif index in applypatches:
+                pnum = pnum_re.search(applypatches[index])
+                if pnum:
+                    patch.striplevel = int(pnum.groups()[0])
+                else:
+                    patch.striplevel = -1
+            else:
+                for line in applyextra:
+                    if patchfn in line:
+                        patch.striplevel = 1
+                        break
+                else:
+                    # Not being applied
+                    logger.debug('Not applying %s %s' % (index, patchfn))
+                    patch.applied = False
             patch.src_path = patchfn
             patch.apply_order = index
             patch.save()
@@ -515,6 +565,10 @@ def try_specfile(args):
                 print('sources:')
                 for src in recipe.source_set.all():
                     print(' * %s' % src.url)
+            if recipe.patch_set.exists():
+                print('patches:')
+                for patch in recipe.patch_set.all():
+                    print(' * %s' % patch.src_path)
 
             raise DryRunRollbackException()
     except DryRunRollbackException:

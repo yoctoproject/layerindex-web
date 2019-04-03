@@ -189,7 +189,7 @@
                             <tbody>
                                 {% for patch in rcp.patch_set.all %}
                                 <tr>
-                                    <td><a href="{{ patch.vcs_web_url }}">{{ patch.src_path }}</a></td>
+                                    <td><a href="{{ patch.vcs_web_url }}">{{ patch.src_path }}</a>{% if not patch.applied %} <i class="glyphicon glyphicon-ban-circle not-applied" aria-hidden="true"></i>{% endif %}</td>
                                     {% block patch_status %}
                                     {% if not rcp.layerbranch.branch.comparison %}
                                     <td>{{ patch.get_status_display }} {{ patch.status_extra | urlize }}</td>
@@ -222,6 +222,7 @@
             $('[data-toggle="tooltip"]').tooltip();
             $('#id_cover_status').change(enable_value_field)
             enable_value_field()
+            $('.not-applied').tooltip({title:"Not being applied"});
         });
         enable_value_field = function() {
             cover_status = $('#id_cover_status').val()

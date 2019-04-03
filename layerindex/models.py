@@ -563,6 +563,8 @@ class Patch(models.Model):
     status = models.CharField(max_length=1, choices=PATCH_STATUS_CHOICES, default='U')
     status_extra = models.CharField(max_length=255, blank=True)
     apply_order = models.IntegerField(blank=True, null=True)
+    applied = models.BooleanField(default=True)
+    striplevel = models.IntegerField(default=1)
 
     class Meta:
         verbose_name_plural = 'Patches'
