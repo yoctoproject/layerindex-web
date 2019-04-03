@@ -18,6 +18,7 @@ import tempfile
 import glob
 import shutil
 import subprocess
+import string
 from distutils.version import LooseVersion
 
 sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__), '..')))
@@ -247,10 +248,11 @@ def update_recipe_file(path, recipe, repodir, raiseexceptions=False):
                     # We want to stop parsing the description when we hit another macro,
                     # but we do want to allow bracketed macro expressions within the description
                     # (e.g. %{name})
-                    if line.startswith('%') and len(line) > 1 and line[1] != '{':
+                    if line.startswith('%') and len(line) > 1 and line[1] != '{' and line[1].islower():
                         indesc = False
                     elif not line.startswith('#'):
                         desc.append(line)
+                    continue
 
                 if ':' in line and not line.startswith('%'):
                     key, value = line.split(':', 1)
@@ -276,7 +278,11 @@ def update_recipe_file(path, recipe, repodir, raiseexceptions=False):
             elif key.startswith('source'):
                 sources.append(expand(value))
 
-        recipe.description = expand(' '.join(desc).rstrip())
+        if desc and desc[0][0] in string.printable:
+            recipe.description = expand(' '.join(desc).rstrip())
+        else:
+            logger.warning('%s: description appears to be garbage' % path)
+            recipe.description = ''
         recipe.save()
 
         saved_patches = []
