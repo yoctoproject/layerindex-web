@@ -16,6 +16,7 @@ services:
     hostname: localhost
     volumes:
      - layersmeta:/opt/workdir
+     - logvolume:/opt/layerindex-task-logs:z
     environment:
      #- "SECRET_KEY=<set this here>"
      - "DATABASE_USER=root"
@@ -63,6 +64,7 @@ services:
     image: halstead/layerindex-app
     volumes:
      - layersmeta:/opt/workdir
+     - logvolume:/opt/layerindex-task-logs:z
     environment:
      #- "SECRET_KEY=<set this here>"
      - "DATABASE_USER=layers"
@@ -87,4 +89,5 @@ services:
 volumes:
   layersmeta:
   layersstatic:
+  logvolume:
   certbotwww:

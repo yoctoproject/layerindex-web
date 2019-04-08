@@ -282,7 +282,7 @@ AXES_CACHE = "axes_cache"
 AXES_LOCKOUT_TEMPLATE = "registration/account_lockout.html"
 
 # Full path to directory to store logs for dynamically executed tasks
-TASK_LOG_DIR = "/tmp/layerindex-task-logs"
+TASK_LOG_DIR = "/opt/layerindex-task-logs"
 
 # Full path to directory where rrs tools stores logs
 TOOLS_LOG_DIR = ""
