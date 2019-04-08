@@ -61,7 +61,22 @@
             url: '{{ log_url }}?start=' + posn,
             success: function( data, code, xhr ) {
                 task_log = $("#task_log")
-                task_log.append(data);
+                if( data.indexOf('\r') > -1 ) {
+                    orig = task_log.html();
+                    for (var i = 0; i < data.length; i++) {
+                        ch = data.charAt(i);
+                        if( ch == '\r' ) {
+                            orig = orig.substring(0, orig.lastIndexOf('\n')+1);
+                        }
+                        else {
+                            orig += ch;
+                        }
+                    }
+                    task_log.html(orig);
+                }
+                else {
+                    task_log.append(data);
+                }
                 if(scrolling) {
                     task_log.animate({ scrollTop: task_log.prop('scrollHeight') }, "slow");
                 }
