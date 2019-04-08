@@ -40,8 +40,11 @@ def run_update_command(self, branch_name, update_command):
     updateobj.started = datetime.now()
     updateobj.save()
     output = ''
-    update_command = update_command.replace('%update%', str(updateobj.id))
-    update_command = update_command.replace('%branch%', branch_name)
+    shell = False
+    if isinstance(update_command, str):
+        update_command = update_command.replace('%update%', str(updateobj.id))
+        update_command = update_command.replace('%branch%', branch_name)
+        shell = True
     try:
         os.makedirs(settings.TASK_LOG_DIR)
     except FileExistsError:
@@ -50,7 +53,7 @@ def run_update_command(self, branch_name, update_command):
     retcode = 0
     erroutput = None
     try:
-        output = utils.runcmd(update_command, os.path.dirname(os.path.dirname(__file__)), outfile=logfile, shell=True)
+        output = utils.runcmd(update_command, os.path.dirname(os.path.dirname(__file__)), outfile=logfile, shell=shell)
     except subprocess.CalledProcessError as e:
         output = e.output
         erroutput = output
