@@ -202,6 +202,7 @@ def update_recipe_file(path, recipe, repodir, raiseexceptions=False):
             applyextra = []
             configopts = ''
             inconf = False
+            pastpackage = False
             for line in f:
                 if inconf:
                     line = line.rstrip()
@@ -262,6 +263,8 @@ def update_recipe_file(path, recipe, repodir, raiseexceptions=False):
                     if name in defines:
                         del defines[name]
                     continue
+                elif line.startswith('%package'):
+                    pastpackage = True
                 elif line.startswith('%patch'):
                     patchsplit = line.split()
                     if '-P' in line:
@@ -311,7 +314,7 @@ def update_recipe_file(path, recipe, repodir, raiseexceptions=False):
                     elif 'git apply' in line:
                         applyextra.append(line)
 
-                if ':' in line and not line.startswith('%'):
+                if not pastpackage and ':' in line and not line.startswith('%'):
                     key, value = line.split(':', 1)
                     key = key.rstrip().lower()
                     value = value.strip()
