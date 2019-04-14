@@ -206,6 +206,19 @@
                     {% endfor %}
                     </tr></tbody>
                 </table>
+
+                <h2>configure options</h2>
+                <table width="100%" class="table table-bordered">
+                    <thead>
+                        <th width="50%">{{ layerbranch_desc }}{{ layerbranch_addtext }}</th>
+                        <th width="50%">{{ to_desc }}</th>
+                    </thead>
+                    <tbody><tr>
+                    {% for rcp in recipes %}
+                    <td><code>{{ rcp.configopts }}</code></td>
+                    {% endfor %}
+                    </tr></tbody>
+                </table>
             </div>
         </div>
 

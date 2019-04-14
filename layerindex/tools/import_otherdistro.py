@@ -50,6 +50,7 @@ def update_recipe_file(path, recipe, repodir, raiseexceptions=False):
     # At the end of the day we are scraping the spec file, we aren't trying to build it
 
     pnum_re = re.compile('-p[\s]*([0-9]+)')
+    configure_re = re.compile('[/%]configure\s')
 
     try:
         logger.debug('Updating recipe %s' % path)
@@ -199,9 +200,17 @@ def update_recipe_file(path, recipe, repodir, raiseexceptions=False):
             reading = True
             inprep = False
             applyextra = []
+            configopts = ''
+            inconf = False
             for line in f:
-                if line.startswith('%build'):
-                    # Assume it's OK to stop when we hit %build
+                if inconf:
+                    line = line.rstrip()
+                    configopts += line.rstrip('\\')
+                    if not line.endswith('\\'):
+                        inconf = False
+                    continue
+                if line.startswith('%install'):
+                    # Assume it's OK to stop when we hit %install
                     break
                 if line.startswith('%autopatch') or line.startswith('%autosetup'):
                     pnum = pnum_re.search(line)
@@ -266,6 +275,21 @@ def update_recipe_file(path, recipe, repodir, raiseexceptions=False):
                     else:
                         patchid = int(patchsplit[0][6:])
                     applypatches[patchid] = ' '.join(patchsplit[1:])
+                elif line.startswith('%cmake'):
+                    if line.rstrip().endswith('\\'):
+                        inconf = True
+                    configopts = line[7:].rstrip().rstrip('\\')
+                    continue
+                elif configure_re.search(line):
+                    if line.rstrip().endswith('\\'):
+                        inconf = True
+                    configopts = line.split('configure', 1)[1].rstrip().rstrip('\\')
+                    continue
+                elif line.startswith('meson'):
+                    if line.rstrip().endswith('\\'):
+                        inconf = True
+                    configopts = line[6:].rstrip().rstrip('\\')
+                    continue
                 elif line.startswith('%prep'):
                     inprep = True
                     continue
@@ -310,6 +334,8 @@ def update_recipe_file(path, recipe, repodir, raiseexceptions=False):
                 patches.append((int(key[5:] or '0'), expand(value)))
             elif key.startswith('source'):
                 sources.append(expand(value))
+
+        recipe.configopts = utils.squashspaces(configopts)
 
         if desc and desc[0][0] in string.printable:
             recipe.description = expand(' '.join(desc).rstrip())

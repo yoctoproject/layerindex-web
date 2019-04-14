@@ -472,6 +472,7 @@ class Recipe(models.Model):
     inherits = models.CharField(max_length=255, blank=True)
     updated = models.DateTimeField(auto_now=True)
     blacklisted = models.CharField(max_length=255, blank=True)
+    configopts = models.CharField(max_length=4096, blank=True)
 
     def vcs_web_url(self):
         url = self.layerbranch.file_url(os.path.join(self.filepath, self.filename))

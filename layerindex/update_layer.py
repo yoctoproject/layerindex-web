@@ -121,6 +121,12 @@ def update_recipe_file(tinfoil, data, path, recipe, layerdir_start, repodir, sto
         lr = set(envdata.getVar("__inherit_cache", True) or [])
         recipe.inherits = ' '.join(sorted({os.path.splitext(os.path.basename(r))[0] for r in lr if r not in gr}))
         recipe.blacklisted = envdata.getVarFlag('PNBLACKLIST', recipe.pn, True) or ""
+        for confvar in ['EXTRA_OEMESON', 'EXTRA_OECMAKE', 'EXTRA_OESCONS', 'EXTRA_OECONF']:
+            recipe.configopts = envdata.getVar(confvar, True) or ""
+            if recipe.configopts:
+                break
+        else:
+            recipe.configopts = ''
         recipe.save()
 
         # Handle sources
