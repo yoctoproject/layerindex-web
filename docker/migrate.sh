@@ -1,2 +1,2 @@
 #!/bin/bash
-python /opt/layerindex/manage.py migrate "$@"
+python3 /opt/layerindex/manage.py migrate "$@"
