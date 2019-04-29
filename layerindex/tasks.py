@@ -23,7 +23,8 @@ except ImportError:
 
 tasks = Celery('layerindex',
     broker=settings.RABBIT_BROKER,
-    backend=settings.RABBIT_BACKEND)
+    backend=settings.RABBIT_BACKEND,
+    broker_heartbeat=0)
 
 @tasks.task
 def send_email(subject, text_content, from_email=settings.DEFAULT_FROM_EMAIL, to_emails=[]):
