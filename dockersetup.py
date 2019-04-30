@@ -321,7 +321,7 @@ def setup_https(hostname, http_port, https_port, letsencrypt, cert, cert_key, em
             os.makedirs(local_letsencrypt_cert_dir)
         keyfile = os.path.join(letsencrypt_cert_subdir, 'privkey.pem')
         certfile = os.path.join(letsencrypt_cert_subdir, 'fullchain.pem')
-        return_code = subprocess.call("openssl req -x509 -nodes -newkey rsa:1024 -days 1 -keyout %s -out %s -subj '/CN=localhost'" % (os.path.join(local_cert_dir, keyfile), os.path.join(local_cert_dir, certfile)), shell=True)
+        return_code = subprocess.call(['openssl', 'req', '-x509', '-nodes', '-newkey', 'rsa:1024', '-days', '1', '-keyout', os.path.join(local_cert_dir, keyfile), '-out', os.path.join(local_cert_dir, certfile), '-subj', '/CN=localhost'], shell=False)
         if return_code != 0:
             print("Dummy certificate generation failed")
             sys.exit(1)
@@ -337,11 +337,11 @@ def setup_https(hostname, http_port, https_port, letsencrypt, cert, cert_key, em
         print('Generating self-signed SSL certificate. Please specify your hostname (%s) when prompted for the Common Name.' % hostname)
         certfile = 'setup-selfsigned.crt'
         keyfile = 'setup-selfsigned.key'
-        return_code = subprocess.call('openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout %s -out %s' % (os.path.join(local_cert_dir, keyfile), os.path.join(local_cert_dir, certfile)), shell=True)
+        return_code = subprocess.call(['openssl', 'req', '-x509', '-nodes', '-days', '365', '-newkey', 'rsa:2048', '-keyout', os.path.join(local_cert_dir, keyfile), '-out', os.path.join(local_cert_dir, certfile)], shell=False)
         if return_code != 0:
             print("Self-signed certificate generation failed")
             sys.exit(1)
-    return_code = subprocess.call('openssl dhparam -out %s 2048' % os.path.join(local_cert_dir, 'dhparam.pem'), shell=True)
+    return_code = subprocess.call(['openssl', 'dhparam', '-out', os.path.join(local_cert_dir, 'dhparam.pem'), '2048'], shell=False)
     if return_code != 0:
         print("DH group generation failed")
         sys.exit(1)
@@ -349,7 +349,7 @@ def setup_https(hostname, http_port, https_port, letsencrypt, cert, cert_key, em
     edit_nginx_ssl_conf(hostname, https_port, container_cert_dir, certfile, keyfile)
 
     if letsencrypt:
-        return_code = subprocess.call("docker-compose up -d --build layersweb", shell=True)
+        return_code = subprocess.call(['docker-compose', 'up', '-d', '--build', 'layersweb'], shell=False)
         if return_code != 0:
             print("docker-compose up layersweb failed")
             sys.exit(1)
@@ -358,7 +358,7 @@ def setup_https(hostname, http_port, https_port, letsencrypt, cert, cert_key, em
             # Wait for web server to start
             while True:
                 time.sleep(2)
-                return_code = subprocess.call("wget -q --no-check-certificate http://%s:%s/" % (hostname, http_port), shell=True, cwd=tempdir)
+                return_code = subprocess.call(['wget', '-q', '--no-check-certificate', "http://{}:{}/".format(hostname, http_port)], shell=False, cwd=tempdir)
                 if return_code == 0 or return_code > 4:
                     break
                 else:
@@ -372,11 +372,11 @@ def setup_https(hostname, http_port, https_port, letsencrypt, cert, cert_key, em
             if return_code != 0:
                 print("Creating test file failed")
                 sys.exit(1)
-            return_code = subprocess.call("wget -nv http://%s:%s/.well-known/acme-challenge/test.txt" % (hostname, http_port), shell=True, cwd=tempdir)
+            return_code = subprocess.call(['wget', '-nv', "http://{}:{}/.well-known/acme-challenge/test.txt".format(hostname, http_port)], shell=False, cwd=tempdir)
             if return_code != 0:
                 print("Reading test file from web server failed")
                 sys.exit(1)
-            return_code = subprocess.call("docker-compose exec layersweb /bin/sh -c 'rm -rf /var/www/certbot/.well-known'", shell=True)
+            return_code = subprocess.call(['docker-compose', 'exec', 'layersweb', '/bin/sh', '-c', 'rm -rf /var/www/certbot/.well-known'], shell=False)
             if return_code != 0:
                 print("Removing test file failed")
                 sys.exit(1)
@@ -402,7 +402,7 @@ def setup_https(hostname, http_port, https_port, letsencrypt, cert, cert_key, em
             sys.exit(1)
 
         # Stop web server (so it can effectively be restarted with the new certificate)
-        return_code = subprocess.call("docker-compose stop layersweb", shell=True)
+        return_code = subprocess.call(['docker-compose', 'stop', 'layersweb'], shell=False)
         if return_code != 0:
             print("docker-compose stop failed")
             sys.exit(1)
@@ -516,7 +516,7 @@ if not updatemode:
             print('Entered email address is not valid')
 
 if reinstmode:
-    return_code = subprocess.call("docker-compose down -v", shell=True)
+    return_code = subprocess.call(['docker-compose', 'down', '-v'], shell=False)
 
 if not updatemode:
     if http_proxy:
@@ -534,7 +534,7 @@ if not updatemode:
         setup_https(hostname, http_port, https_port, letsencrypt, cert, cert_key, emailaddr)
 
 ## Start up containers
-return_code = subprocess.call("docker-compose up -d --build", shell=True)
+return_code = subprocess.call(['docker-compose', 'up', '-d', '--build'], shell=False)
 if return_code != 0:
     print("docker-compose up failed")
     sys.exit(1)
@@ -574,7 +574,7 @@ if not no_migrate:
     env = os.environ.copy()
     env['DATABASE_USER'] = 'root'
     env['DATABASE_PASSWORD'] = dbapassword
-    return_code = subprocess.call("docker-compose run --rm -e DATABASE_USER -e DATABASE_PASSWORD layersapp /opt/migrate.sh", shell=True, env=env)
+    return_code = subprocess.call(['docker-compose', 'run', '--rm', '-e', 'DATABASE_USER', '-e', 'DATABASE_PASSWORD', 'layersapp', '/opt/migrate.sh'], shell=False, env=env)
     if return_code != 0:
         print("Applying migrations failed")
         sys.exit(1)
@@ -614,11 +614,11 @@ if return_code != 0:
 
 if not updatemode:
     ## Set site name
-    return_code = subprocess.call("docker-compose run --rm layersapp /opt/layerindex/layerindex/tools/site_name.py %s 'OpenEmbedded Layer Index'" % hostname, shell=True)
+    return_code = subprocess.call(['docker-compose', 'run', '--rm', 'layersapp', '/opt/layerindex/layerindex/tools/site_name.py', hostname, 'OpenEmbedded Layer Index'], shell=False)
 
     ## For a fresh database, create an admin account
     print("Creating database superuser. Input user name and password when prompted.")
-    return_code = subprocess.call("docker-compose run --rm layersapp /opt/layerindex/manage.py createsuperuser --email %s" % emailaddr, shell=True)
+    return_code = subprocess.call(['docker-compose', 'run', '--rm', 'layersapp', '/opt/layerindex/manage.py', 'createsuperuser', '--email', emailaddr], shell=False)
     if return_code != 0:
         print("Creating superuser failed")
         sys.exit(1)
