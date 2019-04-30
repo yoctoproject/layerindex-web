@@ -18,6 +18,12 @@
 # It will build and run these containers and set up the database.
 
 import sys
+
+min_version = (3, 4, 3)
+if sys.version_info < min_version:
+    sys.stderr.write('Sorry, python version %d.%d.%d or later is required\n' % min_version)
+    sys.exit(1)
+
 import os
 import argparse
 import re
