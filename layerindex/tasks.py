@@ -11,6 +11,7 @@ from . import utils
 import os
 import time
 import subprocess
+import shlex
 from datetime import datetime
 
 try:
@@ -44,7 +45,7 @@ def run_update_command(self, branch_name, update_command):
     shell = False
     if isinstance(update_command, str):
         update_command = update_command.replace('%update%', str(updateobj.id))
-        update_command = update_command.replace('%branch%', branch_name)
+        update_command = update_command.replace('%branch%', shlex.quote(branch_name))
         shell = True
     try:
         os.makedirs(settings.TASK_LOG_DIR)

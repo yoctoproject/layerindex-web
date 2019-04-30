@@ -19,6 +19,7 @@ import glob
 import shutil
 import subprocess
 import string
+import shlex
 from distutils.version import LooseVersion
 
 sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__), '..')))
