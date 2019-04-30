@@ -26,6 +26,7 @@ import time
 import random
 import shutil
 import tempfile
+from shlex import quote
 
 def get_args():
     parser = argparse.ArgumentParser(description='Script sets up the Layer Index tool with Docker Containers.')
@@ -386,7 +387,7 @@ def setup_https(hostname, http_port, https_port, letsencrypt, cert, cert_key, em
         # Now run certbot to register SSL certificate
         staging_arg = '--staging'
         if emailaddr:
-            email_arg = '--email %s' % emailaddr
+            email_arg = '--email %s' % quote(emailaddr)
         else:
             email_arg = '--register-unsafely-without-email'
         return_code = subprocess.call('docker-compose run --rm --entrypoint "\
@@ -396,7 +397,7 @@ def setup_https(hostname, http_port, https_port, letsencrypt, cert, cert_key, em
     -d %s \
     --rsa-key-size 4096 \
     --agree-tos \
-    --force-renewal" layerscertbot' % (staging_arg, email_arg, hostname), shell=True)
+    --force-renewal" layerscertbot' % (staging_arg, email_arg, quote(hostname)), shell=True)
         if return_code != 0:
             print("Running certbot failed")
             sys.exit(1)
@@ -557,14 +558,14 @@ while True:
 if not updatemode:
     # Import the user's supplied data
     if dbfile:
-        return_code = subprocess.call("gunzip -t %s > /dev/null 2>&1" % dbfile, shell=True)
+        return_code = subprocess.call("gunzip -t %s > /dev/null 2>&1" % quote(dbfile), shell=True)
         if return_code == 0:
             catcmd = 'zcat'
         else:
             catcmd = 'cat'
         env = os.environ.copy()
         env['MYSQL_PWD'] = dbapassword
-        return_code = subprocess.call("%s %s | docker exec -i -e MYSQL_PWD layersdb mysql -uroot layersdb" % (catcmd, dbfile), shell=True, env=env)
+        return_code = subprocess.call("%s %s | docker exec -i -e MYSQL_PWD layersdb mysql -uroot layersdb" % (catcmd, quote(dbfile)), shell=True, env=env)
         if return_code != 0:
             print("Database import failed")
             sys.exit(1)
@@ -592,7 +593,7 @@ if not updatemode:
         # (avoids password being visible through ps or /proc/<pid>/cmdline)
         env = os.environ.copy()
         env['MYSQL_PWD'] = dbapassword
-        return_code = subprocess.call("docker exec -i -e MYSQL_PWD layersdb mysql -uroot layersdb < " + sqlscriptfile, shell=True, env=env)
+        return_code = subprocess.call("docker exec -i -e MYSQL_PWD layersdb mysql -uroot layersdb < " + quote(sqlscriptfile), shell=True, env=env)
         if return_code != 0:
             print("Creating database user failed")
             sys.exit(1)
