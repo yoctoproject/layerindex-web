@@ -252,6 +252,32 @@ def edit_dockercompose(hostname, dbpassword, dbapassword, secretkey, rmqpassword
     writefile("docker-compose.yml", ''.join(newlines))
 
 
+def read_nginx_ssl_conf(certdir):
+    hostname = None
+    https_port = None
+    certdir = None
+    certfile = None
+    keyfile = None
+    with open('docker/nginx-ssl-edited.conf', 'r') as f:
+        for line in f:
+            if 'ssl_certificate ' in line:
+                certdir, certfile = os.path.split(line.split('ssl_certificate', 1)[1].strip().rstrip(';'))
+            elif 'ssl_certificate_key ' in line:
+                keyfile = os.path.basename(line.split('ssl_certificate_key', 1)[1].strip().rstrip(';'))
+            elif 'server_name ' in line:
+                sname = line.split('server_name', 1)[1].strip().rstrip(';')
+                if sname != '_':
+                    hostname = sname
+            elif 'return 301 https://' in line:
+                res = re.search(':([0-9]+)', line)
+                if res:
+                    https_port = res.groups()[0]
+    ret = (hostname, https_port, certdir, certfile, keyfile)
+    if None in ret:
+        sys.stderr.write('Failed to read SSL configuration from nginx-ssl-edited.conf')
+        sys.exit(1)
+    return ret
+
 def edit_nginx_ssl_conf(hostname, https_port, certdir, certfile, keyfile):
     filedata = readfile('docker/nginx-ssl.conf')
     newlines = []
@@ -296,6 +322,17 @@ def edit_settings_py(emailaddr):
             continue
         newlines.append(line + "\n")
     writefile("docker/settings.py", ''.join(newlines))
+
+
+def read_dockerfile_web():
+    no_https = True
+    with open('Dockerfile.web', 'r') as f:
+        for line in f:
+            if line.startswith('COPY ') and line.rstrip().endswith('/etc/nginx/nginx.conf'):
+                if 'nginx-ssl' in line:
+                    no_https = False
+                break
+    return no_https
 
 
 def edit_dockerfile_web(hostname, no_https):
@@ -522,7 +559,13 @@ if not updatemode:
 if reinstmode:
     return_code = subprocess.call(['docker-compose', 'down', '-v'], shell=False)
 
-if not updatemode:
+if updatemode:
+    no_https = read_dockerfile_web()
+    if not no_https:
+        container_cert_dir = '/opt/cert'
+        hostname, https_port, certdir, certfile, keyfile = read_nginx_ssl_conf(container_cert_dir)
+        edit_nginx_ssl_conf(hostname, https_port, certdir, certfile, keyfile)
+else:
     if http_proxy:
         edit_gitproxy(proxymod, port)
     if http_proxy or https_proxy:
