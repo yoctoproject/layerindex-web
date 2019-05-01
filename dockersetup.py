@@ -268,9 +268,6 @@ def edit_nginx_ssl_conf(hostname, https_port, certdir, certfile, keyfile):
         elif 'https://layers.openembedded.org' in line:
             line = line.replace('https://layers.openembedded.org', 'https://%s:%s' % (hostname, https_port))
             newlines.append(line + "\n")
-        elif 'http://layers.openembedded.org' in line:
-            line = line.replace('http://layers.openembedded.org', 'http://%s:%s' % (hostname, http_port))
-            newlines.append(line + "\n")
         else:
             line = line.replace('layers.openembedded.org', hostname)
             newlines.append(line + "\n")
