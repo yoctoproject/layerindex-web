@@ -57,7 +57,7 @@ from layerindex.models import (BBAppend, BBClass, Branch, ClassicRecipe,
                                UserProfile, PatchDisposition)
 
 
-from . import simplesearch, tasks, utils
+from . import tasks, utils
 
 def edit_layernote_view(request, template_name, slug, pk=None):
     layeritem = get_object_or_404(LayerItem, name=slug)
@@ -495,13 +495,13 @@ class RecipeSearchView(ListView):
                 qs0 = recipes_preferred_count(qs0)
 
             # Then keyword somewhere in the name
-            entry_query = simplesearch.get_query(query_string, ['pn'])
+            entry_query = utils.string_to_query(query_string, ['pn'])
             qs1 = init_qs.filter(entry_query).order_by(*order_by)
             if preferred:
                 qs1 = recipes_preferred_count(qs1)
 
             # Then keyword somewhere in summary or description
-            entry_query = simplesearch.get_query(query_string, ['description', 'summary'])
+            entry_query = utils.string_to_query(query_string, ['description', 'summary'])
             qs2 = init_qs.filter(entry_query).order_by(*order_by)
             if preferred:
                 qs2 = recipes_preferred_count(qs2)
@@ -765,7 +765,7 @@ class MachineSearchView(ListView):
             query_string = ""
         init_qs = Machine.objects.filter(layerbranch__branch__name=self.kwargs['branch'])
         if query_string.strip():
-            entry_query = simplesearch.get_query(query_string, ['name', 'description'])
+            entry_query = utils.string_to_query(query_string, ['name', 'description'])
             return init_qs.filter(entry_query).order_by('name', 'layerbranch__layer')
         else:
             if 'q' in self.request.GET:
@@ -817,7 +817,7 @@ class DistroSearchView(ListView):
             query_string = ""
         init_qs = Distro.objects.filter(layerbranch__branch__name=self.kwargs['branch'])
         if query_string.strip():
-            entry_query = simplesearch.get_query(query_string, ['name', 'description'])
+            entry_query = utils.string_to_query(query_string, ['name', 'description'])
             return init_qs.filter(entry_query).order_by('name', 'layerbranch__layer')
 
         if 'q' in self.request.GET:
@@ -845,7 +845,7 @@ class ClassSearchView(ListView):
             query_string = ""
         init_qs = BBClass.objects.filter(layerbranch__branch__name=self.kwargs['branch'])
         if query_string.strip():
-            entry_query = simplesearch.get_query(query_string, ['name'])
+            entry_query = utils.string_to_query(query_string, ['name'])
             return init_qs.filter(entry_query).order_by('name', 'layerbranch__layer')
 
         if 'q' in self.request.GET:

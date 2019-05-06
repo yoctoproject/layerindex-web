@@ -537,3 +537,23 @@ class ProgressReader():
             if self.logger is not None:
                 self.logger.warning('Failed to read progress: %s' % str(e))
         return result
+
+def string_to_query(querystr, fieldnames):
+    # Inspired by http://julienphalip.com/post/2825034077/adding-search-to-a-django-site-in-a-snap
+    # (reimplemented a bit more simply)
+    from django.db.models import Q
+    keywords = [item for item in re.split(r"\s|\"(.*)?\"|'.*?'", querystr) if item]
+    query = None
+    for keyword in keywords:
+        fquery = None
+        for fieldname in fieldnames:
+            q = Q(**{'%s__icontains' % fieldname: keyword})
+            if fquery is None:
+                fquery = q
+            else:
+                fquery = fquery | q
+        if query is None:
+            query = fquery
+        else:
+            query = query & fquery
+    return query
