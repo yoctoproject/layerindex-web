@@ -122,9 +122,10 @@ class ClassicRecipeAdmin(admin.ModelAdmin):
     search_fields = ['filename', 'pn', 'cover_pn']
     list_filter = ['layerbranch__layer__name', 'layerbranch__branch__name']
     def get_readonly_fields(self, request, obj=None):
+        rwfields = ['cover_layerbranch', 'cover_pn', 'cover_status', 'cover_verified', 'cover_comment', 'classic_category', 'needs_attention', 'sha256sum', 'export']
         rofields = []
         for f in ClassicRecipe._meta.get_fields():
-            if not (f.auto_created and f.is_relation):
+            if f.name not in rwfields and not (f.auto_created and f.is_relation):
                 rofields.append(f.name)
         return rofields
     def has_add_permission(self, request, obj=None):
