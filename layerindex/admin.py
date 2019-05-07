@@ -119,7 +119,7 @@ class SourceAdmin(admin.ModelAdmin):
     pass
 
 class ClassicRecipeAdmin(admin.ModelAdmin):
-    search_fields = ['filename', 'pn']
+    search_fields = ['filename', 'pn', 'cover_pn']
     list_filter = ['layerbranch__layer__name', 'layerbranch__branch__name']
     def get_readonly_fields(self, request, obj=None):
         rofields = []
