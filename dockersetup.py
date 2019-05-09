@@ -647,11 +647,17 @@ if not updatemode:
         os.remove(sqlscriptfile)
 
     ## Set the volume permissions using debian:stretch since we recently fetched it
-    return_code = subprocess.call("docker run --rm -v layerindexweb_layersmeta:/opt/workdir debian:stretch chown 500 /opt/workdir && \
-            docker run --rm -v layerindexweb_layersstatic:/usr/share/nginx/html debian:stretch chown 500 /usr/share/nginx/html", shell=True)
-    if return_code != 0:
-        print("Setting volume permissions failed")
-        sys.exit(1)
+    volumes = ['layersmeta', 'layersstatic', 'logvolume']
+    with open('docker-compose.yml', 'r') as f:
+        for line in f:
+            if line.lstrip().startswith('- srcvolume:'):
+                volumes.append('srcvolume')
+                break
+    for volume in volumes:
+        return_code = subprocess.call(['docker', 'run', '--rm', '-v', 'layerindexweb_%s:/opt/mount' % volume, 'debian:stretch', 'chown', '500', '/opt/mount'], shell=False)
+        if return_code != 0:
+            print("Setting volume permissions for volume %s failed" % volume)
+            sys.exit(1)
 
 ## Generate static assets. Run this command again to regenerate at any time (when static assets in the code are updated)
 return_code = subprocess.call("docker-compose run --rm -e STATIC_ROOT=/usr/share/nginx/html -v layerindexweb_layersstatic:/usr/share/nginx/html layersapp /opt/layerindex/manage.py collectstatic --noinput", shell = True)
