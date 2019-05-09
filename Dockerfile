@@ -60,7 +60,7 @@ COPY docker/migrate.sh /opt/migrate.sh
 
 RUN mkdir /opt/workdir \
 	&& adduser --system --uid=500 layers \
-	&& chown -R layers /opt
+	&& chown -R layers /opt/workdir
 USER layers
 
 # Always copy in .gitconfig and proxy helper script (they need editing to be active)
