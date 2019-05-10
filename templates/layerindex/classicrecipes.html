@@ -261,7 +261,7 @@
                                 <td><a href="{% url 'comparison_recipe' recipe.id %}">{{ recipe.name }}{% if recipe.needs_attention %} <i class="glyphicon glyphicon-exclamation-sign" data-toggle="tooltip" title="Needs attention" aria-hidden="true"></i>{% endif %}</a></td>
                                 <td>{{ recipe.pv|truncatechars:10 }}</td>
                                 <td>{% if recipe.patch_set.exists %}{{ recipe.patch_set.count }}{% endif %}</td>
-                                <td>{{ recipe.get_cover_status_display }}{% if recipe.cover_comment %} <a href="{% url 'classic_recipe' recipe.id %}"><i class="glyphicon glyphicon-comment" data-toggle="tooltip" title="{{ recipe.cover_comment }}" aria-hidden="true"></i></a>{% endif %}</td>
+                                <td>{{ recipe.get_cover_status_display }}{% if recipe.cover_comment %} <a href="{% url 'comparison_recipe' recipe.id %}"><i class="glyphicon glyphicon-comment" data-toggle="tooltip" title="{{ recipe.cover_comment }}" aria-hidden="true"></i></a>{% endif %}</td>
                                 <td>{% if recipe.cover_layerbranch %}<a href="{% url 'layer_item' 'master' recipe.cover_layerbranch.layer.name %}">{{ recipe.cover_layerbranch.layer.name }}</a>{% endif %}</td>
                                 {% if recipe.cover_pn %}
                                 <td>{% if recipe.cover_recipe %}<a href="{% url 'recipe' recipe.cover_recipe.id %}">{% endif %}{{ recipe.cover_pn }}{% if recipe.cover_recipe %}</a>{% endif %}</td>
