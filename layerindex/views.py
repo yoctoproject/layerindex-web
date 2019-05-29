@@ -1550,7 +1550,13 @@ def task_log_view(request, task_id):
         origlen = len(datastr)
         data = escape(datastr)
         response = HttpResponse(data)
-        if result.ready():
+        try:
+            ready = result.ready()
+        except ConnectionResetError:
+            # FIXME this shouldn't be happening so often, but ultimately we don't care -
+            # the frontend is polling so it'll likely succeed in a subsequent request
+            ready = False
+        if ready:
             response['Task-Done'] = '1'
             updateobj = get_object_or_404(Update, task_id=task_id)
             response['Task-Duration'] = utils.timesince2(updateobj.started, updateobj.finished)
