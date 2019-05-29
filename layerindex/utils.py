@@ -309,7 +309,10 @@ def runcmd(cmd, destdir=None, printerr=True, outfile=None, logger=None, shell=Fa
         proc = subprocess.Popen(cmd, stdout=out, stderr=out, cwd=destdir, shell=shell)
         global child_pid
         child_pid = proc.pid
-        proc.communicate()
+        proc.poll()
+        while proc.returncode is None:
+            proc.poll()
+            time.sleep(0.05)
         if proc.returncode:
             out.seek(0)
             output = out.read()
