@@ -53,6 +53,7 @@ RUN apt-get update \
 	&& apt-get clean
 
 COPY . /opt/layerindex
+RUN rm -rf /opt/layerindex/docker
 COPY docker/settings.py /opt/layerindex/settings.py
 COPY docker/refreshlayers.sh /opt/refreshlayers.sh
 COPY docker/updatelayers.sh /opt/updatelayers.sh
