@@ -80,7 +80,7 @@
                 if(scrolling) {
                     task_log.animate({ scrollTop: task_log.prop('scrollHeight') }, "slow");
                 }
-                posn += data.length
+                posn = xhr.getResponseHeader('Task-Log-Position');
                 done = xhr.getResponseHeader('Task-Done')
                 duration = xhr.getResponseHeader('Task-Duration')
                 progress = parseInt(xhr.getResponseHeader('Task-Progress')) || 0;

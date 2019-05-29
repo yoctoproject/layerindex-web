@@ -1537,16 +1537,18 @@ def task_log_view(request, task_id):
         raise Http404
 
     result = AsyncResult(task_id)
-    start = request.GET.get('start', 0)
+    start = int(request.GET.get('start', 0))
     try:
         f = open(os.path.join(settings.TASK_LOG_DIR, 'task_%s.log' % task_id), 'rb')
     except FileNotFoundError:
         raise Http404
     try:
-        f.seek(int(start))
+        f.seek(start)
         # We need to escape this or else things that look like tags in the output
         # will be interpreted as such by the browser
-        data = escape(f.read())
+        datastr = f.read()
+        origlen = len(datastr)
+        data = escape(datastr)
         response = HttpResponse(data)
         if result.ready():
             response['Task-Done'] = '1'
@@ -1562,6 +1564,7 @@ def task_log_view(request, task_id):
             response['Task-Done'] = '0'
             preader = utils.ProgressReader(settings.TASK_LOG_DIR, task_id)
             response['Task-Progress'] = preader.read()
+        response['Task-Log-Position'] = start + origlen
     finally:
         f.close()
     return response
