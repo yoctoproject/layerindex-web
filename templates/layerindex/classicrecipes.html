@@ -18,7 +18,7 @@
 
 {% block navs %}
 {% autoescape on %}
-                            <li class="active"><a href="{% url 'comparison_recipe_search' branch.name %}">Recipes</a></li>
+                            <li class="active"><a href="{% url 'comparison_recipe_search' branch.name %}">{% if branch.name == 'oe-classic' %}Recipes{% else %}Packages{% endif %}</a></li>
                             <li><a href="{% url 'comparison_recipe_stats' branch.name %}">Stats</a></li>
 {% endautoescape %}
 {% endblock %}
