@@ -235,7 +235,7 @@
             $('[data-toggle="tooltip"]').tooltip();
             $('#id_cover_status').change(enable_value_field)
             enable_value_field()
-            $('.not-applied').tooltip({title:"Not being applied"});
+            $('.not-applied').tooltip({title:"Not being applied in {{ branch }}"});
         });
         enable_value_field = function() {
             cover_status = $('#id_cover_status').val()
