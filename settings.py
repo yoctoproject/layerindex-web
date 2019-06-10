@@ -279,6 +279,8 @@ CACHES = {
 }
 AXES_CACHE = "axes_cache"
 AXES_LOCKOUT_TEMPLATE = "registration/account_lockout.html"
+AXES_FAILURE_LIMIT = 4
+AXES_COOLOFF_TIME = 1
 
 # Full path to directory to store logs for dynamically executed tasks
 TASK_LOG_DIR = "/tmp/layerindex-task-logs"
