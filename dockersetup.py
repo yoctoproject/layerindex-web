@@ -586,6 +586,25 @@ if return_code != 0:
     print("docker-compose up failed")
     sys.exit(1)
 
+# Get real project name (if only there were a reasonable way to do this... ugh)
+real_project_name = ''
+output = subprocess.check_output(['docker-compose', 'ps', '-q'], shell=False)
+if output:
+    output = output.decode('utf-8')
+    for contid in output.splitlines():
+        output = subprocess.check_output(['docker', 'inspect', '-f', '{{ .Mounts }}', contid], shell=False)
+        if output:
+            output = output.decode('utf-8')
+            for volume in re.findall('volume ([^ ]+)', output):
+                if '_' in volume:
+                    real_project_name = volume.rsplit('_', 1)[0]
+                    break
+            if real_project_name:
+                break
+if not real_project_name:
+    print('Failed to detect docker-compose project name')
+    sys.exit(1)
+
 # Database might not be ready yet; have to wait then poll.
 time.sleep(8)
 while True:
@@ -654,13 +673,14 @@ if not updatemode:
                 volumes.append('srcvolume')
                 break
     for volume in volumes:
-        return_code = subprocess.call(['docker', 'run', '--rm', '-v', 'layerindexweb_%s:/opt/mount' % volume, 'debian:stretch', 'chown', '500', '/opt/mount'], shell=False)
+        volname = '%s_%s' % (real_project_name, volume)
+        return_code = subprocess.call(['docker', 'run', '--rm', '-v', '%s:/opt/mount' % volname, 'debian:stretch', 'chown', '500', '/opt/mount'], shell=False)
         if return_code != 0:
             print("Setting volume permissions for volume %s failed" % volume)
             sys.exit(1)
 
 ## Generate static assets. Run this command again to regenerate at any time (when static assets in the code are updated)
-return_code = subprocess.call("docker-compose run --rm -e STATIC_ROOT=/usr/share/nginx/html -v layerindexweb_layersstatic:/usr/share/nginx/html layersapp /opt/layerindex/manage.py collectstatic --noinput", shell = True)
+return_code = subprocess.call("docker-compose run --rm -e STATIC_ROOT=/usr/share/nginx/html -v %s_layersstatic:/usr/share/nginx/html layersapp /opt/layerindex/manage.py collectstatic --noinput" % quote(real_project_name), shell = True)
 if return_code != 0:
     print("Collecting static files failed")
     sys.exit(1)
