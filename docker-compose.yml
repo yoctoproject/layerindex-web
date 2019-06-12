@@ -7,7 +7,6 @@ services:
      - "MYSQL_DATABASE=layersdb"
      - "MYSQL_ROOT_PASSWORD=testingpw"
     restart: unless-stopped
-    container_name: layersdb
   layersapp:
     depends_on:
       - layersdb
@@ -28,7 +27,6 @@ services:
      #- "EMAIL_PORT=<set this here if not the default>"
      #- "DEBUG=1"
     restart: unless-stopped
-    container_name: layersapp
   layersweb:
     depends_on:
       - layersapp
@@ -48,11 +46,9 @@ services:
      - certbotwww:/var/www/certbot:z
     command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
     restart: unless-stopped
-    container_name: layersweb
   layersrabbit:
     image: rabbitmq:alpine
     restart: unless-stopped
-    container_name: layersrabbit
     environment:
      - "RABBITMQ_DEFAULT_USER=guest"
      - "RABBITMQ_DEFAULT_PASS=guest"
@@ -76,14 +72,12 @@ services:
      #- "EMAIL_PORT=<set this here if not the default>"
      #- "DEBUG=1"
     restart: unless-stopped
-    container_name: layerscelery
     command: /usr/local/bin/celery -A layerindex.tasks worker --loglevel=info --workdir=/opt/layerindex
   #layerscertbot:
   #  image: certbot/certbot
   #  volumes:
   #   - ./docker/certs:/opt/cert
   #   - certbotwww:/var/www/certbot:z
-  #  container_name: layerscertbot
   #  entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
 
 volumes:
