@@ -45,6 +45,7 @@ def get_args():
     parser.add_argument('-d', '--databasefile', type=str, help='Location of your database file to import. Must be a .sql file.', required=False)
     parser.add_argument('-e', '--email-host', type=str, help='Email host for sending messages (optionally with :port if not 25)', required=False)
     parser.add_argument('-m', '--portmapping', type=str, help='Port mapping in the format HOST:CONTAINER. Default is %(default)s', required=False, default='8080:80,8081:443')
+    parser.add_argument('--project-name', type=str, help='docker-compose project name to use')
     parser.add_argument('--no-https', action="store_true", default=False, help='Disable HTTPS (HTTP only) for web server')
     parser.add_argument('--cert', type=str, help='Existing SSL certificate to use for HTTPS web serving', required=False)
     parser.add_argument('--cert-key', type=str, help='Existing SSL certificate key to use for HTTPS web serving', required=False)
@@ -101,7 +102,7 @@ def get_args():
         if len(email_host_split) > 1:
             email_port = email_host_split[1]
 
-    return args.update, args.reinstall, args.hostname, args.http_proxy, args.https_proxy, args.databasefile, port, proxymod, args.portmapping, args.no_https, args.cert, cert_key, args.letsencrypt, email_host, email_port, args.no_migrate
+    return args.update, args.reinstall, args.hostname, args.http_proxy, args.https_proxy, args.databasefile, port, proxymod, args.portmapping, args.no_https, args.cert, cert_key, args.letsencrypt, email_host, email_port, args.no_migrate, args.project_name
 
 # Edit http_proxy and https_proxy in Dockerfile
 def edit_dockerfile(http_proxy, https_proxy):
@@ -449,6 +450,11 @@ def setup_https(hostname, http_port, https_port, letsencrypt, cert, cert_key, em
             sys.exit(1)
 
 
+def edit_options_file(project_name):
+    with open('.dockersetup-options', 'w') as f:
+        f.write('project_name=%s\n' % project_name)
+
+
 def generatepasswords(passwordlength):
     return ''.join([random.SystemRandom().choice('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@%^&*-_+') for i in range(passwordlength)])
 
@@ -462,7 +468,7 @@ def writefile(filename, data):
 
 
 ## Get user arguments and modify config files
-updatemode, reinstmode, hostname, http_proxy, https_proxy, dbfile, port, proxymod, portmapping, no_https, cert, cert_key, letsencrypt, email_host, email_port, no_migrate = get_args()
+updatemode, reinstmode, hostname, http_proxy, https_proxy, dbfile, port, proxymod, portmapping, no_https, cert, cert_key, letsencrypt, email_host, email_port, no_migrate, project_name = get_args()
 
 if updatemode:
     with open('docker-compose.yml', 'r') as f:
@@ -470,12 +476,26 @@ if updatemode:
             if 'MYSQL_ROOT_PASSWORD=' in line:
                 dbapassword = line.split('=')[1].rstrip().rstrip('"')
                 break
+    # Use last project name
+    try:
+        with open('.dockersetup-options', 'r') as f:
+            for line in f:
+                if line.startswith('project_name='):
+                    project_name = line.split('=', 1)[1].rstrip()
+    except FileNotFoundError:
+        pass
 else:
     # Generate secret key and database password
     secretkey = generatepasswords(50)
     dbapassword = generatepasswords(10)
     dbpassword = generatepasswords(10)
     rmqpassword = generatepasswords(10)
+
+if project_name:
+    os.environ['COMPOSE_PROJECT_NAME'] = project_name
+else:
+    # Get the project name from the environment (so we can save it for a future upgrade)
+    project_name = os.environ.get('COMPOSE_PROJECT_NAME', '')
 
 https_port = None
 http_port = None
@@ -576,6 +596,8 @@ else:
     edit_dockerfile_web(hostname, no_https)
 
     edit_settings_py(emailaddr)
+
+    edit_options_file(project_name)
 
     if not no_https:
         setup_https(hostname, http_port, https_port, letsencrypt, cert, cert_key, emailaddr)
@@ -700,6 +722,9 @@ if not updatemode:
 if updatemode:
     print("Update complete")
 else:
+    if project_name:
+        print("")
+        print("NOTE: you may need to use -p %s (or set COMPOSE_PROJECT_NAME=\"%s\" ) if running docker-compose directly in future" % (project_name, project_name))
     print("")
     if https_port and not no_https:
         protocol = 'https'
@@ -708,3 +733,4 @@ else:
         protocol = 'http'
         port = http_port
     print("The application should now be accessible at %s://%s:%s" % (protocol, hostname, port))
+    print("")
