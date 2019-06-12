@@ -409,7 +409,7 @@ def setup_https(hostname, http_port, https_port, letsencrypt, cert, cert_key, em
             shutil.rmtree(os.path.join(local_cert_dir, 'live'))
 
             # Create a test file and fetch it to ensure web server is working (for http)
-            return_code = subprocess.call("docker-compose exec layersweb /bin/sh -c 'mkdir -p /var/www/certbot/.well-known/acme-challenge/ ; echo something > /var/www/certbot/.well-known/acme-challenge/test.txt'", shell=True)
+            return_code = subprocess.call("docker-compose exec -T layersweb /bin/sh -c 'mkdir -p /var/www/certbot/.well-known/acme-challenge/ ; echo something > /var/www/certbot/.well-known/acme-challenge/test.txt'", shell=True)
             if return_code != 0:
                 print("Creating test file failed")
                 sys.exit(1)
@@ -417,7 +417,7 @@ def setup_https(hostname, http_port, https_port, letsencrypt, cert, cert_key, em
             if return_code != 0:
                 print("Reading test file from web server failed")
                 sys.exit(1)
-            return_code = subprocess.call(['docker-compose', 'exec', 'layersweb', '/bin/sh', '-c', 'rm -rf /var/www/certbot/.well-known'], shell=False)
+            return_code = subprocess.call(['docker-compose', 'exec', '-T', 'layersweb', '/bin/sh', '-c', 'rm -rf /var/www/certbot/.well-known'], shell=False)
             if return_code != 0:
                 print("Removing test file failed")
                 sys.exit(1)
