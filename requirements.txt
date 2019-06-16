@@ -7,6 +7,7 @@ confusable-homoglyphs==3.2.0
 Django>=1.11.20,<1.12
 django-appconf==1.0.3
 django-axes==4.5.4
+django-bootstrap-pagination==1.7.1
 django-cors-headers==2.5.3
 django-ipware==2.1.0
 django-ranged-response==0.2.0

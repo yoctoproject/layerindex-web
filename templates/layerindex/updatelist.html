@@ -54,8 +54,10 @@
 </div>
 
 {% if is_paginated %}
-    {% load pagination %}
-    {% pagination page_obj %}
+    {% load bootstrap_pagination %}
+    <div class="text-center">
+    {% bootstrap_paginate page_obj range=10 show_prev_next="false" show_first_last="true" %}
+    </div>
 {% endif %}
 
 {% endautoescape %}
