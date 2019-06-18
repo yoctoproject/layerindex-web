@@ -51,6 +51,7 @@ def get_args():
     parser.add_argument('--cert-key', type=str, help='Existing SSL certificate key to use for HTTPS web serving', required=False)
     parser.add_argument('--letsencrypt', action="store_true", default=False, help='Use Let\'s Encrypt for HTTPS')
     parser.add_argument('--no-migrate', action="store_true", default=False, help='Skip running database migrations')
+    parser.add_argument('--no-admin-user', action="store_true", default=False, help='Skip adding admin user')
 
     args = parser.parse_args()
 
@@ -102,7 +103,7 @@ def get_args():
         if len(email_host_split) > 1:
             email_port = email_host_split[1]
 
-    return args.update, args.reinstall, args.hostname, args.http_proxy, args.https_proxy, args.databasefile, port, proxymod, args.portmapping, args.no_https, args.cert, cert_key, args.letsencrypt, email_host, email_port, args.no_migrate, args.project_name
+    return args.update, args.reinstall, args.hostname, args.http_proxy, args.https_proxy, args.databasefile, port, proxymod, args.portmapping, args.no_https, args.cert, cert_key, args.letsencrypt, email_host, email_port, args.no_migrate, args.project_name, args.no_admin_user
 
 # Edit http_proxy and https_proxy in Dockerfile
 def edit_dockerfile(http_proxy, https_proxy):
@@ -468,7 +469,7 @@ def writefile(filename, data):
 
 
 ## Get user arguments and modify config files
-updatemode, reinstmode, hostname, http_proxy, https_proxy, dbfile, port, proxymod, portmapping, no_https, cert, cert_key, letsencrypt, email_host, email_port, no_migrate, project_name = get_args()
+updatemode, reinstmode, hostname, http_proxy, https_proxy, dbfile, port, proxymod, portmapping, no_https, cert, cert_key, letsencrypt, email_host, email_port, no_migrate, project_name, no_admin_user = get_args()
 
 if updatemode:
     with open('docker-compose.yml', 'r') as f:
@@ -712,12 +713,13 @@ if not updatemode:
         ## Set site name
         return_code = subprocess.call(['docker-compose', 'run', '--rm', 'layersapp', '/opt/layerindex/layerindex/tools/site_name.py', hostname, 'OpenEmbedded Layer Index'], shell=False)
 
-    ## For a fresh database, create an admin account
-    print("Creating database superuser. Input user name and password when prompted.")
-    return_code = subprocess.call(['docker-compose', 'run', '--rm', 'layersapp', '/opt/layerindex/manage.py', 'createsuperuser', '--email', emailaddr], shell=False)
-    if return_code != 0:
-        print("Creating superuser failed")
-        sys.exit(1)
+    if not no_admin_user:
+        ## For a fresh database, create an admin account
+        print("Creating database superuser. Input user name and password when prompted.")
+        return_code = subprocess.call(['docker-compose', 'run', '--rm', 'layersapp', '/opt/layerindex/manage.py', 'createsuperuser', '--email', emailaddr], shell=False)
+        if return_code != 0:
+            print("Creating superuser failed")
+            sys.exit(1)
 
 
 if updatemode:
