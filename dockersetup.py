@@ -708,8 +708,9 @@ if return_code != 0:
     sys.exit(1)
 
 if not updatemode:
-    ## Set site name
-    return_code = subprocess.call(['docker-compose', 'run', '--rm', 'layersapp', '/opt/layerindex/layerindex/tools/site_name.py', hostname, 'OpenEmbedded Layer Index'], shell=False)
+    if not dbfile:
+        ## Set site name
+        return_code = subprocess.call(['docker-compose', 'run', '--rm', 'layersapp', '/opt/layerindex/layerindex/tools/site_name.py', hostname, 'OpenEmbedded Layer Index'], shell=False)
 
     ## For a fresh database, create an admin account
     print("Creating database superuser. Input user name and password when prompted.")
