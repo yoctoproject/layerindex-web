@@ -448,6 +448,9 @@ def import_pkgspec(args):
                 logger.error('No spec files found in directory %s' % metapath)
                 return 1
 
+            if args.relative_path:
+                layerbranch.local_path = os.path.relpath(metapath, args.relative_path)
+
             if existing:
                 fpaths = sorted(['%s/%s' % (pth, fn) for pth, fn in existing])
                 logger.info('Marking as deleted:\n  %s' % '\n  '.join(fpaths))
@@ -628,6 +631,7 @@ def main():
     parser_pkgspec.add_argument('layer', help='Layer to import into')
     parser_pkgspec.add_argument('pkgdir', help='Top level directory containing package subdirectories')
     parser_pkgspec.add_argument('--description', help='Set branch/layer description')
+    parser_pkgspec.add_argument('--relative-path', help='Top level directory to set layerbranch path relative to')
     parser_pkgspec.add_argument('-u', '--update', help='Specify update record to link to')
     parser_pkgspec.add_argument('-n', '--dry-run', help='Don\'t write any data back to the database', action='store_true')
     parser_pkgspec.set_defaults(func=import_pkgspec)
