@@ -99,7 +99,14 @@ Database Setup
 Once the application is running you'll need to do a bit of further
 setup within it:
 
-1. You'll need to add at least the openembedded-core layer to the
+1. For a fresh database (without importing any database dump) you will
+   need layer data. To import the full set for the master branch from the
+   public instance at layers.openembedded.org you can run the following:
+
+   docker-compose run --rm layersapp /opt/layerindex/layerindex/tools/import_layers.py -d https://layers.openembedded.org
+
+   Alternatively, you can populate the database manually -
+   you'll need to add at least the openembedded-core layer to the
    database, or some equivalent that contains conf/bitbake.conf for
    the base system configuration. To add this, follow these steps:
 
