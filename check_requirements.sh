@@ -14,27 +14,49 @@ fi
 
 set -e
 
+if [ "$1" = "-q" ] ; then
+    quiet="1"
+elif [ "$1" = "" ] ; then
+    quiet="0"
+else
+    echo "Invalid option: $1"
+    exit 1
+fi
+
+vecho()
+{
+    if [ "$quiet" = "0" ] ; then
+        echo "$@"
+    fi
+}
+
+
 tmpdir=`mktemp -d`
-virtualenv -p python3 $tmpdir
+vecho "Setting up virtual environment"
+virtualenv -q -p python3 $tmpdir
 . $tmpdir/bin/activate
-pip install -r requirements.txt
+pip install -q -r requirements.txt
 newreqs="requirements.txt.updated"
-echo "Creating $newreqs"
+vecho "Creating $newreqs"
 pip freeze > $newreqs
 newreqsdiff="requirements.txt.diff"
-echo "Creating $newreqsdiff"
+vecho "Creating $newreqsdiff"
 diff -udN requirements.txt $newreqs > $newreqsdiff || true
 outdated="outdated.txt"
-echo "Creating $outdated"
+vecho "Creating $outdated"
 pip list --outdated > $outdated
-pip install pipdeptree
+pip install -q pipdeptree
 deptree="deptree.txt"
-echo "Creating $deptree"
+vecho "Creating $deptree"
 pipdeptree > $deptree
-pip install safety
+pip install -q safety
 safety="safety_check.txt"
-echo "Running safety check (output also to $safety)"
+vecho "Running safety check (output also to $safety)"
 safety check | tee $safety
+echo
+echo "Outdated components:"
+echo
+cat $outdated
 deactivate
 rm -rf $tmpdir
 
