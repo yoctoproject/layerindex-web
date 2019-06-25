@@ -32,8 +32,9 @@ deptree="deptree.txt"
 echo "Creating $deptree"
 pipdeptree > $deptree
 pip install safety
-echo "Running safety check"
-safety check
+safety="safety_check.txt"
+echo "Running safety check (output also to $safety)"
+safety check | tee $safety
 deactivate
 rm -rf $tmpdir
 
