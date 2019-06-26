@@ -25,6 +25,10 @@ services:
      - "RABBITMQ_DEFAULT_PASS=guest"
      #- "EMAIL_HOST=<set this here>"
      #- "EMAIL_PORT=<set this here if not the default>"
+     #- "EMAIL_USER=<set this here if needed>"
+     #- "EMAIL_PASSWORD=<set this here if needed>"
+     #- "EMAIL_USE_SSL=<set this here if needed>"
+     #- "EMAIL_USE_TLS=<set this here if needed>"
      #- "DEBUG=1"
     restart: unless-stopped
   layersweb:
@@ -70,6 +74,10 @@ services:
      - "RABBITMQ_DEFAULT_PASS=guest"
      #- "EMAIL_HOST=<set this here>"
      #- "EMAIL_PORT=<set this here if not the default>"
+     #- "EMAIL_USER=<set this here if needed>"
+     #- "EMAIL_PASSWORD=<set this here if needed>"
+     #- "EMAIL_USE_SSL=<set this here if needed>"
+     #- "EMAIL_USE_TLS=<set this here if needed>"
      #- "DEBUG=1"
     restart: unless-stopped
     command: /usr/local/bin/celery -A layerindex.tasks worker --loglevel=info --workdir=/opt/layerindex

@@ -44,6 +44,10 @@ def get_args():
     parser.add_argument('-s', '--https-proxy', type=str, help='https proxy in the format http://<myproxy:port>', required=False)
     parser.add_argument('-d', '--databasefile', type=str, help='Location of your database file to import. Must be a .sql file.', required=False)
     parser.add_argument('-e', '--email-host', type=str, help='Email host for sending messages (optionally with :port if not 25)', required=False)
+    parser.add_argument('--email-user', type=str, help='User name to use when connecting to email host', required=False)
+    parser.add_argument('--email-password', type=str, help='Password to use when connecting to email host', required=False)
+    parser.add_argument('--email-ssl', action="store_true", default=False, help='Use SSL when connecting to email host')
+    parser.add_argument('--email-tls', action="store_true", default=False, help='Use TLS when connecting to email host')
     parser.add_argument('-m', '--portmapping', type=str, help='Port mapping in the format HOST:CONTAINER. Default is %(default)s', required=False, default='8080:80,8081:443')
     parser.add_argument('--project-name', type=str, help='docker-compose project name to use')
     parser.add_argument('--no-https', action="store_true", default=False, help='Disable HTTPS (HTTP only) for web server')
@@ -101,6 +105,11 @@ def get_args():
         email_host = email_host_split[0]
         if len(email_host_split) > 1:
             email_port = email_host_split[1]
+
+    if args.email_ssl and args.email_tls:
+        raise argparse.ArgumentTypeError("--email-ssl and --email-tls options are mutually exclusive")
+    if (args.email_ssl or args.email_tls or args.email_user or args.email_password) and not email_host:
+        raise argparse.ArgumentTypeError("If any of the email host options are specified then you must also specify an email host with -e/--email-host")
 
     return args, proxy_port, proxymod, email_host, email_port
 
@@ -166,7 +175,7 @@ def yaml_comment(line):
 
 
 # Add hostname, secret key, db info, and email host in docker-compose.yml
-def edit_dockercompose(hostname, dbpassword, dbapassword, secretkey, rmqpassword, portmapping, letsencrypt, email_host, email_port):
+def edit_dockercompose(hostname, dbpassword, dbapassword, secretkey, rmqpassword, portmapping, letsencrypt, email_host, email_port, email_user, email_password, email_ssl, email_tls):
     filedata= readfile("docker-compose.yml")
     in_layersweb = False
     in_layersweb_ports = False
@@ -242,6 +251,30 @@ def edit_dockercompose(hostname, dbpassword, dbapassword, secretkey, rmqpassword
                 newlines.append(format + '- "EMAIL_PORT=' + email_port + '"\n')
             else:
                 newlines.append(format + '#- "EMAIL_PORT=<set this here if not the default>"\n')
+        elif '- "EMAIL_USER' in line:
+            format = line[0:line.find('- "EMAIL_USER')].replace("#", "")
+            if email_user:
+                newlines.append(format + '- "EMAIL_USER=' + email_user + '"\n')
+            else:
+                newlines.append(format + '#- "EMAIL_USER=<set this here if needed>"\n')
+        elif '- "EMAIL_PASSWORD' in line:
+            format = line[0:line.find('- "EMAIL_PASSWORD')].replace("#", "")
+            if email_password:
+                newlines.append(format + '- "EMAIL_PASSWORD=' + email_password + '"\n')
+            else:
+                newlines.append(format + '#- "EMAIL_PASSWORD=<set this here if needed>"\n')
+        elif '- "EMAIL_USE_SSL' in line:
+            format = line[0:line.find('- "EMAIL_USE_SSL')].replace("#", "")
+            if email_ssl:
+                newlines.append(format + '- "EMAIL_USE_SSL=' + email_ssl + '"\n')
+            else:
+                newlines.append(format + '#- "EMAIL_USE_SSL=<set this here if needed>"\n')
+        elif '- "EMAIL_USE_TLS' in line:
+            format = line[0:line.find('- "EMAIL_USE_TLS')].replace("#", "")
+            if email_tls:
+                newlines.append(format + '- "EMAIL_USE_TLS=' + email_tls + '"\n')
+            else:
+                newlines.append(format + '#- "EMAIL_USE_TLS=<set this here if needed>"\n')
         elif "ports:" in line:
             if in_layersweb:
                 in_layersweb_ports = True
@@ -598,7 +631,7 @@ else:
     if args.http_proxy or args.https_proxy:
         edit_dockerfile(args.http_proxy, args.https_proxy)
 
-    edit_dockercompose(args.hostname, dbpassword, dbapassword, secretkey, rmqpassword, args.portmapping, args.letsencrypt, email_host, email_port)
+    edit_dockercompose(args.hostname, dbpassword, dbapassword, secretkey, rmqpassword, args.portmapping, args.letsencrypt, email_host, email_port, args.email_user, args.email_password, args.email_ssl, args.email_tls)
 
     edit_dockerfile_web(args.hostname, args.no_https)
 

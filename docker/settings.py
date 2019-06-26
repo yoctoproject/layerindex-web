@@ -228,6 +228,10 @@ MESSAGE_TAGS = {
 ACCOUNT_ACTIVATION_DAYS = 2
 EMAIL_HOST = os.getenv('EMAIL_HOST', 'layers.test')
 EMAIL_PORT = os.getenv('EMAIL_PORT', '25')
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', False)
+EMAIL_USE_SSL = os.getenv('EMAIL_USE_SSL', False)
+EMAIL_HOST_USER = os.getenv('EMAIL_USER', '')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_PASSWORD', '')
 DEFAULT_FROM_EMAIL = 'noreply@' + os.getenv('HOSTNAME', 'layers.test')
 LOGIN_REDIRECT_URL = '/layerindex'
 
