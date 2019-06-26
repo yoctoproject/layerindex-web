@@ -100,7 +100,7 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'reversion.middleware.RevisionMiddleware',
+    'layerindex.middleware.NonAtomicRevisionMiddleware',
 )
 
 # We allow CORS calls from everybody
