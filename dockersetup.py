@@ -61,11 +61,11 @@ def get_args():
         if args.reinstall:
             raise argparse.ArgumentTypeError("The -u/--update and -r/--reinstall options are mutually exclusive")
 
-    port = proxymod = ""
+    proxy_port = proxymod = ""
     try:
         if args.http_proxy:
             split = args.http_proxy.split(":")
-            port = split[2]
+            proxy_port = split[2]
             proxymod = split[1].replace("/", "")
     except IndexError:
         raise argparse.ArgumentTypeError("http_proxy must be in format http://<myproxy:port>")
@@ -89,10 +89,9 @@ def get_args():
         raise argparse.ArgumentTypeError("Specified certificate key file %s does not exist" % args.cert_key)
     if args.cert_key and not args.cert:
         raise argparse.ArgumentTypeError("Certificate key file specified but not certificate")
-    cert_key = args.cert_key
-    if args.cert and not cert_key:
-        cert_key = os.path.splitext(args.cert)[0] + '.key'
-        if not os.path.exists(cert_key):
+    if args.cert and not args.cert_key:
+        args.cert_key = os.path.splitext(args.cert)[0] + '.key'
+        if not os.path.exists(args.cert_key):
             raise argparse.ArgumentTypeError("Could not find certificate key, please use --cert-key to specify it")
 
     email_host = None
@@ -103,7 +102,7 @@ def get_args():
         if len(email_host_split) > 1:
             email_port = email_host_split[1]
 
-    return args.update, args.reinstall, args.hostname, args.http_proxy, args.https_proxy, args.databasefile, port, proxymod, args.portmapping, args.no_https, args.cert, cert_key, args.letsencrypt, email_host, email_port, args.no_migrate, args.project_name, args.no_admin_user
+    return args, proxy_port, proxymod, email_host, email_port
 
 # Edit http_proxy and https_proxy in Dockerfile
 def edit_dockerfile(http_proxy, https_proxy):
@@ -122,7 +121,7 @@ def edit_dockerfile(http_proxy, https_proxy):
 
 
 # If using a proxy, add proxy values to git-proxy and uncomment proxy script in .gitconfig
-def edit_gitproxy(proxymod, port):
+def edit_gitproxy(proxymod, proxy_port):
     filedata= readfile("docker/git-proxy")
     newlines = []
     lines = filedata.splitlines()
@@ -130,7 +129,7 @@ def edit_gitproxy(proxymod, port):
         if "PROXY=" in line:
             newlines.append("PROXY=" + proxymod + "\n")
         elif "PORT=" in line:
-            newlines.append("PORT=" + port + "\n")
+            newlines.append("PORT=" + proxy_port + "\n")
         else:
             newlines.append(line + "\n")
     writefile("docker/git-proxy", ''.join(newlines))
@@ -468,10 +467,10 @@ def writefile(filename, data):
         f.write(data)
 
 
-## Get user arguments and modify config files
-updatemode, reinstmode, hostname, http_proxy, https_proxy, dbfile, port, proxymod, portmapping, no_https, cert, cert_key, letsencrypt, email_host, email_port, no_migrate, project_name, no_admin_user = get_args()
+## Get user arguments
+args, proxy_port, proxymod, email_host, email_port = get_args()
 
-if updatemode:
+if args.update:
     with open('docker-compose.yml', 'r') as f:
         for line in f:
             if 'MYSQL_ROOT_PASSWORD=' in line:
@@ -482,7 +481,7 @@ if updatemode:
         with open('.dockersetup-options', 'r') as f:
             for line in f:
                 if line.startswith('project_name='):
-                    project_name = line.split('=', 1)[1].rstrip()
+                    args.project_name = line.split('=', 1)[1].rstrip()
     except FileNotFoundError:
         pass
 else:
@@ -492,22 +491,22 @@ else:
     dbpassword = generatepasswords(10)
     rmqpassword = generatepasswords(10)
 
-if project_name:
-    os.environ['COMPOSE_PROJECT_NAME'] = project_name
+if args.project_name:
+    os.environ['COMPOSE_PROJECT_NAME'] = args.project_name
 else:
     # Get the project name from the environment (so we can save it for a future upgrade)
-    project_name = os.environ.get('COMPOSE_PROJECT_NAME', '')
+    args.project_name = os.environ.get('COMPOSE_PROJECT_NAME', '')
 
 https_port = None
 http_port = None
-if not updatemode:
-    for portmap in portmapping.split(','):
+if not args.update:
+    for portmap in args.portmapping.split(','):
         outport, inport = portmap.split(':', 1)
         if inport == '443':
             https_port = outport
         elif inport == '80':
             http_port = outport
-    if (not https_port) and (not no_https):
+    if (not https_port) and (not args.no_https):
         print("No HTTPS port mapping (to port 443 inside the container) was specified and --no-https was not specified")
         sys.exit(1)
     if not http_port:
@@ -520,14 +519,14 @@ return_code = subprocess.call("docker ps -a | grep -q layersapp", shell=True)
 if return_code == 0:
     installed = True
 
-if updatemode:
+if args.update:
     if not installed:
         print("Application container not found - update mode can only be used on an existing installation")
         sys.exit(1)
     if dbapassword == 'testingpw':
         print("Update mode can only be used when previous configuration is still present in docker-compose.yml and other files")
         sys.exit(1)
-elif installed and not reinstmode:
+elif installed and not args.reinstall:
     print('Application already installed. Please use -u/--update to update or -r/--reinstall to reinstall')
     sys.exit(1)
 
@@ -546,21 +545,21 @@ Note that this script does have interactive prompts, so be prepared to
 provide information as needed.
 """)
 
-if not updatemode and not email_host:
+if not args.update and not email_host:
     print("""  WARNING: no email host has been specified - functions that require email
   (such as and new account registraion, password reset and error reports will
   not work without it. If you wish to correct this, press Ctrl+C now and then
   re-run specifying the email host with the --email-host option.
 """)
 
-if reinstmode:
+if args.reinstall:
     print("""  WARNING: continuing will wipe out any existing data in the database and set
   up the application from scratch! Press Ctrl+C now if this is not what you
   want.
 """)
 
 try:
-    if updatemode:
+    if args.update:
         promptstr = 'Press Enter to begin update (or Ctrl+C to exit)...'
     else:
         promptstr = 'Press Enter to begin setup (or Ctrl+C to exit)...'
@@ -569,10 +568,10 @@ except KeyboardInterrupt:
     print('')
     sys.exit(2)
 
-if not updatemode:
+if not args.update:
     # Get email address
     print('')
-    if letsencrypt:
+    if args.letsencrypt:
         print('You will now be asked for an email address. This will be used for the superuser account, to send error reports to and for Let\'s Encrypt.')
     else:
         print('You will now be asked for an email address. This will be used for the superuser account and to send error reports to.')
@@ -584,31 +583,31 @@ if not updatemode:
         else:
             print('Entered email address is not valid')
 
-if reinstmode:
+if args.reinstall:
     return_code = subprocess.call(['docker-compose', 'down', '-v'], shell=False)
 
-if updatemode:
-    no_https = read_dockerfile_web()
-    if not no_https:
+if args.update:
+    args.no_https = read_dockerfile_web()
+    if not args.no_https:
         container_cert_dir = '/opt/cert'
-        hostname, https_port, certdir, certfile, keyfile = read_nginx_ssl_conf(container_cert_dir)
-        edit_nginx_ssl_conf(hostname, https_port, certdir, certfile, keyfile)
+        args.hostname, https_port, certdir, certfile, keyfile = read_nginx_ssl_conf(container_cert_dir)
+        edit_nginx_ssl_conf(args.hostname, https_port, certdir, certfile, keyfile)
 else:
-    if http_proxy:
-        edit_gitproxy(proxymod, port)
-    if http_proxy or https_proxy:
-        edit_dockerfile(http_proxy, https_proxy)
+    if args.http_proxy:
+        edit_gitproxy(proxymod, proxy_port)
+    if args.http_proxy or args.https_proxy:
+        edit_dockerfile(args.http_proxy, args.https_proxy)
 
-    edit_dockercompose(hostname, dbpassword, dbapassword, secretkey, rmqpassword, portmapping, letsencrypt, email_host, email_port)
+    edit_dockercompose(args.hostname, dbpassword, dbapassword, secretkey, rmqpassword, args.portmapping, args.letsencrypt, email_host, email_port)
 
-    edit_dockerfile_web(hostname, no_https)
+    edit_dockerfile_web(args.hostname, args.no_https)
 
     edit_settings_py(emailaddr)
 
-    edit_options_file(project_name)
+    edit_options_file(args.project_name)
 
-    if not no_https:
-        setup_https(hostname, http_port, https_port, letsencrypt, cert, cert_key, emailaddr)
+    if not args.no_https:
+        setup_https(args.hostname, http_port, https_port, letsencrypt, args.cert, args.cert_key, emailaddr)
 
 ## Start up containers
 return_code = subprocess.call(['docker-compose', 'up', '-d', '--build'], shell=False)
@@ -650,22 +649,22 @@ while True:
     else:
         print("Database server may not be ready; will try again.")
 
-if not updatemode:
+if not args.update:
     # Import the user's supplied data
-    if dbfile:
-        return_code = subprocess.call("gunzip -t %s > /dev/null 2>&1" % quote(dbfile), shell=True)
+    if args.databasefile:
+        return_code = subprocess.call("gunzip -t %s > /dev/null 2>&1" % quote(args.databasefile), shell=True)
         if return_code == 0:
             catcmd = 'zcat'
         else:
             catcmd = 'cat'
         env = os.environ.copy()
         env['MYSQL_PWD'] = dbapassword
-        return_code = subprocess.call("%s %s | docker-compose exec -T -e MYSQL_PWD layersdb mysql -uroot layersdb" % (catcmd, quote(dbfile)), shell=True, env=env)
+        return_code = subprocess.call("%s %s | docker-compose exec -T -e MYSQL_PWD layersdb mysql -uroot layersdb" % (catcmd, quote(args.databasefile)), shell=True, env=env)
         if return_code != 0:
             print("Database import failed")
             sys.exit(1)
 
-if not no_migrate:
+if not args.no_migrate:
     # Apply any pending layerindex migrations / initialize the database.
     env = os.environ.copy()
     env['DATABASE_USER'] = 'root'
@@ -675,7 +674,7 @@ if not no_migrate:
         print("Applying migrations failed")
         sys.exit(1)
 
-if not updatemode:
+if not args.update:
     # Create normal database user for app to use
     with tempfile.NamedTemporaryFile('w', dir=os.getcwd(), delete=False) as tf:
         sqlscriptfile = tf.name
@@ -715,7 +714,7 @@ if return_code != 0:
     print("Collecting static files failed")
     sys.exit(1)
 
-if https_port and not no_https:
+if https_port and not args.no_https:
     protocol = 'https'
     port = https_port
     defport == '443'
@@ -724,16 +723,16 @@ else:
     port = http_port
     defport = '80'
 if port == defport:
-    host = hostname
+    host = args.hostname
 else:
-    host = '%s:%s' % (hostname, port)
+    host = '%s:%s' % (args.hostname, port)
 
-if not updatemode:
-    if not dbfile:
+if not args.update:
+    if not args.databasefile:
         ## Set site name
         return_code = subprocess.call(['docker-compose', 'run', '--rm', 'layersapp', '/opt/layerindex/layerindex/tools/site_name.py', host, 'OpenEmbedded Layer Index'], shell=False)
 
-    if not no_admin_user:
+    if not args.no_admin_user:
         ## For a fresh database, create an admin account
         print("Creating database superuser. Input user name and password when prompted.")
         return_code = subprocess.call(['docker-compose', 'run', '--rm', 'layersapp', '/opt/layerindex/manage.py', 'createsuperuser', '--email', emailaddr], shell=False)
@@ -742,12 +741,12 @@ if not updatemode:
             sys.exit(1)
 
 
-if updatemode:
+if args.update:
     print("Update complete")
 else:
-    if project_name:
+    if args.project_name:
         print("")
-        print("NOTE: you may need to use -p %s (or set COMPOSE_PROJECT_NAME=\"%s\" ) if running docker-compose directly in future" % (project_name, project_name))
+        print("NOTE: you may need to use -p %s (or set COMPOSE_PROJECT_NAME=\"%s\" ) if running docker-compose directly in future" % (args.project_name, args.project_name))
     print("")
     print("The application should now be accessible at %s://%s" % (protocol, host))
     print("")
