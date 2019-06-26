@@ -546,6 +546,13 @@ Note that this script does have interactive prompts, so be prepared to
 provide information as needed.
 """)
 
+if not updatemode and not email_host:
+    print("""  WARNING: no email host has been specified - functions that require email
+  (such as and new account registraion, password reset and error reports will
+  not work without it. If you wish to correct this, press Ctrl+C now and then
+  re-run specifying the email host with the --email-host option.
+""")
+
 if reinstmode:
     print("""  WARNING: continuing will wipe out any existing data in the database and set
   up the application from scratch! Press Ctrl+C now if this is not what you
