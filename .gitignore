@@ -8,3 +8,13 @@ venv/
 static/
 layers/
 logs/
+docker/certs/
+categories.json
+confusables.json
+.dockersetup-options
+docker/nginx-ssl-edited.conf
+requirements.txt.diff
+requirements.txt.updated
+requirements_outdated.txt
+requirements_safety_check.txt
+requirements_deptree.txt
