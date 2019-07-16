@@ -33,8 +33,9 @@ vecho()
 
 tmpdir=`mktemp -d`
 vecho "Setting up virtual environment"
-virtualenv -q -p python3 $tmpdir
+python3 -m venv $tmpdir
 . $tmpdir/bin/activate
+pip install -q --upgrade pip
 pip install -q -r requirements.txt
 newreqs="requirements.txt.updated"
 vecho "Creating $newreqs"
