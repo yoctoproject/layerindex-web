@@ -249,7 +249,7 @@ class EditProfileForm(StyledModelForm):
                 if 'answer_1' not in self.changed_data \
                   or 'answer_2' not in self.changed_data \
                   or 'answer_3' not in self.changed_data:
-                    raise forms.ValidationError("Please answer three security questions.")
+                    raise forms.ValidationError("Please provide answers for all three security questions.")
                 security_question_1 = self.cleaned_data["security_question_1"]
                 security_question_2 = self.cleaned_data["security_question_2"]
                 security_question_3 = self.cleaned_data["security_question_3"]

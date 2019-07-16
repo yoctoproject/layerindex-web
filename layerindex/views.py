@@ -933,7 +933,7 @@ class EditProfileFormView(SuccessMessageMixin, UpdateView):
             view.send_activation_email(user)
             return HttpResponseRedirect(reverse('reregister'))
 
-        return HttpResponseRedirect(self.get_success_url())
+        return super(EditProfileFormView, self).form_valid(form)
 
     def get_success_message(self, cleaned_data):
         return "Profile saved successfully"
