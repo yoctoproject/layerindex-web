@@ -115,11 +115,11 @@ class SecurityQuestionPasswordResetForm(SetPasswordForm):
         return self.clean_answer_util("security_question_3", "answer_3")
 
     def clean(self):
-        # We require two correct security questions. If less than two are correct, the user gets
-        # one additional attempt before their account is locked out.
+        # We require three correct security question answers. The user gets
+        # three attempts before their account is locked out.
         answer_attempts = self.user.userprofile.answer_attempts
-        if self.correct_answers < 2:
-            if answer_attempts == 0:
+        if self.correct_answers < 3:
+            if answer_attempts < 2:
                 self.user.userprofile.answer_attempts = self.user.userprofile.answer_attempts + 1
                 self.user.userprofile.save()
                 raise forms.ValidationError("One or more security answers are incorrect.", code="incorrect_answers")
