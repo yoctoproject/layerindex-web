@@ -106,14 +106,14 @@ class PasswordResetSecurityQuestions(PasswordResetConfirmView):
     form_class = SecurityQuestionPasswordResetForm
 
     def get(self, request, *args, **kwargs):
-            try:
-                self.user.userprofile
-            except UserProfile.DoesNotExist:
-                return HttpResponseRedirect(reverse('password_reset_fail'))
-            if not self.user.is_active:
-                return HttpResponseRedirect(reverse('account_lockout'))
+        try:
+            self.user.userprofile
+        except UserProfile.DoesNotExist:
+            return HttpResponseRedirect(reverse('password_reset_fail'))
+        if not self.user.is_active:
+            return HttpResponseRedirect(reverse('account_lockout'))
 
-            return super().get(request, *args, **kwargs)
+        return super().get(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
         form = self.form_class(data=request.POST, user=self.user)
