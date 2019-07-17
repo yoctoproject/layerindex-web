@@ -11,7 +11,8 @@ from django.contrib.auth.hashers import check_password
 from django.contrib.auth.models import User
 from django_registration.forms import RegistrationForm
 
-from layerindex.models import SecurityQuestion
+from layerindex.models import SecurityQuestion, UserProfile
+import settings
 
 
 class CaptchaRegistrationForm(RegistrationForm):
@@ -84,9 +85,24 @@ class SecurityQuestionPasswordResetForm(SetPasswordForm):
 
     def __init__(self, *args, **kwargs):
         super(SecurityQuestionPasswordResetForm, self ).__init__(*args, **kwargs)
-        self.fields['security_question_1'].initial=SecurityQuestion.objects.all()[0]
-        self.fields['security_question_2'].initial=SecurityQuestion.objects.all()[1]
-        self.fields['security_question_3'].initial=SecurityQuestion.objects.all()[2]
+        security_questions = True
+        try:
+            self.user.userprofile
+        except UserProfile.DoesNotExist:
+            if not getattr(settings, 'SECURITY_QUESTIONS_REQUIRED', True):
+                security_questions = False
+
+        if security_questions:
+            self.fields['security_question_1'].initial = SecurityQuestion.objects.all()[0]
+            self.fields['security_question_2'].initial = SecurityQuestion.objects.all()[1]
+            self.fields['security_question_3'].initial = SecurityQuestion.objects.all()[2]
+        else:
+            del self.fields['security_question_1']
+            del self.fields['answer_1']
+            del self.fields['security_question_2']
+            del self.fields['answer_2']
+            del self.fields['security_question_3']
+            del self.fields['answer_3']
 
     def clean_answer_util(self, question, answer):
         form_security_question = self.cleaned_data[question]
@@ -117,7 +133,11 @@ class SecurityQuestionPasswordResetForm(SetPasswordForm):
     def clean(self):
         # We require three correct security question answers. The user gets
         # three attempts before their account is locked out.
-        answer_attempts = self.user.userprofile.answer_attempts
+        try:
+            answer_attempts = self.user.userprofile.answer_attempts
+        except UserProfile.DoesNotExist:
+            if not getattr(settings, 'SECURITY_QUESTIONS_REQUIRED', True):
+                return
         if self.correct_answers < 3:
             if answer_attempts < 2:
                 self.user.userprofile.answer_attempts = self.user.userprofile.answer_attempts + 1

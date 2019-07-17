@@ -257,6 +257,9 @@ REMOVE_LAYER_DEPENDENCIES = False
 # the login page)
 FORCE_REVIEW_HTTPS = True
 
+# False to allow accounts without security questions to reset their password
+SECURITY_QUESTIONS_REQUIRED = True
+
 # Settings for layer submission feature
 SUBMIT_EMAIL_FROM = 'noreply@' + os.getenv('HOSTNAME', 'layers.test')
 SUBMIT_EMAIL_SUBJECT = 'OE Layerindex layer submission'

@@ -109,7 +109,8 @@ class PasswordResetSecurityQuestions(PasswordResetConfirmView):
         try:
             self.user.userprofile
         except UserProfile.DoesNotExist:
-            return HttpResponseRedirect(reverse('password_reset_fail'))
+            if getattr(settings, 'SECURITY_QUESTIONS_REQUIRED', True):
+                return HttpResponseRedirect(reverse('password_reset_fail'))
         if not self.user.is_active:
             return HttpResponseRedirect(reverse('account_lockout'))
 
