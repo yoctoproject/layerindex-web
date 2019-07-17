@@ -16,7 +16,7 @@ def layerindex_context(request):
         site_name = site.name
     else:
         site_name = 'OpenEmbedded Layer Index'
-    if request.path.startswith('/accounts'):
+    if request.path.startswith('/accounts') or request.path.startswith('/admin/logout'):
         login_return_url = ''
     else:
         login_return_url = request.path
