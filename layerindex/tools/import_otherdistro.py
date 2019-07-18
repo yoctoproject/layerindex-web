@@ -20,6 +20,7 @@ import shutil
 import subprocess
 import string
 import shlex
+import codecs
 from distutils.version import LooseVersion
 
 sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__), '..')))
@@ -56,7 +57,29 @@ def update_recipe_file(path, recipe, repodir, raiseexceptions=False):
     try:
         logger.debug('Updating recipe %s' % path)
         recipe.pn = os.path.splitext(recipe.filename)[0]
-        with open(path, 'r', errors='surrogateescape') as f:
+
+        f = None
+        encodings = ['utf8', 'iso-8859-1', 'gb2312', 'windows-1250', 'windows-1251', 'windows-1252']
+        for e in encodings:
+            try:
+                f = codecs.open(path, 'r', encoding=e)
+                try:
+                    for i in range(0,100):
+                        next(f)
+                except StopIteration:
+                    pass
+                f.seek(0)
+            except UnicodeDecodeError:
+                logger.debug('%s: got unicode error with %s, trying different encoding' % (os.path.basename(path), e))
+                f.close()
+                f = None
+            else:
+                break
+        if f is None:
+            logger.error('Failed to find suitable encoding for %s' % path)
+            return
+
+        try:
             indesc = False
             desc = []
             patches = []
@@ -320,6 +343,8 @@ def update_recipe_file(path, recipe, repodir, raiseexceptions=False):
                     key = key.rstrip().lower()
                     value = value.strip()
                     values[key] = expand(value)
+        finally:
+            f.close()
 
         for key, value in values.items():
             if key == 'name':
