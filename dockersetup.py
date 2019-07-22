@@ -750,7 +750,7 @@ if return_code != 0:
 if https_port and not args.no_https:
     protocol = 'https'
     port = https_port
-    defport == '443'
+    defport = '443'
 else:
     protocol = 'http'
     port = http_port
