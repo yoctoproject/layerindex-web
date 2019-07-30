@@ -640,7 +640,7 @@ else:
     edit_options_file(args.project_name)
 
     if not args.no_https:
-        setup_https(args.hostname, http_port, https_port, letsencrypt, args.cert, args.cert_key, emailaddr)
+        setup_https(args.hostname, http_port, https_port, args.letsencrypt, args.cert, args.cert_key, emailaddr)
 
 ## Start up containers
 return_code = subprocess.call(['docker-compose', 'up', '-d', '--build'], shell=False)
