@@ -67,7 +67,7 @@ def main():
 
     utils.setup_django()
     import settings
-    from layerindex.models import Branch, LayerItem, LayerBranch, LayerDependency, LayerMaintainer, LayerNote
+    from layerindex.models import Branch, LayerItem, LayerBranch, LayerDependency, LayerMaintainer, LayerNote, Recipe, Source, Patch, PackageConfig, StaticBuildDep, DynamicBuildDep, RecipeFileDependency
     from django.db import transaction
 
     logger.setLevel(options.loglevel)
@@ -95,6 +95,7 @@ def main():
     layerbranches_url = jsdata['layerBranches']
     layermaintainers_url = jsdata.get('layerMaintainers', None)
     layernotes_url = jsdata.get('layerNotes', None)
+    recipes_url = jsdata.get('recipes', None)
 
     logger.debug('Getting branches')
 
@@ -143,10 +144,123 @@ def main():
             logger.debug('Importing layer branches')
             rq = urllib.request.Request(layerbranches_url)
             data = urllib.request.urlopen(rq).read()
-            jsdata = json.loads(data.decode('utf-8'))
+            jsdata = json.loads(data.decode('utf-8'), object_hook=datetime_hook)
 
             layerbranch_idmap = {}
-            exclude_fields = ['id', 'layer', 'branch', 'vcs_last_fetch', 'vcs_last_rev', 'vcs_last_commit', 'yp_compatible_version', 'updated']
+
+            def import_child_items(parentobj, objclass, childlist=None, url=None, parent_orig_id=None, parentfield=None, exclude_fields=None, key_fields=None, custom_fields=None, custom_field_cb=None):
+                logger.debug('Importing %s for %s' % (objclass._meta.verbose_name_plural, parentobj))
+
+                if parentfield is None:
+                    parentfield = parentobj.__class__.__name__.lower()
+
+                if exclude_fields is None:
+                    exclude = ['id', parentfield]
+                else:
+                    exclude = exclude_fields[:]
+                if custom_fields is not None:
+                    exclude += custom_fields
+                if key_fields is None:
+                    keys = None
+                else:
+                    # The parent field always needs to be part of the keys
+                    keys = key_fields + [parentfield]
+
+                if url:
+                    if parent_orig_id is None:
+                        raise Exception('import_child_items: if url is specified then parent_orig_id must also be specified')
+                    rq = urllib.request.Request(url + '?filter=%s:%s' % (parentfield, parent_orig_id))
+                    data = urllib.request.urlopen(rq).read()
+                    childjslist = json.loads(data.decode('utf-8'))
+                elif childlist is not None:
+                    childjslist = childlist
+                else:
+                    raise Exception('import_child_items: either url or childlist must be specified')
+
+                manager = getattr(parentobj, objclass.__name__.lower() + '_set')
+                existing_ids = list(manager.values_list('id', flat=True))
+                updated_ids = []
+                for childjs in childjslist:
+                    vals = {}
+                    for key, value in childjs.items():
+                        if key in exclude:
+                            continue
+                        vals[key] = value
+                    vals[parentfield] = parentobj
+
+                    if keys:
+                        keyvals = {k: vals[k] for k in keys}
+                    else:
+                        keyvals = vals
+
+                    # In the case of multiple records with the same keys (e.g. multiple recipes with same pn),
+                    # we need to skip ones we've already touched
+                    obj = None
+                    created = False
+                    for entry in manager.filter(**keyvals):
+                        if entry.id not in updated_ids:
+                            obj = entry
+                            break
+                    else:
+                        created = True
+                        obj = objclass(**keyvals)
+
+                    for key, value in vals.items():
+                        setattr(obj, key, value)
+                    # Need to have saved before calling custom_field_cb since the function might be adding child objects
+                    obj.save()
+                    updated_ids.append(obj.id)
+                    if custom_field_cb is not None:
+                        custom_field_cb(obj, childjs)
+                    if not created:
+                        if obj.id in existing_ids:
+                            existing_ids.remove(obj.id)
+                for idv in existing_ids:
+                    objclass.objects.filter(id=idv).delete()
+
+            def package_config_field_handler(package_config, pjsdata):
+                for dep in pjsdata['builddeps']:
+                    dynamic_build_dependency, created = DynamicBuildDep.objects.get_or_create(name=dep)
+                    if created:
+                        dynamic_build_dependency.save()
+                    dynamic_build_dependency.package_configs.add(package_config)
+                    dynamic_build_dependency.recipes.add(package_config.recipe)
+
+            def recipe_field_handler(recipe, recipejs):
+                sources = recipejs.get('sources', [])
+                import_child_items(recipe, Source, childlist=sources, key_fields=['url'])
+                patches = recipejs.get('patches', [])
+                import_child_items(recipe, Patch, childlist=patches, key_fields=['path'])
+                existing_deps = list(recipe.staticbuilddep_set.values_list('name', flat=True))
+                for dep in recipejs['staticbuilddeps']:
+                    depobj, created = StaticBuildDep.objects.get_or_create(name=dep)
+                    if created:
+                        depobj.save()
+                    elif dep in existing_deps:
+                        existing_deps.remove(dep)
+                    depobj.recipes.add(recipe)
+                for existing_dep in existing_deps:
+                    recipe.staticbuilddep_set.filter(name=existing_dep).recipes.remove(recipe)
+                package_configs = recipejs.get('package_configs', [])
+                import_child_items(recipe, PackageConfig, childlist=package_configs, custom_fields=['builddeps'], custom_field_cb=package_config_field_handler, key_fields=['feature'])
+
+                # RecipeFileDependency objects need to be handled specially (since they link to a separate LayerBranch)
+                existing_filedeps = list(recipe.recipefiledependency_set.values_list('id', flat=True))
+                filedeps = recipejs.get('filedeps', [])
+                for filedep in filedeps:
+                    target_layerbranch = layerbranch_idmap.get(filedep['layerbranch'], None)
+                    if target_layerbranch is None:
+                        logger.debug('Skipping recipe file dependency on layerbranch %s, branch not imported' % filedep['layerbranch'])
+                        continue
+                    depobj, created = RecipeFileDependency.objects.get_or_create(recipe=recipe, layerbranch=target_layerbranch, path=filedep['path'])
+                    if created:
+                        depobj.save()
+                    elif depobj.id in existing_filedeps:
+                        existing_filedeps.remove(depobj.id)
+                for idv in existing_filedeps:
+                    RecipeFileDependency.objects.filter(id=idv).delete()
+
+            exclude_fields = ['id', 'layer', 'branch', 'yp_compatible_version', 'updated']
             for layerbranchjs in jsdata:
                 branch = branch_idmap.get(layerbranchjs['branch'], None)
                 if not branch:
@@ -178,6 +292,17 @@ def main():
                     setattr(layerbranch, key, value)
                 layerbranch.save()
                 layerbranch_idmap[layerbranchjs['id']] = layerbranch
+
+                if recipes_url:
+                    import_child_items(layerbranch,
+                                       Recipe,
+                                       url=recipes_url,
+                                       parent_orig_id=layerbranchjs['id'],
+                                       exclude_fields=['id', 'layerbranch', 'updated'],
+                                       custom_fields=['sources', 'patches', 'package_configs'],
+                                       custom_field_cb=recipe_field_handler,
+                                       key_fields=['pn'])
+
 
             # Get layer dependencies
             logger.debug('Importing layer dependencies')
