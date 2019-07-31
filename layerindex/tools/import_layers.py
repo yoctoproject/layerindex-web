@@ -169,6 +169,9 @@ def main():
             jsdata = json.loads(data.decode('utf-8'))
 
             exclude_fields = ['id', 'layerbranch', 'dependency', 'updated']
+            existing_deps = []
+            for layerbranch in layerbranch_idmap.values():
+                existing_deps += list(LayerDependency.objects.filter(layerbranch=layerbranch).values_list('id', flat=True))
             for layerdepjs in jsdata:
                 layerbranch = layerbranch_idmap.get(layerdepjs['layerbranch'], None)
                 if not layerbranch:
@@ -179,65 +182,64 @@ def main():
                     # We didn't import the dependency, skip it
                     continue
 
-                layerdep = LayerDependency()
+                layerdep, created = LayerDependency.objects.get_or_create(layerbranch=layerbranch, dependency=dependency)
+                if not created and layerdep.id in existing_deps:
+                    existing_deps.remove(layerdep.id)
                 for key, value in layerdepjs.items():
                     if key in exclude_fields:
                         continue
                     setattr(layerdep, key, value)
-                layerdep.layerbranch = layerbranch
-                layerdep.dependency = dependency
                 layerdep.save()
+            for idv in existing_deps:
+                LayerDependency.objects.filter(id=idv).delete()
+
+            def import_items(desc, url, exclude_fields, objclass, idmap, parentfield):
+                logger.debug('Importing %s' % desc)
+                rq = urllib.request.Request(url)
+                data = urllib.request.urlopen(rq).read()
+                jsdata = json.loads(data.decode('utf-8'))
+
+                existing_ids = []
+                for parentobj in idmap.values():
+                    existing_ids += list(objclass.objects.values_list('id', flat=True))
+
+                for itemjs in jsdata:
+                    parentobj = idmap.get(itemjs[parentfield], None)
+                    if not parentobj:
+                        # We didn't import the parent, skip it
+                        continue
+
+                    vals = {}
+                    for key, value in itemjs.items():
+                        if key in exclude_fields:
+                            continue
+                        vals[key] = value
+
+                    vals[parentfield] = parentobj
+                    manager = getattr(parentobj, objclass.__name__.lower() + '_set')
+                    obj, created = manager.get_or_create(**vals)
+                    for key, value in vals.items():
+                        setattr(obj, key, value)
+                    obj.save()
+
+                for idv in existing_deps:
+                    objclass.objects.filter(id=idv).delete()
 
             if layermaintainers_url:
-                # Get layer maintainers (only available in latest code)
-                logger.debug('Importing layer maintainers')
-                rq = urllib.request.Request(layermaintainers_url)
-                data = urllib.request.urlopen(rq).read()
-                jsdata = json.loads(data.decode('utf-8'))
-
-                exclude_fields = ['id', 'layerbranch']
-                for layermaintainerjs in jsdata:
-                    layerbranch = layerbranch_idmap.get(layermaintainerjs['layerbranch'], None)
-                    if not layerbranch:
-                        # We didn't import this layerbranch, skip it
-                        continue
-
-                    layermaintainer = LayerMaintainer()
-                    for key, value in layermaintainerjs.items():
-                        if key in exclude_fields:
-                            continue
-                        setattr(layermaintainer, key, value)
-                    layermaintainer.layerbranch = layerbranch
-                    layermaintainer.save()
+                import_items('layer maintainers',
+                            layermaintainers_url,
+                            ['id', 'layerbranch'],
+                            LayerMaintainer,
+                            layerbranch_idmap,
+                            'layerbranch')
 
             if layernotes_url:
-                # Get layer notes (only available in latest code)
-                logger.debug('Importing layer notes')
-                rq = urllib.request.Request(layernotes_url)
-                data = urllib.request.urlopen(rq).read()
-                jsdata = json.loads(data.decode('utf-8'))
-
-                exclude_fields = ['id', 'layer']
-                for layernotejs in jsdata:
-                    layer = layer_idmap.get(layernotejs['layer'], None)
-                    if not layer:
-                        # We didn't import this layer, skip it
-                        continue
-                    res = LayerNote.objects.filter(layer=layer).filter(text=layernotejs['text'])
-                    if res:
-                        # The note already exists (this will occur for layers
-                        # that already existed, since we need to have those in layer_idmap
-                        # to be able to import layer dependencies)
-                        logger.debug('Skipping note %s, already exists' % layernotejs['id'])
-                        continue
-
-                    layernote = LayerNote()
-                    for key, value in layernotejs.items():
-                        if key in exclude_fields:
-                            continue
-                        setattr(layernote, key, value)
-                    layernote.layer = layer
-                    layernote.save()
+                import_items('layer notes',
+                            layernotes_url,
+                            ['id', 'layer'],
+                            LayerNote,
+                            layer_idmap,
+                            'layer')
 
             if options.dryrun:
                 raise DryRunRollbackException()
