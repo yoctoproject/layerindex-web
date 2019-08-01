@@ -1,4 +1,4 @@
-from layerindex.models import Branch, LayerItem, LayerMaintainer, YPCompatibleVersion, LayerNote, LayerBranch, LayerDependency, Recipe, Machine, Distro, BBClass
+from layerindex.models import Branch, LayerItem, LayerMaintainer, YPCompatibleVersion, LayerNote, LayerBranch, LayerDependency, Recipe, Machine, Distro, BBClass, Source, Patch, PackageConfig, StaticBuildDep, DynamicBuildDep, RecipeFileDependency
 from rest_framework import viewsets, serializers
 from layerindex.querysethelper import params_to_queryset, get_search_tuple
 
@@ -84,10 +84,64 @@ class LayerNoteViewSet(ParametricSearchableModelViewSet):
     queryset = LayerNote.objects.filter(layer__status__in=['P', 'X'])
     serializer_class = LayerNoteSerializer
 
+class SourceSerializer(DynamicFieldsModelSerializer):
+    class Meta:
+        model = Source
+        fields = '__all__'
+
+class PatchSerializer(DynamicFieldsModelSerializer):
+    class Meta:
+        model = Patch
+        fields = '__all__'
+
+class PackageConfigSerializer(DynamicFieldsModelSerializer):
+    class Meta:
+        model = PackageConfig
+        fields = '__all__'
+
+    builddeps = serializers.SerializerMethodField()
+
+    def get_builddeps(self, package_config):
+        return package_config.dynamicbuilddep_set.values_list('name', flat=True)
+
+class RecipeFileDependencySerializer(DynamicFieldsModelSerializer):
+    class Meta:
+        model = RecipeFileDependency
+        fields = '__all__'
+
 class RecipeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Recipe
         fields = '__all__'
+
+    sources = serializers.SerializerMethodField()
+    patches = serializers.SerializerMethodField()
+    package_configs = serializers.SerializerMethodField()
+    staticbuilddeps = serializers.SerializerMethodField()
+    filedeps = serializers.SerializerMethodField()
+
+    def get_sources(self, recipe):
+        qs = recipe.source_set.all()
+        serializer = SourceSerializer(instance=qs, many=True, read_only=True, fields=('url', 'sha256sum'))
+        return serializer.data
+
+    def get_patches(self, recipe):
+        qs = recipe.patch_set.all()
+        serializer = PatchSerializer(instance=qs, many=True, read_only=True, fields=('path', 'src_path', 'status', 'status_extra', 'apply_order', 'applied', 'striplevel'))
+        return serializer.data
+
+    def get_package_configs(self, recipe):
+        qs = recipe.packageconfig_set.all()
+        serializer = PackageConfigSerializer(instance=qs, many=True, read_only=True, fields=('feature', 'with_option', 'without_option', 'builddeps'))
+        return serializer.data
+
+    def get_staticbuilddeps(self, recipe):
+        return recipe.staticbuilddep_set.values_list('name', flat=True)
+
+    def get_filedeps(self, recipe):
+        qs = recipe.recipefiledependency_set.all()
+        serializer = RecipeFileDependencySerializer(instance=qs, many=True, read_only=True, fields=('layerbranch', 'path'))
+        return serializer.data
 
 class RecipeViewSet(ParametricSearchableModelViewSet):
     queryset = Recipe.objects.all()
