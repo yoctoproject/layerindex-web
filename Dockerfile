@@ -58,6 +58,7 @@ COPY docker/settings.py /opt/layerindex/settings.py
 COPY docker/refreshlayers.sh /opt/refreshlayers.sh
 COPY docker/updatelayers.sh /opt/updatelayers.sh
 COPY docker/migrate.sh /opt/migrate.sh
+COPY docker/connectivity_check.sh /opt/connectivity_check.sh
 
 RUN mkdir /opt/workdir \
 	&& adduser --system --uid=500 layers \

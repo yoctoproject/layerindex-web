@@ -56,6 +56,7 @@ def get_args():
     parser.add_argument('--letsencrypt', action="store_true", default=False, help='Use Let\'s Encrypt for HTTPS')
     parser.add_argument('--no-migrate', action="store_true", default=False, help='Skip running database migrations')
     parser.add_argument('--no-admin-user', action="store_true", default=False, help='Skip adding admin user')
+    parser.add_argument('--no-connectivity', action="store_true", default=False, help='Skip checking external network connectivity')
 
     args = parser.parse_args()
 
@@ -488,6 +489,13 @@ def edit_options_file(project_name):
         f.write('project_name=%s\n' % project_name)
 
 
+def check_connectivity():
+    return_code = subprocess.call(['docker-compose', 'run', '--rm', 'layersapp', '/opt/connectivity_check.sh'], shell=False)
+    if return_code != 0:
+        print("Connectivity check failed - if you are behind a proxy, please check that you have correctly specified the proxy settings on the command line (see --help for details)")
+        sys.exit(1)
+
+
 def generatepasswords(passwordlength):
     return ''.join([random.SystemRandom().choice('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@%^&*-_+') for i in range(passwordlength)])
 
@@ -647,6 +655,10 @@ return_code = subprocess.call(['docker-compose', 'up', '-d', '--build'], shell=F
 if return_code != 0:
     print("docker-compose up failed")
     sys.exit(1)
+
+if not (args.update or args.no_connectivity):
+    ## Run connectivity check
+    check_connectivity()
 
 # Get real project name (if only there were a reasonable way to do this... ugh)
 real_project_name = ''
