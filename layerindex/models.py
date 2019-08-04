@@ -773,7 +773,7 @@ class BBAppend(models.Model):
         return False
 
     def __str__(self):
-        return os.path.join(self.filepath, self.filename)
+        return '%s: %s' % (self.layerbranch, os.path.join(self.filepath, self.filename))
 
 
 class BBClass(models.Model):
