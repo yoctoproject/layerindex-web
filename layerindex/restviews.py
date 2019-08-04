@@ -1,4 +1,4 @@
-from layerindex.models import Branch, LayerItem, LayerMaintainer, YPCompatibleVersion, LayerNote, LayerBranch, LayerDependency, Recipe, Machine, Distro, BBClass, Source, Patch, PackageConfig, StaticBuildDep, DynamicBuildDep, RecipeFileDependency
+from layerindex.models import Branch, LayerItem, LayerMaintainer, YPCompatibleVersion, LayerNote, LayerBranch, LayerDependency, Recipe, Machine, Distro, BBClass, Source, Patch, PackageConfig, StaticBuildDep, DynamicBuildDep, RecipeFileDependency, BBAppend, IncFile
 from rest_framework import viewsets, serializers
 from layerindex.querysethelper import params_to_queryset, get_search_tuple
 
@@ -203,4 +203,22 @@ class LayerViewSet(ParametricSearchableModelViewSet):
     """
     queryset = LayerBranch.objects.filter(layer__status__in=['P', 'X'])
     serializer_class = LayerSerializer
+
+class AppendSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BBAppend
+        fields = '__all__'
+
+class AppendViewSet(ParametricSearchableModelViewSet):
+    queryset = BBAppend.objects.all()
+    serializer_class = AppendSerializer
+
+class IncFileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = IncFile
+        fields = '__all__'
+
+class IncFileViewSet(ParametricSearchableModelViewSet):
+    queryset = IncFile.objects.all()
+    serializer_class = IncFileSerializer
 
