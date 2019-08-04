@@ -17,6 +17,8 @@ import logging
 import subprocess
 import urllib.request
 import json
+import datetime
+from django.utils import timezone
 
 sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__), '..')))
 
@@ -27,6 +29,14 @@ class DryRunRollbackException(Exception):
     pass
 
 logger = utils.logger_create('LayerIndexImport')
+
+
+iso8601_date_re = re.compile('^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}')
+def datetime_hook(jsdict):
+    for key, value in jsdict.items():
+        if isinstance(value, str) and iso8601_date_re.match(value):
+            jsdict[key] = timezone.make_naive(datetime.datetime.strptime(value, "%Y-%m-%dT%H:%M:%S%z"))
+    return jsdict
 
 
 
@@ -105,19 +115,23 @@ def main():
             logger.debug('Importing layers')
             rq = urllib.request.Request(layers_url)
             data = urllib.request.urlopen(rq).read()
-            jsdata = json.loads(data.decode('utf-8'))
+            jsdata = json.loads(data.decode('utf-8'), object_hook=datetime_hook)
 
             layer_idmap = {}
             exclude_fields = ['id', 'updated']
             for layerjs in jsdata:
-                res = LayerItem.objects.filter(name=layerjs['name'])
-                if res:
+                layeritem = LayerItem.objects.filter(name=layerjs['name']).first()
+                if layeritem:
                     # Already have this layer
-                    logger.debug('Skipping layer %s, already in database' % layerjs['name'])
-                    layer_idmap[layerjs['id']] = res[0]
-                    continue
-                logger.debug('Adding layer %s' % layerjs['name'])
-                layeritem = LayerItem()
+                    if layerjs['updated'] <= layeritem.updated:
+                        logger.debug('Skipping layer %s, already up-to-date' % layerjs['name'])
+                        layer_idmap[layerjs['id']] = layeritem
+                        continue
+                    else:
+                        logger.debug('Updating layer %s' % layerjs['name'])
+                else:
+                    logger.debug('Adding layer %s' % layerjs['name'])
+                    layeritem = LayerItem()
                 for key, value in layerjs.items():
                     if key in exclude_fields:
                         continue
@@ -144,21 +158,24 @@ def main():
                     # We didn't import this layer, skip it
                     logger.debug('Skipping layerbranch %s, layer not imported' % layerbranchjs['id'])
                     continue
-                res = LayerBranch.objects.filter(layer=layer).filter(branch=branch)
-                if res:
+                layerbranch = LayerBranch.objects.filter(layer=layer).filter(branch=branch).first()
+                if layerbranch:
                     # The layerbranch already exists (this will occur for layers
                     # that already existed, since we need to have those in layer_idmap
                     # to be able to import layer dependencies)
-                    logger.debug('Skipping layerbranch %s, already exists' % layerbranchjs['id'])
-                    continue
+                    if layerbranchjs['updated'] <= layerbranch.updated:
+                        logger.debug('Skipping layerbranch %s, already up-to-date' % layerbranchjs['id'])
+                        layerbranch_idmap[layerbranchjs['id']] = layerbranch
+                        continue
+                else:
+                    layerbranch = LayerBranch()
+                    layerbranch.branch = branch
+                    layerbranch.layer = layer
 
-                layerbranch = LayerBranch()
                 for key, value in layerbranchjs.items():
                     if key in exclude_fields:
                         continue
                     setattr(layerbranch, key, value)
-                layerbranch.branch = branch
-                layerbranch.layer = layer
                 layerbranch.save()
                 layerbranch_idmap[layerbranchjs['id']] = layerbranch
 
