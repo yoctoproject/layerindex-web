@@ -10,7 +10,7 @@
 
 import sys
 import os
-import optparse
+import argparse
 import re
 import glob
 import logging
@@ -41,36 +41,27 @@ def datetime_hook(jsdict):
 
 
 def main():
-    valid_layer_name = re.compile('[-\w]+$')
+    parser = argparse.ArgumentParser(description="Layer index import utility. Imports layer information from another layer index instance using the REST API. WARNING: this will overwrite data in your database, use with caution!")
+    parser.add_argument('url', help='Layer index URL to fetch from')
+    parser.add_argument('-n', '--dry-run', action='store_true', help="Don't write any data back to the database")
+    parser.add_argument('-d', '--debug', action='store_true', help='Enable debug output')
+    parser.add_argument('-q', '--quiet', action='store_true', help='Hide all output except error messages')
 
-    parser = optparse.OptionParser(
-        usage = """
-    %prog [options] <url>""")
+    args = parser.parse_args()
 
-    parser.add_option("-n", "--dry-run",
-            help = "Don't write any data back to the database",
-            action="store_true", dest="dryrun")
-    parser.add_option("-d", "--debug",
-            help = "Enable debug output",
-            action="store_const", const=logging.DEBUG, dest="loglevel", default=logging.INFO)
-    parser.add_option("-q", "--quiet",
-            help = "Hide all output except error messages",
-            action="store_const", const=logging.ERROR, dest="loglevel")
-
-    options, args = parser.parse_args(sys.argv)
-
-    if len(args) < 2:
-        print("Please specify URL of the layer index")
-        sys.exit(1)
-
-    layerindex_url = args[1]
+    if args.debug:
+        loglevel = logging.DEBUG
+    elif args.quiet:
+        loglevel = logging.WARNING
+    else:
+        loglevel = logging.INFO
 
     utils.setup_django()
     import settings
     from layerindex.models import Branch, LayerItem, LayerBranch, LayerDependency, LayerMaintainer, LayerNote, Recipe, Source, Patch, PackageConfig, StaticBuildDep, DynamicBuildDep, RecipeFileDependency, Machine, Distro, BBClass, BBAppend, IncFile
     from django.db import transaction
 
-    logger.setLevel(options.loglevel)
+    logger.setLevel(loglevel)
 
     fetchdir = settings.LAYER_FETCH_DIR
     if not fetchdir:
@@ -80,6 +71,7 @@ def main():
     if not os.path.exists(fetchdir):
         os.makedirs(fetchdir)
 
+    layerindex_url = args.url
     if not layerindex_url.endswith('/'):
         layerindex_url += '/'
     if not '/layerindex/api/' in layerindex_url:
@@ -431,7 +423,7 @@ def main():
                             layer_idmap,
                             'layer')
 
-            if options.dryrun:
+            if args.dry_run:
                 raise DryRunRollbackException()
     except DryRunRollbackException:
         pass
