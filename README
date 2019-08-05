@@ -103,7 +103,7 @@ setup within it:
    need layer data. To import the full set for the master branch from the
    public instance at layers.openembedded.org you can run the following:
 
-   docker-compose run --rm layersapp /opt/layerindex/layerindex/tools/import_layers.py -d https://layers.openembedded.org
+   docker-compose run --rm layersapp /opt/layerindex/layerindex/tools/import_layers.py https://layers.openembedded.org
 
    Alternatively, you can populate the database manually -
    you'll need to add at least the openembedded-core layer to the
@@ -166,7 +166,8 @@ Updating OpenEmbedded data
 --------------------------
 
 You will likely want to update the OpenEmbedded layer information on a regular
-basis. To do that:
+basis. To do that by fetching and parsing all layer repositories, run the
+following:
 
    Incremental update:
 
@@ -176,6 +177,11 @@ basis. To do that:
    changed as part of an upgrade of the application code):
 
        docker-compose run --rm layersapp /opt/layerindex/layerindex/update.py -r
+
+Alternatively, you can update the data from an existing layer index instance
+(as per above during setup):
+
+    docker-compose run --rm layersapp /opt/layerindex/layerindex/tools/import_layers.py https://layers.openembedded.org
 
 
 
