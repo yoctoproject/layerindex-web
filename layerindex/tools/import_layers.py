@@ -279,6 +279,12 @@ def main():
                 for idv in existing_filedeps:
                     RecipeFileDependency.objects.filter(id=idv).delete()
 
+            # Get list of layerbranches that currently exist, so we can delete any that
+            # we don't find in the remote layer index (assuming they are on branches
+            # that *do* exist in the remote index and are in the list specified by
+            # -b/--branch, if any)
+            existing_layerbranches = list(LayerBranch.objects.filter(branch__in=branch_idmap.values()).values_list('id', flat=True))
+
             exclude_fields = ['id', 'layer', 'branch', 'yp_compatible_version', 'updated']
             for layerbranchjs in jsdata:
                 branch = branch_idmap.get(layerbranchjs['branch'], None)
@@ -296,6 +302,7 @@ def main():
                     # The layerbranch already exists (this will occur for layers
                     # that already existed, since we need to have those in layer_idmap
                     # to be able to import layer dependencies)
+                    existing_layerbranches.remove(layerbranch.id)
                     if layerbranchjs['updated'] <= layerbranch.updated:
                         logger.debug('Skipping layerbranch %s, already up-to-date' % layerbranchjs['id'])
                         layerbranch_idmap[layerbranchjs['id']] = layerbranch
@@ -365,6 +372,11 @@ def main():
                                        exclude_fields=['id', 'layerbranch', 'updated'],
                                        key_fields=['path'])
 
+            for idv in existing_layerbranches:
+                layerbranch = LayerBranch.objects.get(id=idv)
+                if layer_re is None or layer_re.match(layerbranch.layer.name):
+                    logger.debug('Deleting layerbranch %s' % layerbranch)
+                    layerbranch.delete()
 
             # Get layer dependencies
             logger.debug('Importing layer dependencies')
