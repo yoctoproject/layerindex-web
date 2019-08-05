@@ -12,7 +12,6 @@ import sys
 import os
 import argparse
 import re
-import glob
 import logging
 import subprocess
 import urllib.request
@@ -44,6 +43,7 @@ def main():
     parser = argparse.ArgumentParser(description="Layer index import utility. Imports layer information from another layer index instance using the REST API. WARNING: this will overwrite data in your database, use with caution!")
     parser.add_argument('url', help='Layer index URL to fetch from')
     parser.add_argument('-b', '--branch', action='store', help='Restrict to import a specific branch only (separate multiple branches with commas)')
+    parser.add_argument('-l', '--layer', action='store', help='Restrict to import a specific layer only (regular expressions allowed)')
     parser.add_argument('-n', '--dry-run', action='store_true', help="Don't write any data back to the database")
     parser.add_argument('-d', '--debug', action='store_true', help='Enable debug output')
     parser.add_argument('-q', '--quiet', action='store_true', help='Hide all output except error messages')
@@ -120,6 +120,11 @@ def main():
         else:
             logger.debug('Skipping branch %s, not in database' % branchjs['name'])
 
+    if args.layer:
+        layer_re = re.compile('^' + args.layer + '$')
+    else:
+        layer_re = None
+
     try:
         with transaction.atomic():
             # Get layers
@@ -131,6 +136,10 @@ def main():
             layer_idmap = {}
             exclude_fields = ['id', 'updated']
             for layerjs in jsdata:
+                if layer_re and not layer_re.match(layerjs['name']):
+                    logger.debug('Skipping layer %s, does not match layer restriction' % layerjs['name'])
+                    continue
+
                 layeritem = LayerItem.objects.filter(name=layerjs['name']).first()
                 if layeritem:
                     # Already have this layer
