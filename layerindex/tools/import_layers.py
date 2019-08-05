@@ -44,6 +44,7 @@ def main():
     parser.add_argument('url', help='Layer index URL to fetch from')
     parser.add_argument('-b', '--branch', action='store', help='Restrict to import a specific branch only (separate multiple branches with commas)')
     parser.add_argument('-l', '--layer', action='store', help='Restrict to import a specific layer only (regular expressions allowed)')
+    parser.add_argument('-r', '--reload', action='store_true', help='Reload data even if it is up-to-date')
     parser.add_argument('-n', '--dry-run', action='store_true', help="Don't write any data back to the database")
     parser.add_argument('-d', '--debug', action='store_true', help='Enable debug output')
     parser.add_argument('-q', '--quiet', action='store_true', help='Hide all output except error messages')
@@ -143,7 +144,7 @@ def main():
                 layeritem = LayerItem.objects.filter(name=layerjs['name']).first()
                 if layeritem:
                     # Already have this layer
-                    if layerjs['updated'] <= layeritem.updated:
+                    if layerjs['updated'] <= layeritem.updated and not args.reload:
                         logger.debug('Skipping layer %s, already up-to-date' % layerjs['name'])
                         layer_idmap[layerjs['id']] = layeritem
                         continue
@@ -303,7 +304,7 @@ def main():
                     # that already existed, since we need to have those in layer_idmap
                     # to be able to import layer dependencies)
                     existing_layerbranches.remove(layerbranch.id)
-                    if layerbranchjs['updated'] <= layerbranch.updated:
+                    if layerbranchjs['updated'] <= layerbranch.updated and not args.reload:
                         logger.debug('Skipping layerbranch %s, already up-to-date' % layerbranchjs['id'])
                         layerbranch_idmap[layerbranchjs['id']] = layerbranch
                         continue
