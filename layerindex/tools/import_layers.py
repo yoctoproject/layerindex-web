@@ -43,6 +43,7 @@ def datetime_hook(jsdict):
 def main():
     parser = argparse.ArgumentParser(description="Layer index import utility. Imports layer information from another layer index instance using the REST API. WARNING: this will overwrite data in your database, use with caution!")
     parser.add_argument('url', help='Layer index URL to fetch from')
+    parser.add_argument('-b', '--branch', action='store', help='Restrict to import a specific branch only (separate multiple branches with commas)')
     parser.add_argument('-n', '--dry-run', action='store_true', help="Don't write any data back to the database")
     parser.add_argument('-d', '--debug', action='store_true', help='Enable debug output')
     parser.add_argument('-q', '--quiet', action='store_true', help='Hide all output except error messages')
@@ -101,11 +102,23 @@ def main():
     data = urllib.request.urlopen(rq).read()
     jsdata = json.loads(data.decode('utf-8'))
     branch_idmap = {}
+    filter_branches = []
+    if args.branch:
+        for branch in args.branch.split(','):
+            if not Branch.objects.filter(name=branch).exists():
+                logger.error('"%s" is not a valid branch in this database (branches must be created manually first)' % branch)
+                sys.exit(1)
+            filter_branches.append(branch)
     for branchjs in jsdata:
+        if filter_branches and branchjs['name'] not in filter_branches:
+            logger.debug('Skipping branch %s, not in specified branch list' % branchjs['name'])
+            continue
         res = Branch.objects.filter(name=branchjs['name'])
         if res:
             branch = res.first()
             branch_idmap[branchjs['id']] = branch
+        else:
+            logger.debug('Skipping branch %s, not in database' % branchjs['name'])
 
     try:
         with transaction.atomic():
