@@ -67,7 +67,7 @@ def main():
 
     utils.setup_django()
     import settings
-    from layerindex.models import Branch, LayerItem, LayerBranch, LayerDependency, LayerMaintainer, LayerNote, Recipe, Source, Patch, PackageConfig, StaticBuildDep, DynamicBuildDep, RecipeFileDependency
+    from layerindex.models import Branch, LayerItem, LayerBranch, LayerDependency, LayerMaintainer, LayerNote, Recipe, Source, Patch, PackageConfig, StaticBuildDep, DynamicBuildDep, RecipeFileDependency, Machine, Distro, BBClass, BBAppend, IncFile
     from django.db import transaction
 
     logger.setLevel(options.loglevel)
@@ -96,6 +96,11 @@ def main():
     layermaintainers_url = jsdata.get('layerMaintainers', None)
     layernotes_url = jsdata.get('layerNotes', None)
     recipes_url = jsdata.get('recipes', None)
+    machines_url = jsdata.get('machines', None)
+    distros_url = jsdata.get('distros', None)
+    classes_url = jsdata.get('classes', None)
+    appends_url = jsdata.get('appends', None)
+    incfiles_url = jsdata.get('incFiles', None)
 
     logger.debug('Getting branches')
 
@@ -302,6 +307,49 @@ def main():
                                        custom_fields=['sources', 'patches', 'package_configs'],
                                        custom_field_cb=recipe_field_handler,
                                        key_fields=['pn'])
+
+                if machines_url:
+                    import_child_items(layerbranch,
+                                       Machine,
+                                       url=machines_url,
+                                       parent_orig_id=layerbranchjs['id'],
+                                       exclude_fields=['id', 'layerbranch', 'updated'],
+                                       key_fields=['name'])
+
+                if distros_url:
+                    import_child_items(layerbranch,
+                                       Distro,
+                                       url=distros_url,
+                                       parent_orig_id=layerbranchjs['id'],
+                                       exclude_fields=['id', 'layerbranch', 'updated'],
+                                       key_fields=['name'])
+
+                # The models below don't have an "updated" field at present, but it does
+                # no harm to leave it as excluded in case it does get added in the future
+
+                if classes_url:
+                    import_child_items(layerbranch,
+                                       BBClass,
+                                       url=classes_url,
+                                       parent_orig_id=layerbranchjs['id'],
+                                       exclude_fields=['id', 'layerbranch', 'updated'],
+                                       key_fields=['name'])
+
+                if appends_url:
+                    import_child_items(layerbranch,
+                                       BBAppend,
+                                       url=appends_url,
+                                       parent_orig_id=layerbranchjs['id'],
+                                       exclude_fields=['id', 'layerbranch', 'updated'],
+                                       key_fields=['filename'])
+
+                if incfiles_url:
+                    import_child_items(layerbranch,
+                                       IncFile,
+                                       url=incfiles_url,
+                                       parent_orig_id=layerbranchjs['id'],
+                                       exclude_fields=['id', 'layerbranch', 'updated'],
+                                       key_fields=['path'])
 
 
             # Get layer dependencies
