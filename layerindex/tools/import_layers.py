@@ -129,7 +129,7 @@ def main():
     try:
         with transaction.atomic():
             # Get layers
-            logger.debug('Importing layers')
+            logger.info('Importing layers')
             rq = urllib.request.Request(layers_url)
             data = urllib.request.urlopen(rq).read()
             jsdata = json.loads(data.decode('utf-8'), object_hook=datetime_hook)
@@ -287,7 +287,8 @@ def main():
             existing_layerbranches = list(LayerBranch.objects.filter(branch__in=branch_idmap.values()).values_list('id', flat=True))
 
             exclude_fields = ['id', 'layer', 'branch', 'yp_compatible_version', 'updated']
-            for layerbranchjs in jsdata:
+            layercount = len(jsdata)
+            for i, layerbranchjs in enumerate(jsdata):
                 branch = branch_idmap.get(layerbranchjs['branch'], None)
                 if not branch:
                     # We don't have this branch, skip it
@@ -308,10 +309,13 @@ def main():
                         logger.debug('Skipping layerbranch %s, already up-to-date' % layerbranchjs['id'])
                         layerbranch_idmap[layerbranchjs['id']] = layerbranch
                         continue
+                    logger.info('Updating %s (%d/%d)' % (layerbranch, i+1, layercount))
                 else:
+                    logger.info('Importing %s (%d/%d)' % (layerbranch, i+1, layercount))
                     layerbranch = LayerBranch()
                     layerbranch.branch = branch
                     layerbranch.layer = layer
+
 
                 for key, value in layerbranchjs.items():
                     if key in exclude_fields:
@@ -380,7 +384,7 @@ def main():
                     layerbranch.delete()
 
             # Get layer dependencies
-            logger.debug('Importing layer dependencies')
+            logger.info('Importing layer dependencies')
             rq = urllib.request.Request(layerdeps_url)
             data = urllib.request.urlopen(rq).read()
             jsdata = json.loads(data.decode('utf-8'))
