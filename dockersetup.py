@@ -44,6 +44,7 @@ def get_args():
 
     parser.add_argument('-u', '--update', action="store_true", default=False, help='Update existing installation instead of installing')
     parser.add_argument('-r', '--reinstall', action="store_true", default=False, help='Reinstall over existing installation (wipes database!)')
+    parser.add_argument('--uninstall', action="store_true", default=False, help='Uninstall (wipes database!)')
     parser.add_argument('-o', '--hostname', type=str, help='Hostname of your machine. Defaults to localhost if not set.', required=False, default = "localhost")
     parser.add_argument('-p', '--http-proxy', type=str, help='http proxy in the format http://<myproxy:port>', default=default_http_proxy, required=False)
     parser.add_argument('-s', '--https-proxy', type=str, help='https proxy in the format http://<myproxy:port>', default=default_https_proxy, required=False)
@@ -631,7 +632,11 @@ return_code = subprocess.call("docker ps -a | grep -q layersapp", shell=True)
 if return_code == 0:
     installed = True
 
-if args.update:
+if args.uninstall:
+    if not installed:
+        print("Cannot uninstall - application does not appear to be installed")
+        sys.exit(1)
+elif args.update:
     if not installed:
         print("Application container not found - update mode can only be used on an existing installation")
         sys.exit(1)
@@ -642,7 +647,8 @@ elif installed and not args.reinstall:
     print('Application already installed. Please use -u/--update to update or -r/--reinstall to reinstall')
     sys.exit(1)
 
-print("""
+if not args.uninstall:
+    print("""
 OE Layer Index Docker setup script
 ----------------------------------
 
@@ -657,7 +663,7 @@ Note that this script does have interactive prompts, so be prepared to
 provide information as needed.
 """)
 
-if not args.update and not email_host:
+if not (args.update or args.uninstall) and not email_host:
     print("""  WARNING: no email host has been specified - functions that require email
   (such as and new account registraion, password reset and error reports will
   not work without it. If you wish to correct this, press Ctrl+C now and then
@@ -670,8 +676,16 @@ if args.reinstall:
   want.
 """)
 
+if args.uninstall:
+    print("""
+  WARNING: continuing will wipe out any existing data in the database and
+  uninstall the application. Press Ctrl+C now if this is not what you want.
+""")
+
 try:
-    if args.update:
+    if args.uninstall:
+        promptstr = 'Press Enter to begin uninstallation (or Ctrl+C to exit)...'
+    elif args.update:
         promptstr = 'Press Enter to begin update (or Ctrl+C to exit)...'
     else:
         promptstr = 'Press Enter to begin setup (or Ctrl+C to exit)...'
@@ -680,7 +694,7 @@ except KeyboardInterrupt:
     print('')
     sys.exit(2)
 
-if not args.update:
+if not (args.update or args.uninstall):
     # Get email address
     print('')
     if args.letsencrypt:
@@ -695,8 +709,13 @@ if not args.update:
         else:
             print('Entered email address is not valid')
 
-if args.reinstall:
+if args.reinstall or args.uninstall:
     return_code = subprocess.call(['docker-compose', 'down', '-v'], shell=False)
+
+if args.uninstall:
+    # We're done
+    print('Uninstallation completed')
+    sys.exit(0)
 
 if args.update:
     args.no_https = read_dockerfile_web()
