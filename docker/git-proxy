@@ -6,7 +6,15 @@
 PROXY=your.proxy.server
 PORT=portnumber
 
-METHOD="-X 5 -x ${PROXY}:${PORT}"
+case $1 in
+    ## NO_PROXY
+    )
+        METHOD="-X connect"
+        ;;
+    *)
+        METHOD="-X 5 -x ${PROXY}:${PORT}"
+        ;;
+esac
 
 # BSD netcat is used to connect
 /bin/nc $METHOD $*

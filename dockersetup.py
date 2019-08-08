@@ -37,11 +37,18 @@ from shlex import quote
 def get_args():
     parser = argparse.ArgumentParser(description='Script sets up the Layer Index tool with Docker Containers.')
 
+    default_http_proxy = os.environ.get('http_proxy', os.environ.get('HTTP_PROXY', ''))
+    default_https_proxy = os.environ.get('https_proxy', os.environ.get('HTTPS_PROXY', ''))
+    default_socks_proxy = os.environ.get('socks_proxy', os.environ.get('SOCKS_PROXY', os.environ.get('all_proxy', os.environ.get('ALL_PROXY', ''))))
+    default_no_proxy = os.environ.get('no_proxy', os.environ.get('NO_PROXY', ''))
+
     parser.add_argument('-u', '--update', action="store_true", default=False, help='Update existing installation instead of installing')
     parser.add_argument('-r', '--reinstall', action="store_true", default=False, help='Reinstall over existing installation (wipes database!)')
     parser.add_argument('-o', '--hostname', type=str, help='Hostname of your machine. Defaults to localhost if not set.', required=False, default = "localhost")
-    parser.add_argument('-p', '--http-proxy', type=str, help='http proxy in the format http://<myproxy:port>', required=False)
-    parser.add_argument('-s', '--https-proxy', type=str, help='https proxy in the format http://<myproxy:port>', required=False)
+    parser.add_argument('-p', '--http-proxy', type=str, help='http proxy in the format http://<myproxy:port>', default=default_http_proxy, required=False)
+    parser.add_argument('-s', '--https-proxy', type=str, help='https proxy in the format http://<myproxy:port>', default=default_https_proxy, required=False)
+    parser.add_argument('-S', '--socks-proxy', type=str, help='socks proxy in the format socks://myproxy:port>', default=default_socks_proxy, required=False)
+    parser.add_argument('-N', '--no-proxy', type=str, help='Comma-separated list of hosts that should not be connected to via the proxy', default=default_no_proxy, required=False)
     parser.add_argument('-d', '--databasefile', type=str, help='Location of your database file to import. Must be a .sql file.', required=False)
     parser.add_argument('-e', '--email-host', type=str, help='Email host for sending messages (optionally with :port if not 25)', required=False)
     parser.add_argument('--email-user', type=str, help='User name to use when connecting to email host', required=False)
@@ -66,17 +73,24 @@ def get_args():
         if args.reinstall:
             raise argparse.ArgumentTypeError("The -u/--update and -r/--reinstall options are mutually exclusive")
 
-    proxy_port = proxymod = ""
+    socks_proxy_port = socks_proxy_host = ""
     try:
-        if args.http_proxy:
+        if args.socks_proxy:
+            split = args.socks_proxy.split(":")
+            socks_proxy_port = split[2]
+            socks_proxy_host = split[1].replace("/", "")
+        elif args.http_proxy:
+            # Guess that this will work
             split = args.http_proxy.split(":")
-            proxy_port = split[2]
-            proxymod = split[1].replace("/", "")
+            socks_proxy_port = '1080'
+            socks_proxy_host = split[1].replace("/", "")
     except IndexError:
-        raise argparse.ArgumentTypeError("http_proxy must be in format http://<myproxy:port>")
+        raise argparse.ArgumentTypeError("socks_proxy must be in format socks://<myproxy:port>")
 
     if args.http_proxy and not args.https_proxy:
-        print('WARNING: http proxy specified without https proxy, this is likely to be incorrect')
+        args.https_proxy = args.http_proxy
+    elif args.https_proxy and not args.http_proxy:
+        args.http_proxy = args.https_proxy
 
     for entry in args.portmapping.split(','):
         if len(entry.split(":")) != 2:
@@ -112,40 +126,97 @@ def get_args():
     if (args.email_ssl or args.email_tls or args.email_user or args.email_password) and not email_host:
         raise argparse.ArgumentTypeError("If any of the email host options are specified then you must also specify an email host with -e/--email-host")
 
-    return args, proxy_port, proxymod, email_host, email_port
+    return args, socks_proxy_port, socks_proxy_host, email_host, email_port
 
 # Edit http_proxy and https_proxy in Dockerfile
-def edit_dockerfile(http_proxy, https_proxy):
+def edit_dockerfile(http_proxy, https_proxy, no_proxy):
     filedata= readfile("Dockerfile")
     newlines = []
     lines = filedata.splitlines()
     for line in lines:
-        if "ENV http_proxy" in line and http_proxy:
-            newlines.append("ENV http_proxy " + http_proxy + "\n")
-        elif "ENV https_proxy" in line and https_proxy:
-            newlines.append("ENV https_proxy " + https_proxy + "\n")
+        if "ENV http_proxy" in line:
+            if http_proxy:
+                newlines.append("ENV http_proxy " + http_proxy + "\n")
+            else:
+                newlines.append('#' + line.lstrip('#') + '\n')
+        elif "ENV https_proxy" in line:
+            if https_proxy:
+                newlines.append("ENV https_proxy " + https_proxy + "\n")
+            else:
+                newlines.append('#' + line.lstrip('#') + '\n')
+        elif "ENV no_proxy" in line:
+            if no_proxy:
+                newlines.append("ENV no_proxy " + no_proxy + "\n")
+            else:
+                newlines.append('#' + line.lstrip('#') + '\n')
         else:
             newlines.append(line + "\n")
 
     writefile("Dockerfile", ''.join(newlines))
 
 
+def convert_no_proxy(no_proxy):
+    '''
+    Convert no_proxy to something that will work in a shell case
+    statement (for the git proxy script)
+    '''
+    no_proxy_sh = []
+    for item in no_proxy.split(','):
+        ip_res = re.match('^([0-9]+).([0-9]+).([0-9]+).([0-9]+)/([0-9]+)$', item)
+        if ip_res:
+            mask = int(ip_res.groups()[4])
+            if mask == 8:
+                no_proxy_sh.append('%s.*' % ip_res.groups()[0])
+            elif mask == 16:
+                no_proxy_sh.append('%s.%s.*' % ip_res.groups()[:2])
+            elif mask == 24:
+                no_proxy_sh.append('%s.%s.%s.*' % ip_res.groups()[:3])
+            elif mask == 32:
+                no_proxy_sh.append('%s.%s.%s.%s' % ip_res.groups()[:4])
+            # If it's not one of these, we can't support it - just skip it
+        else:
+            if item.startswith('.'):
+                no_proxy_sh.append('*' + item)
+            else:
+                no_proxy_sh.append(item)
+    return '|'.join(no_proxy_sh)
+
+
 # If using a proxy, add proxy values to git-proxy and uncomment proxy script in .gitconfig
-def edit_gitproxy(proxymod, proxy_port):
-    filedata= readfile("docker/git-proxy")
+def edit_gitproxy(socks_proxy_host, socks_proxy_port, no_proxy):
+    no_proxy_sh = convert_no_proxy(no_proxy)
+
+    filedata = readfile("docker/git-proxy")
     newlines = []
     lines = filedata.splitlines()
+    eatnextline = False
     for line in lines:
-        if "PROXY=" in line:
-            newlines.append("PROXY=" + proxymod + "\n")
-        elif "PORT=" in line:
-            newlines.append("PORT=" + proxy_port + "\n")
+        if eatnextline:
+            eatnextline = False
+            continue
+        if line.startswith('PROXY='):
+            newlines.append('PROXY=' + socks_proxy_host + '\n')
+        elif line.startswith('PORT='):
+            newlines.append('PORT=' + socks_proxy_port + '\n')
+        elif '## NO_PROXY' in line:
+            newlines.append(line + '\n')
+            newlines.append('    %s)\n' % no_proxy_sh)
+            eatnextline = True
         else:
             newlines.append(line + "\n")
     writefile("docker/git-proxy", ''.join(newlines))
+
     filedata = readfile("docker/.gitconfig")
-    newdata = filedata.replace("#gitproxy", "gitproxy")
-    writefile("docker/.gitconfig", newdata)
+    newlines = []
+    for line in filedata.splitlines():
+        if 'gitproxy' in line:
+            if socks_proxy_host:
+                newlines.append(yaml_uncomment(line) + "\n")
+            else:
+                newlines.append(yaml_comment(line) + "\n")
+        else:
+            newlines.append(line + "\n")
+    writefile("docker/.gitconfig", ''.join(newlines))
 
 def yaml_uncomment(line):
     out = ''
@@ -509,7 +580,7 @@ def writefile(filename, data):
 
 
 ## Get user arguments
-args, proxy_port, proxymod, email_host, email_port = get_args()
+args, socks_proxy_port, socks_proxy_host, email_host, email_port = get_args()
 
 if args.update:
     with open('docker-compose.yml', 'r') as f:
@@ -634,10 +705,9 @@ if args.update:
         args.hostname, https_port, certdir, certfile, keyfile = read_nginx_ssl_conf(container_cert_dir)
         edit_nginx_ssl_conf(args.hostname, https_port, certdir, certfile, keyfile)
 else:
-    if args.http_proxy:
-        edit_gitproxy(proxymod, proxy_port)
-    if args.http_proxy or args.https_proxy:
-        edit_dockerfile(args.http_proxy, args.https_proxy)
+    # Always edit these in case we switch from proxy to no proxy
+    edit_gitproxy(socks_proxy_host, socks_proxy_port, args.no_proxy)
+    edit_dockerfile(args.http_proxy, args.https_proxy, args.no_proxy)
 
     edit_dockercompose(args.hostname, dbpassword, dbapassword, secretkey, rmqpassword, args.portmapping, args.letsencrypt, email_host, email_port, args.email_user, args.email_password, args.email_ssl, args.email_tls)
 
