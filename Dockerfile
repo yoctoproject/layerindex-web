@@ -10,6 +10,7 @@ ENV PYTHONUNBUFFERED=1 \
 ## Uncomment to set proxy ENVVARS within container
 #ENV http_proxy http://your.proxy.server:port
 #ENV https_proxy https://your.proxy.server:port
+#ENV no_proxy localhost,127.0.0.0/8
 
 # NOTE: we don't purge gcc below as we have some places in the OE metadata that look for it
 
