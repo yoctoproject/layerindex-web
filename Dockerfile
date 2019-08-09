@@ -1,4 +1,4 @@
-# See docker/README for how to use this.
+# See README for how to use this.
 
 FROM debian:stretch
 LABEL maintainer="Michael Halstead <mhalstead@linuxfoundation.org>"
