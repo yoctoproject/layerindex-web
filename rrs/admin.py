@@ -172,7 +172,8 @@ class RecipeDistroAdmin(admin.ModelAdmin):
 class RecipeUpgradeAdmin(admin.ModelAdmin):
     search_fields = ['recipesymbol__pn']
     list_filter = ['recipesymbol__layerbranch__layer__name',
-            ('commit_date', DateFieldListFilter), 'maintainer__name']
+                   'upgrade_type', ('commit_date', DateFieldListFilter),
+                   'maintainer__name']
     model = RecipeUpgrade
 
 class RecipeUpstreamHistoryAdmin(admin.ModelAdmin):

@@ -146,7 +146,7 @@ def _save_upgrade(recipesymbol, layerbranch, pv, commit, title, info, filepath, 
 """
     Create upgrade receives new recipe_data and cmp versions.
 """
-def _create_upgrade(recipe_data, layerbranch, ct, title, info, filepath, logger, initial=False):
+def _create_upgrade(recipe_data, layerbranch, ct, title, info, filepath, logger, pn_recipes, initial=False):
     from rrs.models import RecipeUpgrade, RecipeSymbol
     from bb.utils import vercmp_string
 
@@ -181,9 +181,13 @@ def _create_upgrade(recipe_data, layerbranch, ct, title, info, filepath, logger,
                 get_pv_type(pv))
 
         try:
+            vercmp_result = 0
+            if not (npv == 'git' or ppv == 'git'):
+                vercmp_result = vercmp_string(ppv, npv)
+
             if npv == 'git':
                 logger.debug("%s: Avoiding upgrade to unversioned git." % pn)
-            elif ppv == 'git' or vercmp_string(ppv, npv) == -1:
+            elif ppv == 'git' or vercmp_result != 0:
                 if initial is True:
                     logger.debug("%s: Update initial upgrade ( -> %s)." % \
                             (pn, pv)) 
@@ -191,9 +195,29 @@ def _create_upgrade(recipe_data, layerbranch, ct, title, info, filepath, logger,
                     latest_upgrade.version = pv
                     latest_upgrade.save()
                 else:
-                    logger.debug("%s: detected upgrade (%s -> %s)" \
-                            " in ct %s." % (pn, prev_pv, pv, ct))
-                    _save_upgrade(recipesymbol, layerbranch, pv, ct, title, info, filepath, logger)
+                    if len(pn_recipes) > 1:
+                        # Check if the "new" version is already in the database
+                        if RecipeUpgrade.objects.filter(recipesymbol=recipesymbol, version=pv).exists():
+                            for prd in pn_recipes:
+                                if prd.getVar('FILE', True) != recipe_data.getVar('FILE', True):
+                                    lpv = prd.getVar('PV', True)
+                                    (lpvw, _, _) = get_recipe_pv_without_srcpv(lpv,
+                                            get_pv_type(lpv))
+                                    if lpvw == ppv:
+                                        # The "previous" recipe is still present, we won't call this an upgrade 
+                                        logger.debug('Multiple %s recipes, ignoring apparent version change' % pn)
+                                        return
+                    upgrade_type = 'U'
+                    if vercmp_result == 1:
+                        if len(pn_recipes) > 1:
+                            logger.debug('Multiple %s recipes, ignoring apparent downgrade' % pn)
+                            return
+                        else:
+                            upgrade_type = 'D'
+                    op = {'U': 'upgrade', 'D': 'downgrade'}[upgrade_type]
+                    logger.debug("%s: detected %s (%s -> %s)" \
+                            " in ct %s." % (pn, op, prev_pv, pv, ct))
+                    _save_upgrade(recipesymbol, layerbranch, pv, ct, title, info, filepath, logger, upgrade_type=upgrade_type)
         except KeyboardInterrupt:
             raise
         except Exception as e:
@@ -351,9 +375,15 @@ def generate_history(options, layerbranch_id, commit, logger):
             recordcommit = commit
 
         fn_data = {}
+        pn_data = {}
         for recipe_data in recipes:
             fn = os.path.relpath(recipe_data.getVar('FILE', True), repodir)
             fn_data[fn] = recipe_data
+            pn = recipe_data.getVar('PN', True)
+            if pn in pn_data:
+                pn_data[pn].append(recipe_data)
+            else:
+                pn_data[pn] = [recipe_data]
 
         seen_pns = []
         try:
@@ -381,10 +411,11 @@ def generate_history(options, layerbranch_id, commit, logger):
                             ru.save()
 
                 for recipe_data in recipes:
+                    pn = recipe_data.getVar('PN', True)
                     filepath = os.path.relpath(recipe_data.getVar('FILE', True), repodir)
                     _create_upgrade(recipe_data, layerbranch, recordcommit, title,
-                            info, filepath, logger, initial=options.initial)
-                    seen_pns.append(recipe_data.getVar('PN', True))
+                            info, filepath, logger, pn_data[pn], initial=options.initial)
+                    seen_pns.append(pn)
 
                 for df in deleted:
                     rus = RecipeUpgrade.objects.filter(recipesymbol__layerbranch=layerbranch, filepath=df).order_by('-commit_date')

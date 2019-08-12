@@ -432,6 +432,7 @@ class RecipeDistro(models.Model):
 class RecipeUpgrade(models.Model):
     UPGRADE_TYPE_CHOICES = (
         ('U', 'Upgrade'),
+        ('D', 'Downgrade'),
         ('N', 'Delete'),
         ('R', 'Delete (final)'),
     )

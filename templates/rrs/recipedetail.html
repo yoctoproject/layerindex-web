@@ -95,7 +95,7 @@
                 {% for rud in recipe_upgrade_details %}
                 <tr>
                     <td>{{ rud.title }}</td>
-                    <td>{% if rud.upgrade_type != 'R' %}{{ rud.version }}{% endif %}</td>
+                    <td>{% if rud.upgrade_type != 'R' %}{{ rud.version }}{% if rud.upgrade_type == 'D' %} <span class="label label-warning">downgrade</span>{% endif %}{% endif %}</td>
                     {% if rud.milestone_name %}
                     <td>
                         <a href="{% url 'rrs_recipes' rud.maintplan_name rud.release_name rud.milestone_name %}">
