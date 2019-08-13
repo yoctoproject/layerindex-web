@@ -286,7 +286,7 @@
                     if (e) {
                         $('#id_vcs_web_tree_base_url').val(vcs_web_url + '/tree/%path%?h=%branch%')
                         $('#id_vcs_web_file_base_url').val(vcs_web_url + '/tree/%path%?h=%branch%')
-                        $('#id_vcs_web_commit_url').val(vcs_web_url + '/commit/id=%hash%')
+                        $('#id_vcs_web_commit_url').val(vcs_web_url + '/commit/?id=%hash%')
                     }
                 }
                 else if (type == 'gitweb') {
