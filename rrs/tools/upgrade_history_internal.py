@@ -160,13 +160,10 @@ def _create_upgrade(recipe_data, layerbranch, ct, title, info, filepath, logger,
     summary = recipe_data.getVar('SUMMARY', True) or recipe_data.getVar('DESCRIPTION', True)
     recipesymbol = RecipeSymbol.symbol(recipe_data.getVar('PN', True), layerbranch, summary=summary)
 
-    try:
-        latest_upgrade = RecipeUpgrade.objects.filter(
-                recipesymbol=recipesymbol).order_by('-commit_date')[0]
+    latest_upgrade = RecipeUpgrade.objects.filter(recipesymbol=recipesymbol).order_by('-commit_date').first()
+    if latest_upgrade:
         prev_pv = latest_upgrade.version
-    except KeyboardInterrupt:
-        raise
-    except:
+    else:
         prev_pv = None
 
     if prev_pv is None:
