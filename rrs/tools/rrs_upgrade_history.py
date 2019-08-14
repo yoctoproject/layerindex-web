@@ -88,6 +88,8 @@ def run_internal(maintplanlayerbranch, commit, commitdate, options, logger, bitb
 def upgrade_history(options, logger):
     from rrs.models import MaintenancePlan, RecipeUpgrade, Release, Milestone
 
+    logger.debug('=== BEGIN; cmdline: %s' % (' '.join(sys.argv)))
+
     if options.plan:
         maintplans = MaintenancePlan.objects.filter(id=int(options.plan))
         if not maintplans.exists():
