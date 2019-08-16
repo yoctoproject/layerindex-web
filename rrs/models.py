@@ -435,6 +435,7 @@ class RecipeUpgrade(models.Model):
         ('D', 'Downgrade'),
         ('N', 'Delete'),
         ('R', 'Delete (final)'),
+        ('M', 'Move'),
     )
 
     recipesymbol = models.ForeignKey(RecipeSymbol)
@@ -446,6 +447,7 @@ class RecipeUpgrade(models.Model):
     commit_date = models.DateTimeField(db_index=True)
     upgrade_type = models.CharField(max_length=1, choices=UPGRADE_TYPE_CHOICES, default='U', db_index=True)
     filepath = models.CharField(max_length=512, blank=True)
+    orig_filepath = models.CharField(max_length=512, blank=True)
 
     @staticmethod
     def get_by_recipe_and_date(recipe, end_date):
@@ -466,6 +468,9 @@ class RecipeUpgrade(models.Model):
                             self.commit_date)
         elif self.upgrade_type == 'N':
             return '%s: deleted (%s)' % (self.recipesymbol.pn,
+                            self.commit_date)
+        elif self.upgrade_type == 'M':
+            return '%s: moved (%s)' % (self.recipesymbol.pn,
                             self.commit_date)
         else:
             return '%s: (%s, %s)' % (self.recipesymbol.pn, self.version,

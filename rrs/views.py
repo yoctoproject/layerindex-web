@@ -201,7 +201,7 @@ class Raw():
                             ) AS rownum
                         FROM rrs_recipeupgrade
                         WHERE commit_date <= %s
-                        AND upgrade_type <> 'N') AS te
+                        AND upgrade_type not in ('M', 'N')) AS te
                         INNER JOIN rrs_recipesymbol AS rs
                         ON te.recipesymbol_id = rs.id
                         WHERE rownum = 1
@@ -731,7 +731,7 @@ class RecipeDetailView(DetailView):
             context['maintainer_name'] = 'No maintainer'
 
         context['recipe_upgrade_details'] = []
-        for ru in RecipeUpgrade.objects.filter(recipesymbol=recipesymbol).order_by('-commit_date'): 
+        for ru in RecipeUpgrade.objects.filter(recipesymbol=recipesymbol).exclude(upgrade_type='M').order_by('-commit_date'):
             context['recipe_upgrade_details'].append(_get_recipe_upgrade_detail(maintplan, ru))
         context['recipe_upgrade_detail_count'] = len(context['recipe_upgrade_details'])
 

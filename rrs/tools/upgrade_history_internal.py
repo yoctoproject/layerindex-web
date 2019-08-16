@@ -120,7 +120,7 @@ oecore_bad_revs = {
 """
     Store upgrade into RecipeUpgrade model.
 """
-def _save_upgrade(recipesymbol, layerbranch, pv, commit, title, info, filepath, logger, upgrade_type=None):
+def _save_upgrade(recipesymbol, layerbranch, pv, commit, title, info, filepath, logger, upgrade_type=None, orig_filepath=None):
     from rrs.models import Maintainer, RecipeUpgrade, RecipeSymbol
 
     maintainer_name = info.split(';')[0]
@@ -141,12 +141,14 @@ def _save_upgrade(recipesymbol, layerbranch, pv, commit, title, info, filepath, 
     upgrade.filepath = filepath
     if upgrade_type:
         upgrade.upgrade_type = upgrade_type
+    if orig_filepath:
+        upgrade.orig_filepath = orig_filepath
     upgrade.save()
 
 """
     Create upgrade receives new recipe_data and cmp versions.
 """
-def _create_upgrade(recipe_data, layerbranch, ct, title, info, filepath, logger, pn_recipes, initial=False):
+def _create_upgrade(recipe_data, layerbranch, ct, title, info, filepath, logger, pn_recipes, initial=False, orig_filepath=None):
     from rrs.models import RecipeUpgrade, RecipeSymbol
     from bb.utils import vercmp_string
 
@@ -214,7 +216,7 @@ def _create_upgrade(recipe_data, layerbranch, ct, title, info, filepath, logger,
                     op = {'U': 'upgrade', 'D': 'downgrade'}[upgrade_type]
                     logger.debug("%s: detected %s (%s -> %s)" \
                             " in ct %s." % (pn, op, prev_pv, pv, ct))
-                    _save_upgrade(recipesymbol, layerbranch, pv, ct, title, info, filepath, logger, upgrade_type=upgrade_type)
+                    _save_upgrade(recipesymbol, layerbranch, pv, ct, title, info, filepath, logger, upgrade_type=upgrade_type, orig_filepath=orig_filepath)
         except KeyboardInterrupt:
             raise
         except Exception as e:
@@ -385,6 +387,7 @@ def generate_history(options, layerbranch_id, commit, logger):
         seen_pns = []
         try:
             with transaction.atomic():
+                # Handle recipes where PN has changed
                 for a, b in moved:
                     logger.debug('Move %s -> %s' % (a,b))
                     rus = RecipeUpgrade.objects.filter(recipesymbol__layerbranch=layerbranch, filepath=a).order_by('-commit_date')
@@ -400,20 +403,31 @@ def generate_history(options, layerbranch_id, commit, logger):
                     else:
                         logger.warning('Unable to find parsed data for recipe %s' % b)
 
-                    if a not in deleted:
-                        # Need to keep filepath up-to-date, otherwise we won't be able to
-                        # find the record if we need to mark it as deleted later
-                        for ru in rus:
-                            ru.filepath = b
-                            ru.save()
-
+                # Handle recipes that exist at this point in time (which may have upgraded)
                 for recipe_data in recipes:
                     pn = recipe_data.getVar('PN', True)
                     filepath = os.path.relpath(recipe_data.getVar('FILE', True), repodir)
+                    orig_filepath = None
+                    for a, b in moved:
+                        if b == filepath:
+                            orig_filepath = a
+                            break
                     _create_upgrade(recipe_data, layerbranch, recordcommit, title,
-                            info, filepath, logger, pn_data[pn], initial=options.initial)
+                            info, filepath, logger, pn_data[pn], initial=options.initial, orig_filepath=orig_filepath)
                     seen_pns.append(pn)
 
+                # Handle recipes that have been moved without it being an upgrade/delete
+                for a, b in moved:
+                    if a not in deleted:
+                        rus = RecipeUpgrade.objects.filter(recipesymbol__layerbranch=layerbranch, filepath=a).order_by('-commit_date')
+                        if rus:
+                            ru = rus.first()
+                            if not RecipeUpgrade.objects.filter(recipesymbol=ru.recipesymbol, filepath=b).exists():
+                                # Need to record the move, otherwise we won't be able to
+                                # find the record if we need to mark the recipe as deleted later
+                                _save_upgrade(ru.recipesymbol, layerbranch, ru.version, recordcommit, title, info, b, logger, upgrade_type='M', orig_filepath=a)
+
+                # Handle deleted recipes
                 for df in deleted:
                     rus = RecipeUpgrade.objects.filter(recipesymbol__layerbranch=layerbranch, filepath=df).order_by('-commit_date')
                     for ru in rus:
