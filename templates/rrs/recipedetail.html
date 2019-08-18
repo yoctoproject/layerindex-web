@@ -93,6 +93,9 @@
                     <th>Commit</th>
                 </tr>
                 {% for rud in recipe_upgrade_details %}
+                    {% ifchanged rud.group %}
+                <tr><td colspan="6"><b>{{ rud.group.title }}</b></td></tr>
+                    {% endifchanged %}
                 <tr>
                     <td>{{ rud.title }}</td>
                     <td>{% if rud.upgrade_type != 'R' %}{{ rud.version }}{% if rud.upgrade_type == 'D' %} <span class="label label-warning">downgrade</span>{% endif %}{% endif %}</td>

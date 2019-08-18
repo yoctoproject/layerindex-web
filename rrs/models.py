@@ -6,7 +6,7 @@
 
 import sys
 import os
-import os.path
+import re
 sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__), '../')))
 
 from datetime import date, datetime
@@ -429,6 +429,38 @@ class RecipeDistro(models.Model):
         return recipe_distros
 
 
+class RecipeUpgradeGroup(models.Model):
+    recipesymbol = models.ForeignKey(RecipeSymbol)
+    title = models.CharField(max_length=100, help_text='Group title')
+
+    def __str__(self):
+        return '%s: %s' % (self.recipesymbol, self.title)
+
+
+class RecipeUpgradeGroupRule(models.Model):
+    layerbranch = models.ForeignKey(LayerBranch)
+    pn = models.CharField(max_length=100, help_text='Regular expression to match recipe to apply to')
+    version = models.CharField(max_length=100, help_text='Regular expression to split version component on')
+
+    @staticmethod
+    def group_for_params(recipesymbol, version):
+        for rule in RecipeUpgradeGroupRule.objects.filter(layerbranch=recipesymbol.layerbranch):
+            if re.match(rule.pn, recipesymbol.pn):
+                res = re.match(rule.version, version)
+                if res:
+                    if res.groups():
+                        match = res.groups()[0]
+                    else:
+                        match = res.string[res.start(0):res.end(0)]
+                    group, _ = RecipeUpgradeGroup.objects.get_or_create(recipesymbol=recipesymbol, title=match)
+                    group.save()
+                    return group
+        return None
+
+    def __str__(self):
+        return '%s: %s' % (self.layerbranch, self.pn)
+
+
 class RecipeUpgrade(models.Model):
     UPGRADE_TYPE_CHOICES = (
         ('U', 'Upgrade'),
@@ -448,6 +480,7 @@ class RecipeUpgrade(models.Model):
     upgrade_type = models.CharField(max_length=1, choices=UPGRADE_TYPE_CHOICES, default='U', db_index=True)
     filepath = models.CharField(max_length=512, blank=True)
     orig_filepath = models.CharField(max_length=512, blank=True)
+    group = models.ForeignKey(RecipeUpgradeGroup, blank=True, null=True, on_delete=models.SET_NULL)
 
     @staticmethod
     def get_by_recipe_and_date(recipe, end_date):
@@ -461,6 +494,14 @@ class RecipeUpgrade(models.Model):
 
     def commit_url(self):
         return self.recipesymbol.layerbranch.commit_url(self.sha1)
+
+    def regroup(self):
+        group = RecipeUpgradeGroupRule.group_for_params(self.recipesymbol, self.version)
+        if group != self.group:
+            self.group = group
+            return True
+        else:
+            return False
 
     def __str__(self):
         if self.upgrade_type == 'R':

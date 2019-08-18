@@ -117,11 +117,12 @@ oecore_bad_revs = {
     ],
 }
 
+
 """
     Store upgrade into RecipeUpgrade model.
 """
 def _save_upgrade(recipesymbol, layerbranch, pv, commit, title, info, filepath, logger, upgrade_type=None, orig_filepath=None):
-    from rrs.models import Maintainer, RecipeUpgrade, RecipeSymbol
+    from rrs.models import Maintainer, RecipeUpgrade
 
     maintainer_name = info.split(';')[0]
     maintainer_email = info.split(';')[1]
@@ -143,13 +144,14 @@ def _save_upgrade(recipesymbol, layerbranch, pv, commit, title, info, filepath, 
         upgrade.upgrade_type = upgrade_type
     if orig_filepath:
         upgrade.orig_filepath = orig_filepath
+    upgrade.regroup()
     upgrade.save()
 
 """
     Create upgrade receives new recipe_data and cmp versions.
 """
 def _create_upgrade(recipe_data, layerbranch, ct, title, info, filepath, logger, pn_recipes, initial=False, orig_filepath=None):
-    from rrs.models import RecipeUpgrade, RecipeSymbol
+    from rrs.models import RecipeUpgrade, RecipeSymbol, RecipeUpgradeGroupRule
     from bb.utils import vercmp_string
 
     pn = recipe_data.getVar('PN', True)

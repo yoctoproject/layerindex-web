@@ -624,9 +624,11 @@ class RecipeUpgradeDetail():
     commit = None
     commit_url = None
     upgrade_type = None
+    group = None
 
-    def __init__(self, title, version, maintplan_name, release_name, milestone_name, date, 
-            maintainer_name, is_recipe_maintainer, commit, commit_url, upgrade_type):
+    def __init__(self, title, version, maintplan_name, release_name, milestone_name, date,
+            maintainer_name, is_recipe_maintainer, commit, commit_url, upgrade_type,
+            group):
         self.title = title
         self.version = version
         self.maintplan_name = maintplan_name
@@ -638,6 +640,7 @@ class RecipeUpgradeDetail():
         self.commit = commit
         self.commit_url = commit_url
         self.upgrade_type = upgrade_type
+        self.group = group
 
 def _get_recipe_upgrade_detail(maintplan, recipe_upgrade):
     release_name = ''
@@ -672,7 +675,8 @@ def _get_recipe_upgrade_detail(maintplan, recipe_upgrade):
 
     rud = RecipeUpgradeDetail(recipe_upgrade.title, recipe_upgrade.version, \
             maintplan.name, release_name, milestone_name, commit_date, maintainer_name, \
-            is_recipe_maintainer, commit, commit_url, recipe_upgrade.upgrade_type)
+            is_recipe_maintainer, commit, commit_url, recipe_upgrade.upgrade_type, \
+            recipe_upgrade.group)
 
     return rud
 
@@ -730,10 +734,13 @@ class RecipeDetailView(DetailView):
         else:
             context['maintainer_name'] = 'No maintainer'
 
-        context['recipe_upgrade_details'] = []
-        for ru in RecipeUpgrade.objects.filter(recipesymbol=recipesymbol).exclude(upgrade_type='M').order_by('-commit_date'):
-            context['recipe_upgrade_details'].append(_get_recipe_upgrade_detail(maintplan, ru))
-        context['recipe_upgrade_detail_count'] = len(context['recipe_upgrade_details'])
+        details = []
+        for ru in RecipeUpgrade.objects.filter(recipesymbol=recipesymbol).exclude(upgrade_type='M').order_by('group', '-commit_date'):
+            details.append(_get_recipe_upgrade_detail(maintplan, ru))
+        details.sort(key=lambda s: list(map(int, s.group.title.split('.') if s.group else [])), reverse=True)
+        context['recipe_upgrade_details'] = details
+        context['recipe_upgrade_detail_count'] = len(details)
+
 
         if not recipe:
             ru = RecipeUpgrade.objects.filter(recipesymbol=recipesymbol).order_by('-commit_date').first()

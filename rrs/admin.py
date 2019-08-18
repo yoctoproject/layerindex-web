@@ -15,7 +15,8 @@ from django.core.exceptions import ValidationError
 from rrs.models import Release, Milestone, Maintainer, RecipeMaintainerHistory, \
         RecipeMaintainer, RecipeDistro, RecipeUpgrade, RecipeUpstream, \
         RecipeUpstreamHistory, MaintenancePlan, MaintenancePlanLayerBranch, \
-        RecipeMaintenanceLink, RecipeSymbol
+        RecipeMaintenanceLink, RecipeSymbol, RecipeUpgradeGroupRule, \
+        RecipeUpgradeGroup
 
 class MaintenancePlanLayerBranchFormSet(BaseInlineFormSet):
     def __init__(self, *args, **kwargs):
@@ -210,3 +211,5 @@ admin.site.register(RecipeUpstreamHistory, RecipeUpstreamHistoryAdmin)
 admin.site.register(RecipeUpstream, RecipeUpstreamAdmin)
 admin.site.register(RecipeMaintenanceLink, RecipeMaintenanceLinkAdmin)
 admin.site.register(RecipeSymbol, RecipeSymbolAdmin)
+admin.site.register(RecipeUpgradeGroupRule)
+admin.site.register(RecipeUpgradeGroup)

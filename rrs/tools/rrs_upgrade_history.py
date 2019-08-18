@@ -86,7 +86,7 @@ def run_internal(maintplanlayerbranch, commit, commitdate, options, logger, bitb
     Upgrade history handler.
 """
 def upgrade_history(options, logger):
-    from rrs.models import MaintenancePlan, RecipeUpgrade, Release, Milestone
+    from rrs.models import MaintenancePlan, RecipeUpgrade, Release, Milestone, RecipeUpgradeGroupRule
 
     logger.debug('=== BEGIN; cmdline: %s' % (' '.join(sys.argv)))
 
@@ -100,6 +100,16 @@ def upgrade_history(options, logger):
         if not maintplans.exists():
             logger.error('No enabled maintenance plans found')
             sys.exit(1)
+
+    if options.regroup:
+        for maintplan in maintplans:
+            for maintplanbranch in maintplan.maintenanceplanlayerbranch_set.all():
+                layerbranch = maintplanbranch.layerbranch
+                if RecipeUpgradeGroupRule.objects.filter(layerbranch=layerbranch).exists():
+                    for ru in RecipeUpgrade.objects.filter(recipesymbol__layerbranch=layerbranch):
+                        if ru.regroup():
+                            ru.save()
+        sys.exit(0)
 
     lockfn = os.path.join(fetchdir, "layerindex.lock")
     lockfile = utils.lock_file(lockfn)
@@ -236,6 +246,10 @@ if __name__=="__main__":
     parser.add_option("-p", "--plan",
             help="Specify maintenance plan to operate on (default is all plans that have updates enabled)",
             action="store", dest="plan", default=None)
+
+    parser.add_option("--regroup",
+            help="Re-group records only",
+            action="store_true", dest="regroup", default=False)
 
     options, args = parser.parse_args(sys.argv)
     logger.setLevel(options.loglevel)
