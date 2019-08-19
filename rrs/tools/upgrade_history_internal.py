@@ -164,7 +164,12 @@ def _create_upgrade(recipe_data, layerbranch, ct, title, info, filepath, logger,
     summary = recipe_data.getVar('SUMMARY', True) or recipe_data.getVar('DESCRIPTION', True)
     recipesymbol = RecipeSymbol.symbol(recipe_data.getVar('PN', True), layerbranch, summary=summary)
 
-    latest_upgrade = RecipeUpgrade.objects.filter(recipesymbol=recipesymbol).order_by('-commit_date').first()
+    all_rupgrades = RecipeUpgrade.objects.filter(recipesymbol=recipesymbol).exclude(sha1=ct)
+    rupgrades = all_rupgrades
+    group = RecipeUpgradeGroupRule.group_for_params(recipesymbol, pv)
+    if group:
+        rupgrades = all_rupgrades.filter(group=group)
+    latest_upgrade = rupgrades.order_by('-commit_date').first()
     if latest_upgrade:
         prev_pv = latest_upgrade.version
     else:
