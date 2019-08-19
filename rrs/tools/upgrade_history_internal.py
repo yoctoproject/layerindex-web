@@ -404,7 +404,7 @@ def generate_history(options, layerbranch_id, commit, logger):
                         ru = rus.first()
                         if ru and ru.recipesymbol.pn != pn:
                             # PN has been changed! We need to mark the old record as deleted
-                            logger.debug('PN changed: %s -> %s' % (ru.recipesymbol.pn, pn))
+                            logger.debug('PN changed (with move): %s -> %s' % (ru.recipesymbol.pn, pn))
                             if a not in deleted:
                                 deleted.append(a)
                     else:
@@ -414,6 +414,14 @@ def generate_history(options, layerbranch_id, commit, logger):
                 for recipe_data in recipes:
                     pn = recipe_data.getVar('PN', True)
                     filepath = os.path.relpath(recipe_data.getVar('FILE', True), repodir)
+                    # Check if PN has changed internally
+                    rus = RecipeUpgrade.objects.filter(recipesymbol__layerbranch=layerbranch, filepath=filepath).order_by('-commit_date')
+                    deleted_pns = rus.filter(upgrade_type__in=['R', 'N']).values_list('recipesymbol__pn', flat=True).distinct()
+                    for ru in rus:
+                        if ru.recipesymbol.pn != pn and ru.recipesymbol.pn not in deleted_pns and ru.upgrade_type not in ['R', 'N']:
+                            # PN changed (set within recipe), we need to mark the old recipe as deleted
+                            logger.debug('PN changed (without move): %s -> %s' % (ru.recipesymbol.pn, pn))
+                            _save_upgrade(ru.recipesymbol, layerbranch, ru.version, recordcommit, title, info, ru.filepath, logger, upgrade_type='R')
                     orig_filepath = None
                     for a, b in moved:
                         if b == filepath:
