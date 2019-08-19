@@ -349,7 +349,11 @@ def generate_history(options, layerbranch_id, commit, logger):
         deleted = []
         moved = []
     else:
-        fns, deleted, moved = _get_recipes_filenames(commit, repo, repodir, layersubdir_start, logger)
+        if options.filter_files:
+            filepath_start = options.filter_files
+        else:
+            filepath_start = layersubdir_start
+        fns, deleted, moved = _get_recipes_filenames(commit, repo, repodir, filepath_start, logger)
         if not (fns or deleted or moved):
             return
 
@@ -500,6 +504,10 @@ if __name__=="__main__":
         parser.add_option("--dry-run",
                 help = "Do not write any data back to the database",
                 action="store_true", dest="dry_run", default=False)
+
+        parser.add_option("-F", "--filter-files",
+                help="Only operate on a specified subset of files (wildcards allowed)",
+                action="store", dest="filter_files", default='')
 
         options, args = parser.parse_args(sys.argv)
 

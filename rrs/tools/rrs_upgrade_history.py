@@ -71,6 +71,8 @@ def run_internal(maintplanlayerbranch, commit, commitdate, options, logger, bitb
         cmd += ' --initial="%s"' % comment
     if bitbake_rev:
         cmd += ' --bitbake-rev %s' % bitbake_rev
+    if options.filter_files:
+        cmd += ' --filter-files %s' % options.filter_files
     if options.dry_run:
         cmd += ' --dry-run'
     if options.loglevel == logging.DEBUG:
@@ -131,7 +133,11 @@ def upgrade_history(options, logger):
             for maintplanbranch in maintplan.maintenanceplanlayerbranch_set.all():
                 layerbranch = maintplanbranch.layerbranch
                 if options.fullreload and not options.dry_run:
-                    RecipeUpgrade.objects.filter(recipesymbol__layerbranch=layerbranch).delete()
+                    logger.debug('fullreload: deleting upgrade objects')
+                    if options.filter_files:
+                        RecipeUpgrade.objects.filter(recipesymbol__layerbranch=layerbranch, filepath__startswith=options.filter_files).delete()
+                    else:
+                        RecipeUpgrade.objects.filter(recipesymbol__layerbranch=layerbranch).delete()
                 layer = layerbranch.layer
                 urldir = layer.get_fetch_dir()
                 repodir = os.path.join(fetchdir, urldir)
@@ -195,6 +201,9 @@ def upgrade_history(options, logger):
                                 if layersubdir_start and not (diffitem.a_path.startswith(layersubdir_start) or diffitem.b_path.startswith(layersubdir_start)):
                                     # Not in this layer, skip it
                                     continue
+                                if options.filter_files and not (diffitem.a_path.startswith(options.filter_files) or diffitem.b_path.startswith(options.filter_files)):
+                                    # Doesn't match path filter
+                                    continue
                                 if diffitem.a_path.endswith(('.bb', '.inc')) or diffitem.b_path.endswith(('.bb', '.inc')):
                                     # We need to look at this commit
                                     touches_recipe = True
@@ -211,7 +220,7 @@ def upgrade_history(options, logger):
                             continue
                         logger.debug("Analysing commit %s ..." % ct)
                         run_internal(maintplanbranch, ct, ctdate, options, logger, bitbake_map)
-                        if not options.dry_run:
+                        if not (options.dry_run or options.filter_files):
                             maintplanbranch.upgrade_rev = ct
                             maintplanbranch.upgrade_date = ctdate
                             maintplanbranch.save()
@@ -247,11 +256,19 @@ if __name__=="__main__":
             help="Specify maintenance plan to operate on (default is all plans that have updates enabled)",
             action="store", dest="plan", default=None)
 
+    parser.add_option("-F", "--filter-files",
+            help="Only operate on a specified subset of files (filepath 'startswith')",
+            action="store", dest="filter_files", default='')
+
     parser.add_option("--regroup",
             help="Re-group records only",
             action="store_true", dest="regroup", default=False)
 
     options, args = parser.parse_args(sys.argv)
     logger.setLevel(options.loglevel)
+
+    if options.filter_files and not options.plan:
+        logger.error('-F/--filter-files must be specified in conjunction with -p/--plan and --fullreload')
+        sys.exit(1)
 
     upgrade_history(options, logger)
