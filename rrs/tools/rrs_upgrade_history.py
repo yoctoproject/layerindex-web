@@ -175,6 +175,10 @@ def upgrade_history(options, logger):
                 for commit in bitbake_commit_list:
                     bitbake_map[commit] = '39780b1ccbd76579db0fc6fb9369c848a3bafa9d'
 
+                if options.stop_commit and (options.stop_commit not in [x.split()[0] for x in commit_list]):
+                    logger.error('Stop commit %s is not in repository %s' % (options.stop_commit, repodir))
+                    sys.exit(1)
+
                 if initial:
                     logger.debug("Adding initial upgrade history ....")
 
@@ -192,6 +196,9 @@ def upgrade_history(options, logger):
                 for item in commit_list:
                     if item:
                         ct, ctepoch = item.split()
+                        if ct == options.stop_commit:
+                            logger.debug('Stopping at requested commit %s' % ct)
+                            break
                         ctdate = datetime.fromtimestamp(int(ctepoch))
                         commitobj = repo.commit(ct)
                         touches_recipe = False
@@ -239,6 +246,10 @@ if __name__=="__main__":
     parser.add_option("-c", "--commit",
             help="Specify a single commit to import (for debugging)",
             action="store", dest="commit", default='')
+
+    parser.add_option("--stop-commit",
+            help="Specify a commit to stop at (for debugging)",
+            action="store", dest="stop_commit", default='')
 
     parser.add_option("-d", "--debug",
             help = "Enable debug output",
