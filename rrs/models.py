@@ -481,6 +481,7 @@ class RecipeUpgrade(models.Model):
     filepath = models.CharField(max_length=512, blank=True)
     orig_filepath = models.CharField(max_length=512, blank=True)
     group = models.ForeignKey(RecipeUpgradeGroup, blank=True, null=True, on_delete=models.SET_NULL)
+    prev_version = models.CharField(max_length=100, blank=True)
 
     @staticmethod
     def get_by_recipe_and_date(recipe, end_date):

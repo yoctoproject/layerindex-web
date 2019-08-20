@@ -121,7 +121,7 @@ oecore_bad_revs = {
 """
     Store upgrade into RecipeUpgrade model.
 """
-def _save_upgrade(recipesymbol, layerbranch, pv, commit, title, info, filepath, logger, upgrade_type=None, orig_filepath=None):
+def _save_upgrade(recipesymbol, layerbranch, pv, commit, title, info, filepath, logger, upgrade_type=None, orig_filepath=None, prev_version=None):
     from rrs.models import Maintainer, RecipeUpgrade
 
     maintainer_name = info.split(';')[0]
@@ -144,13 +144,15 @@ def _save_upgrade(recipesymbol, layerbranch, pv, commit, title, info, filepath, 
         upgrade.upgrade_type = upgrade_type
     if orig_filepath:
         upgrade.orig_filepath = orig_filepath
+    if prev_version:
+        upgrade.prev_version = prev_version
     upgrade.regroup()
     upgrade.save()
 
 """
     Create upgrade receives new recipe_data and cmp versions.
 """
-def _create_upgrade(recipe_data, layerbranch, ct, title, info, filepath, logger, pn_recipes, initial=False, orig_filepath=None):
+def _create_upgrade(recipe_data, layerbranch, ct, title, info, filepath, logger, initial=False, orig_filepath=None):
     from rrs.models import RecipeUpgrade, RecipeSymbol, RecipeUpgradeGroupRule
     from bb.utils import vercmp_string
 
@@ -201,29 +203,22 @@ def _create_upgrade(recipe_data, layerbranch, ct, title, info, filepath, logger,
                     latest_upgrade.version = pv
                     latest_upgrade.save()
                 else:
-                    if len(pn_recipes) > 1:
-                        # Check if the "new" version is already in the database
-                        if RecipeUpgrade.objects.filter(recipesymbol=recipesymbol, version=pv).exists():
-                            for prd in pn_recipes:
-                                if prd.getVar('FILE', True) != recipe_data.getVar('FILE', True):
-                                    lpv = prd.getVar('PV', True)
-                                    (lpvw, _, _) = get_recipe_pv_without_srcpv(lpv,
-                                            get_pv_type(lpv))
-                                    if lpvw == ppv:
-                                        # The "previous" recipe is still present, we won't call this an upgrade 
-                                        logger.debug('Multiple %s recipes, ignoring apparent version change' % pn)
-                                        return
+                    # Check if the "new" version is already in the database
+                    same_pv_upgrade = all_rupgrades.filter(version=pv).order_by('-commit_date').last()
+                    if same_pv_upgrade and \
+                            not all_rupgrades.filter(prev_version=pv, commit_date__gt=same_pv_upgrade.commit_date).exists() \
+                            and \
+                            not all_rupgrades.filter(upgrade_type__in=['R', 'N'], commit_date__gt=same_pv_upgrade.commit_date).exists():
+                        # The "previous" recipe is still present, we won't call this an upgrade
+                        logger.debug('%s: new version %s already exists' % (pn, pv))
+                        return
                     upgrade_type = 'U'
                     if vercmp_result == 1:
-                        if len(pn_recipes) > 1:
-                            logger.debug('Multiple %s recipes, ignoring apparent downgrade' % pn)
-                            return
-                        else:
-                            upgrade_type = 'D'
+                        upgrade_type = 'D'
                     op = {'U': 'upgrade', 'D': 'downgrade'}[upgrade_type]
                     logger.debug("%s: detected %s (%s -> %s)" \
                             " in ct %s." % (pn, op, prev_pv, pv, ct))
-                    _save_upgrade(recipesymbol, layerbranch, pv, ct, title, info, filepath, logger, upgrade_type=upgrade_type, orig_filepath=orig_filepath)
+                    _save_upgrade(recipesymbol, layerbranch, pv, ct, title, info, filepath, logger, upgrade_type=upgrade_type, orig_filepath=orig_filepath, prev_version=prev_pv)
         except KeyboardInterrupt:
             raise
         except Exception as e:
@@ -385,15 +380,9 @@ def generate_history(options, layerbranch_id, commit, logger):
             recordcommit = commit
 
         fn_data = {}
-        pn_data = {}
         for recipe_data in recipes:
             fn = os.path.relpath(recipe_data.getVar('FILE', True), repodir)
             fn_data[fn] = recipe_data
-            pn = recipe_data.getVar('PN', True)
-            if pn in pn_data:
-                pn_data[pn].append(recipe_data)
-            else:
-                pn_data[pn] = [recipe_data]
 
         seen_pns = []
         try:
@@ -432,7 +421,7 @@ def generate_history(options, layerbranch_id, commit, logger):
                             orig_filepath = a
                             break
                     _create_upgrade(recipe_data, layerbranch, recordcommit, title,
-                            info, filepath, logger, pn_data[pn], initial=options.initial, orig_filepath=orig_filepath)
+                            info, filepath, logger, initial=options.initial, orig_filepath=orig_filepath)
                     seen_pns.append(pn)
 
                 # Handle recipes that have been moved without it being an upgrade/delete
