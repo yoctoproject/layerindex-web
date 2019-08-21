@@ -234,6 +234,7 @@ def _get_recipes_filenames(ct, repo, repodir, layersubdir_start, logger):
     ct_files = []
     deleted = []
     moved_files = []
+    added_files = []
 
     incdirs = []
     commitobj = repo.commit(ct)
@@ -254,7 +255,12 @@ def _get_recipes_filenames(ct, repo, repodir, layersubdir_start, logger):
                 continue
 
             if typename == 'recipe':
-                ct_files.append(os.path.join(repodir, diffitem.b_path))
+                (to_typename, _, _) = recipeparse.detect_file_type(diffitem.b_path,
+                                            layersubdir_start)
+                if to_typename == 'recipe':
+                    ct_files.append(os.path.join(repodir, diffitem.b_path))
+                    if diffitem.a_path is None or diffitem.new_file:
+                        added_files.append(diffitem.b_path)
                 if diffitem.a_path != diffitem.b_path:
                     moved_files.append((diffitem.a_path, diffitem.b_path))
             elif typename == 'incfile':
@@ -267,6 +273,16 @@ def _get_recipes_filenames(ct, repo, repodir, layersubdir_start, logger):
         for f in glob.glob(os.path.join(fpath, '*.bb')):
             if not f in ct_files:
                 ct_files.append(f)
+
+    # Check moves for recipe -> inc with an added recipe
+    # (i.e. the move should really be to the newly added recipe)
+    # example: d5a95dc8985a42bb7e50bc4e7dc6b012d711ff08 in OE-Core
+    for i,(a,b) in enumerate(moved_files):
+        if b.endswith('.inc'):
+            for af in added_files:
+                # This is naive, but good enough
+                if af.rsplit('_')[0] == a.rsplit('_')[0]:
+                    moved_files[i] = (a,af)
 
     return ct_files, deleted, moved_files
 
