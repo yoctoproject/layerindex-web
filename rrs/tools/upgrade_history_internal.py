@@ -116,6 +116,65 @@ oecore_bad_revs = {
         '3dd26cd6b3d731f7698f6fbcd1947969f360cdc4',
     ],
 }
+oecore_bad_revs_2 = [
+    '2dfbff215f3567252fdfbd5704e6740a30ad41b4',
+    '543e39ad5e2baa0f1ece013a89483783e6b15dd9',
+    'a39830b77f567e2361f1ced49bfdce52591e220c',
+    'c88304a78e528596ca481cabe273749c286c352a',
+    '21d015f6c9927598d64c48c925638619b25cf232',
+    'da29440633706fb7a346391d97894d6f2cbb0d01',
+    'b9b254da08c1db94ac9ded5f67d7e2e82e3b9be7',
+    '12e859dfb70f8aae40edfd88b143b6c771f4e1a6',
+    'ec957a03010949a93fbebd3e7b8b924ebc055ef7',
+    '2f0dd67a5a8d4269f5155004d532d8fa972b3223',
+    '1c2197f96d69547e10b74dc722d9a569d9a2b2b6',
+    '7aa94abac09be6beb7ce14a2b9a409e934465706',
+    '1a0ee6b0f194807b9eac1207c43ba3fae4d1f94c',
+    'bbd9524256461f1bcafd4103edd575e668de76f8',
+    '68e0080a924654245f04cf92c2579abd9e5bc658',
+    '1ed072515f2a23de75ee56b86d8607c85b42605c',
+    'cb3c0343becc8bb2ebf4e9c12782c509a3d7754d',
+    '94793d08b0087b7f579b2ca5adae3343864e5f66',
+    '802c4029f90cee3027b6bc62c5201e8b29f02557',
+    'b992be195821e110691434e4a743b753bc04b3c4',
+    '6414d23cd23fc6ed2d31a7b55fce1be82a09ae67',
+    '458c835fe05279467ab781aab811498ab80f6904',
+    '31c9b42aaeef3ad66e05e51b8209e87f2a22f091',
+    'c70b70f045a5ccf62b19060f3438b38d9914e9a2',
+    'af4f0d44acef328245dfe1bd102bb5e61293ee2d',
+    '747c7dc8702d2241475894876d06a2f1f2b29fed',
+    '369bbf393438ae4a76ab0d1817463c6f735816ea',
+    'dd5208ae22d47504443785daece4bff6331d8904',
+    'c9fdf3d046606a0becb2e6b566a481c483b9021a',
+    '13269dfbbc62faef32595343dc78250fdb2a2946',
+    '270a1e9bcf26a43f5cbdc5b901c4c6f79495311d',
+    '15e876ada73fe8e98284d14dec166007b5767f19',
+    '647db1d9eb65b225ffbb6953f796232026bfa935',
+    '75529d384bfeaf52befccb892cf41f22dc02668b',
+    'ec9fcdf14d3e2aefc5af1e53a69f056db6ea83f5',
+    '84980150ff4a2c27acd1f27123f200e03bee8c4b',
+    'c93dc7dd18a752d9523e11c6c4dce1908b5970b4',
+    '2d9a8a5539342faa1827f4902b1095a9f3448c66',
+    'b2cd021887e12d9f5b8ba48d9be3c2f2119c8e2a',
+    'da3659155cd1825a4a8d3d7c5288b4273714de15',
+    '4af90876914e5f2ccc5b7f833cd43c239c2dac55',
+    '8a771f22980f766b71f3ea0825568fc5c669e444',
+    'b0338efcdabeec79c568c74b6888d7d523e8e9dc',
+    'f3f394913b4e4a7c601ad1158faaf8b9d493e1c7',
+    'b3e246fef166030f327b5a852718ea907ada1759',
+    'a8a2c5ec891286a1e7fd5ebdd33565f9ae3965c2',
+    'ee48cb68e5d91ba108cccdabce003233290ba816',
+    '088814ef79015d9df0c8c8bc61219507cfe52ad5',
+    'c03cef42e079e4ed3d1e4f401722778157158bd6',
+    'bcdaa93dc70411da8876364ae67d0bf2456a3611',
+    'e8dfe9799e473e0ba911a0670aa23e8e8d700223',
+    'e38e56e28f2090e2b8013546f4dd76da8d59f766',
+    '85981cbbf0ce48a6d82bc39248afa9540ca858d8',
+    '147f5a665fe5073027d92e4acac631f15f08f79f',
+    'b503b1fe9a71f70726c92f46a71fc49615256fce',
+    '4972faf1bf20f07a1c1f608bc421c6fd05651594',
+    '309a02931779f32d1139cc1169a039cbe4638706',
+]
 
 
 """
@@ -311,6 +370,13 @@ def checkout_layer_deps(layerbranch, commit, fetchdir, logger):
                     logger.debug('Preferring OE-Core revision %s over %s' % (lmapcommit, lcommit))
                     lcommit = lmapcommit
             utils.checkout_repo(repodir, lcommit, logger, force)
+            if lcommit in oecore_bad_revs_2:
+                # Fix issue that was introduced in 309a02931779f32d1139cc1169a039cbe4638706 and fixed in 40a904bf8bc1279c3da0893c003f740f1d2066c2
+                with open(os.path.join(repodir, 'meta/conf/bitbake.conf'), 'r') as f:
+                    lines = f.readlines()
+                lines.insert(0, 'BBINCLUDED ?= ""\n')
+                with open(os.path.join(repodir, 'meta/conf/bitbake.conf'), 'w') as f:
+                    f.writelines(lines)
             done_repos.append(repodir)
 
     # We "force" here because it's almost certain we'll be checking out a
