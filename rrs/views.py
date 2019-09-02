@@ -197,7 +197,7 @@ class Raw():
         cur.execute("""SELECT rs.id, rs.pn, rs.summary, te.version, rownum FROM (
                             SELECT recipesymbol_id, version, commit_date, upgrade_type, ROW_NUMBER() OVER(
                                 PARTITION BY recipesymbol_id
-                                ORDER BY commit_date DESC
+                                ORDER BY commit_date DESC, id DESC
                             ) AS rownum
                         FROM rrs_recipeupgrade
                         WHERE commit_date <= %s
@@ -735,7 +735,7 @@ class RecipeDetailView(DetailView):
             context['maintainer_name'] = 'No maintainer'
 
         details = []
-        for ru in RecipeUpgrade.objects.filter(recipesymbol=recipesymbol).exclude(upgrade_type='M').order_by('group', '-commit_date'):
+        for ru in RecipeUpgrade.objects.filter(recipesymbol=recipesymbol).exclude(upgrade_type='M').order_by('group', '-commit_date', '-id'):
             details.append(_get_recipe_upgrade_detail(maintplan, ru))
         details.sort(key=lambda s: list(map(int, s.group.title.split('.') if s.group else [])), reverse=True)
         context['recipe_upgrade_details'] = details
@@ -743,7 +743,7 @@ class RecipeDetailView(DetailView):
 
 
         if not recipe:
-            ru = RecipeUpgrade.objects.filter(recipesymbol=recipesymbol).order_by('-commit_date').first()
+            ru = RecipeUpgrade.objects.filter(recipesymbol=recipesymbol).order_by('-commit_date', '-id').first()
             if ru:
                 context['last_filepath'] = ru.filepath
 
