@@ -167,13 +167,19 @@ def upgrade_history(options, logger):
                 commit_list = commits.split('\n')
 
                 bitbake_map = {}
+                def remap_range(start, end, replacewith=None):
+                    if replacewith is None:
+                        replacewith = end
+                    bitbake_commits = utils.runcmd(['git', 'rev-list', '%s^..%s^' % (start, end)],
+                                        bitbakepath,
+                                        logger=logger)
+                    bitbake_commit_list = bitbake_commits.splitlines()
+                    for commit in bitbake_commit_list:
+                        bitbake_map[commit] = replacewith
+
                 # Filter out some bad commits
-                bitbake_commits = utils.runcmd(['git', 'rev-list', 'fef18b445c0cb6b266cd939b9c78d7cbce38663f^..39780b1ccbd76579db0fc6fb9369c848a3bafa9d^'],
-                                    bitbakepath,
-                                    logger=logger)
-                bitbake_commit_list = bitbake_commits.splitlines()
-                for commit in bitbake_commit_list:
-                    bitbake_map[commit] = '39780b1ccbd76579db0fc6fb9369c848a3bafa9d'
+                remap_range('fef18b445c0cb6b266cd939b9c78d7cbce38663f', '39780b1ccbd76579db0fc6fb9369c848a3bafa9d')
+                remap_range('5796ed550d127853808f38257f8dcc8c1cf59342', '547128731e62b36d2271c4390b3fee2b16c535dc')
 
                 if options.stop_commit and (options.stop_commit not in [x.split()[0] for x in commit_list]):
                     logger.error('Stop commit %s is not in repository %s' % (options.stop_commit, repodir))
