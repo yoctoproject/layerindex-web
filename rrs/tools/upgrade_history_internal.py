@@ -254,7 +254,7 @@ def _create_upgrade(recipe_data, layerbranch, ct, title, info, filepath, logger,
 
             if npv == 'git':
                 logger.debug("%s: Avoiding upgrade to unversioned git." % pn)
-            elif ppv == 'git' or vercmp_result != 0:
+            elif ppv == 'git' or vercmp_result != 0 or latest_upgrade.upgrade_type == 'R':
                 if initial is True:
                     logger.debug("%s: Update initial upgrade ( -> %s)." % \
                             (pn, pv)) 
