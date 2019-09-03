@@ -8,11 +8,11 @@
 # Licensed under the MIT license, see COPYING.MIT for details
 
 import sys
-import os.path
+import os
 
 sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__), '..')))
 
-import optparse
+import argparse
 import re
 import utils
 import logging
@@ -25,59 +25,55 @@ class DryRunRollbackException(Exception):
 
 def main():
 
-    parser = optparse.OptionParser(
-        usage = """
-    %prog [options]""")
+    parser = argparse.ArgumentParser(description='Comparison recipe cover status update tool')
 
-    parser.add_option("-b", "--branch",
-            help = "Specify branch to import into",
-            action="store", dest="branch", default='oe-classic')
-    parser.add_option("-l", "--layer",
-            help = "Specify layer to import into",
-            action="store", dest="layer", default='oe-classic')
-    parser.add_option("-u", "--update",
-            help = "Specify update record to link to",
-            action="store", dest="update")
-    parser.add_option("-n", "--dry-run",
-            help = "Don't write any data back to the database",
-            action="store_true", dest="dryrun")
-    parser.add_option("-s", "--skip",
-            help = "Skip specified packages (comma-separated list, no spaces)",
-            action="store", dest="skip")
-    parser.add_option("-d", "--debug",
-            help = "Enable debug output",
-            action="store_const", const=logging.DEBUG, dest="loglevel", default=logging.INFO)
-    parser.add_option("-q", "--quiet",
-            help = "Hide all output except error messages",
-            action="store_const", const=logging.ERROR, dest="loglevel")
+    parser.add_argument('-b', '--branch',
+            default='oe-classic',
+            help='Specify branch to import into')
+    parser.add_argument('-l', '--layer',
+            default='oe-classic',
+            help='Specify layer to import into')
+    parser.add_argument('-u', '--update',
+            help='Specify update record to link to')
+    parser.add_argument('-n', '--dry-run',
+            action='store_true',
+            help='Don\'t write any data back to the database')
+    parser.add_argument('-s', '--skip',
+            help='Skip specified packages (comma-separated list, no spaces)')
+    parser.add_argument('-d', '--debug',
+            action='store_const', const=logging.DEBUG, dest='loglevel', default=logging.INFO,
+            help='Enable debug output')
+    parser.add_argument('-q', '--quiet',
+            action='store_const', const=logging.ERROR, dest='loglevel',
+            help='Hide all output except error messages')
 
-    options, args = parser.parse_args(sys.argv)
+    args = parser.parse_args()
 
     utils.setup_django()
     from layerindex.models import LayerItem, LayerBranch, Recipe, ClassicRecipe, Update, ComparisonRecipeUpdate
     from django.db import transaction
 
-    logger.setLevel(options.loglevel)
+    logger.setLevel(args.loglevel)
 
-    layer = LayerItem.objects.filter(name=options.layer).first()
+    layer = LayerItem.objects.filter(name=args.layer).first()
     if not layer:
-        logger.error('Specified layer %s does not exist in database' % options.layer)
+        logger.error('Specified layer %s does not exist in database' % args.layer)
         sys.exit(1)
 
-    layerbranch = layer.get_layerbranch(options.branch)
+    layerbranch = layer.get_layerbranch(args.branch)
     if not layerbranch:
-        logger.error("Specified branch %s does not exist in database" % options.branch)
+        logger.error("Specified branch %s does not exist in database" % args.branch)
         sys.exit(1)
 
     updateobj = None
-    if options.update:
-        updateobj = Update.objects.filter(id=int(options.update)).first()
+    if args.update:
+        updateobj = Update.objects.filter(id=int(args.update)).first()
         if not updateobj:
-            logger.error("Specified update id %s does not exist in database" % options.update)
+            logger.error("Specified update id %s does not exist in database" % args.update)
             sys.exit(1)
 
-    if options.skip:
-        skiplist = options.skip.split(',')
+    if args.skip:
+        skiplist = args.skip.split(',')
     else:
         skiplist = []
     try:
@@ -240,7 +236,7 @@ def main():
                     rupdate.link_updated = True
                     rupdate.save()
 
-            if options.dryrun:
+            if args.dry_run:
                 raise DryRunRollbackException()
     except DryRunRollbackException:
         pass
