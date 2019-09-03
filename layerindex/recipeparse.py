@@ -146,7 +146,7 @@ def detect_file_type(path, subdir_start):
 
     if typename in ['recipe', 'bbappend', 'incfile']:
         if subdir_start:
-            filepath = os.path.relpath(os.path.dirname(path), subdir_start)
+            filepath = os.path.dirname(os.path.relpath(path, subdir_start))
         else:
             filepath = os.path.dirname(path)
         return (typename, filepath, os.path.basename(path))
