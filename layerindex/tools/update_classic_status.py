@@ -59,10 +59,8 @@ def main():
 
     logger.setLevel(options.loglevel)
 
-    res = list(LayerItem.objects.filter(name=options.layer)[:1])
-    if res:
-        layer = res[0]
-    else:
+    layer = LayerItem.objects.filter(name=options.layer).first()
+    if not layer:
         logger.error('Specified layer %s does not exist in database' % options.layer)
         sys.exit(1)
 
@@ -73,11 +71,10 @@ def main():
 
     updateobj = None
     if options.update:
-        updateobj = Update.objects.filter(id=int(options.update))
+        updateobj = Update.objects.filter(id=int(options.update)).first()
         if not updateobj:
             logger.error("Specified update id %s does not exist in database" % options.update)
             sys.exit(1)
-        updateobj = updateobj.first()
 
     if options.skip:
         skiplist = options.skip.split(',')
