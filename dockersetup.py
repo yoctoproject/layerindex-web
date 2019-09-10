@@ -581,7 +581,11 @@ def writefile(filename, data):
 
 
 ## Get user arguments
-args, socks_proxy_port, socks_proxy_host, email_host, email_port = get_args()
+try:
+    args, socks_proxy_port, socks_proxy_host, email_host, email_port = get_args()
+except argparse.ArgumentTypeError as e:
+    print('error: %s' % e)
+    sys.exit(1)
 
 if args.update:
     with open('docker-compose.yml', 'r') as f:
