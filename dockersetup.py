@@ -50,7 +50,7 @@ def get_args():
     parser.add_argument('-s', '--https-proxy', type=str, help='https proxy in the format http://<myproxy:port>', default=default_https_proxy, required=False)
     parser.add_argument('-S', '--socks-proxy', type=str, help='socks proxy in the format socks://myproxy:port>', default=default_socks_proxy, required=False)
     parser.add_argument('-N', '--no-proxy', type=str, help='Comma-separated list of hosts that should not be connected to via the proxy', default=default_no_proxy, required=False)
-    parser.add_argument('-d', '--databasefile', type=str, help='Location of your database file to import. Must be a .sql file.', required=False)
+    parser.add_argument('-d', '--databasefile', type=str, help='Location of your database file to import. Must be a .sql or .sql.gz file.', required=False)
     parser.add_argument('-e', '--email-host', type=str, help='Email host for sending messages (optionally with :port if not 25)', required=False)
     parser.add_argument('--email-user', type=str, help='User name to use when connecting to email host', required=False)
     parser.add_argument('--email-password', type=str, help='Password to use when connecting to email host', required=False)
