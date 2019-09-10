@@ -69,7 +69,7 @@ def get_args():
     args = parser.parse_args()
 
     if args.update:
-        if args.http_proxy or args.https_proxy or args.databasefile or args.no_https or args.cert or args.cert_key or args.letsencrypt:
+        if args.http_proxy != default_http_proxy or args.https_proxy != default_https_proxy or args.no_proxy != default_no_proxy or args.databasefile or args.no_https or args.cert or args.cert_key or args.letsencrypt:
             raise argparse.ArgumentTypeError("The -u/--update option will not update configuration or database content, and thus none of the other configuration options can be used in conjunction with it")
         if args.reinstall:
             raise argparse.ArgumentTypeError("The -u/--update and -r/--reinstall options are mutually exclusive")
