@@ -1,6 +1,15 @@
+# OpenEmbedded Layer Index REST API implementation
+#
+# Copyright (C) 2014, 2016-2019 Intel Corporation
+#
+# Licensed under the MIT license, see COPYING.MIT for details
+
 from layerindex.models import Branch, LayerItem, LayerMaintainer, YPCompatibleVersion, LayerNote, LayerBranch, LayerDependency, Recipe, Machine, Distro, BBClass, Source, Patch, PackageConfig, StaticBuildDep, DynamicBuildDep, RecipeFileDependency, BBAppend, IncFile
-from rest_framework import viewsets, serializers
+from rest_framework import viewsets, serializers, pagination
 from layerindex.querysethelper import params_to_queryset, get_search_tuple
+
+class LayerIndexPagination(pagination.PageNumberPagination):
+    page_size = 200
 
 class DynamicFieldsModelSerializer(serializers.ModelSerializer):
     """
@@ -114,6 +123,15 @@ class RecipeSerializer(serializers.ModelSerializer):
         model = Recipe
         fields = '__all__'
 
+class RecipeViewSet(ParametricSearchableModelViewSet):
+    queryset = Recipe.objects.all()
+    serializer_class = RecipeSerializer
+
+class RecipeExtendedSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Recipe
+        fields = '__all__'
+
     sources = serializers.SerializerMethodField()
     patches = serializers.SerializerMethodField()
     package_configs = serializers.SerializerMethodField()
@@ -143,9 +161,10 @@ class RecipeSerializer(serializers.ModelSerializer):
         serializer = RecipeFileDependencySerializer(instance=qs, many=True, read_only=True, fields=('layerbranch', 'path'))
         return serializer.data
 
-class RecipeViewSet(ParametricSearchableModelViewSet):
+class RecipeExtendedViewSet(ParametricSearchableModelViewSet):
     queryset = Recipe.objects.all()
-    serializer_class = RecipeSerializer
+    serializer_class = RecipeExtendedSerializer
+    pagination_class = LayerIndexPagination
 
 class MachineSerializer(serializers.ModelSerializer):
     class Meta:
