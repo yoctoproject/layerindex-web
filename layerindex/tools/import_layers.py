@@ -89,7 +89,7 @@ def main():
     layerbranches_url = jsdata['layerBranches']
     layermaintainers_url = jsdata.get('layerMaintainers', None)
     layernotes_url = jsdata.get('layerNotes', None)
-    recipes_url = jsdata.get('recipes', None)
+    recipes_url = jsdata.get('recipesExtended', None)
     machines_url = jsdata.get('machines', None)
     distros_url = jsdata.get('distros', None)
     classes_url = jsdata.get('classes', None)
@@ -186,55 +186,73 @@ def main():
                     # The parent field always needs to be part of the keys
                     keys = key_fields + [parentfield]
 
+                def fetch_api_url(api_url):
+                    rq = urllib.request.Request(api_url)
+                    data = urllib.request.urlopen(rq).read()
+                    return json.loads(data.decode('utf-8'))
+
                 if url:
                     if parent_orig_id is None:
                         raise Exception('import_child_items: if url is specified then parent_orig_id must also be specified')
-                    rq = urllib.request.Request(url + '?filter=%s:%s' % (parentfield, parent_orig_id))
-                    data = urllib.request.urlopen(rq).read()
-                    childjslist = json.loads(data.decode('utf-8'))
+                    childjsdata = fetch_api_url(url + '?filter=%s:%s' % (parentfield, parent_orig_id))
                 elif childlist is not None:
-                    childjslist = childlist
+                    childjsdata = childlist
                 else:
                     raise Exception('import_child_items: either url or childlist must be specified')
 
                 manager = getattr(parentobj, objclass.__name__.lower() + '_set')
                 existing_ids = list(manager.values_list('id', flat=True))
                 updated_ids = []
-                for childjs in childjslist:
-                    vals = {}
-                    for key, value in childjs.items():
-                        if key in exclude:
-                            continue
-                        vals[key] = value
-                    vals[parentfield] = parentobj
 
-                    if keys:
-                        keyvals = {k: vals[k] for k in keys}
-                    else:
-                        keyvals = vals
+                def import_list(childjslist):
+                    for childjs in childjslist:
+                        vals = {}
+                        for key, value in childjs.items():
+                            if key in exclude:
+                                continue
+                            vals[key] = value
+                        vals[parentfield] = parentobj
 
-                    # In the case of multiple records with the same keys (e.g. multiple recipes with same pn),
-                    # we need to skip ones we've already touched
-                    obj = None
-                    created = False
-                    for entry in manager.filter(**keyvals):
-                        if entry.id not in updated_ids:
-                            obj = entry
+                        if keys:
+                            keyvals = {k: vals[k] for k in keys}
+                        else:
+                            keyvals = vals
+
+                        # In the case of multiple records with the same keys (e.g. multiple recipes with same pn),
+                        # we need to skip ones we've already touched
+                        obj = None
+                        created = False
+                        for entry in manager.filter(**keyvals):
+                            if entry.id not in updated_ids:
+                                obj = entry
+                                break
+                        else:
+                            created = True
+                            obj = objclass(**keyvals)
+
+                        for key, value in vals.items():
+                            setattr(obj, key, value)
+                        # Need to have saved before calling custom_field_cb since the function might be adding child objects
+                        obj.save()
+                        updated_ids.append(obj.id)
+                        if custom_field_cb is not None:
+                            custom_field_cb(obj, childjs)
+                        if not created:
+                            if obj.id in existing_ids:
+                                existing_ids.remove(obj.id)
+
+                if 'results' in childjsdata:
+                    while True:
+                        import_list(childjsdata['results'])
+                        if childjsdata.get('next', None):
+                            childjsdata = fetch_api_url(childjsdata['next'])
+                            if not 'results' in childjsdata:
+                                break
+                        else:
                             break
-                    else:
-                        created = True
-                        obj = objclass(**keyvals)
+                else:
+                    import_list(childjsdata)
 
-                    for key, value in vals.items():
-                        setattr(obj, key, value)
-                    # Need to have saved before calling custom_field_cb since the function might be adding child objects
-                    obj.save()
-                    updated_ids.append(obj.id)
-                    if custom_field_cb is not None:
-                        custom_field_cb(obj, childjs)
-                    if not created:
-                        if obj.id in existing_ids:
-                            existing_ids.remove(obj.id)
                 for idv in existing_ids:
                     objclass.objects.filter(id=idv).delete()
 
