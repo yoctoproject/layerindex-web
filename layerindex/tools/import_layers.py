@@ -329,10 +329,10 @@ def main():
                         continue
                     logger.info('Updating %s (%d/%d)' % (layerbranch, i+1, layercount))
                 else:
-                    logger.info('Importing %s (%d/%d)' % (layerbranch, i+1, layercount))
                     layerbranch = LayerBranch()
                     layerbranch.branch = branch
                     layerbranch.layer = layer
+                    logger.info('Importing %s (%d/%d)' % (layerbranch, i+1, layercount))
 
 
                 for key, value in layerbranchjs.items():
