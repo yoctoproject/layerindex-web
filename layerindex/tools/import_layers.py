@@ -278,7 +278,7 @@ def main():
                         existing_deps.remove(dep)
                     depobj.recipes.add(recipe)
                 for existing_dep in existing_deps:
-                    recipe.staticbuilddep_set.filter(name=existing_dep).recipes.remove(recipe)
+                    recipe.staticbuilddep_set.filter(name=existing_dep).first().recipes.remove(recipe)
                 package_configs = recipejs.get('package_configs', [])
                 import_child_items(recipe, PackageConfig, childlist=package_configs, custom_fields=['builddeps'], custom_field_cb=package_config_field_handler, key_fields=['feature'])
 
