@@ -249,6 +249,16 @@ def yaml_comment(line):
 
 # Add hostname, secret key, db info, and email host in docker-compose.yml
 def edit_dockercompose(hostname, dbpassword, dbapassword, secretkey, rmqpassword, portmapping, letsencrypt, email_host, email_port, email_user, email_password, email_ssl, email_tls):
+
+    def adjust_cert_mount_line(ln):
+        linesplit = ln.split(':')
+        if letsencrypt:
+            linesplit[1] = '/etc/letsencrypt'
+        else:
+            linesplit[1] = '/opt/cert'
+        # This allows us to handle if there is a ":ro" or similar on the end
+        return ':'.join(linesplit)
+
     filedata= readfile("docker-compose.yml")
     in_layersweb = False
     in_layersweb_ports = False
@@ -276,6 +286,8 @@ def edit_dockercompose(hostname, dbpassword, dbapassword, secretkey, rmqpassword
             if len(format) <= len(in_layerscertbot_format):
                 in_layerscertbot_format = False
             elif letsencrypt:
+                if "./docker/certs:/" in ucline:
+                    ucline = adjust_cert_mount_line(ucline)
                 newlines.append(ucline + '\n')
                 continue
             else:
@@ -352,8 +364,8 @@ def edit_dockercompose(hostname, dbpassword, dbapassword, secretkey, rmqpassword
             if in_layersweb:
                 in_layersweb_ports = True
             newlines.append(line + "\n")
-        elif letsencrypt and "./docker/certs:/" in line:
-            newlines.append(line.split(':')[0] + ':/etc/letsencrypt\n')
+        elif "./docker/certs:/" in line:
+            newlines.append(adjust_cert_mount_line(line) + '\n')
         else:
             newlines.append(line + "\n")
     writefile("docker-compose.yml", ''.join(newlines))
