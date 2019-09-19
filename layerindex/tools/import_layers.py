@@ -323,7 +323,7 @@ def main():
                     # that already existed, since we need to have those in layer_idmap
                     # to be able to import layer dependencies)
                     existing_layerbranches.remove(layerbranch.id)
-                    if layerbranchjs['updated'] <= layerbranch.updated and not args.reload:
+                    if layerbranchjs['vcs_last_rev'] == layerbranch.vcs_last_rev and not args.reload:
                         logger.debug('Skipping layerbranch %s, already up-to-date' % layerbranchjs['id'])
                         layerbranch_idmap[layerbranchjs['id']] = layerbranch
                         continue
