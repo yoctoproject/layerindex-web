@@ -138,7 +138,7 @@ def main():
             exclude_fields = ['id', 'updated']
             for layerjs in jsdata:
                 if layer_re and not layer_re.match(layerjs['name']):
-                    logger.debug('Skipping layer %s, does not match layer restriction' % layerjs['name'])
+                    #logger.debug('Skipping layer %s, does not match layer restriction' % layerjs['name'])
                     continue
 
                 layeritem = LayerItem.objects.filter(name=layerjs['name']).first()
@@ -288,7 +288,7 @@ def main():
                 for filedep in filedeps:
                     target_layerbranch = layerbranch_idmap.get(filedep['layerbranch'], None)
                     if target_layerbranch is None:
-                        logger.debug('Skipping recipe file dependency on layerbranch %s, branch not imported' % filedep['layerbranch'])
+                        #logger.debug('Skipping recipe file dependency on layerbranch %s, branch not imported' % filedep['layerbranch'])
                         continue
                     depobj, created = RecipeFileDependency.objects.get_or_create(recipe=recipe, layerbranch=target_layerbranch, path=filedep['path'])
                     if created:
@@ -310,12 +310,12 @@ def main():
                 branch = branch_idmap.get(layerbranchjs['branch'], None)
                 if not branch:
                     # We don't have this branch, skip it
-                    logger.debug('Skipping layerbranch %s, branch not imported' % layerbranchjs['id'])
+                    #logger.debug('Skipping layerbranch %s, branch not imported' % layerbranchjs['id'])
                     continue
                 layer = layer_idmap.get(layerbranchjs['layer'], None)
                 if not layer:
                     # We didn't import this layer, skip it
-                    logger.debug('Skipping layerbranch %s, layer not imported' % layerbranchjs['id'])
+                    #logger.debug('Skipping layerbranch %s, layer not imported' % layerbranchjs['id'])
                     continue
                 layerbranch = LayerBranch.objects.filter(layer=layer).filter(branch=branch).first()
                 if layerbranch:
@@ -324,7 +324,7 @@ def main():
                     # to be able to import layer dependencies)
                     existing_layerbranches.remove(layerbranch.id)
                     if layerbranchjs['vcs_last_rev'] == layerbranch.vcs_last_rev and not args.reload:
-                        logger.debug('Skipping layerbranch %s, already up-to-date' % layerbranchjs['id'])
+                        logger.debug('Skipping layerbranch %s, already up-to-date' % layerbranch)
                         layerbranch_idmap[layerbranchjs['id']] = layerbranch
                         continue
                     logger.info('Updating %s (%d/%d)' % (layerbranch, i+1, layercount))
