@@ -12,12 +12,11 @@ In order to run this application standalone, you will need:
 * RabbitMQ 3.7.x
 * For production usage, a web server set up to host Django applications
   (not needed for local-only testing/development)
-* A database supported by Django (SQLite, MySQL, etc.). Django takes
-  care of creating the database itself, you just need to ensure that the
-  database server (if not using SQLite) is configured and running.
+* A database system supported by Django (SQLite, MariaDB/MySQL, etc.).
 * Third-party Django/python modules as detailed by requirements.txt.
   If you're using pip, you can install these by running:
     pip install -r requirements.txt
+  (See below for a virtualenv-based setup which is easy to work with.)
 * On the machine that will run the backend update script (which does not
   have to be the same machine as the web server, however it does still
   have to have Django installed, have the same or similar configuration
@@ -41,7 +40,8 @@ distros).
    pip to build the dependencies; it's also assumed you want MariaDB as
    the database backend):
 
-   sudo apt-get install virtualenv libmariadb-client-lgpl-dev build-essential python3-dev libjpeg-dev libz-dev libfreetype6-dev mariadb-server rabbitmq-server
+   sudo apt-get update
+   sudo apt-get install python3-venv libmariadb-client-lgpl-dev build-essential python3-dev libjpeg-dev libz-dev libfreetype6-dev libssl-dev mariadb-server rabbitmq-server
 
 2. Work around path issues (you may not need this):
 
@@ -58,6 +58,27 @@ distros).
 5. Install requirements:
 
    pip install -r requirements.txt
+
+
+Setting up MariaDB/MySQL:
+
+Assuming you wish to use MariaDB/MySQL for storing the database - the
+following is completely standard, but to save you having to look it up
+elsewhere:
+
+1. Start the server:
+
+   sudo /etc/init.d/mysql start
+
+2. Set the root password and secure the database server:
+
+   sudo mysql_secure_installation
+
+3. Create a database (substituting "mydatabase" with desired database
+   name):
+
+   mysql -u root -p
+   CREATE DATABASE mydatabase CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 
 Configuration and running:
