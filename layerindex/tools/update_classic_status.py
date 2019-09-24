@@ -17,6 +17,7 @@ import re
 import utils
 import logging
 import json
+from collections import OrderedDict
 
 logger = utils.logger_create('LayerIndexComparisonUpdate')
 
@@ -28,13 +29,17 @@ def export(args, layerbranch, skiplist):
     from layerindex.models import ClassicRecipe
     from django.db.models import F
     jscoverlist = []
-    recipequery = ClassicRecipe.objects.filter(layerbranch=layerbranch, deleted=False).order_by('pn').values(
-            'pn', 'cover_pn', 'cover_status', 'cover_comment', 'classic_category', cover_layer=F('cover_layerbranch__layer__name'))
+    # These shenanigans are necessary because values() order is not
+    # guaranteed and we can't use values_list because that won't work with our
+    # extra cover_layer field.
+    fields = ['pn', 'cover_pn', 'cover_status', 'cover_comment', 'classic_category']
+    recipequery = ClassicRecipe.objects.filter(layerbranch=layerbranch, deleted=False).order_by('pn').values(*fields, cover_layer=F('cover_layerbranch__layer__name'))
+    fields.append('cover_layer') # need to add this after the call
     for recipe in recipequery:
         if recipe['pn'] in skiplist:
             logger.debug('Skipping %s' % recipe.pn)
             continue
-        jscoverlist.append(recipe)
+        jscoverlist.append(OrderedDict([(k,recipe[k]) for k in fields]))
     jsdata = {'coverlist': jscoverlist}
     with open(args.export_data, 'w') as f:
         json.dump(jsdata, f, indent=4)
