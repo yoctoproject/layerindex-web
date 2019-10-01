@@ -108,6 +108,8 @@ def update_recipe_file(tinfoil, data, path, recipe, layerdir_start, repodir, sto
         envdata.setVar('SRCPV', 'X')
         recipe.pn = envdata.getVar("PN", True)
         recipe.pv = envdata.getVar("PV", True)
+        recipe.pr = envdata.getVar("PR", True) or ""
+        recipe.pe = envdata.getVar("PE", True) or ""
         recipe.summary = envdata.getVar("SUMMARY", True)
         recipe.description = envdata.getVar("DESCRIPTION", True)
         recipe.section = envdata.getVar("SECTION", True)

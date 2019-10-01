@@ -461,6 +461,8 @@ class Recipe(models.Model):
     filepath = models.CharField(max_length=255, blank=True)
     pn = models.CharField(max_length=100, blank=True)
     pv = models.CharField(max_length=100, blank=True)
+    pr = models.CharField(max_length=100, blank=True)
+    pe = models.CharField(max_length=100, blank=True)
     summary = models.CharField(max_length=200, blank=True)
     description = models.TextField(blank=True)
     section = models.CharField(max_length=100, blank=True)
