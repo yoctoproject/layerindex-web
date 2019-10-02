@@ -135,7 +135,7 @@
                                     <ul class="list-unstyled">
                                         {% for pc in packageconfigs %}
                                             {% for dep in pc.dynamicbuilddep_set.all %}
-                                            <li> {{dep.name}}<i class="glyphicon glyphicon-cog" data-toggle="tooltip" title="If &quot;{{pc.feature}}&quot; is set in PACKAGECONFIG" aria-hidden="true"></i></li>
+                                            <li> {{dep.name}} <i class="glyphicon glyphicon-cog" data-toggle="tooltip" title="If &quot;{{pc.feature}}&quot; is set in PACKAGECONFIG" aria-hidden="true"></i></li>
                                             {% endfor %}
                                         {% endfor %}
                                     </ul>
