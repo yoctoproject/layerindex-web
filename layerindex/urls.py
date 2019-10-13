@@ -107,7 +107,7 @@ urlpatterns = [
         BulkChangeDeleteView.as_view(
             template_name='layerindex/deleteconfirm.html'),
         name="bulk_change_delete"),
-    url(r'^branch/(?P<branch>[-\w]+)/',
+    url(r'^branch/(?P<branch>[-.\w]+)/',
         include('layerindex.urls_branch')),
     url(r'^updates/$',
         UpdateListView.as_view(
@@ -146,17 +146,17 @@ urlpatterns = [
         ClassicRecipeDetailView.as_view(
             template_name='layerindex/classicrecipedetail.html'),
         name='classic_recipe'),
-    url(r'^comparison/recipes/(?P<branch>[-\w]+)/$',
+    url(r'^comparison/recipes/(?P<branch>[-.\w]+)/$',
         ClassicRecipeSearchView.as_view(
             template_name='layerindex/classicrecipes.html'),
         name='comparison_recipe_search'),
-    url(r'^comparison/search-csv/(?P<branch>[-\w]+)/$',
+    url(r'^comparison/search-csv/(?P<branch>[-.\w]+)/$',
         ClassicRecipeSearchView.as_view(
             template_name='layerindex/classicrecipes_csv.txt',
             paginate_by=0,
             content_type='text/csv'),
         name='comparison_recipe_search_csv'),
-    url(r'^comparison/stats/(?P<branch>[-\w]+)/$',
+    url(r'^comparison/stats/(?P<branch>[-.\w]+)/$',
         ClassicRecipeStatsView.as_view(
             template_name='layerindex/classicstats.html'),
         name='comparison_recipe_stats'),
@@ -185,11 +185,11 @@ urlpatterns = [
     url(r'^stoptask/(?P<task_id>[-\w]+)/$',
         task_stop_view,
         name='task_stop'),
-    url(r'^ajax/layerchecklist/(?P<branch>[-\w]+)/$',
+    url(r'^ajax/layerchecklist/(?P<branch>[-.\w]+)/$',
         LayerCheckListView.as_view(
             template_name='layerindex/layerchecklist.html'),
         name='layer_checklist'),
-    url(r'^ajax/classchecklist/(?P<branch>[-\w]+)/$',
+    url(r'^ajax/classchecklist/(?P<branch>[-.\w]+)/$',
         BBClassCheckListView.as_view(
             template_name='layerindex/classchecklist.html'),
         name='class_checklist'),
