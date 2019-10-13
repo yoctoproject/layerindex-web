@@ -204,7 +204,7 @@
             this.vcs_web_commit_url = 'http://cgit.openembedded.org/' + reponame + '/commit/?id=%hash%'
             this.vcs_web_type = 'cgit'
         }
-        else if( repoval.indexOf('git.yoctoproject.org/') > -1 ) {
+        else if( repoval.startsWith('git://git.yoctoproject.org/') ) {
             reponame = repoval.replace(/^.*\//, '')
             this.vcs_web_url = 'http://git.yoctoproject.org/cgit/cgit.cgi/' + reponame
             this.vcs_web_tree_base_url = 'http://git.yoctoproject.org/cgit/cgit.cgi/' + reponame + '/tree/%path%?h=%branch%'
@@ -212,7 +212,7 @@
             this.vcs_web_commit_url = 'http://git.yoctoproject.org/cgit/cgit.cgi/' + reponame + '/commit/?id=%hash%'
             this.vcs_web_type = 'cgit'
         }
-        else if( repoval.indexOf('github.com/') > -1 ) {
+        else if( repoval.startsWith('git://github.com/') ) {
             reponame = repoval.replace(/^.*github.com\//, '')
             reponame = reponame.replace(/.git$/, '')
             this.vcs_web_url = 'http://github.com/' + reponame
@@ -221,7 +221,7 @@
             this.vcs_web_commit_url = 'http://github.com/' + reponame + '/commit/%hash%/'
             this.vcs_web_type = '(custom)'
         }
-        else if( repoval.indexOf('gitlab.com/') > -1 ) {
+        else if( repoval.startsWith('git://gitlab.com/') ) {
             reponame = repoval.replace(/^.*gitlab.com\//, '')
             reponame = reponame.replace(/.git$/, '')
             this.vcs_web_url = 'http://gitlab.com/' + reponame
@@ -230,7 +230,7 @@
             this.vcs_web_commit_url = 'http://gitlab.com/' + reponame + '/commit/%hash%/'
             this.vcs_web_type = '(custom)'
         }
-        else if( repoval.indexOf('bitbucket.org/') > -1 ) {
+        else if( repoval.startsWith('git://bitbucket.org/') ) {
             reponame = repoval.replace(/^.*bitbucket.org\//, '')
             reponame = reponame.replace(/.git$/, '')
             this.vcs_web_url = 'http://bitbucket.org/' + reponame
