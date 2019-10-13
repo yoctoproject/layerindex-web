@@ -20,7 +20,13 @@ class LayerConfParse:
 
         if not bitbakepath:
             fetchdir = settings.LAYER_FETCH_DIR
-            bitbakepath = os.path.join(fetchdir, 'bitbake')
+
+            from layerindex.models import LayerItem
+            bitbakeitem = LayerItem()
+            bitbakeitem.vcs_url = settings.BITBAKE_REPO_URL
+            bitbakepath = os.path.join(fetchdir, bitbakeitem.get_fetch_dir())
+            if getattr(settings, 'BITBAKE_PATH', ''):
+                bitbakepath = os.path.join(bitbakepath, settings.BITBAKE_PATH)
         self.bbpath = bitbakepath
 
         # Set up BBPATH.

@@ -268,8 +268,6 @@ def main():
             logger.error("Layer index lock timeout expired")
             sys.exit(1)
         try:
-            bitbakepath = os.path.join(fetchdir, 'bitbake')
-
             if not options.nofetch:
                 # Make sure oe-core is fetched since recipe parsing requires it
                 layerquery_core = LayerItem.objects.filter(comparison=False).filter(name=settings.CORE_LAYER_NAME)
@@ -285,7 +283,17 @@ def main():
                     if layer.vcs_url not in allrepos:
                         allrepos[layer.vcs_url] = (repodir, urldir, fetchdir, layer.name)
                 # Add bitbake
-                allrepos[settings.BITBAKE_REPO_URL] = (bitbakepath, "bitbake", fetchdir, "bitbake")
+                if settings.BITBAKE_REPO_URL not in allrepos:
+                    bitbakeitem = LayerItem()
+                    bitbakeitem.vcs_url = settings.BITBAKE_REPO_URL
+                    bitbakeurldir = bitbakeitem.get_fetch_dir()
+                    bitbakepath = os.path.join(fetchdir, bitbakeurldir)
+                    allrepos[settings.BITBAKE_REPO_URL] = (bitbakepath, bitbakeurldir, fetchdir, "bitbake")
+
+                (bitbakepath, _, _, _) = allrepos[settings.BITBAKE_REPO_URL]
+                if getattr(settings, 'BITBAKE_PATH', ''):
+                    bitbakepath = os.path.join(bitbakepath, settings.BITBAKE_PATH)
+
                 # Parallel fetching
                 pool = multiprocessing.Pool(int(settings.PARALLEL_JOBS))
                 for url in allrepos:

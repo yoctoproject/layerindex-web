@@ -98,7 +98,13 @@ def main():
 
     branch = utils.get_branch('master')
     fetchdir = settings.LAYER_FETCH_DIR
-    bitbakepath = os.path.join(fetchdir, 'bitbake')
+
+    import layerindex.models import LayerItem
+    bitbakeitem = LayerItem()
+    bitbakeitem.vcs_url = settings.BITBAKE_REPO_URL
+    bitbakepath = os.path.join(fetchdir, bitbakeitem.get_fetch_dir())
+    if getattr(settings, 'BITBAKE_PATH', ''):
+        bitbakepath = os.path.join(bitbakepath, settings.BITBAKE_PATH)
 
     if not os.path.exists(bitbakepath):
         sys.stderr.write("Unable to find bitbake checkout at %s" % bitbakepath)

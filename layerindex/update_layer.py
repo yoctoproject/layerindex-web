@@ -300,7 +300,11 @@ def main():
         logger.error("Please set LAYER_FETCH_DIR in settings.py")
         sys.exit(1)
 
-    bitbakepath = os.path.join(fetchdir, 'bitbake')
+    bitbakeitem = LayerItem()
+    bitbakeitem.vcs_url = settings.BITBAKE_REPO_URL
+    bitbakepath = os.path.join(fetchdir, bitbakeitem.get_fetch_dir())
+    if getattr(settings, 'BITBAKE_PATH', ''):
+        bitbakepath = os.path.join(bitbakepath, settings.BITBAKE_PATH)
 
     layer = utils.get_layer(options.layer)
     urldir = layer.get_fetch_dir()

@@ -239,6 +239,9 @@ TEMP_BASE_DIR = "/tmp"
 # Fetch URL of the BitBake repository for the update script
 BITBAKE_REPO_URL = "git://git.openembedded.org/bitbake"
 
+# Path within the BITBAKE_REPO_URL, usually empty
+BITBAKE_PATH = ""
+
 # Core layer to be used by the update script for basic BitBake configuration
 CORE_LAYER_NAME = "openembedded-core"
 
