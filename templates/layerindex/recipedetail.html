@@ -54,7 +54,7 @@
                         </tr>
                         <tr>
                             <th>Version</th>
-                            <td>{{ recipe.pv }}</td>
+                            <td>{{ recipe.pv }}{% if recipe.srcrev %} ({{ recipe.srcrev }}){% endif %}</td>
                         </tr>
                         <tr>
                             <th>Summary</th>

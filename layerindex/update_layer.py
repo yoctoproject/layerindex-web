@@ -110,6 +110,10 @@ def update_recipe_file(tinfoil, data, path, recipe, layerdir_start, repodir, sto
         recipe.pv = envdata.getVar("PV", True)
         recipe.pr = envdata.getVar("PR", True) or ""
         recipe.pe = envdata.getVar("PE", True) or ""
+        recipe.srcrev = envdata.getVar('SRCREV', True) or ''
+        if recipe.srcrev == 'INVALID':
+            # INVALID is the default from bitbake.conf, but we don't want to see it
+            recipe.srcrev = ''
         recipe.summary = envdata.getVar("SUMMARY", True)
         recipe.description = envdata.getVar("DESCRIPTION", True)
         recipe.section = envdata.getVar("SECTION", True)
