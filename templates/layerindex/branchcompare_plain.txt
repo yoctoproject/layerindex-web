@@ -1,0 +1,17 @@
+From {{ from_branch }} to {{ to_branch }} (layers: {{ showlayers_text }})
+
+
+Added
+-----
+{% for recipe in added %}{{ recipe.pn }} {% for rv in recipe.to_versions %}{{ rv.pv }}{% if not forloop.last %}, {% endif %}{% endfor %}
+{% endfor %}
+
+Changed
+-------
+{% for recipe in changed %}{% with pv_changed=recipe.pv_changed %}{{ recipe.pn }} {% for rv in recipe.from_versions %}{{ rv.pv }}{% if rv.srcrev and not pv_changed %} ({{ rv.srcrev|truncatechars:13 }}){% endif %}{% if not forloop.last %}, {% endif %}{% endfor %} -> {% for rv in recipe.to_versions %}{{ rv.pv }}{% if rv.srcrev and not pv_changed %} ({{ rv.srcrev|truncatechars:13 }}){% endif %}{% if not forloop.last %}, {% endif %}{% endfor %}
+{% endwith %}{% endfor %}
+
+Removed
+-------
+{% for recipe in removed %}{{ recipe.pn }}
+{% endfor %}

@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load static %}
+
+{% comment %}
+
+  layerindex-web - branch comparison page template
+
+  Copyright (C) 2019 Intel Corporation
+  Licensed under the MIT license, see COPYING.MIT for details
+
+{% endcomment %}
+
+
+<!--
+{% block title_append %} - branch comparison{% endblock %}
+-->
+
+{% block content %}
+{% autoescape on %}
+
+        <div class="row">
+            <div class="col-md-12">
+
+    <div class="pull-right">
+        <form class="form-inline" method="GET">
+            {{ form }}
+
+            <div id="layerDialog" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="layerDialogLabel">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                            <h3 id="layerDialogLabel">Select layers to include</h3>
+                        </div>
+                            <div class="modal-body">
+                                <div class="form-group has-feedback has-clear">
+                                    <input type="text" class="form-control" id="layersearchtext" placeholder="search layers">
+                                    <a class="glyphicon glyphicon-remove-sign form-control-feedback form-control-clear" id="layersearchclear" style="pointer-events: auto; text-decoration: none;cursor: pointer;"></a>
+                                </div>
+                                <div class="scrolling">
+                                    <table class="layerstable"><tbody>
+                                        {% for layer in layers %}
+                                            <tr>
+                                                <td class="checkboxtd"><input
+                                                    type="checkbox"
+                                                    class="filterlayercheckbox"
+                                                    name="l"
+                                                    value="{{ layer.id }}" id="id_layercheckbox_{{layer.id}}"
+                                                    {% if showlayers and layer.id in showlayers %}
+                                                        checked
+                                                    {% endif %}
+                                                    />
+                                                </td>
+                                                <td><label for="id_layercheckbox_{{layer.id}}">{{ layer.name }}</label></td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody></table>
+                                </div>
+                                <div class="buttonblock">
+                                <button type="button" class="btn btn-default buttonblock-btn" id="id_select_none">Clear selections</button>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-primary" id="id_layerdialog_ok" data-dismiss="modal">Filter</button>
+                                <button type="button" class="btn btn-default" id="id_cancel" data-dismiss="modal">Cancel</button>
+                            </div>
+                    </div><!-- /.modal-content -->
+                </div><!-- /.modal-dialog -->
+            </div>
+
+            <a href="#layerDialog" role="button" id="id_select_layers" class="btn btn-default nav-spacer" data-toggle="modal">Filter layers <span class="badge badge-success" id="id_layers_count">{{ showlayers|length }}</span></a>
+
+            <button type="submit" class="btn btn-primary">Show</button>
+        </form>
+    </div>
+
+                <h2>Branch recipe comparison</h2>
+{% if added or changed or removed %}
+                <h3>Added</h3>
+                <table class="table table-striped table-bordered recipestable">
+                    <thead>
+                        <tr>
+                            <th>Recipe</th>
+                            <th>Description</th>
+                            <th>Version - {{ to_branch }}</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for recipe in added %}
+                            <tr>
+                                <td class="success">{{ recipe.pn }}</td>
+                                <td class="success">{{ recipe.short_desc }}</td>
+                                <td class="success">{% for rv in recipe.to_versions %}<a href="{% url 'recipe' rv.id %}">{{ rv.pv }}{% if not forloop.last %}, {% endif %}</a>{% endfor %}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+                <h3>Changed</h3>
+                <table class="table table-striped table-bordered recipestable">
+                    <thead>
+                        <tr>
+                            <th>Recipe</th>
+                            <th>Description</th>
+                            <th>Version - {{ from_branch }}</th>
+                            <th>Version - {{ to_branch }}</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for recipe in changed %}
+                            {% with pv_changed=recipe.pv_changed %}
+                            <tr>
+                                <td>{{ recipe.pn }}</td>
+                                <td>{{ recipe.short_desc }}</td>
+                                <td>{% for rv in recipe.from_versions %}<a href="{% url 'recipe' rv.id %}">{{ rv.pv }}{% if rv.srcrev and not pv_changed %} ({{ rv.srcrev|truncatechars:13 }}){% endif %}{% if not forloop.last %}, {% endif %}</a>{% endfor %}</td>
+                                <td>{% for rv in recipe.to_versions %}<a href="{% url 'recipe' rv.id %}">{{ rv.pv }}{% if rv.srcrev and not pv_changed %} ({{ rv.srcrev|truncatechars:13 }}){% endif %}{% if not forloop.last %}, {% endif %}</a>{% endfor %}</td>
+                            </tr>
+                            {% endwith %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+                <h3>Removed</h3>
+                <table class="table table-striped table-bordered recipestable">
+                    <thead>
+                        <tr>
+                            <th>Recipe</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for recipe in removed %}
+                            <tr>
+                                <td class="error"><a href="{% url 'recipe' recipe.id %}">{{ recipe.pn }}</a></td>
+                                <td class="error">{{ recipe.short_desc }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+{% elif from_branch and to_branch %}
+    <p>No matching recipes in database.</p>
+{% else %}
+    <p>Select some parameters above to begin comparison.</p>
+{% endif %}
+            </div>
+        </div>
+
+    <span class="pull-right">
+    <a class="btn btn-default" href="{% url 'branch_comparison_plain' %}?{{ request.GET.urlencode }}"><i class="glyphicon glyphicon-file"></i> Plain text</a>
+    </span>
+
+
+{% endautoescape %}
+
+{% endblock %}
+
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        firstfield = $("#filter-form input:text").first()
+        if( ! firstfield.val() )
+            firstfield.focus()
+    });
+    $('#id_select_none').click(function (e) {
+        $('.layerstable').find('tr:visible').find('.filterlayercheckbox').prop('checked', false);
+    });
+
+    function clearLayerSearch() {
+        $("#layersearchtext").val('');
+        $(".layerstable > tbody > tr").show();
+    }
+
+    update_selected_layer_display = function() {
+        //layernames = [];
+        layerids = [];
+        $('.filterlayercheckbox:checked').each(function() {
+            //layernames.push($("label[for="+$(this).attr('id')+"]").html());
+            layerids.push($(this).attr('value'))
+        });
+        $('#id_layers').val(layerids)
+        $('#id_layers_count').html(layerids.length)
+    }
+    select_layer_checkboxes = function() {
+        $('.filterlayercheckbox').prop('checked', false);
+        selectedlayers = $('#id_layers').val().split(',');
+        for(i in selectedlayers) {
+            $('#id_layercheckbox_' + selectedlayers[i]).prop('checked', true);
+        }
+    }
+
+    $('#id_layerdialog_ok').click(function (e) {
+        update_selected_layer_display()
+    });
+    $("#layersearchtext").on("input", function() {
+        var value = $(this).val().toLowerCase();
+        $(".layerstable > tbody > tr").filter(function() {
+            $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+        });
+    });
+    $("#layersearchclear").click(function(){
+        clearLayerSearch();
+        $("#layersearchtext").focus();
+    });
+    $('#id_select_layers').click(function (e) {
+        clearLayerSearch();
+        select_layer_checkboxes();
+    })
+</script>
+{% endblock %}

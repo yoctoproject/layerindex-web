@@ -14,7 +14,8 @@ from layerindex.views import LayerListView, LayerReviewListView, LayerReviewDeta
     bulk_change_edit_view, bulk_change_patch_view, BulkChangeDeleteView, RecipeDetailView, RedirectParamsView, \
     ClassicRecipeSearchView, ClassicRecipeDetailView, ClassicRecipeStatsView, LayerUpdateDetailView, UpdateListView, \
     UpdateDetailView, StatsView, publish_view, LayerCheckListView, BBClassCheckListView, TaskStatusView, \
-    ComparisonRecipeSelectView, ComparisonRecipeSelectDetailView, task_log_view, task_stop_view, email_test_view
+    ComparisonRecipeSelectView, ComparisonRecipeSelectDetailView, task_log_view, task_stop_view, email_test_view, \
+    BranchCompareView
 from layerindex.models import LayerItem, Recipe, RecipeChangeset
 from rest_framework import routers
 from . import restviews
@@ -185,6 +186,15 @@ urlpatterns = [
     url(r'^stoptask/(?P<task_id>[-\w]+)/$',
         task_stop_view,
         name='task_stop'),
+    url(r'^branch_comparison/$',
+        BranchCompareView.as_view(
+            template_name='layerindex/branchcompare.html'),
+        name='branch_comparison'),
+    url(r'^branch_comparison_plain/$',
+        BranchCompareView.as_view(
+            content_type='text/plain',
+            template_name='layerindex/branchcompare_plain.txt'),
+        name='branch_comparison_plain'),
     url(r'^ajax/layerchecklist/(?P<branch>[-.\w]+)/$',
         LayerCheckListView.as_view(
             template_name='layerindex/layerchecklist.html'),
