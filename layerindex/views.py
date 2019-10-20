@@ -47,7 +47,8 @@ from layerindex.forms import (AdvancedRecipeSearchForm, BulkChangeEditFormSet,
                               ComparisonRecipeSelectForm, EditLayerForm,
                               EditNoteForm, EditProfileForm,
                               LayerMaintainerFormSet, RecipeChangesetForm,
-                              PatchDispositionForm, PatchDispositionFormSet)
+                              PatchDispositionForm, PatchDispositionFormSet,
+                              BranchComparisonForm)
 from layerindex.models import (BBAppend, BBClass, Branch, ClassicRecipe,
                                Distro, DynamicBuildDep, IncFile, LayerBranch,
                                LayerDependency, LayerItem, LayerMaintainer,
@@ -1705,3 +1706,113 @@ class ComparisonRecipeSelectDetailView(DetailView):
             messages.error(request, 'Failed to save changes: %s' % form.errors)
 
         return self.get(request, *args, **kwargs)
+
+
+class BranchCompareView(FormView):
+    form_class = BranchComparisonForm
+
+    def get_recipes(self, from_branch, to_branch, layer_ids):
+        from distutils.version import LooseVersion
+        class BranchComparisonResult:
+            def __init__(self, pn, short_desc):
+                self.pn = pn
+                self.short_desc = short_desc
+                self.from_versions = []
+                self.to_versions = []
+                self.id = None
+            def pv_changed(self):
+                from_pvs = sorted([x.pv for x in self.from_versions])
+                to_pvs = sorted([x.pv for x in self.to_versions])
+                return (from_pvs != to_pvs)
+        class BranchComparisonVersionResult:
+            def __init__(self, id, pv, srcrev):
+                self.id = id
+                self.pv = pv
+                self.srcrev = srcrev
+            def version_expr(self):
+                return (self.pv, self.srcrev)
+
+        def map_name(recipe):
+            pn = recipe.pn
+            if pn.startswith('gcc-source-'):
+                pn = pn.replace('-%s' % recipe.pv, '')
+            elif pn.endswith(('-i586', '-i686')):
+                pn = pn[:-5]
+            elif pn.endswith('-x86_64-oesdk-linux'):
+                pn = pn[:-19]
+            return pn
+
+        from_recipes = Recipe.objects.filter(layerbranch__branch=from_branch)
+        to_recipes = Recipe.objects.filter(layerbranch__branch=to_branch)
+        if layer_ids:
+            from_recipes = from_recipes.filter(layerbranch__layer__in=layer_ids)
+            to_recipes = to_recipes.filter(layerbranch__layer__in=layer_ids)
+        recipes = {}
+        for recipe in from_recipes:
+            pn = map_name(recipe)
+            res = recipes.get(pn, None)
+            if not res:
+                res = BranchComparisonResult(pn, recipe.short_desc)
+                recipes[pn] = res
+            res.from_versions.append(BranchComparisonVersionResult(id=recipe.id, pv=recipe.pv, srcrev=recipe.srcrev))
+        for recipe in to_recipes:
+            pn = map_name(recipe)
+            res = recipes.get(pn, None)
+            if not res:
+                res = BranchComparisonResult(pn, recipe.short_desc)
+                recipes[pn] = res
+            res.to_versions.append(BranchComparisonVersionResult(id=recipe.id, pv=recipe.pv, srcrev=recipe.srcrev))
+
+        added = []
+        changed = []
+        removed = []
+        for _, recipe in sorted(recipes.items(), key=lambda item: item[0]):
+            recipe.from_versions = sorted(recipe.from_versions, key=lambda item: LooseVersion(item.pv))
+            from_version_exprs = [x.version_expr() for x in recipe.from_versions]
+            recipe.to_versions = sorted(recipe.to_versions, key=lambda item: LooseVersion(item.pv))
+            to_version_exprs = [x.version_expr() for x in recipe.to_versions]
+            if not from_version_exprs:
+                added.append(recipe)
+            elif not to_version_exprs:
+                recipe.id = recipe.from_versions[-1].id
+                removed.append(recipe)
+            elif from_version_exprs != to_version_exprs:
+                changed.append(recipe)
+        return added, changed, removed
+
+    def form_valid(self, form):
+        return HttpResponseRedirect(reverse_lazy('branch_comparison', args=(form.cleaned_data['from_branch'].name, form.cleaned_data['to_branch'].name)))
+
+    def get_initial(self):
+        initial = super(BranchCompareView, self).get_initial()
+        from_branch_id = self.request.GET.get('from_branch', None)
+        if from_branch_id is not None:
+            initial['from_branch'] = get_object_or_404(Branch, id=from_branch_id)
+        to_branch_id = self.request.GET.get('to_branch', None)
+        if to_branch_id is not None:
+            initial['to_branch'] = get_object_or_404(Branch, id=to_branch_id)
+        initial['layers'] = self.request.GET.get('layers', str(LayerItem.objects.get(name=settings.CORE_LAYER_NAME).id))
+        return initial
+
+    def get_context_data(self, **kwargs):
+        context = super(BranchCompareView, self).get_context_data(**kwargs)
+        from_branch_id = self.request.GET.get('from_branch', None)
+        to_branch_id = self.request.GET.get('to_branch', None)
+
+        layer_ids = self.request.GET.get('layers', self.request.GET.get('layers', str(LayerItem.objects.get(name=settings.CORE_LAYER_NAME).id)))
+        from_branch = None
+        if from_branch_id is not None:
+            from_branch = get_object_or_404(Branch, id=from_branch_id)
+        context['from_branch'] = from_branch
+        to_branch = None
+        if from_branch_id is not None:
+            to_branch = get_object_or_404(Branch, id=to_branch_id)
+        context['to_branch'] = to_branch
+        if from_branch and to_branch:
+            context['added'], context['changed'], context['removed'] = self.get_recipes(from_branch, to_branch, layer_ids)
+        context['this_url_name'] = resolve(self.request.path_info).url_name
+        context['layers'] = LayerItem.objects.filter(status__in=['P', 'X']).order_by('name')
+        context['showlayers'] = layer_ids
+
+        return context
+

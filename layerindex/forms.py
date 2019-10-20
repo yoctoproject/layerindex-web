@@ -354,3 +354,22 @@ class PatchDispositionForm(StyledModelForm):
         }
 
 PatchDispositionFormSet = modelformset_factory(PatchDisposition, form=PatchDispositionForm, extra=0)
+
+
+class BranchComparisonForm(StyledForm):
+    from_branch = forms.ModelChoiceField(label='From', queryset=Branch.objects.none())
+    to_branch = forms.ModelChoiceField(label='To', queryset=Branch.objects.none())
+    layers = forms.CharField(widget=forms.HiddenInput())
+
+    def __init__(self, *args, request=None, **kwargs):
+        super(BranchComparisonForm, self).__init__(*args, **kwargs)
+        qs = Branch.objects.filter(comparison=False, hidden=False).order_by('sort_priority', 'name')
+        self.fields['from_branch'].queryset = qs
+        self.fields['to_branch'].queryset = qs
+        self.request = request
+
+    def clean(self):
+        cleaned_data = super(BranchComparisonForm, self).clean()
+        if cleaned_data['from_branch'] == cleaned_data['to_branch']:
+            raise forms.ValidationError({'to_branch': 'From and to branches cannot be the same'})
+        return cleaned_data
