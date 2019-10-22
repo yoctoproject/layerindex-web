@@ -33,7 +33,7 @@ class MaintenancePlan(models.Model):
     maintainer_style = models.CharField(max_length=1, choices=MAINTENANCEPLAN_MAINTAINER_STYLE, default='L', help_text='Maintainer tracking style for the layers within this plan')
 
     def get_default_release(self):
-        return self.release_set.filter(milestone__isnull=False).last()
+        return self.release_set.filter(milestone__isnull=False).order_by('-start_date').first()
 
     def per_recipe_maintainers(self):
         return self.maintainer_style != 'L'
@@ -63,7 +63,7 @@ class Release(models.Model):
         unique_together = ('plan', 'name',)
 
     def get_default_milestone(self):
-        return self.milestone_set.last()
+        return self.milestone_set.order_by('-start_date').first()
 
     @staticmethod
     def get_by_date(maintplan, date):
