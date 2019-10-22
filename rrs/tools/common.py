@@ -57,21 +57,23 @@ def get_pv_type(pv):
 def get_recipe_files(layerdir):
     from layerindex import recipeparse
 
-    sublayer_dirs = []
+    # Exclude lib dir (likely to include templates)
+    exclude_dirs = [os.path.join(layerdir, 'lib') + os.sep]
+    # Exclude sub-layers
     for root, dirs, files in os.walk(layerdir):
         for d in dirs:
             if os.path.exists(os.path.join(root, d, 'conf', 'layer.conf')):
-                sublayer_dirs.append(os.path.join(root, d) + os.sep)
+                exclude_dirs.append(os.path.join(root, d) + os.sep)
 
     recipe_files = []
     for root, dirs, files in os.walk(layerdir):
         if '.git' in dirs:
             dirs.remove('.git')
 
-        # remove sublayer dirs
+        # remove excluded dirs
         for d in dirs[:]:
             fullpath = os.path.join(root, d) + os.sep
-            if fullpath in sublayer_dirs:
+            if fullpath in exclude_dirs:
                 dirs.remove(d)
 
         for f in files:

@@ -303,6 +303,9 @@ def _get_recipes_filenames(ct, repo, repodir, layersubdir_start, logger):
             if layersubdir_start and not (diffitem.a_path.startswith(layersubdir_start) or diffitem.b_path.startswith(layersubdir_start)):
                 # Not in this layer, skip it
                 continue
+            if diffitem.a_path.startswith(layersubdir_start + 'lib/') or diffitem.b_path.startswith(layersubdir_start + 'lib/'):
+                # A little bit hacky, but we pick up templates otherwise
+                continue
 
             (typename, _, _) = recipeparse.detect_file_type(diffitem.a_path,
                                         layersubdir_start)
