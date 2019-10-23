@@ -180,7 +180,7 @@ oecore_bad_revs_2 = [
 """
     Store upgrade into RecipeUpgrade model.
 """
-def _save_upgrade(recipesymbol, layerbranch, pv, commit, title, info, filepath, logger, upgrade_type=None, orig_filepath=None, prev_version=None):
+def _save_upgrade(recipesymbol, layerbranch, pv, srcrev, commit, title, info, filepath, logger, upgrade_type=None, orig_filepath=None, prev_version=None):
     from rrs.models import Maintainer, RecipeUpgrade
 
     maintainer_name = info.split(';')[0]
@@ -196,6 +196,7 @@ def _save_upgrade(recipesymbol, layerbranch, pv, commit, title, info, filepath, 
     upgrade.author_date = rfc2822_time_to_utc_datetime(author_date)
     upgrade.commit_date = rfc2822_time_to_utc_datetime(commit_date)
     upgrade.version = pv
+    upgrade.srcrev = srcrev
     upgrade.sha1 = commit
     upgrade.title = title.strip()
     upgrade.filepath = filepath
@@ -217,6 +218,9 @@ def _create_upgrade(recipe_data, layerbranch, ct, title, info, filepath, logger,
 
     pn = recipe_data.getVar('PN', True)
     pv = recipe_data.getVar('PV', True)
+    srcrev = recipe_data.getVar('SRCREV', True)
+    if srcrev == 'INVALID':
+        srcrev = ''
 
     if '..' in pv or pv.endswith('.'):
         logger.warn('Invalid version for recipe %s in commit %s, ignoring' % (recipe_data.getVar('FILE', True), ct))
@@ -233,12 +237,14 @@ def _create_upgrade(recipe_data, layerbranch, ct, title, info, filepath, logger,
     latest_upgrade = rupgrades.order_by('-commit_date').first()
     if latest_upgrade:
         prev_pv = latest_upgrade.version
+        prev_srcrev = latest_upgrade.srcrev
     else:
         prev_pv = None
+        prev_srcrev = ''
 
     if prev_pv is None:
         logger.debug("%s: Initial upgrade ( -> %s)." % (pn, pv))
-        _save_upgrade(recipesymbol, layerbranch, pv, ct, title, info, filepath, logger)
+        _save_upgrade(recipesymbol, layerbranch, pv, srcrev, ct, title, info, filepath, logger)
     else:
         from common import get_recipe_pv_without_srcpv
 
@@ -254,7 +260,7 @@ def _create_upgrade(recipe_data, layerbranch, ct, title, info, filepath, logger,
 
             if npv == 'git':
                 logger.debug("%s: Avoiding upgrade to unversioned git." % pn)
-            elif ppv == 'git' or vercmp_result != 0 or latest_upgrade.upgrade_type == 'R':
+            elif ppv == 'git' or vercmp_result != 0 or srcrev != prev_srcrev or latest_upgrade.upgrade_type == 'R':
                 if initial is True:
                     logger.debug("%s: Update initial upgrade ( -> %s)." % \
                             (pn, pv)) 
@@ -277,7 +283,7 @@ def _create_upgrade(recipe_data, layerbranch, ct, title, info, filepath, logger,
                     op = {'U': 'upgrade', 'D': 'downgrade'}[upgrade_type]
                     logger.debug("%s: detected %s (%s -> %s)" \
                             " in ct %s." % (pn, op, prev_pv, pv, ct))
-                    _save_upgrade(recipesymbol, layerbranch, pv, ct, title, info, filepath, logger, upgrade_type=upgrade_type, orig_filepath=orig_filepath, prev_version=prev_pv)
+                    _save_upgrade(recipesymbol, layerbranch, pv, srcrev, ct, title, info, filepath, logger, upgrade_type=upgrade_type, orig_filepath=orig_filepath, prev_version=prev_pv)
         except KeyboardInterrupt:
             raise
         except Exception as e:
@@ -499,7 +505,7 @@ def generate_history(options, layerbranch_id, commit, logger):
                         if ru.recipesymbol.pn != pn and ru.recipesymbol.pn not in deleted_pns and ru.upgrade_type not in ['R', 'N']:
                             # PN changed (set within recipe), we need to mark the old recipe as deleted
                             logger.debug('PN changed (without move): %s -> %s' % (ru.recipesymbol.pn, pn))
-                            _save_upgrade(ru.recipesymbol, layerbranch, ru.version, recordcommit, title, info, ru.filepath, logger, upgrade_type='R')
+                            _save_upgrade(ru.recipesymbol, layerbranch, ru.version, ru.srcrev, recordcommit, title, info, ru.filepath, logger, upgrade_type='R')
                     orig_filepath = None
                     for a, b in moved:
                         if b == filepath:
@@ -518,7 +524,7 @@ def generate_history(options, layerbranch_id, commit, logger):
                             if not RecipeUpgrade.objects.filter(recipesymbol=ru.recipesymbol, filepath=b).exists():
                                 # Need to record the move, otherwise we won't be able to
                                 # find the record if we need to mark the recipe as deleted later
-                                _save_upgrade(ru.recipesymbol, layerbranch, ru.version, recordcommit, title, info, b, logger, upgrade_type='M', orig_filepath=a)
+                                _save_upgrade(ru.recipesymbol, layerbranch, ru.version, ru.srcrev, recordcommit, title, info, b, logger, upgrade_type='M', orig_filepath=a)
 
                 # Handle deleted recipes
                 for df in deleted:
@@ -538,7 +544,7 @@ def generate_history(options, layerbranch_id, commit, logger):
                             continue
                         if ru.upgrade_type != upgrade_type and ru.recipesymbol.pn not in seen_pns:
                             logger.debug("%s: marking as deleted (%s)" % (ru.recipesymbol.pn, ru.filepath))
-                            _save_upgrade(ru.recipesymbol, layerbranch, ru.version, recordcommit, title, info, df, logger, upgrade_type=upgrade_type)
+                            _save_upgrade(ru.recipesymbol, layerbranch, ru.version, ru.srcrev, recordcommit, title, info, df, logger, upgrade_type=upgrade_type)
                             break
 
                 if options.dry_run:

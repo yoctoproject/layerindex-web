@@ -475,6 +475,7 @@ class RecipeUpgrade(models.Model):
     sha1 = models.CharField(max_length=40, blank=True)
     title = models.CharField(max_length=1024, blank=True)
     version = models.CharField(max_length=100, blank=True)
+    srcrev = models.CharField(max_length=64, blank=True)
     author_date = models.DateTimeField(db_index=True)
     commit_date = models.DateTimeField(db_index=True)
     upgrade_type = models.CharField(max_length=1, choices=UPGRADE_TYPE_CHOICES, default='U', db_index=True)
