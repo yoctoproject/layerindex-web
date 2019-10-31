@@ -439,22 +439,44 @@ class RecipeUpgradeGroup(models.Model):
 
 class RecipeUpgradeGroupRule(models.Model):
     layerbranch = models.ForeignKey(LayerBranch)
-    pn = models.CharField(max_length=100, help_text='Regular expression to match recipe to apply to')
-    version = models.CharField(max_length=100, help_text='Regular expression to split version component on')
+    pn = models.CharField(max_length=100, blank=True, help_text='Regular expression to match recipe to apply to')
+    version = models.CharField(max_length=100, blank=True, help_text='Regular expression to split version component on')
+    license = models.CharField(max_length=100, blank=True, help_text='Regular expression to split license on')
+    priority = models.IntegerField(blank=True, null=True, help_text='Order to apply rule in (higher first)')
+
+    class Meta:
+        ordering = ["-priority"]
 
     @staticmethod
-    def group_for_params(recipesymbol, version):
-        for rule in RecipeUpgradeGroupRule.objects.filter(layerbranch=recipesymbol.layerbranch):
-            if re.match(rule.pn, recipesymbol.pn):
-                res = re.match(rule.version, version)
-                if res:
-                    if res.groups():
-                        match = res.groups()[0]
-                    else:
-                        match = res.string[res.start(0):res.end(0)]
-                    group, _ = RecipeUpgradeGroup.objects.get_or_create(recipesymbol=recipesymbol, title=match)
-                    group.save()
-                    return group
+    def group_for_params(recipesymbol, version, license):
+        for rule in RecipeUpgradeGroupRule.objects.filter(layerbranch=recipesymbol.layerbranch).order_by('-priority'):
+            pnmatch = None
+            if rule.pn:
+                pnmatch = re.match(rule.pn, recipesymbol.pn)
+            if (not rule.pn) or pnmatch:
+                if rule.version:
+                    res = re.match(rule.version, version)
+                    if res:
+                        if res.groups():
+                            match = res.groups()[0]
+                        else:
+                            match = res.string[res.start(0):res.end(0)]
+                        group, _ = RecipeUpgradeGroup.objects.get_or_create(recipesymbol=recipesymbol, title=match)
+                        group.save()
+                        return group
+                elif rule.license:
+                    res = re.match(rule.license, license)
+                    if res:
+                        if res.groups():
+                            match = res.groups()[0]
+                        else:
+                            match = res.string[res.start(0):res.end(0)]
+                        group, _ = RecipeUpgradeGroup.objects.get_or_create(recipesymbol=recipesymbol, title=match)
+                        group.save()
+                        return group
+                elif pnmatch:
+                    # Allow for dummy rules
+                    return None
         return None
 
     def __str__(self):
@@ -476,6 +498,7 @@ class RecipeUpgrade(models.Model):
     title = models.CharField(max_length=1024, blank=True)
     version = models.CharField(max_length=100, blank=True)
     srcrev = models.CharField(max_length=64, blank=True)
+    license = models.CharField(max_length=100, blank=True)
     author_date = models.DateTimeField(db_index=True)
     commit_date = models.DateTimeField(db_index=True)
     upgrade_type = models.CharField(max_length=1, choices=UPGRADE_TYPE_CHOICES, default='U', db_index=True)
@@ -498,7 +521,7 @@ class RecipeUpgrade(models.Model):
         return self.recipesymbol.layerbranch.commit_url(self.sha1)
 
     def regroup(self):
-        group = RecipeUpgradeGroupRule.group_for_params(self.recipesymbol, self.version)
+        group = RecipeUpgradeGroupRule.group_for_params(self.recipesymbol, self.version, self.license)
         if group != self.group:
             self.group = group
             return True

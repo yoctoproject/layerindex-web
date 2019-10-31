@@ -612,6 +612,36 @@ def recipes_report(request, maintplan_name, release_name, milestone_name):
 
     return response
 
+
+
+class RecipeUpgradeGroupSortItem:
+    def __init__(self, group):
+        self.group = group
+        self.ver = RecipeUpgradeGroupSortItem.group_to_ver(self.group)
+
+    @staticmethod
+    def group_to_ver(grp):
+        if not grp:
+            return []
+        else:
+            try:
+                return list(map(int, grp.title.split('.')))
+            except ValueError:
+                return grp.recipeupgrade_set.exclude(upgrade_type__in=['N','R']).order_by('-id').values_list('id', flat=True).first()
+
+    def __lt__(self, other):
+        if type(self.ver) == type(other.ver):
+            return self.ver < other.ver
+        elif isinstance(self.ver, str) and isinstance(other.ver, list):
+            return True
+        elif isinstance(self.ver, int) and isinstance(other.ver, int):
+            return False
+
+    def __repr__(self):
+        return repr(self.group)
+
+
+
 class RecipeUpgradeDetail():
     title = None
     version = None
@@ -735,9 +765,17 @@ class RecipeDetailView(DetailView):
             context['maintainer_name'] = 'No maintainer'
 
         details = []
+        multigroup = False
+        lastgroup = '' # can't use None here
         for ru in RecipeUpgrade.objects.filter(recipesymbol=recipesymbol).exclude(upgrade_type='M').order_by('group', '-commit_date', '-id'):
             details.append(_get_recipe_upgrade_detail(maintplan, ru))
-        details.sort(key=lambda s: list(map(int, s.group.title.split('.') if s.group else [])), reverse=True)
+            if not multigroup:
+                if lastgroup == '':
+                    lastgroup = ru.group
+                elif ru.group != lastgroup:
+                    multigroup = True
+        details.sort(key=lambda s: RecipeUpgradeGroupSortItem(s.group), reverse=True)
+        context['multigroup'] = multigroup
         context['recipe_upgrade_details'] = details
         context['recipe_upgrade_detail_count'] = len(details)
 

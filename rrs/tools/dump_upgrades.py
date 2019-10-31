@@ -74,7 +74,7 @@ def main():
         details = []
         for ru in RecipeUpgrade.objects.filter(recipesymbol=recipesymbol).exclude(upgrade_type='M').order_by('group', '-commit_date', '-id'):
             details.append(rrs.views._get_recipe_upgrade_detail(maintplan, ru))
-        details.sort(key=lambda s: list(map(int, s.group.title.split('.') if s.group else [])), reverse=True)
+        details.sort(key=lambda s: rrs.views.RecipeUpgradeGroupSortItem(s.group), reverse=True)
         group = None
         for rud in details:
             if rud.group != group:
