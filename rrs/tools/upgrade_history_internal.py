@@ -532,7 +532,7 @@ def generate_history(options, layerbranch_id, commit, logger):
                 for df in deleted:
                     rus = RecipeUpgrade.objects.filter(recipesymbol__layerbranch=layerbranch, filepath=df).order_by('-commit_date', '-id')
                     for ru in rus:
-                        other_rus = RecipeUpgrade.objects.filter(recipesymbol=ru.recipesymbol, commit_date__gt=ru.commit_date).exclude(filepath=df).order_by('-commit_date', '-id')
+                        other_rus = RecipeUpgrade.objects.filter(recipesymbol=ru.recipesymbol, commit_date__gte=ru.commit_date).exclude(filepath=df).order_by('-commit_date', '-id')
                         # We make a distinction between deleting just one version and the entire recipe being deleted
                         upgrade_type = 'R'
                         for other_ru in other_rus:
@@ -545,7 +545,11 @@ def generate_history(options, layerbranch_id, commit, logger):
                         if not upgrade_type:
                             continue
                         if ru.upgrade_type != upgrade_type and ru.recipesymbol.pn not in seen_pns:
-                            logger.debug("%s: marking as deleted (%s)" % (ru.recipesymbol.pn, ru.filepath))
+                            if upgrade_type == 'R':
+                                finalmsg = ' [FINAL]'
+                            else:
+                                finalmsg = ''
+                            logger.debug("%s: marking as deleted%s (%s)" % (ru.recipesymbol.pn, finalmsg, ru.filepath))
                             _save_upgrade(ru.recipesymbol, layerbranch, ru.version, ru.srcrev, ru.license, recordcommit, title, info, df, logger, upgrade_type=upgrade_type)
                             break
 
