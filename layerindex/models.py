@@ -919,3 +919,11 @@ class PatchDisposition(models.Model):
 
     def __str__(self):
         return '%s - %s' % (self.patch, self.get_disposition_display())
+
+
+class ExtendedProvide(models.Model):
+    recipes = models.ManyToManyField(Recipe)
+    name = models.CharField(max_length=255, unique=True)
+
+    def __str__(self):
+        return self.name

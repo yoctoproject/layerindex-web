@@ -194,4 +194,19 @@ def handle_recipe_depends(recipe, depends, packageconfig_opts):
                     dynamic_build_dependency.save()
                 dynamic_build_dependency.package_configs.add(package_config)
                 dynamic_build_dependency.recipes.add(recipe)
-    
+
+def handle_recipe_provides(recipe):
+    from layerindex.models import ExtendedProvide
+
+    recipe.extendedprovide_set.clear()
+    provides = recipe.provides.split()
+    for extend in recipe.bbclassextend.split():
+        if extend == 'native':
+            provides.append('%s-native' % recipe.pn)
+        elif extend == 'nativesdk':
+            provides.append('nativesdk-%s' % recipe.pn)
+    for provide in provides:
+        provides, created = ExtendedProvide.objects.get_or_create(name=provide)
+        if created:
+            provides.save()
+        provides.recipes.add(recipe)

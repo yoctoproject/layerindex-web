@@ -373,3 +373,16 @@ class BranchComparisonForm(StyledForm):
         if cleaned_data['from_branch'] == cleaned_data['to_branch']:
             raise forms.ValidationError({'to_branch': 'From and to branches cannot be the same'})
         return cleaned_data
+
+
+class RecipeDependenciesForm(StyledForm):
+    branch = forms.ModelChoiceField(label='Branch', queryset=Branch.objects.none())
+    layer = forms.ModelChoiceField(queryset=LayerItem.objects.filter(comparison=False).filter(status__in=['P', 'X']).order_by('name'), required=True)
+    crosslayer = forms.BooleanField(required=False)
+    excludelayers = forms.CharField(widget=forms.HiddenInput())
+
+    def __init__(self, *args, request=None, **kwargs):
+        super(RecipeDependenciesForm, self).__init__(*args, **kwargs)
+        qs = Branch.objects.filter(comparison=False, hidden=False).order_by('sort_priority', 'name')
+        self.fields['branch'].queryset = qs
+        self.request = request

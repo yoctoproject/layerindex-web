@@ -1,0 +1,209 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load static %}
+
+{% comment %}
+
+  layerindex-web - recipe dependencies page template
+
+  Copyright (C) 2019 Intel Corporation
+  Licensed under the MIT license, see COPYING.MIT for details
+
+{% endcomment %}
+
+
+<!--
+{% block title_append %} - recipe dependencies{% endblock %}
+-->
+
+{% block content %}
+{% autoescape on %}
+
+    <h2>Recipe dependencies</h2>
+
+        <div class="row">
+            <div class="col-md-5">
+
+        <form method="GET">
+        {% for hidden in form.hidden_fields %}
+            {{ hidden }}
+        {% endfor %}
+    {% for field in form.visible_fields %}
+        {% if field.name in form.errors %}
+        <div class="form-group alert alert-danger">
+        {{ field.errors }}
+        {% else %}
+        <div class="form-group">
+        {% endif %}
+            {% if field.name == "crosslayer" %}
+            <div class="controls">
+                <input type="checkbox" name="crosslayer" id="id_crosslayer" {% if crosslayer %} checked{% endif %} />
+                <label for="id_crosslayer">Cross-layer deps only</label></td>
+            </div>
+            {% else %}
+            <div class="control-label {% if field.required %}requiredlabel{% endif %}">
+                {{ field.label_tag }}
+            </div>
+            <div class="controls">
+                {{ field }}
+            </div>
+            {% endif %}
+        <p>
+        {{ field.help_text|safe }}
+        </p>
+        </div>
+    {% endfor %}
+
+            <div id="layerDialog" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="layerDialogLabel">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                            <h3 id="layerDialogLabel">Select layers to exclude for dependencies</h3>
+                        </div>
+                            <div class="modal-body">
+                                <div class="form-group has-feedback has-clear">
+                                    <input type="text" class="form-control" id="layersearchtext" placeholder="search layers">
+                                    <a class="glyphicon glyphicon-remove-sign form-control-feedback form-control-clear" id="layersearchclear" style="pointer-events: auto; text-decoration: none;cursor: pointer;"></a>
+                                </div>
+                                <div class="scrolling">
+                                    <table class="layerstable"><tbody>
+                                        {% for layer in layers %}
+                                            <tr>
+                                                <td class="checkboxtd"><input
+                                                    type="checkbox"
+                                                    class="filterlayercheckbox"
+                                                    value="{{ layer.id }}" id="id_excludelayercheckbox_{{layer.id}}"
+                                                    {% if excludelayers and layer.id in excludelayers %}
+                                                        checked
+                                                    {% endif %}
+                                                    />
+                                                </td>
+                                                <td><label for="id_excludelayercheckbox_{{layer.id}}">{{ layer.name }}</label></td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody></table>
+                                </div>
+                                <div class="buttonblock">
+                                <button type="button" class="btn btn-default buttonblock-btn" id="id_select_none">Clear selections</button>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-primary" id="id_layerdialog_ok" data-dismiss="modal">Exclude</button>
+                                <button type="button" class="btn btn-default" id="id_cancel" data-dismiss="modal">Cancel</button>
+                            </div>
+                    </div><!-- /.modal-content -->
+                </div><!-- /.modal-dialog -->
+            </div>
+
+        <div class="form-group">
+            <a href="#layerDialog" role="button" id="id_select_layers" class="btn btn-default nav-spacer" data-toggle="modal">Exclude layers <span class="badge badge-info" id="id_excludelayers_count">{{ excludelayers|length }}</span></a>
+        </div>
+
+            <button type="submit" class="btn btn-primary">Show</button>
+        </form>
+        <br>
+
+            </div>
+            <div class="col-md-12">
+{% if recipes %}
+                <table class="table table-striped table-bordered recipestable">
+                    <thead>
+                        <tr>
+                            <th>Recipe</th>
+                            <th>License</th>
+                            <th>Dependency</th>
+                            <th>Version - {{ branch }}</th>
+                            <th>License</th>
+                            <th>Layer</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for recipe in recipes %}
+                            {% with len=recipe.deps|length %}
+                            {% for dep in recipe.deps %}
+                            <tr>
+                                {% if forloop.first %}
+                                <td rowspan="{{ len }}"><a href="{% url 'recipe' recipe.id %}">{{ recipe.pn }}</a></td>
+                                <td rowspan="{{ len }}">{{ recipe.license }}</td>
+                                {% endif %}
+                                <td>{% if dep.pn != dep.depname %}{{ dep.depname }}: {% endif %}{% if dep.id > -1 %}<a href="{% url 'recipe' dep.id %}">{% endif %}{{ dep.pn }}{% if dep.id > -1 %}</a>{% endif %}{% if dep.dynamic %} <span class="label label-default">optional</span>{% endif %}</td>
+                                <td>{{ dep.pv }}</td>
+                                <td>{{ dep.license }}</td>
+                                <td>{{ dep.layer }}</td>
+                            </tr>
+                            {% endfor %}
+                            {% endwith %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+{% elif branch %}
+    <p>No matching recipes in database.</p>
+{% endif %}
+            </div>
+        </div>
+
+    <span class="pull-right">
+    <a class="btn btn-default" href="{% url 'branch_comparison_plain' %}?{{ request.GET.urlencode }}"><i class="glyphicon glyphicon-file"></i> Plain text</a>
+    </span>
+
+
+{% endautoescape %}
+
+{% endblock %}
+
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        firstfield = $("#filter-form input:text").first()
+        if( ! firstfield.val() )
+            firstfield.focus()
+    });
+    $('#id_select_none').click(function (e) {
+        $('.layerstable').find('tr:visible').find('.filterlayercheckbox').prop('checked', false);
+    });
+
+    function clearLayerSearch() {
+        $("#layersearchtext").val('');
+        $(".layerstable > tbody > tr").show();
+    }
+
+    update_selected_layer_display = function() {
+        //layernames = [];
+        layerids = [];
+        $('.filterlayercheckbox:checked').each(function() {
+            //layernames.push($("label[for="+$(this).attr('id')+"]").html());
+            layerids.push($(this).attr('value'))
+        });
+        $('#id_excludelayers').val(layerids)
+        $('#id_excludelayers_count').html(layerids.length)
+    }
+    select_layer_checkboxes = function() {
+        $('.filterlayercheckbox').prop('checked', false);
+        selectedlayers = $('#id_excludelayers').val().split(',');
+        for(i in selectedlayers) {
+            $('#id_excludelayercheckbox_' + selectedlayers[i]).prop('checked', true);
+        }
+    }
+
+    $('#id_layerdialog_ok').click(function (e) {
+        update_selected_layer_display()
+    });
+    $("#layersearchtext").on("input", function() {
+        var value = $(this).val().toLowerCase();
+        $(".layerstable > tbody > tr").filter(function() {
+            $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+        });
+    });
+    $("#layersearchclear").click(function(){
+        clearLayerSearch();
+        $("#layersearchtext").focus();
+    });
+    $('#id_select_layers').click(function (e) {
+        clearLayerSearch();
+        select_layer_checkboxes();
+    })
+</script>
+{% endblock %}

@@ -150,6 +150,8 @@ def update_recipe_file(tinfoil, data, path, recipe, layerdir_start, repodir, sto
 
         recipeparse.handle_recipe_depends(recipe, envdata.getVar('DEPENDS', True) or '', envdata.getVarFlags('PACKAGECONFIG'))
 
+        recipeparse.handle_recipe_provides(recipe)
+
         if not skip_patches:
             # Handle patches
             collect_patches(recipe, envdata, layerdir_start, stop_on_error)

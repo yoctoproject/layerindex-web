@@ -48,14 +48,14 @@ from layerindex.forms import (AdvancedRecipeSearchForm, BulkChangeEditFormSet,
                               EditNoteForm, EditProfileForm,
                               LayerMaintainerFormSet, RecipeChangesetForm,
                               PatchDispositionForm, PatchDispositionFormSet,
-                              BranchComparisonForm)
+                              BranchComparisonForm, RecipeDependenciesForm)
 from layerindex.models import (BBAppend, BBClass, Branch, ClassicRecipe,
                                Distro, DynamicBuildDep, IncFile, LayerBranch,
                                LayerDependency, LayerItem, LayerMaintainer,
                                LayerNote, LayerUpdate, Machine, Patch, Recipe,
                                RecipeChange, RecipeChangeset, Source, StaticBuildDep,
                                Update, SecurityQuestion, SecurityQuestionAnswer,
-                               UserProfile, PatchDisposition)
+                               UserProfile, PatchDisposition, ExtendedProvide)
 
 
 from . import tasks, utils
@@ -1815,6 +1815,118 @@ class BranchCompareView(FormView):
         context['showlayers'] = layer_ids
         layerlist = dict(context['layers'].values_list('id', 'name'))
         context['showlayers_text'] = ', '.join([layerlist[int(i)] for i in layer_ids])
+
+        return context
+
+
+class RecipeDependenciesView(FormView):
+    form_class = RecipeDependenciesForm
+
+    def get_recipes(self, layerbranch, exclude_layer_ids, crosslayer):
+        class RecipeResult:
+            def __init__(self, id, pn, short_desc, license):
+                self.id = id
+                self.pn = pn
+                self.short_desc = short_desc
+                self.license = license
+                self.deps = []
+        class RecipeDependencyResult:
+            def __init__(self, id, depname, pn, pv, license, layer, dynamic):
+                self.id = id
+                self.depname = depname
+                self.pn = pn
+                self.pv = pv
+                self.license = license
+                self.layer = layer
+                self.dynamic = dynamic
+
+        recipes = Recipe.objects.filter(layerbranch=layerbranch)
+
+        layerprovides = []
+        if crosslayer:
+            layerprovides = list(ExtendedProvide.objects.filter(recipes__layerbranch=layerbranch).values_list('name', flat=True))
+
+        branch = layerbranch.branch
+
+        def process(resultobj, depname, dynamic):
+            if crosslayer and depname in layerprovides:
+                return
+            eprovides = ExtendedProvide.objects.filter(name=depname)
+            if eprovides:
+                for eprovide in eprovides:
+                    deprecipes = eprovide.recipes.filter(layerbranch__branch=branch).values('id', 'pn', 'pv', 'license', 'layerbranch__layer__name').order_by('-layerbranch__layer__index_preference', 'layerbranch', 'pn')
+                    if exclude_layer_ids:
+                        deprecipes = deprecipes.exclude(layerbranch__layer__in=exclude_layer_ids)
+                    for deprecipe in deprecipes:
+                        resultobj.deps.append(RecipeDependencyResult(deprecipe['id'],
+                                                            depname,
+                                                            deprecipe['pn'],
+                                                            deprecipe['pv'],
+                                                            deprecipe['license'],
+                                                            deprecipe['layerbranch__layer__name'],
+                                                            dynamic))
+            if not resultobj.deps:
+                resultobj.deps.append(RecipeDependencyResult(-1,
+                                                    depname,
+                                                    depname,
+                                                    '',
+                                                    '',
+                                                    '',
+                                                    dynamic))
+
+        outrecipes = []
+        for recipe in recipes:
+            res = RecipeResult(recipe.id, recipe.pn, recipe.short_desc, recipe.license)
+            for rdepname in recipe.staticbuilddep_set.values_list('name', flat=True).order_by('name'):
+                process(res, rdepname, False)
+            for rdepname in recipe.dynamicbuilddep_set.values_list('name', flat=True).order_by('name'):
+                process(res, rdepname, True)
+            outrecipes.append(res)
+
+        return outrecipes
+
+    def form_valid(self, form):
+        return HttpResponseRedirect(reverse_lazy('recipe_deps', args=(form.cleaned_data['branch'].name)))
+
+    def get_initial(self):
+        initial = super(RecipeDependenciesView, self).get_initial()
+        branch_id = self.request.GET.get('branch', None)
+        if branch_id is not None:
+            initial['branch'] = get_object_or_404(Branch, id=branch_id)
+        layer_id = self.request.GET.get('layer', None)
+        if layer_id is not None:
+            initial['layer'] = get_object_or_404(LayerItem, id=layer_id)
+        initial['excludelayers'] = self.request.GET.get('excludelayers', '')
+        initial['crosslayer'] = self.request.GET.get('crosslayer', False)
+        return initial
+
+    def get_context_data(self, **kwargs):
+        context = super(RecipeDependenciesView, self).get_context_data(**kwargs)
+        branch_id = self.request.GET.get('branch', None)
+        layer_id = self.request.GET.get('layer', None)
+        exclude_layer_ids = self.request.GET.get('excludelayers', '')
+        if exclude_layer_ids:
+            exclude_layer_ids = exclude_layer_ids.split(',')
+        branch = None
+        if branch_id is not None:
+            branch = get_object_or_404(Branch, id=branch_id)
+        context['branch'] = branch
+        layer = None
+        if layer_id is not None:
+            layer = get_object_or_404(LayerItem, id=layer_id)
+        context['layer'] = layer
+        crosslayer = self.request.GET.get('crosslayer', False)
+        context['crosslayer'] = crosslayer
+        layerbranch = None
+        if layer:
+            layerbranch = layer.get_layerbranch(branch.name)
+        if layerbranch:
+            context['recipes'] = self.get_recipes(layerbranch, exclude_layer_ids, crosslayer)
+        context['this_url_name'] = resolve(self.request.path_info).url_name
+        context['layers'] = LayerItem.objects.filter(status__in=['P', 'X']).order_by('name')
+        context['excludelayers'] = exclude_layer_ids
+        layerlist = dict(context['layers'].values_list('id', 'name'))
+        context['excludelayers_text'] = ', '.join([layerlist[int(i)] for i in exclude_layer_ids])
 
         return context
 
