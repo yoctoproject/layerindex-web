@@ -268,32 +268,32 @@ def main():
             logger.error("Layer index lock timeout expired")
             sys.exit(1)
         try:
+            # Make sure oe-core is fetched since recipe parsing requires it
+            layerquery_core = LayerItem.objects.filter(comparison=False).filter(name=settings.CORE_LAYER_NAME)
+            if layerquery_core in layerquery:
+                layerquery_fetch = list(layerquery)
+            else:
+                layerquery_fetch = list(layerquery) + list(layerquery_core)
+            # Fetch latest metadata from repositories
+            for layer in layerquery_fetch:
+                # Handle multiple layers in a single repo
+                urldir = layer.get_fetch_dir()
+                repodir = os.path.join(fetchdir, urldir)
+                if layer.vcs_url not in allrepos:
+                    allrepos[layer.vcs_url] = (repodir, urldir, fetchdir, layer.name)
+            # Add bitbake
+            if settings.BITBAKE_REPO_URL not in allrepos:
+                bitbakeitem = LayerItem()
+                bitbakeitem.vcs_url = settings.BITBAKE_REPO_URL
+                bitbakeurldir = bitbakeitem.get_fetch_dir()
+                bitbakepath = os.path.join(fetchdir, bitbakeurldir)
+                allrepos[settings.BITBAKE_REPO_URL] = (bitbakepath, bitbakeurldir, fetchdir, "bitbake")
+
+            (bitbakepath, _, _, _) = allrepos[settings.BITBAKE_REPO_URL]
+            if getattr(settings, 'BITBAKE_PATH', ''):
+                bitbakepath = os.path.join(bitbakepath, settings.BITBAKE_PATH)
+
             if not options.nofetch:
-                # Make sure oe-core is fetched since recipe parsing requires it
-                layerquery_core = LayerItem.objects.filter(comparison=False).filter(name=settings.CORE_LAYER_NAME)
-                if layerquery_core in layerquery:
-                    layerquery_fetch = list(layerquery)
-                else:
-                    layerquery_fetch = list(layerquery) + list(layerquery_core)
-                # Fetch latest metadata from repositories
-                for layer in layerquery_fetch:
-                    # Handle multiple layers in a single repo
-                    urldir = layer.get_fetch_dir()
-                    repodir = os.path.join(fetchdir, urldir)
-                    if layer.vcs_url not in allrepos:
-                        allrepos[layer.vcs_url] = (repodir, urldir, fetchdir, layer.name)
-                # Add bitbake
-                if settings.BITBAKE_REPO_URL not in allrepos:
-                    bitbakeitem = LayerItem()
-                    bitbakeitem.vcs_url = settings.BITBAKE_REPO_URL
-                    bitbakeurldir = bitbakeitem.get_fetch_dir()
-                    bitbakepath = os.path.join(fetchdir, bitbakeurldir)
-                    allrepos[settings.BITBAKE_REPO_URL] = (bitbakepath, bitbakeurldir, fetchdir, "bitbake")
-
-                (bitbakepath, _, _, _) = allrepos[settings.BITBAKE_REPO_URL]
-                if getattr(settings, 'BITBAKE_PATH', ''):
-                    bitbakepath = os.path.join(bitbakepath, settings.BITBAKE_PATH)
-
                 # Parallel fetching
                 pool = multiprocessing.Pool(int(settings.PARALLEL_JOBS))
                 for url in allrepos:
