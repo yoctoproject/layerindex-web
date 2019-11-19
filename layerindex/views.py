@@ -569,6 +569,8 @@ layer name is expected to follow the \"layer:\" prefix without any spaces.')
                 else:
                     query_layer = LayerItem.objects.filter(
                         name=query_layername)
+                    if query_layername == 'oe-core' and not query_layer:
+                        query_layer = LayerItem.objects.filter(name='openembedded-core')
                     if query_layer:
                         init_qs = init_qs.filter(
                             layerbranch__layer=query_layer[0])
