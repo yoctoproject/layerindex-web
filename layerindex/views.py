@@ -576,6 +576,9 @@ layer name is expected to follow the \"layer:\" prefix without any spaces.')
                         messages.add_message(self.request, messages.ERROR,
                                             'No layer \"%s\" was found.'
                                             % query_layername)
+            elif item.startswith('pn:'):
+                query_pn = item.split(':')[1].strip().lower()
+                init_qs = init_qs.filter(pn=query_pn)
             else:
                 if ' ' in item:
                     item = '"%s"' % item
