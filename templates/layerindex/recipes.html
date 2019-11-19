@@ -38,6 +38,25 @@
                                     <input type="text" class="form-control" id="id_search_text" placeholder="Search recipes" name="q" value="{{ search_keyword }}" />
                                     <div class="input-group-btn">
                                         <button class="btn btn-default" type="submit">search</button>
+                                        <a class="btn btn-link" id="helplink" role="button"
+                                            data-toggle="popover"
+                                            data-html="true"
+                                            title="Searching"
+                                            data-placement="bottom"
+                                            data-content="
+<p>Enter terms to search for, separating multiple terms with spaces. Double quotes can be used to enclose phrases containing spaces.</p>
+<p>By default, recipe name, summary and description fields will be searched (with preference given to recipe name matches).</p>
+<p><b>Advanced query terms</b></p>
+<ul>
+<li><b>pn:</b><i>example</i> - match recipes whose name is exactly <i>example</i></li>
+<li><b>depends:</b><i>other</i> - match recipes that depend on <i>other</i> (i.e. with <i>other</i> in <code>DEPENDS</code>)</li>
+<li><b>inherits:</b><i>class</i> - match recipes that inherit the specified <i>class</i></li>
+<li><b>layer:</b><i>layer</i> - match recipes from the specified <i>layer</i></li>
+</ul>
+<p><b>Note:</b> do not use spaces when using the advanced query terms above.</p>
+">
+                                            <span class="glyphicon glyphicon-question-sign" aria-hidden="true"></span> help
+                                        </a>
                                     </div>
                                 </div>
                                 <span class="help-block" id="errortext"></span>
@@ -96,6 +115,9 @@
 
         $('.glyphicon-hdd').tooltip({title:"Inherits image"});
         $('.label-inverse').tooltip();
+        $('[data-toggle="popover"]').popover({
+            container: 'body'
+        });
     });
 
     function validate(){
