@@ -524,15 +524,27 @@ class RecipeSearchView(ListView):
         return qs, filtered
 
     def get_queryset(self):
+        import shlex
         _check_url_branch(self.kwargs)
         query_string = self.request.GET.get('q', '')
         init_qs = Recipe.objects.filter(layerbranch__branch__name=self.kwargs['branch'])
 
-        # Support slightly crude search on inherits field
-        query_items = query_string.split()
+        try:
+            # Note: we drop quotes here, they will be added back later
+            query_items = shlex.split(query_string)
+        except ValueError:
+            messages.add_message(self.request, messages.ERROR, 'Invalid query string')
+            return Recipe.objects.none()
+        # Check for single quotes which will cause the filter to blow up (e.g. searching for "'hello'" with all quotes)
+        for item in query_items:
+            if '\'' in item:
+                messages.add_message(self.request, messages.ERROR, 'Invalid query string')
+                return Recipe.objects.none()
+
         inherits = []
         query_terms = []
         for item in query_items:
+            # Support slightly crude search on inherits field
             if item.startswith('inherits:'):
                 inherits.append(item.split(':')[1])
 
@@ -565,6 +577,8 @@ layer name is expected to follow the \"layer:\" prefix without any spaces.')
                                             'No layer \"%s\" was found.'
                                             % query_layername)
             else:
+                if ' ' in item:
+                    item = '"%s"' % item
                 query_terms.append(item)
         if inherits:
             # FIXME This is a bit ugly, perhaps we should consider having this as a one-many relationship instead
