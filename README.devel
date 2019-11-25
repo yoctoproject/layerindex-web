@@ -125,6 +125,24 @@ Configuration and running:
    layerindex/tools/import_layer.py script or through the admin interface.
 
 
+SMTP test server
+----------------
+
+If you want to test email functionality (e.g. for password reset, layer
+submission or other notifications) you can do so without dealing with actual
+emails being sent by running python's built-in SMTP test server (in a
+separate shell session):
+
+python3 -m smtpd -n -c DebuggingServer localhost:1025
+
+This will stay running and print out any email that is sent to it. All you
+need to do then is edit settings.py and set it to point to the server:
+
+EMAIL_HOST = 'localhost'
+EMAIL_PORT = 1025
+
+
+
 Updating OpenEmbedded data
 --------------------------
 
