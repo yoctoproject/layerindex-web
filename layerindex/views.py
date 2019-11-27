@@ -6,6 +6,7 @@
 
 import os
 import sys
+import re
 from datetime import datetime
 from itertools import islice
 from pkg_resources import parse_version
@@ -1564,10 +1565,12 @@ def task_log_view(request, task_id):
         raise Http404
     try:
         f.seek(start)
-        # We need to escape this or else things that look like tags in the output
-        # will be interpreted as such by the browser
         datastr = f.read()
         origlen = len(datastr)
+        # Squash out CRs *within* the string (CRs at the start preserved)
+        datastr = re.sub(b'\n[^\n]+\r', b'\n', datastr)
+        # We need to escape this or else things that look like tags in the output
+        # will be interpreted as such by the browser
         data = escape(datastr)
         response = HttpResponse(data)
         try:
