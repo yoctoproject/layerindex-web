@@ -154,17 +154,23 @@ def detect_file_type(path, subdir_start):
     return (None, None, None)
 
 
-def handle_recipe_depends(recipe, depends, packageconfig_opts):
+def handle_recipe_depends(recipe, depends, packageconfig_opts, logger):
     from layerindex.models import StaticBuildDep, PackageConfig, DynamicBuildDep
 
     # Handle static build dependencies for this recipe
+    staticdeps = list(recipe.staticbuilddep_set.values_list('name', flat=True))
     for dep in depends.split():
         static_build_dependency, created = StaticBuildDep.objects.get_or_create(name=dep)
         if created:
             static_build_dependency.save()
         static_build_dependency.recipes.add(recipe)
+        if dep in staticdeps:
+            staticdeps.remove(dep)
+    for dep in staticdeps:
+        StaticBuildDep.objects.get(name=dep).recipes.remove(recipe)
 
     # Handle the PACKAGECONFIG variables for this recipe
+    dynamicdeps = list(recipe.dynamicbuilddep_set.values_list('name', flat=True))
     PackageConfig.objects.filter(recipe=recipe).delete()
     for key, value in packageconfig_opts.items():
         if key == "doc":
@@ -194,6 +200,10 @@ def handle_recipe_depends(recipe, depends, packageconfig_opts):
                     dynamic_build_dependency.save()
                 dynamic_build_dependency.package_configs.add(package_config)
                 dynamic_build_dependency.recipes.add(recipe)
+                if dep in dynamicdeps:
+                    dynamicdeps.remove(dep)
+    for dep in dynamicdeps:
+        DynamicBuildDep.objects.get(name=dep).recipes.remove(recipe)
 
 def handle_recipe_provides(recipe):
     from layerindex.models import ExtendedProvide

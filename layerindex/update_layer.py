@@ -148,7 +148,7 @@ def update_recipe_file(tinfoil, data, path, recipe, layerdir_start, repodir, sto
         for url in old_urls:
             recipe.source_set.filter(url=url).delete()
 
-        recipeparse.handle_recipe_depends(recipe, envdata.getVar('DEPENDS', True) or '', envdata.getVarFlags('PACKAGECONFIG'))
+        recipeparse.handle_recipe_depends(recipe, envdata.getVar('DEPENDS', True) or '', envdata.getVarFlags('PACKAGECONFIG'), logger)
 
         recipeparse.handle_recipe_provides(recipe)
 
