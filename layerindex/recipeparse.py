@@ -74,6 +74,9 @@ def init_parser(settings, branch, bitbakepath, enable_tracking=False, nocheckout
     # (see findTopdir() in bitbake/lib/bb/cookerdata.py)
     os.mkdir(os.path.join(tempdir, 'conf'))
     with open(os.path.join(tempdir, 'conf', 'bblayers.conf'), 'w') as f:
+        if not classic:
+            # We need this to avoid problems with AVAILABLE_LICENSES
+            f.write('COREBASE = "%s"\n' % core_repodir)
         pass
 
     if logger:
