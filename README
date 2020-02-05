@@ -412,7 +412,7 @@ To back up the database within the docker-based setup, you can run the
 following command (no need to substitute ${MYSQL_ROOT_PASSWORD}, it's
 already present within the container environment):
 
-docker-compose exec layersdb /bin/sh -c '/usr/bin/mysqldump -u root --password=${MYSQL_ROOT_PASSWORD} layersdb' | gzip > backup-`date +%Y_%m_%d_%H%M`.sql.gz
+docker-compose exec layersdb /bin/sh -c '/usr/bin/mysqldump -u root --password=${MYSQL_ROOT_PASSWORD} --max_allowed_packet=512M layersdb' | gzip > backup-`date +%Y_%m_%d_%H%M`.sql.gz
 
 To restore one of these backups you would run the following command (take
 care, this will overwrite the data immediately without prompting!):
