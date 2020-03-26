@@ -454,8 +454,8 @@ def main():
 
                     if not options.nocheckout:
                         # We need to check this out because we're using stuff from bb.utils
-                        # below, and if we don't it might be a python 2 revision which would
-                        # be an issue
+                        # below, and if we don't then whatever is currently checked out might
+                        # be something incompatible
                         utils.checkout_repo(bitbakepath, safe_bitbake_branch, logger=logger)
 
                     deps_dict = utils.explode_dep_versions2(bitbakepath, deps)

@@ -22,9 +22,8 @@ In order to run this application standalone, you will need:
   have to have Django installed, have the same or similar configuration
   in settings.py and have access to the database used by the web
   application):
-  * Python 2.7.6+ / Python 3.4+ to match with the version of BitBake
-    for the OpenEmbedded branch being parsed (for modern versions it's
-    Python 3.)
+  * Python 3.4+ to match with the version of BitBake for the OpenEmbedded 
+    branch being parsed.
   * Python dependencies as per requirements.txt (we still need Django
     etc. here since we interact with the database through Django's ORM.)
 

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Update cover info for OE-Classic / other distro recipes in OE layer index database
 #

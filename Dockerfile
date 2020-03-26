@@ -21,10 +21,6 @@ RUN apt-get update \
 	g++ \
 	gcc \
 	make \
-	python-pip \
-	python-mysqldb \
-	python-dev \
-	python-imaging \
 	python3-pip \
 	python3-mysqldb \
 	python3-dev \
@@ -44,11 +40,9 @@ RUN apt-get update \
 	&& locale-gen en_US.UTF-8 \
 	&& update-locale \
     && pip3 install gunicorn \
-    && pip install setuptools \
     && pip3 install setuptools \
-    && pip install -r /requirements.txt \
     && pip3 install -r /requirements.txt \
-    && apt-get purge -y autoconf g++ make python-dev python3-dev libjpeg-dev libmariadbclient-dev \
+    && apt-get purge -y autoconf g++ make python3-dev libjpeg-dev libmariadbclient-dev \
 	&& apt-get autoremove -y \
 	&& rm -rf /var/lib/apt/lists/* \
 	&& apt-get clean
