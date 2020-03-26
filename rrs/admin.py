@@ -22,9 +22,6 @@ class MaintenancePlanLayerBranchFormSet(BaseInlineFormSet):
     def __init__(self, *args, **kwargs):
         from layerindex.models import PythonEnvironment
         initialfields = {}
-        py2env = PythonEnvironment.get_default_python2_environment()
-        if py2env:
-            initialfields['python2_environment'] = py2env.id
         py3env = PythonEnvironment.get_default_python3_environment()
         if py3env:
             initialfields['python3_environment'] = py3env.id
@@ -36,9 +33,6 @@ class MaintenancePlanLayerBranchFormSet(BaseInlineFormSet):
     def empty_form(self):
         from layerindex.models import PythonEnvironment
         form = super(MaintenancePlanLayerBranchFormSet, self).empty_form
-        py2env = PythonEnvironment.get_default_python2_environment()
-        if py2env:
-            form.fields['python2_environment'].initial = py2env
         py3env = PythonEnvironment.get_default_python3_environment()
         if py3env:
             form.fields['python3_environment'].initial = py3env

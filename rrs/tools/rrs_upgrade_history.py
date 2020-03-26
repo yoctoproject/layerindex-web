@@ -38,21 +38,12 @@ if not fetchdir:
 def run_internal(maintplanlayerbranch, commit, commitdate, options, logger, bitbake_map, initial=False):
     from layerindex.models import PythonEnvironment
     from rrs.models import Release
-    if commitdate < maintplanlayerbranch.python3_switch_date:
-        # Python 2
-        if maintplanlayerbranch.python2_environment:
-            cmdprefix = maintplanlayerbranch.python2_environment.get_command()
-        else:
-            cmdprefix = 'python'
-        # Ensure we're using a bitbake version that is python 2 compatible
-        if commitdate > datetime(2016, 5, 10):
-            commitdate = datetime(2016, 5, 10)
+
+    # Python 3-only these days
+    if maintplanlayerbranch.python3_environment:
+        cmdprefix = maintplanlayerbranch.python3_environment.get_command()
     else:
-        # Python 3
-        if maintplanlayerbranch.python3_environment:
-            cmdprefix = maintplanlayerbranch.python3_environment.get_command()
-        else:
-            cmdprefix = 'python3'
+        cmdprefix = 'python3'
 
     bitbake_rev = utils.runcmd(['git', 'rev-list', '-1', '--before=%s' % str(commitdate), 'origin/master'],
                     bitbakepath, logger=logger)
@@ -244,7 +235,7 @@ if __name__=="__main__":
     parser = optparse.OptionParser(usage = """%prog [options]""")
 
     # Starting date of the yocto project 1.6 release
-    DEFAULT_SINCE_DATE = '2013-11-11'
+    DEFAULT_SINCE_DATE = '2016-06-02'
     parser.add_option("-s", "--since",
             help="Specify initial date for importing recipe upgrades (default '%s')" % DEFAULT_SINCE_DATE,
             action="store", dest="since", default=DEFAULT_SINCE_DATE)
