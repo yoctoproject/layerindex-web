@@ -15,12 +15,12 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='layerupdate',
             name='branch',
-            field=models.ForeignKey(to='layerindex.Branch'),
+            field=models.ForeignKey(on_delete=models.deletion.CASCADE, to='layerindex.Branch'),
         ),
         migrations.AlterField(
             model_name='layerupdate',
             name='layer',
-            field=models.ForeignKey(to='layerindex.LayerItem'),
+            field=models.ForeignKey(on_delete=models.deletion.CASCADE, to='layerindex.LayerItem'),
         ),
         migrations.RemoveField(
             model_name='layerupdate',

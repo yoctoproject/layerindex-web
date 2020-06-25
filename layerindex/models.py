@@ -7,7 +7,7 @@
 from django.db import models
 from datetime import datetime
 from django.contrib.auth.models import User
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.core.validators import URLValidator
 from django.db.models.signals import pre_save
 from django.dispatch import receiver
@@ -140,7 +140,6 @@ class LayerItem(models.Model):
     mailing_list_url = models.URLField('Mailing list URL', blank=True, help_text='URL of the info page for a mailing list for discussing the layer, if any')
     index_preference = models.IntegerField('Preference', default=0, help_text='Number used to find preferred recipes in recipe search results (higher number is greater preference)')
     comparison = models.BooleanField('Comparison', default=False, help_text='Is this a comparison layer?')
-
     updated = models.DateTimeField(auto_now=True)
 
     class Meta:
@@ -196,7 +195,7 @@ class LayerItem(models.Model):
 
 
 class LayerRecipeExtraURL(models.Model):
-    layer = models.ForeignKey(LayerItem)
+    layer = models.ForeignKey(LayerItem, on_delete=models.CASCADE)
     name = models.CharField(max_length=50, help_text='Name to display for link')
     url = models.CharField('URL', max_length=255, help_text='Template for URL to link to (macros: %pn% %pv% %branch% %actual_branch%)')
 
@@ -229,8 +228,8 @@ class YPCompatibleVersion(models.Model):
         return self.name
 
 class LayerBranch(models.Model):
-    layer = models.ForeignKey(LayerItem)
-    branch = models.ForeignKey(Branch)
+    layer = models.ForeignKey(LayerItem, on_delete=models.CASCADE)
+    branch = models.ForeignKey(Branch, on_delete=models.CASCADE)
     collection = models.CharField('Layer Collection', max_length=40, null=True, blank=True, help_text='Name of the collection that the layer provides for the purpose of expressing dependencies (as specified in BBFILE_COLLECTIONS). Can only contain letters, numbers and dashes.')
     version = models.CharField('Layer Version', max_length=10, null=True, blank=True, help_text='The layer version for this particular branch.')
     vcs_subdir = models.CharField('Repository subdirectory', max_length=40, blank=True, help_text='Subdirectory within the repository where the layer is located, if not in the root (usually only used if the repository contains more than one layer)')
@@ -375,7 +374,7 @@ class LayerMaintainer(models.Model):
         ('A', 'Active'),
         ('I', 'Inactive'),
     )
-    layerbranch = models.ForeignKey(LayerBranch)
+    layerbranch = models.ForeignKey(LayerBranch, on_delete=models.CASCADE)
     name = models.CharField(max_length=255)
     email = models.CharField(max_length=255)
     responsibility = models.CharField(max_length=200, blank=True, help_text='Specific area(s) this maintainer is responsible for, if not the entire layer')
@@ -389,8 +388,8 @@ class LayerMaintainer(models.Model):
 
 
 class LayerDependency(models.Model):
-    layerbranch = models.ForeignKey(LayerBranch, related_name='dependencies_set')
-    dependency = models.ForeignKey(LayerItem, related_name='dependents_set')
+    layerbranch = models.ForeignKey(LayerBranch, related_name='dependencies_set', on_delete=models.CASCADE)
+    dependency = models.ForeignKey(LayerItem, related_name='dependents_set', on_delete=models.CASCADE)
     required = models.BooleanField(default=True)
 
     class Meta:
@@ -401,7 +400,7 @@ class LayerDependency(models.Model):
 
 
 class LayerNote(models.Model):
-    layer = models.ForeignKey(LayerItem)
+    layer = models.ForeignKey(LayerItem, on_delete=models.CASCADE)
     text = models.TextField()
 
     def __str__(self):
@@ -409,9 +408,9 @@ class LayerNote(models.Model):
 
 
 class LayerUpdate(models.Model):
-    layer = models.ForeignKey(LayerItem)
-    branch = models.ForeignKey(Branch)
-    update = models.ForeignKey(Update)
+    layer = models.ForeignKey(LayerItem, on_delete=models.CASCADE)
+    branch = models.ForeignKey(Branch, on_delete=models.CASCADE)
+    update = models.ForeignKey(Update, on_delete=models.CASCADE)
     started = models.DateTimeField()
     finished = models.DateTimeField(blank=True, null=True)
     errors = models.IntegerField(default=0)
@@ -456,7 +455,7 @@ class LayerUpdate(models.Model):
 
 
 class Recipe(models.Model):
-    layerbranch = models.ForeignKey(LayerBranch)
+    layerbranch = models.ForeignKey(LayerBranch, on_delete=models.CASCADE)
     filename = models.CharField(max_length=255)
     filepath = models.CharField(max_length=255, blank=True)
     pn = models.CharField(max_length=100, blank=True)
@@ -527,7 +526,7 @@ class Recipe(models.Model):
 
 
 class Source(models.Model):
-    recipe = models.ForeignKey(Recipe)
+    recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
     url = models.CharField(max_length=255)
     sha256sum = models.CharField(max_length=64, blank=True)
 
@@ -561,7 +560,7 @@ class Patch(models.Model):
         ('S', 'Submitted'),
         ('D', 'Denied'),
         ]
-    recipe = models.ForeignKey(Recipe)
+    recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
     path = models.CharField(max_length=255)
     src_path = models.CharField(max_length=255)
     status = models.CharField(max_length=1, choices=PATCH_STATUS_CHOICES, default='U')
@@ -610,7 +609,7 @@ class Patch(models.Model):
 
 
 class PackageConfig(models.Model):
-    recipe = models.ForeignKey(Recipe)
+    recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
     feature = models.CharField(max_length=255)
     with_option = models.CharField(max_length=255, blank=True)
     without_option = models.CharField(max_length=255, blank=True)
@@ -638,8 +637,8 @@ class DynamicBuildDep(models.Model):
         return self.name
 
 class RecipeFileDependency(models.Model):
-    recipe = models.ForeignKey(Recipe)
-    layerbranch = models.ForeignKey(LayerBranch, related_name='+')
+    recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
+    layerbranch = models.ForeignKey(LayerBranch, related_name='+', on_delete=models.CASCADE)
     path = models.CharField(max_length=255, db_index=True)
 
     class Meta:
@@ -715,8 +714,8 @@ class ClassicRecipe(Recipe):
 
 
 class ComparisonRecipeUpdate(models.Model):
-    update = models.ForeignKey(Update)
-    recipe = models.ForeignKey(ClassicRecipe)
+    update = models.ForeignKey(Update, on_delete=models.CASCADE)
+    recipe = models.ForeignKey(ClassicRecipe, on_delete=models.CASCADE)
     meta_updated = models.BooleanField(default=False)
     link_updated = models.BooleanField(default=False)
 
@@ -725,7 +724,7 @@ class ComparisonRecipeUpdate(models.Model):
 
 
 class Machine(models.Model):
-    layerbranch = models.ForeignKey(LayerBranch)
+    layerbranch = models.ForeignKey(LayerBranch, on_delete=models.CASCADE)
     name = models.CharField(max_length=255)
     description = models.CharField(max_length=255)
 
@@ -739,7 +738,7 @@ class Machine(models.Model):
         return '%s (%s)' % (self.name, self.layerbranch.layer.name)
 
 class Distro(models.Model):
-    layerbranch = models.ForeignKey(LayerBranch)
+    layerbranch = models.ForeignKey(LayerBranch, on_delete=models.CASCADE)
     name = models.CharField(max_length=255)
     description = models.CharField(max_length=255)
 
@@ -754,7 +753,7 @@ class Distro(models.Model):
 
 
 class BBAppend(models.Model):
-    layerbranch = models.ForeignKey(LayerBranch)
+    layerbranch = models.ForeignKey(LayerBranch, on_delete=models.CASCADE)
     filename = models.CharField(max_length=255)
     filepath = models.CharField(max_length=255, blank=True)
 
@@ -780,7 +779,7 @@ class BBAppend(models.Model):
 
 
 class BBClass(models.Model):
-    layerbranch = models.ForeignKey(LayerBranch)
+    layerbranch = models.ForeignKey(LayerBranch, on_delete=models.CASCADE)
     name = models.CharField(max_length=100)
 
     class Meta:
@@ -796,7 +795,7 @@ class BBClass(models.Model):
 
 
 class IncFile(models.Model):
-    layerbranch = models.ForeignKey(LayerBranch)
+    layerbranch = models.ForeignKey(LayerBranch, on_delete=models.CASCADE)
     path = models.CharField(max_length=255)
 
     def vcs_web_url(self):
@@ -808,7 +807,7 @@ class IncFile(models.Model):
 
 
 class RecipeChangeset(models.Model):
-    user = models.ForeignKey(User)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     name = models.CharField(max_length=255)
 
     def __str__(self):
@@ -825,8 +824,8 @@ class RecipeChange(models.Model):
         'bugtracker': 'BUGTRACKER',
     }
 
-    changeset = models.ForeignKey(RecipeChangeset)
-    recipe = models.ForeignKey(Recipe, related_name='+')
+    changeset = models.ForeignKey(RecipeChangeset, on_delete=models.CASCADE)
+    recipe = models.ForeignKey(Recipe, related_name='+', on_delete=models.CASCADE)
     summary = models.CharField(max_length=100, blank=True)
     description = models.TextField(blank=True)
     section = models.CharField(max_length=100, blank=True)
@@ -882,7 +881,7 @@ class SecurityQuestion(models.Model):
 
 
 class UserProfile(models.Model):
-    user = models.OneToOneField(User)
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
     answer_attempts = models.IntegerField(default=0)
 
     def __str__(self):
@@ -891,7 +890,7 @@ class UserProfile(models.Model):
 
 class SecurityQuestionAnswer(models.Model):
     user = models.ForeignKey(UserProfile, on_delete=models.CASCADE)
-    security_question = models.ForeignKey(SecurityQuestion)
+    security_question = models.ForeignKey(SecurityQuestion, on_delete=models.CASCADE)
     answer = models.CharField(max_length = 250, null=False)
 
     def __str__(self):

@@ -16,7 +16,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(verbose_name='ID', primary_key=True, serialize=False, auto_created=True)),
                 ('url', models.CharField(max_length=255)),
-                ('recipe', models.ForeignKey(to='layerindex.Recipe')),
+                ('recipe', models.ForeignKey(on_delete=models.deletion.CASCADE, to='layerindex.Recipe')),
             ],
         ),
     ]

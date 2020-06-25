@@ -20,7 +20,7 @@ class Migration(migrations.Migration):
                 ('errors', models.IntegerField(default=0)),
                 ('warnings', models.IntegerField(default=0)),
                 ('log', models.TextField(blank=True)),
-                ('layerbranch', models.ForeignKey(to='layerindex.LayerBranch')),
+                ('layerbranch', models.ForeignKey(on_delete=models.deletion.CASCADE, to='layerindex.LayerBranch')),
             ],
         ),
         migrations.CreateModel(
@@ -41,6 +41,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='layerupdate',
             name='update',
-            field=models.ForeignKey(to='layerindex.Update'),
+            field=models.ForeignKey(on_delete=models.deletion.CASCADE, to='layerindex.Update'),
         ),
     ]

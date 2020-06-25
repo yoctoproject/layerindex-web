@@ -26,7 +26,7 @@ class Migration(migrations.Migration):
                 ('with_option', models.CharField(max_length=255, blank=True)),
                 ('without_option', models.CharField(max_length=255, blank=True)),
                 ('build_deps', models.CharField(max_length=255, blank=True)),
-                ('recipe', models.ForeignKey(to='layerindex.Recipe')),
+                ('recipe', models.ForeignKey(on_delete=models.deletion.CASCADE, to='layerindex.Recipe')),
             ],
         ),
         migrations.CreateModel(

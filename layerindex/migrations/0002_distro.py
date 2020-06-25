@@ -18,7 +18,7 @@ class Migration(migrations.Migration):
                 ('name', models.CharField(max_length=255)),
                 ('description', models.CharField(max_length=255)),
                 ('updated', models.DateTimeField(auto_now=True)),
-                ('layerbranch', models.ForeignKey(to='layerindex.LayerBranch')),
+                ('layerbranch', models.ForeignKey(on_delete=models.deletion.CASCADE, to='layerindex.LayerBranch')),
             ],
         ),
     ]

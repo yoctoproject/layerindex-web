@@ -21,7 +21,7 @@ from django.contrib.auth.models import Permission, User
 from django.contrib.messages.views import SuccessMessageMixin
 from django.contrib.sites.models import Site
 from django.core.exceptions import PermissionDenied
-from django.core.urlresolvers import resolve, reverse, reverse_lazy
+from django.urls import resolve, reverse, reverse_lazy
 from django.db import transaction
 from django.db.models import Count, Q
 from django.db.models.functions import Lower

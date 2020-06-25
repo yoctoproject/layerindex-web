@@ -6,7 +6,7 @@
 # All rights reserved.
 
 from django.conf.urls import include, url
-from django.core.urlresolvers import reverse_lazy
+from django.urls import reverse_lazy
 from django.views.generic import RedirectView, TemplateView
 from layerindex.auth_views import CaptchaRegistrationView, CaptchaPasswordResetView, delete_account_view, \
     PasswordResetSecurityQuestions
@@ -17,7 +17,7 @@ import settings
 
 urlpatterns = [
     url(r'^layerindex/', include('layerindex.urls')),
-    url(r'^admin/', include(admin.site.urls)),
+    url(r'^admin/', admin.site.urls),
     url(r'^accounts/password_reset/$',
         CaptchaPasswordResetView.as_view(
             email_template_name='registration/password_reset_email.txt',

@@ -12,7 +12,7 @@ from django.contrib.auth.views import (PasswordResetConfirmView,
 from django.contrib.sites.shortcuts import get_current_site
 
 from django.core.exceptions import PermissionDenied
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.http import HttpResponseRedirect, HttpResponse
 from django.shortcuts import render
 from django.utils.decorators import method_decorator

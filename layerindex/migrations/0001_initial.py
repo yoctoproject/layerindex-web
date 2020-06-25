@@ -69,7 +69,7 @@ class Migration(migrations.Migration):
                 ('vcs_last_commit', models.DateTimeField(verbose_name='Last commit date', blank=True, null=True)),
                 ('actual_branch', models.CharField(verbose_name='Actual Branch', blank=True, help_text='Name of the actual branch in the repository matching the core branch', max_length=80)),
                 ('updated', models.DateTimeField(auto_now=True)),
-                ('branch', models.ForeignKey(to='layerindex.Branch')),
+                ('branch', models.ForeignKey(on_delete=models.deletion.CASCADE, to='layerindex.Branch')),
             ],
             options={
                 'verbose_name_plural': 'Layer branches',
@@ -116,7 +116,7 @@ class Migration(migrations.Migration):
                 ('email', models.CharField(max_length=255)),
                 ('responsibility', models.CharField(blank=True, help_text='Specific area(s) this maintainer is responsible for, if not the entire layer', max_length=200)),
                 ('status', models.CharField(default='A', max_length=1, choices=[('A', 'Active'), ('I', 'Inactive')])),
-                ('layerbranch', models.ForeignKey(to='layerindex.LayerBranch')),
+                ('layerbranch', models.ForeignKey(on_delete=models.deletion.CASCADE, to='layerindex.LayerBranch')),
             ],
         ),
         migrations.CreateModel(
@@ -124,7 +124,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(primary_key=True, verbose_name='ID', auto_created=True, serialize=False)),
                 ('text', models.TextField()),
-                ('layer', models.ForeignKey(to='layerindex.LayerItem')),
+                ('layer', models.ForeignKey(on_delete=models.deletion.CASCADE, to='layerindex.LayerItem')),
             ],
         ),
         migrations.CreateModel(
@@ -134,7 +134,7 @@ class Migration(migrations.Migration):
                 ('name', models.CharField(max_length=255)),
                 ('description', models.CharField(max_length=255)),
                 ('updated', models.DateTimeField(auto_now=True)),
-                ('layerbranch', models.ForeignKey(to='layerindex.LayerBranch')),
+                ('layerbranch', models.ForeignKey(on_delete=models.deletion.CASCADE, to='layerindex.LayerBranch')),
             ],
         ),
         migrations.CreateModel(
@@ -184,7 +184,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(primary_key=True, verbose_name='ID', auto_created=True, serialize=False)),
                 ('name', models.CharField(max_length=255)),
-                ('user', models.ForeignKey(to=settings.AUTH_USER_MODEL)),
+                ('user', models.ForeignKey(on_delete=models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
             ],
         ),
         migrations.CreateModel(
@@ -192,7 +192,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(primary_key=True, verbose_name='ID', auto_created=True, serialize=False)),
                 ('path', models.CharField(db_index=True, max_length=255)),
-                ('layerbranch', models.ForeignKey(related_name='+', to='layerindex.LayerBranch')),
+                ('layerbranch', models.ForeignKey(on_delete=models.deletion.CASCADE, related_name='+', to='layerindex.LayerBranch')),
             ],
             options={
                 'verbose_name_plural': 'Recipe file dependencies',
@@ -201,7 +201,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='ClassicRecipe',
             fields=[
-                ('recipe_ptr', models.OneToOneField(primary_key=True, to='layerindex.Recipe', auto_created=True, parent_link=True, serialize=False)),
+                ('recipe_ptr', models.OneToOneField(on_delete=models.deletion.CASCADE, primary_key=True, to='layerindex.Recipe', auto_created=True, parent_link=True, serialize=False)),
                 ('cover_pn', models.CharField(verbose_name='Covering recipe', blank=True, max_length=100)),
                 ('cover_status', models.CharField(default='U', max_length=1, choices=[('U', 'Unknown'), ('N', 'Not available'), ('R', 'Replaced'), ('P', 'Provided (BBCLASSEXTEND)'), ('C', 'Provided (PACKAGECONFIG)'), ('O', 'Obsolete'), ('E', 'Equivalent functionality'), ('D', 'Direct match')])),
                 ('cover_verified', models.BooleanField(default=False)),
@@ -216,57 +216,57 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='recipefiledependency',
             name='recipe',
-            field=models.ForeignKey(to='layerindex.Recipe'),
+            field=models.ForeignKey(on_delete=models.deletion.CASCADE, to='layerindex.Recipe'),
         ),
         migrations.AddField(
             model_name='recipechange',
             name='changeset',
-            field=models.ForeignKey(to='layerindex.RecipeChangeset'),
+            field=models.ForeignKey(on_delete=models.deletion.CASCADE, to='layerindex.RecipeChangeset'),
         ),
         migrations.AddField(
             model_name='recipechange',
             name='recipe',
-            field=models.ForeignKey(related_name='+', to='layerindex.Recipe'),
+            field=models.ForeignKey(on_delete=models.deletion.CASCADE, related_name='+', to='layerindex.Recipe'),
         ),
         migrations.AddField(
             model_name='recipe',
             name='layerbranch',
-            field=models.ForeignKey(to='layerindex.LayerBranch'),
+            field=models.ForeignKey(on_delete=models.deletion.CASCADE, to='layerindex.LayerBranch'),
         ),
         migrations.AddField(
             model_name='layerdependency',
             name='dependency',
-            field=models.ForeignKey(related_name='dependents_set', to='layerindex.LayerItem'),
+            field=models.ForeignKey(on_delete=models.deletion.CASCADE, related_name='dependents_set', to='layerindex.LayerItem'),
         ),
         migrations.AddField(
             model_name='layerdependency',
             name='layerbranch',
-            field=models.ForeignKey(related_name='dependencies_set', to='layerindex.LayerBranch'),
+            field=models.ForeignKey(on_delete=models.deletion.CASCADE, related_name='dependencies_set', to='layerindex.LayerBranch'),
         ),
         migrations.AddField(
             model_name='layerbranch',
             name='layer',
-            field=models.ForeignKey(to='layerindex.LayerItem'),
+            field=models.ForeignKey(on_delete=models.deletion.CASCADE, to='layerindex.LayerItem'),
         ),
         migrations.AddField(
             model_name='branch',
             name='update_environment',
-            field=models.ForeignKey(to='layerindex.PythonEnvironment', blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL),
+            field=models.ForeignKey(to='layerindex.PythonEnvironment', blank=True, null=True, on_delete=models.deletion.SET_NULL),
         ),
         migrations.AddField(
             model_name='bbclass',
             name='layerbranch',
-            field=models.ForeignKey(to='layerindex.LayerBranch'),
+            field=models.ForeignKey(on_delete=models.deletion.CASCADE, to='layerindex.LayerBranch'),
         ),
         migrations.AddField(
             model_name='bbappend',
             name='layerbranch',
-            field=models.ForeignKey(to='layerindex.LayerBranch'),
+            field=models.ForeignKey(on_delete=models.deletion.CASCADE, to='layerindex.LayerBranch'),
         ),
         migrations.AddField(
             model_name='classicrecipe',
             name='cover_layerbranch',
-            field=models.ForeignKey(to='layerindex.LayerBranch', verbose_name='Covering layer', blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL),
+            field=models.ForeignKey(to='layerindex.LayerBranch', verbose_name='Covering layer', blank=True, null=True, on_delete=models.deletion.SET_NULL),
         ),
         migrations.RunPython(create_master_branch, reverse_code=migrations.RunPython.noop),
     ]
