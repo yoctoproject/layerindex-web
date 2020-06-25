@@ -171,7 +171,7 @@ class LayerItem(models.Model):
         return matches
 
     def user_can_edit(self, user):
-        if user.is_authenticated():
+        if user.is_authenticated:
             user_email = user.email.strip().lower()
             for maintainer in self.active_maintainers():
                 if maintainer.email.strip().lower() == user_email:

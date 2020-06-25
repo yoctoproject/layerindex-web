@@ -89,7 +89,7 @@ class EditLayerForm(StyledModelForm):
             del self.fields['captcha']
         else:
             self.fields['deps'].initial = [l.pk for l in LayerItem.objects.filter(name=settings.CORE_LAYER_NAME)]
-            if user.is_authenticated():
+            if user.is_authenticated:
                 del self.fields['captcha']
         # Ensure repo subdir appears after repo URL
         field_order = list(self.fields.keys())

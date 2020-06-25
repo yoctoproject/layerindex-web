@@ -77,7 +77,7 @@ class CaptchaPasswordResetView(PasswordResetView):
 
 
 def delete_account_view(request, template_name):
-    if not request.user.is_authenticated():
+    if not request.user.is_authenticated:
         raise PermissionDenied
     if request.user.is_superuser:
         # It's not really appropriate for the superuser to be deleted this way

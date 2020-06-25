@@ -65,7 +65,7 @@ def edit_layernote_view(request, template_name, slug, pk=None):
     layeritem = get_object_or_404(LayerItem, name=slug)
     if layeritem.comparison:
         raise Http404
-    if not (request.user.is_authenticated() and (request.user.has_perm('layerindex.publish_layer') or layeritem.user_can_edit(request.user))):
+    if not (request.user.is_authenticated and (request.user.has_perm('layerindex.publish_layer') or layeritem.user_can_edit(request.user))):
         raise PermissionDenied
     if pk:
         # Edit mode
@@ -91,7 +91,7 @@ def delete_layernote_view(request, template_name, slug, pk):
     layeritem = get_object_or_404(LayerItem, name=slug)
     if layeritem.comparison:
         raise Http404
-    if not (request.user.is_authenticated() and (request.user.has_perm('layerindex.publish_layer') or layeritem.user_can_edit(request.user))):
+    if not (request.user.is_authenticated and (request.user.has_perm('layerindex.publish_layer') or layeritem.user_can_edit(request.user))):
         raise PermissionDenied
     layernote = get_object_or_404(LayerNote, pk=pk)
     if request.method == 'POST':
@@ -108,7 +108,7 @@ def delete_layer_view(request, template_name, slug):
     layeritem = get_object_or_404(LayerItem, name=slug)
     if layeritem.comparison:
         raise Http404
-    if not (request.user.is_authenticated() and request.user.has_perm('layerindex.publish_layer') and layeritem.status == 'N'):
+    if not (request.user.is_authenticated and request.user.has_perm('layerindex.publish_layer') and layeritem.status == 'N'):
         raise PermissionDenied
     if request.method == 'POST':
         layeritem.delete()
@@ -128,7 +128,7 @@ def edit_layer_view(request, template_name, branch='master', slug=None):
         layeritem = get_object_or_404(LayerItem, name=slug)
         if layeritem.comparison:
             raise Http404
-        if not (request.user.is_authenticated() and (request.user.has_perm('layerindex.publish_layer') or layeritem.user_can_edit(request.user))):
+        if not (request.user.is_authenticated and (request.user.has_perm('layerindex.publish_layer') or layeritem.user_can_edit(request.user))):
             raise PermissionDenied
         layerbranch = get_object_or_404(LayerBranch, layer=layeritem, branch=branchobj)
         old_maintainers = list(layerbranch.layermaintainer_set.values_list('email', flat=True))
@@ -324,7 +324,7 @@ def _get_help_contact():
     return help_contact
 
 def publish_view(request, name):
-    if not (request.user.is_authenticated() and request.user.has_perm('layerindex.publish_layer')):
+    if not (request.user.is_authenticated and request.user.has_perm('layerindex.publish_layer')):
         raise PermissionDenied
 
     if getattr(settings, 'SEND_PUBLISH_EMAIL', True):
@@ -412,7 +412,7 @@ class LayerDetailView(DetailView):
             if l.comparison:
                 raise Http404
             if l.status == 'N':
-                if not (request.user.is_authenticated() and request.user.has_perm('layerindex.publish_layer')):
+                if not (request.user.is_authenticated and request.user.has_perm('layerindex.publish_layer')):
                     raise PermissionDenied
         return res
 
@@ -695,7 +695,7 @@ class BulkChangeView(CreateView):
         return super(BulkChangeView, self).dispatch(request, *args, **kwargs)
 
     def form_valid(self, form):
-        if not self.request.user.is_authenticated():
+        if not self.request.user.is_authenticated:
             raise PermissionDenied
         obj = form.save(commit=False)
         obj.user = self.request.user
@@ -717,7 +717,7 @@ class BulkChangeSearchView(AdvancedRecipeSearchView):
         return super(BulkChangeSearchView, self).get(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
-        if not request.user.is_authenticated():
+        if not request.user.is_authenticated:
             raise PermissionDenied
 
         changeset = get_object_or_404(RecipeChangeset, pk=kwargs['pk'])
@@ -1346,7 +1346,7 @@ class ClassicRecipeDetailView(SuccessMessageMixin, DetailView):
     context_object_name = 'recipe'
 
     def _can_edit(self):
-        if self.request.user.is_authenticated():
+        if self.request.user.is_authenticated:
             if not self.request.user.has_perm('layerindex.edit_classic'):
                 return False
         else:
@@ -1354,7 +1354,7 @@ class ClassicRecipeDetailView(SuccessMessageMixin, DetailView):
         return True
 
     def _can_disposition_patches(self):
-        if self.request.user.is_authenticated():
+        if self.request.user.is_authenticated:
             if not self.request.user.has_perm('layerindex.patch_disposition'):
                 return False
         else:
@@ -1550,7 +1550,7 @@ class TaskStatusView(TemplateView):
 
 def task_log_view(request, task_id):
     from celery.result import AsyncResult
-    if not request.user.is_authenticated():
+    if not request.user.is_authenticated:
         raise PermissionDenied
 
     if '/' in task_id:
@@ -1601,7 +1601,7 @@ def task_log_view(request, task_id):
 def task_stop_view(request, task_id):
     from celery.result import AsyncResult
     import signal
-    if not request.user.is_authenticated():
+    if not request.user.is_authenticated:
         raise PermissionDenied
 
     result = AsyncResult(task_id)
@@ -1610,7 +1610,7 @@ def task_stop_view(request, task_id):
 
 
 def email_test_view(request):
-    if not request.user.is_authenticated() and request.user.is_staff():
+    if not request.user.is_authenticated and request.user.is_staff():
         raise PermissionDenied
 
     plaintext = get_template('layerindex/testemail.txt')
@@ -1639,7 +1639,7 @@ def email_test_view(request):
 
 class ComparisonRecipeSelectView(ClassicRecipeSearchView):
     def _can_edit(self):
-        if self.request.user.is_authenticated():
+        if self.request.user.is_authenticated:
             if not self.request.user.has_perm('layerindex.edit_classic'):
                 return False
         else:
@@ -1713,7 +1713,7 @@ class ComparisonRecipeSelectDetailView(DetailView):
         return context
 
     def post(self, request, *args, **kwargs):
-        if not request.user.is_authenticated():
+        if not request.user.is_authenticated:
             raise PermissionDenied
 
         recipe = get_object_or_404(ClassicRecipe, pk=self.kwargs['selectfor'])
