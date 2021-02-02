@@ -4,6 +4,8 @@
 #
 # Copyright (C) 2012 Intel Corporation
 # Author: Paul Eggleton <paul.eggleton@linux.intel.com>
+#
+# SPDX-License-Identifier: MIT
 
 import sys
 import os.path

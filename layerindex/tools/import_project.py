@@ -9,6 +9,8 @@
 # Author: Liam R. Howlett <liam.howlett@windriver.com>
 #
 # Licensed under the MIT license, see COPYING.MIT for details
+#
+# SPDX-License-Identifier: MIT
 
 from urllib.parse import urlparse
 import logging

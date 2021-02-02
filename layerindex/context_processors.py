@@ -3,6 +3,8 @@
 # Copyright (C) 2013, 2018 Intel Corporation
 #
 # Licensed under the MIT license, see COPYING.MIT for details
+#
+# SPDX-License-Identifier: MIT
 
 from layerindex.models import Branch, LayerItem, SiteNotice
 from django.contrib.sites.models import Site

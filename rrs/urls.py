@@ -1,3 +1,11 @@
+# rrs-web - URLS
+#
+# Copyright (C) 2014 Intel Corporation
+#
+# Licensed under the MIT license, see COPYING.MIT for details
+#
+# SPDX-License-Identifier: MIT
+
 from django.conf.urls import include, url
 
 from rrs.models import Release, Milestone

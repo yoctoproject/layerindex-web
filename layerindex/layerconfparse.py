@@ -5,6 +5,7 @@
 #
 # Licensed under the MIT license, see COPYING.MIT for details
 #
+# SPDX-License-Identifier: MIT
 
 import sys
 import os

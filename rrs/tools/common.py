@@ -4,6 +4,8 @@
 # Author: Anibal Limon <anibal.limon@linux.intel.com>
 #
 # Licensed under the MIT license, see COPYING.MIT for details
+#
+# SPDX-License-Identifier: MIT
 
 import sys
 import os

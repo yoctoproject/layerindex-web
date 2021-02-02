@@ -3,6 +3,8 @@
 # Copyright (C) 2013-2018 Intel Corporation
 #
 # Licensed under the MIT license, see COPYING.MIT for details
+#
+# SPDX-License-Identifier: MIT
 
 from django.db import models
 from datetime import datetime

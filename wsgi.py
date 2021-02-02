@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+
 import os, sys
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "settings")
 sys.path.append('/var/www/html/layerindex')

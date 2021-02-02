@@ -4,6 +4,8 @@
 #
 # Copyright (c) Django Software Foundation and individual contributors.
 # All rights reserved.
+#
+# SPDX-License-Identifier: MIT
 
 from django.conf.urls import include, url
 from django.urls import reverse_lazy

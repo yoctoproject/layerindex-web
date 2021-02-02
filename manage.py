@@ -6,6 +6,8 @@
 #
 # Copyright (c) Django Software Foundation and individual contributors.
 # All rights reserved.
+#
+# SPDX-License-Identifier: MIT
 
 import os
 import sys

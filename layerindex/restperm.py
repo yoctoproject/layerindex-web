@@ -1,3 +1,9 @@
+# Copyright (C) 2014 Intel Corporation
+#
+# Licensed under the MIT license, see COPYING.MIT for details
+#
+# SPDX-License-Identifier: MIT
+
 from rest_framework import permissions
 
 class ReadOnlyPermission(permissions.BasePermission):

@@ -7,6 +7,8 @@
 #          Paul Eggleton <paul.eggleton@linux.intel.com>
 #
 # Licensed under the MIT license, see COPYING.MIT for details
+#
+# SPDX-License-Identifier: MIT
 
 
 import sys

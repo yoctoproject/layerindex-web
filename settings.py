@@ -2,6 +2,8 @@
 #
 # Based on settings.py from the Django project template
 # Copyright (c) Django Software Foundation and individual contributors.
+#
+# SPDX-License-Identifier: MIT
 
 import os
 

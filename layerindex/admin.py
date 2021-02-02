@@ -3,6 +3,8 @@
 # Copyright (C) 2013 Intel Corporation
 #
 # Licensed under the MIT license, see COPYING.MIT for details
+#
+# SPDX-License-Identifier: MIT
 
 from layerindex.models import *
 from django.contrib import admin

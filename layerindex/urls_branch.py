@@ -3,6 +3,8 @@
 # Copyright (C) 2013-2016 Intel Corporation
 #
 # Licensed under the MIT license, see COPYING.MIT for details
+#
+# SPDX-License-Identifier: MIT
 
 from django.conf.urls import *
 from django.views.defaults import page_not_found

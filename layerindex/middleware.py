@@ -3,6 +3,8 @@
 # Copyright (C) 2019 Intel Corporation
 #
 # Licensed under the MIT license, see COPYING.MIT for details
+#
+# SPDX-License-Identifier: MIT
 
 from django.utils.deprecation import MiddlewareMixin
 from django.http import HttpResponseRedirect

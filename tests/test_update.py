@@ -3,6 +3,8 @@
 # Copyright (C) 2018 Intel Corporation
 #
 # Licensed under the MIT license, see COPYING.MIT for details
+#
+# SPDX-License-Identifier: MIT
 
 # NOTE: requires pytest-django. Run using "pytest" from the root
 # of the repository (add -s to avoid suppressing the output of commands

@@ -3,6 +3,8 @@
 # Copyright (C) 2013, 2016-2019 Intel Corporation
 #
 # Licensed under the MIT license, see COPYING.MIT for details
+#
+# SPDX-License-Identifier: MIT
 
 import re
 from collections import OrderedDict

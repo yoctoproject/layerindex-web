@@ -6,6 +6,8 @@
 # Author: Amber Elliot <amber.n.elliot@intel.com>
 #
 # Licensed under the MIT license, see COPYING.MIT for details
+#
+# SPDX-License-Identifier: MIT
 
 # This script will make a cluster of 5 containers:
 #

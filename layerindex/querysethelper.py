@@ -1,3 +1,11 @@
+# layerindex-web - queryset helper definitions
+#
+# Copyright (C) 2014-2018 Intel Corporation
+#
+# Licensed under the MIT license, see COPYING.MIT for details
+#
+# SPDX-License-Identifier: MIT
+
 import operator
 import functools
 from django.db.models import Q, CharField

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+
 import os
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "settings")
