@@ -353,13 +353,13 @@ def edit_dockercompose(hostname, dbpassword, dbapassword, secretkey, rmqpassword
         elif '- "EMAIL_USE_SSL' in line:
             format = line[0:line.find('- "EMAIL_USE_SSL')].replace("#", "")
             if email_ssl:
-                newlines.append(format + '- "EMAIL_USE_SSL=' + email_ssl + '"\n')
+                newlines.append(format + '- "EMAIL_USE_SSL=' + str(email_ssl) + '"\n')
             else:
                 newlines.append(format + '#- "EMAIL_USE_SSL=<set this here if needed>"\n')
         elif '- "EMAIL_USE_TLS' in line:
             format = line[0:line.find('- "EMAIL_USE_TLS')].replace("#", "")
             if email_tls:
-                newlines.append(format + '- "EMAIL_USE_TLS=' + email_tls + '"\n')
+                newlines.append(format + '- "EMAIL_USE_TLS=' + str(email_tls) + '"\n')
             else:
                 newlines.append(format + '#- "EMAIL_USE_TLS=<set this here if needed>"\n')
         elif "ports:" in line:
