@@ -15,6 +15,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='recipemaintainerhistory',
             name='layerbranch',
-            field=models.ForeignKey(blank=True, null=True, to='layerindex.LayerBranch'),
+            field=models.ForeignKey(blank=True, null=True, to='layerindex.LayerBranch', on_delete=models.CASCADE),
         ),
     ]

@@ -14,6 +14,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='recipeupstreamhistory',
             name='layerbranch',
-            field=models.ForeignKey(to='layerindex.LayerBranch'),
+            field=models.ForeignKey(to='layerindex.LayerBranch', on_delete=models.CASCADE),
         ),
     ]

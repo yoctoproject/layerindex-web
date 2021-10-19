@@ -16,7 +16,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='maintenanceplan',
             name='admin',
-            field=models.ForeignKey(blank=True, null=True, help_text='Plan administrator', to=settings.AUTH_USER_MODEL),
+            field=models.ForeignKey(blank=True, null=True, help_text='Plan administrator', to=settings.AUTH_USER_MODEL, on_delete=models.SET_NULL),
         ),
         migrations.AddField(
             model_name='maintenanceplan',

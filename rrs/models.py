@@ -44,11 +44,11 @@ class MaintenancePlan(models.Model):
         return '%s' % (self.name)
 
 class MaintenancePlanLayerBranch(models.Model):
-    plan = models.ForeignKey(MaintenancePlan)
-    layerbranch = models.ForeignKey(LayerBranch)
+    plan = models.ForeignKey(MaintenancePlan, on_delete=models.CASCADE)
+    layerbranch = models.ForeignKey(LayerBranch, on_delete=models.CASCADE)
     python3_switch_date = models.DateTimeField('Commit date to switch to Python 3', default=datetime(2016, 6, 2))
-    python2_environment = models.ForeignKey(PythonEnvironment, related_name='maintplan_layerbranch_python2_set', blank=True, null=True, help_text='Environment to use for Python 2 commits')
-    python3_environment = models.ForeignKey(PythonEnvironment, related_name='maintplan_layerbranch_python3_set', blank=True, null=True, help_text='Environment to use for Python 3 commits')
+    python2_environment = models.ForeignKey(PythonEnvironment, related_name='maintplan_layerbranch_python2_set', blank=True, null=True, help_text='Environment to use for Python 2 commits', on_delete=models.SET_NULL)
+    python3_environment = models.ForeignKey(PythonEnvironment, related_name='maintplan_layerbranch_python3_set', blank=True, null=True, help_text='Environment to use for Python 3 commits', on_delete=models.SET_NULL)
     upgrade_date = models.DateTimeField('Recipe upgrade date', blank=True, null=True)
     upgrade_rev = models.CharField('Recipe upgrade revision ', max_length=80, blank=True)
 
@@ -56,7 +56,7 @@ class MaintenancePlanLayerBranch(models.Model):
         verbose_name_plural = "Maintenance plan layer branches"
 
 class Release(models.Model):
-    plan = models.ForeignKey(MaintenancePlan)
+    plan = models.ForeignKey(MaintenancePlan, on_delete=models.CASCADE)
     name = models.CharField(max_length=100)
     start_date = models.DateField(db_index=True)
     end_date = models.DateField(db_index=True)
@@ -94,7 +94,7 @@ class Release(models.Model):
         return '%s - %s' % (self.plan.name, self.name)
 
 class Milestone(models.Model):
-    release = models.ForeignKey(Release)
+    release = models.ForeignKey(Release, on_delete=models.CASCADE)
     name = models.CharField(max_length=100)
     start_date = models.DateField(db_index=True)
     end_date = models.DateField(db_index=True)
@@ -197,7 +197,7 @@ class Milestone(models.Model):
 
 
 class RecipeSymbol(models.Model):
-    layerbranch = models.ForeignKey(LayerBranch)
+    layerbranch = models.ForeignKey(LayerBranch, on_delete=models.CASCADE)
     pn = models.CharField(max_length=100, blank=True)
     summary = models.CharField(max_length=200, blank=True)
 
@@ -249,9 +249,9 @@ class Maintainer(models.Model):
 class RecipeMaintainerHistory(models.Model):
     title = models.CharField(max_length=255, blank=True)
     date = models.DateTimeField(db_index=True)
-    author = models.ForeignKey(Maintainer)
+    author = models.ForeignKey(Maintainer, on_delete=models.CASCADE)
     sha1 = models.CharField(max_length=64)
-    layerbranch = models.ForeignKey(LayerBranch)
+    layerbranch = models.ForeignKey(LayerBranch, on_delete=models.CASCADE)
 
     class Meta:
         unique_together = ('layerbranch', 'sha1',)
@@ -286,9 +286,9 @@ class RecipeMaintainerHistory(models.Model):
         return "%s: %s, %s" % (self.date, self.author.name, self.sha1[:10])
 
 class RecipeMaintainer(models.Model):
-    recipesymbol = models.ForeignKey(RecipeSymbol)
-    maintainer = models.ForeignKey(Maintainer)
-    history = models.ForeignKey(RecipeMaintainerHistory)
+    recipesymbol = models.ForeignKey(RecipeSymbol, on_delete=models.CASCADE)
+    maintainer = models.ForeignKey(Maintainer, on_delete=models.CASCADE)
+    history = models.ForeignKey(RecipeMaintainerHistory, on_delete=models.CASCADE)
 
     @staticmethod
     def get_maintainer_by_recipe_and_history(recipe, history):
@@ -305,7 +305,7 @@ class RecipeMaintainer(models.Model):
                                 self.maintainer.email)
 
 class RecipeUpstreamHistory(models.Model):
-    layerbranch = models.ForeignKey(LayerBranch)
+    layerbranch = models.ForeignKey(LayerBranch, on_delete=models.CASCADE)
     start_date = models.DateTimeField(db_index=True)
     end_date = models.DateTimeField(db_index=True)
 
@@ -360,8 +360,8 @@ class RecipeUpstream(models.Model):
     )
     RECIPE_UPSTREAM_TYPE_CHOICES_DICT = dict(RECIPE_UPSTREAM_TYPE_CHOICES)
 
-    recipesymbol = models.ForeignKey(RecipeSymbol)
-    history = models.ForeignKey(RecipeUpstreamHistory)
+    recipesymbol = models.ForeignKey(RecipeSymbol, on_delete=models.CASCADE)
+    history = models.ForeignKey(RecipeUpstreamHistory, on_delete=models.CASCADE)
     version = models.CharField(max_length=100, blank=True)
     type = models.CharField(max_length=1, choices=RECIPE_UPSTREAM_TYPE_CHOICES, blank=True, db_index=True)
     status =  models.CharField(max_length=1, choices=RECIPE_UPSTREAM_STATUS_CHOICES, blank=True, db_index=True)
@@ -413,7 +413,7 @@ class RecipeUpstream(models.Model):
                 self.version, self.date)
 
 class RecipeDistro(models.Model):
-    recipe = models.ForeignKey(Recipe)
+    recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
     distro = models.CharField(max_length=100, blank=True)
     alias = models.CharField(max_length=100, blank=True)
 
@@ -432,7 +432,7 @@ class RecipeDistro(models.Model):
 
 
 class RecipeUpgradeGroup(models.Model):
-    recipesymbol = models.ForeignKey(RecipeSymbol)
+    recipesymbol = models.ForeignKey(RecipeSymbol, on_delete=models.CASCADE)
     title = models.CharField(max_length=100, help_text='Group title')
 
     def __str__(self):
@@ -440,7 +440,7 @@ class RecipeUpgradeGroup(models.Model):
 
 
 class RecipeUpgradeGroupRule(models.Model):
-    layerbranch = models.ForeignKey(LayerBranch)
+    layerbranch = models.ForeignKey(LayerBranch, on_delete=models.CASCADE)
     pn = models.CharField(max_length=100, blank=True, help_text='Regular expression to match recipe to apply to')
     version = models.CharField(max_length=100, blank=True, help_text='Regular expression to split version component on')
     license = models.CharField(max_length=100, blank=True, help_text='Regular expression to split license on')
@@ -494,8 +494,8 @@ class RecipeUpgrade(models.Model):
         ('M', 'Move'),
     )
 
-    recipesymbol = models.ForeignKey(RecipeSymbol)
-    maintainer = models.ForeignKey(Maintainer, blank=True)
+    recipesymbol = models.ForeignKey(RecipeSymbol, on_delete=models.CASCADE)
+    maintainer = models.ForeignKey(Maintainer, blank=True, null=True, on_delete=models.SET_NULL)
     sha1 = models.CharField(max_length=40, blank=True)
     title = models.CharField(max_length=1024, blank=True)
     version = models.CharField(max_length=100, blank=True)

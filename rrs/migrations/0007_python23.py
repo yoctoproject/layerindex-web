@@ -16,12 +16,12 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='maintenanceplanlayerbranch',
             name='python2_environment',
-            field=models.ForeignKey(blank=True, null=True, help_text='Environment to use for Python 2 commits', related_name='maintplan_layerbranch_python2_set', to='layerindex.PythonEnvironment'),
+            field=models.ForeignKey(blank=True, null=True, help_text='Environment to use for Python 2 commits', related_name='maintplan_layerbranch_python2_set', to='layerindex.PythonEnvironment', on_delete=models.SET_NULL),
         ),
         migrations.AddField(
             model_name='maintenanceplanlayerbranch',
             name='python3_environment',
-            field=models.ForeignKey(blank=True, null=True, help_text='Environment to use for Python 3 commits', related_name='maintplan_layerbranch_python3_set', to='layerindex.PythonEnvironment'),
+            field=models.ForeignKey(blank=True, null=True, help_text='Environment to use for Python 3 commits', related_name='maintplan_layerbranch_python3_set', to='layerindex.PythonEnvironment', on_delete=models.SET_NULL),
         ),
         migrations.AddField(
             model_name='maintenanceplanlayerbranch',

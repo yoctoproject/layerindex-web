@@ -25,8 +25,8 @@ class Migration(migrations.Migration):
             name='MaintenancePlanLayerBranch',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', primary_key=True, serialize=False, auto_created=True)),
-                ('layerbranch', models.ForeignKey(to='layerindex.LayerBranch')),
-                ('plan', models.ForeignKey(to='rrs.MaintenancePlan')),
+                ('layerbranch', models.ForeignKey(to='layerindex.LayerBranch', on_delete=models.CASCADE)),
+                ('plan', models.ForeignKey(to='rrs.MaintenancePlan', on_delete=models.CASCADE)),
             ],
             options={'verbose_name_plural': 'Maintenance plan layer branches'},
         ),

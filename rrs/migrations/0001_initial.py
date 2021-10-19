@@ -239,7 +239,7 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(verbose_name='ID', primary_key=True, serialize=False, auto_created=True)),
                 ('distro', models.CharField(max_length=100, blank=True)),
                 ('alias', models.CharField(max_length=100, blank=True)),
-                ('recipe', models.ForeignKey(to='layerindex.Recipe')),
+                ('recipe', models.ForeignKey(to='layerindex.Recipe', on_delete=models.CASCADE)),
             ],
         ),
         migrations.CreateModel(
@@ -255,7 +255,7 @@ class Migration(migrations.Migration):
                 ('title', models.CharField(max_length=255, blank=True)),
                 ('date', models.DateTimeField(db_index=True)),
                 ('sha1', models.CharField(max_length=64, unique=True)),
-                ('author', models.ForeignKey(to='rrs.Maintainer')),
+                ('author', models.ForeignKey(to='rrs.Maintainer', on_delete=models.CASCADE)),
             ],
         ),
         migrations.CreateModel(
@@ -267,8 +267,8 @@ class Migration(migrations.Migration):
                 ('version', models.CharField(max_length=100, blank=True)),
                 ('author_date', models.DateTimeField(db_index=True)),
                 ('commit_date', models.DateTimeField(db_index=True)),
-                ('maintainer', models.ForeignKey(blank=True, to='rrs.Maintainer')),
-                ('recipe', models.ForeignKey(to='layerindex.Recipe')),
+                ('maintainer', models.ForeignKey(blank=True, to='rrs.Maintainer', on_delete=models.CASCADE)),
+                ('recipe', models.ForeignKey(to='layerindex.Recipe', on_delete=models.CASCADE)),
             ],
         ),
         migrations.CreateModel(
@@ -302,32 +302,32 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='recipeupstream',
             name='history',
-            field=models.ForeignKey(to='rrs.RecipeUpstreamHistory'),
+            field=models.ForeignKey(to='rrs.RecipeUpstreamHistory', on_delete=models.CASCADE),
         ),
         migrations.AddField(
             model_name='recipeupstream',
             name='recipe',
-            field=models.ForeignKey(to='layerindex.Recipe'),
+            field=models.ForeignKey(to='layerindex.Recipe', on_delete=models.CASCADE),
         ),
         migrations.AddField(
             model_name='recipemaintainer',
             name='history',
-            field=models.ForeignKey(to='rrs.RecipeMaintainerHistory'),
+            field=models.ForeignKey(to='rrs.RecipeMaintainerHistory', on_delete=models.CASCADE),
         ),
         migrations.AddField(
             model_name='recipemaintainer',
             name='maintainer',
-            field=models.ForeignKey(to='rrs.Maintainer'),
+            field=models.ForeignKey(to='rrs.Maintainer', on_delete=models.CASCADE),
         ),
         migrations.AddField(
             model_name='recipemaintainer',
             name='recipe',
-            field=models.ForeignKey(to='layerindex.Recipe'),
+            field=models.ForeignKey(to='layerindex.Recipe', on_delete=models.CASCADE),
         ),
         migrations.AddField(
             model_name='milestone',
             name='release',
-            field=models.ForeignKey(to='rrs.Release'),
+            field=models.ForeignKey(to='rrs.Release', on_delete=models.CASCADE),
         ),
         migrations.AlterUniqueTogether(
             name='milestone',

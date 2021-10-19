@@ -25,7 +25,7 @@ utils.setup_django()
 from django.core.mail import EmailMessage
 from django.template.loader import get_template
 from django.template import Context, Template
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.contrib.sites.models import Site
 import settings
 

@@ -15,7 +15,7 @@ from datetime import date, datetime
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.views.generic import TemplateView, ListView, DetailView, RedirectView
-from django.core.urlresolvers import resolve, reverse, reverse_lazy
+from django.urls import resolve, reverse, reverse_lazy
 from django.db import connection
 from django.contrib import messages
 

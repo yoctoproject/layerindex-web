@@ -14,6 +14,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='release',
             name='plan',
-            field=models.ForeignKey(to='rrs.MaintenancePlan'),
+            field=models.ForeignKey(to='rrs.MaintenancePlan', on_delete=models.CASCADE),
         ),
     ]
