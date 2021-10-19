@@ -79,6 +79,7 @@ def init_parser(settings, branch, bitbakepath, enable_tracking=False, nocheckout
         if not classic:
             # We need this to avoid problems with AVAILABLE_LICENSES
             f.write('COREBASE = "%s"\n' % core_repodir)
+            f.write('BBLAYERS = "%s/meta"\n' % core_repodir)
         pass
 
     if logger:

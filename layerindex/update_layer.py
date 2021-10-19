@@ -397,7 +397,11 @@ def main():
                 tinfoil.config_data.setVar('LICENSE', '')
 
                 layerconfparser = layerconfparse.LayerConfParse(logger=logger, tinfoil=tinfoil)
-                layer_config_data = layerconfparser.parse_layer(layerdir)
+                if layer.name == settings.CORE_LAYER_NAME:
+                    # Skip parsing the core layer, we already did via BBLAYERS
+                    layer_config_data = layerconfparser.config_data_copy
+                else:
+                    layer_config_data = layerconfparser.parse_layer(layerdir)
                 if not layer_config_data:
                     logger.info("Skipping update of layer %s for branch %s - conf/layer.conf may have parse issues" % (layer.name, branchdesc))
                     layerconfparser.shutdown()
