@@ -205,7 +205,20 @@ def setup_tinfoil(bitbakepath, enable_tracking, loglevel=None):
     tinfoil.logger.setLevel(logging.WARNING)
     if loglevel:
         tinfoil.logger.setLevel(loglevel)
-    tinfoil.prepare(config_only = True)
+    try:
+        tinfoil.prepare(config_only = True)
+    except bb.BBHandledException:
+        sys.exit(1)
+    finally:
+        # Handle any remaining events - needed if server failed and logged errors
+        # FIXME tinfoil.prepare() should really be doing this for us!
+        while True:
+            event = tinfoil.wait_event()
+            if not event:
+                break
+            if isinstance(event, logging.LogRecord):
+                if event.taskpid == 0 or event.levelno > logging.INFO:
+                    tinfoil.logger.handle(event)
 
     return tinfoil
 
