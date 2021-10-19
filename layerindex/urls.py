@@ -157,7 +157,7 @@ urlpatterns = [
         ClassicRecipeSearchView.as_view(
             template_name='layerindex/classicrecipes_csv.txt',
             paginate_by=0,
-            content_type='text/csv'),
+            content_type='text/csv; charset=utf-8'),
         name='comparison_recipe_search_csv'),
     url(r'^comparison/stats/(?P<branch>[-.\w]+)/$',
         ClassicRecipeStatsView.as_view(
@@ -194,7 +194,7 @@ urlpatterns = [
         name='branch_comparison'),
     url(r'^branch_comparison_plain/$',
         BranchCompareView.as_view(
-            content_type='text/plain',
+            content_type='text/plain; charset=utf-8',
             template_name='layerindex/branchcompare_plain.txt'),
         name='branch_comparison_plain'),
     url(r'^recipe_deps/$',

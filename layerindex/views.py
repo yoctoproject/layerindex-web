@@ -1493,7 +1493,7 @@ def layer_export_recipes_csv_view(request, branch, slug):
     if not layerbranch:
         raise Http404
 
-    response = HttpResponse(content_type='text/csv')
+    response = HttpResponse(content_type='text/csv; charset=utf-8')
     response['Content-Disposition'] = 'attachment; filename="recipes_%s_%s.csv"' % (layer.name, layerbranch.branch.name)
 
     fieldlist = request.GET.get('fields', 'pn,pv,license').split(',')

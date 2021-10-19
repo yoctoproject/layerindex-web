@@ -607,7 +607,7 @@ def recipes_report(request, maintplan_name, release_name, milestone_name):
 
     recipe_list = _get_recipe_list(milestone)
 
-    response = HttpResponse(content_type='text/csv')
+    response = HttpResponse(content_type='text/csv; charset=utf-8')
     response['Content-Disposition'] = 'attachment; filename="%s_%s.csv"' % (
            release_name , milestone_name)
 
