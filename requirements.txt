@@ -3,7 +3,7 @@ beautifulsoup4==4.8.1
 billiard==3.6.1.0
 celery==4.3.0
 confusable-homoglyphs==3.2.0
-Django>=2.2<2.3
+Django>=2.2,<2.3
 django-appconf==1.0.3
 django-axes==4.5.4
 django-bootstrap-pagination==1.7.1
