@@ -4,6 +4,7 @@ FROM debian:buster
 LABEL maintainer="Michael Halstead <mhalstead@linuxfoundation.org>"
 
 ENV PYTHONUNBUFFERED=1 \
+    LANGUAGE=en_US \
     LANG=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8 \
     LC_CTYPE=en_US.UTF-8
@@ -15,7 +16,7 @@ ENV PYTHONUNBUFFERED=1 \
 # NOTE: we don't purge gcc below as we have some places in the OE metadata that look for it
 
 COPY requirements.txt /
-RUN apt-get update \
+RUN DEBIAN_FRONTEND=noninteractive apt-get update \
     && apt-get install -y --no-install-recommends \
 	autoconf \
 	g++ \
