@@ -80,7 +80,7 @@ services:
      #- "EMAIL_USE_TLS=<set this here if needed>"
      #- "DEBUG=1"
     restart: unless-stopped
-    command: /usr/local/bin/celery -A layerindex.tasks worker --loglevel=info --workdir=/opt/layerindex
+    command: /usr/local/bin/celery --workdir=/opt/layerindex --app layerindex.tasks worker --loglevel=INFO
   #layerscertbot:
   #  image: certbot/certbot
   #  volumes:
