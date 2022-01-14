@@ -7,9 +7,9 @@ covered in the main README.
 
 In order to run this application standalone, you will need:
 
-* Python 3.5+
-* Django 2.2.x
-* RabbitMQ 3.7.x
+* Python 3.6+
+* Django 3.2.x (not compatible with 3.0 or older)
+* RabbitMQ 3.8.x
 * For production usage, a web server set up to host Django applications
   (not needed for local-only testing/development)
 * A database system supported by Django (SQLite, MariaDB/MySQL, etc.).
