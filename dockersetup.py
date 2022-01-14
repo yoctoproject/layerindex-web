@@ -483,7 +483,7 @@ def setup_https(hostname, http_port, https_port, letsencrypt, cert, cert_key, em
             os.makedirs(local_letsencrypt_cert_dir)
         keyfile = os.path.join(letsencrypt_cert_subdir, 'privkey.pem')
         certfile = os.path.join(letsencrypt_cert_subdir, 'fullchain.pem')
-        return_code = subprocess.call(['openssl', 'req', '-x509', '-nodes', '-newkey', 'rsa:1024', '-days', '1', '-keyout', os.path.join(local_cert_dir, keyfile), '-out', os.path.join(local_cert_dir, certfile), '-subj', '/CN=localhost'], shell=False)
+        return_code = subprocess.call(['openssl', 'req', '-x509', '-nodes', '-newkey', 'rsa:2048', '-days', '1', '-keyout', os.path.join(local_cert_dir, keyfile), '-out', os.path.join(local_cert_dir, certfile), '-subj', '/CN=localhost'], shell=False)
         if return_code != 0:
             print("Dummy certificate generation failed")
             sys.exit(1)
