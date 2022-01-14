@@ -140,6 +140,9 @@ TEMPLATES = [
     },
 ]
 
+# New in Django 3.2
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
+
 INSTALLED_APPS = (
     'django.contrib.auth',
     'django.contrib.contenttypes',
