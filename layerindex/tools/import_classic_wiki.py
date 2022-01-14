@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Import migration info from OE-Classic recipes wiki page into OE
 # layer index database
