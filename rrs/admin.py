@@ -6,8 +6,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-from django.utils.functional import curry
-
 from django.contrib import admin
 from django.contrib.admin import DateFieldListFilter
 from django import forms
