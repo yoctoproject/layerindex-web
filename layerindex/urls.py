@@ -128,7 +128,7 @@ urlpatterns = [
         EditProfileFormView.as_view(
             template_name='layerindex/profile.html'),
         name="profile"),
-    url(r'^about$',
+    url(r'^about/$',
         TemplateView.as_view(
             template_name='layerindex/about.html'),
         name="about"),
