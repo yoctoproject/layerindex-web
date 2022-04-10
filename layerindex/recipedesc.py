@@ -63,7 +63,7 @@ def main():
             sys.exit(1)
 
     # Skip sanity checks
-    os.environ['BB_ENV_EXTRAWHITE'] = 'DISABLE_SANITY_CHECKS'
+    os.environ['BB_ENV_PASSTHROUGH_ADDITIONS'] = 'DISABLE_SANITY_CHECKS'
     os.environ['DISABLE_SANITY_CHECKS'] = '1'
 
     sys.path.extend([bitbakepath + '/lib'])

@@ -36,7 +36,7 @@ def init_parser(settings, branch, bitbakepath, enable_tracking=False, nocheckout
         utils.checkout_repo(bitbakepath, bitbake_ref, logger=logger)
 
     # Skip sanity checks
-    os.environ['BB_ENV_EXTRAWHITE'] = 'DISABLE_SANITY_CHECKS'
+    os.environ['BB_ENV_PASSTHROUGH_ADDITIONS'] = 'DISABLE_SANITY_CHECKS'
     os.environ['DISABLE_SANITY_CHECKS'] = '1'
 
     fetchdir = settings.LAYER_FETCH_DIR
