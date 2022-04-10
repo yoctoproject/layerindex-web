@@ -561,6 +561,7 @@ class Patch(models.Model):
         ('B', 'Backport'),
         ('S', 'Submitted'),
         ('D', 'Denied'),
+        ('N', 'Inactive-Upstream'),
         ]
     recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
     path = models.CharField(max_length=255)
