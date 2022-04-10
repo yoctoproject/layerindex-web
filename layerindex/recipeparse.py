@@ -35,8 +35,13 @@ def init_parser(settings, branch, bitbakepath, enable_tracking=False, nocheckout
             bitbake_ref = 'origin/%s' % branch.bitbake_branch
         utils.checkout_repo(bitbakepath, bitbake_ref, logger=logger)
 
+    # Commit "bitbake: Rename environment filtering variables"
+    bb_var_rename_commit = "87104b6a167188921da157c7dba45938849fb22a"
     # Skip sanity checks
-    os.environ['BB_ENV_EXTRAWHITE'] = 'DISABLE_SANITY_CHECKS'
+    if utils.is_commit_ancestor(bitbakepath, bb_var_rename_commit, logger=logger):
+        os.environ['BB_ENV_PASSTHROUGH_ADDITIONS'] = 'DISABLE_SANITY_CHECKS'
+    else:
+        os.environ['BB_ENV_EXTRAWHITE'] = 'DISABLE_SANITY_CHECKS'
     os.environ['DISABLE_SANITY_CHECKS'] = '1'
 
     fetchdir = settings.LAYER_FETCH_DIR

@@ -39,6 +39,7 @@ def main():
     from layerindex.models import LayerItem, Recipe
     from django.db import transaction
     import settings
+    from layerindex.utils import is_commit_ancestor
 
     setup_environ(settings)
 
@@ -62,8 +63,13 @@ def main():
             print("Unable to find bitbake by searching BITBAKEDIR, specified path '%s' or its parent, or PATH" % basepath)
             sys.exit(1)
 
+    # Commit "bitbake: Rename environment filtering variables"
+    bb_var_rename_commit = "87104b6a167188921da157c7dba45938849fb22a"
     # Skip sanity checks
-    os.environ['BB_ENV_EXTRAWHITE'] = 'DISABLE_SANITY_CHECKS'
+    if is_commit_ancestor(bitbakepath, bb_var_rename_commit, logger=logger):
+        os.environ['BB_ENV_PASSTHROUGH_ADDITIONS'] = 'DISABLE_SANITY_CHECKS'
+    else:
+        os.environ['BB_ENV_EXTRAWHITE'] = 'DISABLE_SANITY_CHECKS'
     os.environ['DISABLE_SANITY_CHECKS'] = '1'
 
     sys.path.extend([bitbakepath + '/lib'])
