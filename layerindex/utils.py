@@ -44,7 +44,12 @@ def get_layer_var(config_data, var, logger):
         collection = collection_list[0]
         layerdir = config_data.getVar('LAYERDIR', True)
         if len(collection_list) > 1:
-            logger.warn('%s: multiple collections found, handling first one (%s) only' % (layerdir, collection))
+            if collection_list[0] == 'core':
+                # Many layers append BBFILE_COLLECTIONS and therefore have 'core <layer>'
+                collection = collection_list[1]
+                logger.debug('%s: multiple collections found, ignoring the first one (\'core\') and handling (%s) only' % (layerdir, collection))
+            else:
+                logger.warn('%s: multiple collections found, handling first one (%s) only' % (layerdir, collection))
         if var == 'BBFILE_COLLECTIONS':
             return collection
     value = config_data.getVar('%s_%s' % (var, collection), True)
