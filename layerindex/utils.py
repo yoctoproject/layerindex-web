@@ -229,6 +229,28 @@ def explode_dep_versions2(bitbakepath, deps):
     import bb.utils
     return bb.utils.explode_dep_versions2(deps)
 
+def is_commit_ancestor(repodir, commit, logger):
+    """
+    Check if the given SHA1 hash is an ancestor in the currently checked out branch.
+    NOTE: This will not match commits which have been cherry-picked.
+    """
+    try:
+        # check if commit is a sha1 hash
+        if re.match('[0-9a-f]{40}', commit):
+            # check if the commit is an ancestor
+            contained = runcmd(['git', 'merge-base', '--is-ancestor', '%s' % commit, 'HEAD'], repodir, logger=logger)
+            return True
+        else:
+            raise Exception('is_commit_ancestor: "commit" must be a SHA1 hash')
+    except subprocess.CalledProcessError as e:
+            if e.returncode == 1:
+                # commit is not an ancestor
+                return False
+            else:
+                raise e
+    except Exception as esc:
+        logger.warn(esc)
+
 def checkout_repo(repodir, commit, logger, force=False):
     """
     Check out a revision in a repository, ensuring that untracked/uncommitted
