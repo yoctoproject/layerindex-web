@@ -19,7 +19,7 @@ import re
 import tempfile
 import shutil
 import errno
-from distutils.version import LooseVersion
+from pkg_resources import parse_version
 import itertools
 import utils
 import recipeparse
@@ -239,7 +239,7 @@ def update_distro_conf_file(path, distro, d):
         distro.description = desc
 
 def main():
-    if LooseVersion(git.__version__) < '0.3.1':
+    if parse_version(git.__version__) < parse_version('0.3.1'):
         logger.error("Version of GitPython is too old, please install GitPython (python-git) 0.3.1 or later in order to use this script")
         sys.exit(1)
 
@@ -808,7 +808,7 @@ def main():
         logger.error(traceback.format_exc().rstrip())
         sys.exit(1)
     finally:
-        if tinfoil and (LooseVersion(bb.__version__) > LooseVersion("1.27")):
+        if tinfoil and (parse_version(bb.__version__) > parse_version("1.27")):
             tinfoil.shutdown()
 
     if tempdir:

@@ -23,7 +23,6 @@ import subprocess
 import string
 import shlex
 import codecs
-from distutils.version import LooseVersion
 
 sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__), '..')))
 sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__), 'lib')))

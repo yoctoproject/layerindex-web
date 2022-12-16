@@ -22,7 +22,6 @@ import fnmatch
 import re
 import tempfile
 import shutil
-from distutils.version import LooseVersion
 import utils
 import recipeparse
 

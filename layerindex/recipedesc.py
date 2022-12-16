@@ -13,7 +13,6 @@ import logging
 import subprocess
 from datetime import datetime
 import fnmatch
-from distutils.version import LooseVersion
 
 
 logger = None

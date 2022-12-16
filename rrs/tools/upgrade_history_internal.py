@@ -16,7 +16,7 @@ import os
 import optparse
 import logging
 import re
-from distutils.version import LooseVersion
+from pkg_resources import parse_version
 import git
 from datetime import datetime
 import calendar
@@ -561,7 +561,7 @@ def generate_history(options, layerbranch_id, commit, logger):
             pass
 
     finally:
-        if tinfoil and hasattr(tinfoil, 'shutdown') and (LooseVersion(bb.__version__) > LooseVersion("1.27")):
+        if tinfoil and hasattr(tinfoil, 'shutdown') and (parse_version(bb.__version__) > parse_version("1.27")):
             tinfoil.shutdown()
         utils.rmtree_force(tempdir)
 

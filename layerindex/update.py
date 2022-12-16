@@ -17,7 +17,7 @@ import codecs
 import logging
 import subprocess
 from datetime import datetime, timedelta
-from distutils.version import LooseVersion
+from pkg_resources import parse_version
 import utils
 import operator
 import re
@@ -130,7 +130,7 @@ def extract_value(valuename, output):
         return ''
 
 def main():
-    if LooseVersion(git.__version__) < '0.3.1':
+    if parse_version(git.__version__) < parse_version('0.3.1'):
         logger.error("Version of GitPython is too old, please install GitPython (python-git) 0.3.1 or later in order to use this script")
         sys.exit(1)
 
