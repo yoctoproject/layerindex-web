@@ -31,7 +31,9 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update \
 	python3-mysqldb \
 	python3-dev \
 	python3-pil \
-        python3-wheel \
+	python3-wheel \
+	libz-dev \
+	libfreetype6-dev \
 	libjpeg-dev \
 	libmariadbclient-dev \
 	locales \
