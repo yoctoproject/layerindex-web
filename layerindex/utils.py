@@ -243,16 +243,18 @@ def is_commit_ancestor(repodir, commit, logger):
         # check if commit is a sha1 hash
         if re.match('[0-9a-f]{40}', commit):
             # check if the commit is an ancestor
-            contained = runcmd(['git', 'merge-base', '--is-ancestor', '%s' % commit, 'HEAD'], repodir, logger=logger)
-            return True
-        else:
-            raise Exception('is_commit_ancestor: "commit" must be a SHA1 hash')
-    except subprocess.CalledProcessError as e:
-            if e.returncode == 1:
-                # commit is not an ancestor
+            cmd = "GIT_DIR=%s/.git git merge-base --is-ancestor %s HEAD" % (repodir, commit)
+            logger.debug('Running "%s"' % cmd)
+            ret, output = subprocess.getstatusoutput(cmd)
+            if ret == 0:
+                return True
+            elif ret == 1:
+                logger.debug('output: %s' % output)
                 return False
             else:
-                raise e
+                raise Exception('Failed to run command: %s: ret: %s, output: %s' % (cmd, ret, output))
+        else:
+            raise Exception('is_commit_ancestor: "commit" must be a SHA1 hash')
     except Exception as esc:
         logger.warn(esc)
 
