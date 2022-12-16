@@ -188,7 +188,7 @@ def _add_dependency(var, name, layerbranch, config_data, logger=None, required=T
             logger.warn('Either set REMOVE_LAYER_DEPENDENCIES to remove them from the database, or fix conf/layer.conf')
 
 def set_layerbranch_collection_version(layerbranch, config_data, logger=None):
-    layerbranch.collection = config_data.getVar('BBFILE_COLLECTIONS', True)
+    layerbranch.collection = get_layer_var(config_data, 'BBFILE_COLLECTIONS', logger)
     ver_str = "LAYERVERSION_"
     if layerbranch.collection:
         layerbranch.collection = layerbranch.collection.strip()
