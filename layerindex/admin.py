@@ -102,8 +102,6 @@ class RecipeAdmin(admin.ModelAdmin):
         return rofields
     def has_add_permission(self, request, obj=None):
         return False
-    def has_delete_permission(self, request, obj=None):
-        return False
 
 class PackageConfigAdmin(admin.ModelAdmin):
     search_fields = ['feature', 'recipe__pn']
@@ -132,16 +130,12 @@ class ClassicRecipeAdmin(admin.ModelAdmin):
         return rofields
     def has_add_permission(self, request, obj=None):
         return False
-    def has_delete_permission(self, request, obj=None):
-        return False
 
 class MachineAdmin(admin.ModelAdmin):
     search_fields = ['name']
     list_filter = ['layerbranch__layer__name', 'layerbranch__branch__name']
     readonly_fields = [f.name for f in Machine._meta.get_fields()]
     def has_add_permission(self, request, obj=None):
-        return False
-    def has_delete_permission(self, request, obj=None):
         return False
 
 class DistroAdmin(admin.ModelAdmin):
@@ -150,17 +144,12 @@ class DistroAdmin(admin.ModelAdmin):
     readonly_fields = [f.name for f in Distro._meta.get_fields()]
     def has_add_permission(self, request, obj=None):
         return False
-    def has_delete_permission(self, request, obj=None):
-        return False
-
 
 class BBAppendAdmin(admin.ModelAdmin):
     search_fields = ['filename']
     list_filter = ['layerbranch__layer__name', 'layerbranch__branch__name']
     readonly_fields = [f.name for f in BBAppend._meta.get_fields()]
     def has_add_permission(self, request, obj=None):
-        return False
-    def has_delete_permission(self, request, obj=None):
         return False
 
 class BBClassAdmin(admin.ModelAdmin):
@@ -169,16 +158,12 @@ class BBClassAdmin(admin.ModelAdmin):
     readonly_fields = [f.name for f in BBClass._meta.get_fields()]
     def has_add_permission(self, request, obj=None):
         return False
-    def has_delete_permission(self, request, obj=None):
-        return False
 
 class PatchAdmin(admin.ModelAdmin):
     search_fields = ['path']
     list_filter = ['recipe__layerbranch__layer__name', 'recipe__layerbranch__branch__name']
     readonly_fields = [f.name for f in Patch._meta.get_fields()]
     def has_add_permission(self, request, obj=None):
-        return False
-    def has_delete_permission(self, request, obj=None):
         return False
 
 class PatchDispositionAdmin(admin.ModelAdmin):
@@ -198,8 +183,6 @@ class IncFileAdmin(admin.ModelAdmin):
     list_filter = ['layerbranch__layer__name', 'layerbranch__branch__name']
     readonly_fields = [f.name for f in IncFile._meta.get_fields()]
     def has_add_permission(self, request, obj=None):
-        return False
-    def has_delete_permission(self, request, obj=None):
         return False
 
 class RecipeChangeInline(admin.StackedInline):
