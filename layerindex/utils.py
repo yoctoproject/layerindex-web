@@ -314,7 +314,10 @@ def is_branch_valid(layerdir, branch):
 def parse_conf(conf_file, d):
     if hasattr(bb.parse, "handle"):
         # Newer BitBake
-        data = bb.parse.handle(conf_file, d, include=True)
+        if hasattr(bb.parse.parse_py.ConfHandler, "__addpylib_regexp__"):
+            data = bb.parse.handle(conf_file, d, include=True, baseconfig=True)
+        else:
+            data = bb.parse.handle(conf_file, d, include=True)
     else:
         # Older BitBake (1.18 and below)
         data = bb.cooker._parse(conf_file, d)
