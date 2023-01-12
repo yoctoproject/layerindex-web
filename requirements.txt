@@ -16,10 +16,10 @@ django-reversion-compare==0.14.1
 django-simple-captcha==0.5.14
 djangorestframework==3.13.1
 gitdb==4.0.9
-GitPython==3.1.26
+GitPython==3.1.30
 kombu==5.2.3
 mysqlclient==2.1.0
-Pillow==9.0.0
+Pillow==9.2.0
 pytz==2021.3
 six==1.16.0
 smmap==5.0.0
