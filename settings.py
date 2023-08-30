@@ -161,7 +161,6 @@ INSTALLED_APPS = (
     'axes',
     'rest_framework',
     'corsheaders',
-    'bootstrap_pagination',
 )
 
 AUTHENTICATION_BACKENDS = [
