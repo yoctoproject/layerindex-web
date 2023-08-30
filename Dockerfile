@@ -30,7 +30,6 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update \
 	python3-pip \
 	python3-mysqldb \
 	python3-dev \
-	python3-pil \
 	python3-wheel \
 	zlib1g-dev \
 	libfreetype6-dev \
