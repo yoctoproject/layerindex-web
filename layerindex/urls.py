@@ -59,7 +59,7 @@ urlpatterns = [
     url(r'^classes/$',
         RedirectView.as_view(url=reverse_lazy('class_search', args=('master',)), permanent=False)),
     url(r'^submit/$', edit_layer_view, {'template_name': 'layerindex/submitlayer.html'}, name="submit_layer"),
-    url(r'^submit/thanks$',
+    url(r'^submit/thanks/$',
         TemplateView.as_view(
             template_name='layerindex/submitthanks.html'),
         name="submit_layer_thanks"),
