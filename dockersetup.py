@@ -4,6 +4,8 @@
 #
 # Copyright (C) 2018 Intel Corporation
 # Author: Amber Elliot <amber.n.elliot@intel.com>
+# Copyright (C) 2023 Konsulko Group
+# Author: Tim Orling <tim.orling@konsulko.com>
 #
 # Licensed under the MIT license, see COPYING.MIT for details
 #
@@ -52,7 +54,7 @@ def get_args():
     parser.add_argument('-s', '--https-proxy', type=str, help='https proxy in the format http://<myproxy:port>', default=default_https_proxy, required=False)
     parser.add_argument('-S', '--socks-proxy', type=str, help='socks proxy in the format socks://myproxy:port>', default=default_socks_proxy, required=False)
     parser.add_argument('-N', '--no-proxy', type=str, help='Comma-separated list of hosts that should not be connected to via the proxy', default=default_no_proxy, required=False)
-    parser.add_argument('-d', '--databasefile', type=str, help='Location of your database file to import. Must be a .sql or .sql.gz file.', required=False)
+    parser.add_argument('-d', '--databasefile', type=str, help='Location of your database file to import. Must be a .sql, .sql.gz or .sql.zstd file.', required=False)
     parser.add_argument('-e', '--email-host', type=str, help='Email host for sending messages (optionally with :port if not 25)', required=False)
     parser.add_argument('--email-user', type=str, help='User name to use when connecting to email host', required=False)
     parser.add_argument('--email-password', type=str, help='Password to use when connecting to email host', required=False)
@@ -804,9 +806,15 @@ while True:
 if not args.update:
     # Import the user's supplied data
     if args.databasefile:
-        return_code = subprocess.call("gunzip -t %s > /dev/null 2>&1" % quote(args.databasefile), shell=True)
-        if return_code == 0:
-            catcmd = 'zcat'
+        filename, file_extension = os.path.splitext(args.databasefile)
+        if file_extension == ".zstd":
+            return_code = subprocess.call("zstd -t %s > /dev/null 2>&1" % quote(args.databasefile), shell=True)
+            if return_code == 0:
+                catcmd = 'zstdcat'
+        elif file_extension == ".gz":
+            return_code = subprocess.call("gunzip -t %s > /dev/null 2>&1" % quote(args.databasefile), shell=True)
+            if return_code == 0:
+                catcmd = 'zcat'
         else:
             catcmd = 'cat'
         env = os.environ.copy()
