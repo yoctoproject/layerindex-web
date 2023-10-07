@@ -241,7 +241,7 @@ class LayerBranch(models.Model):
     actual_branch = models.CharField('Actual Branch', max_length=80, blank=True, help_text='Name of the actual branch in the repository matching the core branch')
     yp_compatible_version = models.ForeignKey(YPCompatibleVersion, verbose_name='Yocto Project Compatible version', null=True, blank=True, on_delete=models.SET_NULL, help_text='Which version of the Yocto Project Compatible program has this layer been approved for for?')
     local_path = models.CharField(max_length=255, blank=True, help_text='Local subdirectory where layer data can be found')
-
+    updates_enabled = models.BooleanField('Enable updates', default=True, help_text='Enable automatically updating layer metadata for this layer:branch via the update script')
     updated = models.DateTimeField(auto_now=True)
 
     class Meta:
