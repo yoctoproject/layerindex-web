@@ -375,6 +375,11 @@ def main():
                         if layerbranch_source:
                             layerbranch.vcs_subdir = layerbranch_source.vcs_subdir
 
+                    layerbranch_updates_enabled = LayerBranch.objects.filter(layer=layer, branch=branchobj.id, updates_enabled=True)
+                    if not layerbranch_updates_enabled:
+                        logger.info("Skipping update of layer %s  branch %s - updates disabled" % (layer.name, branchname))
+                        continue
+
                     # Collect repo info
                     urldir = layer.get_fetch_dir()
                     repodir = os.path.join(fetchdir, urldir)
