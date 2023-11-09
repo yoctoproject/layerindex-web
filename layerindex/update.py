@@ -361,6 +361,12 @@ def main():
                         if layerbranch.actual_branch:
                             branchname = layerbranch.actual_branch
                             branchdesc = "%s (%s)" % (branch, branchname)
+
+                        layerbranch_updates_enabled = LayerBranch.objects.filter(layer=layer,
+			                                                         branch=branchobj.id, updates_enabled=True)
+                        if not layerbranch_updates_enabled:
+                            logger.info("Skipping update of layer %s branch %s - updates disabled" % (layer.name, branchname))
+                            continue
                     else:
                         # LayerBranch doesn't exist for this branch, create it temporarily
                         # (we won't save this - update_layer.py will do the actual creation
@@ -374,11 +380,6 @@ def main():
                             layerbranch_source = layer.get_layerbranch(None)
                         if layerbranch_source:
                             layerbranch.vcs_subdir = layerbranch_source.vcs_subdir
-
-                    layerbranch_updates_enabled = LayerBranch.objects.filter(layer=layer, branch=branchobj.id, updates_enabled=True)
-                    if not layerbranch_updates_enabled:
-                        logger.info("Skipping update of layer %s  branch %s - updates disabled" % (layer.name, branchname))
-                        continue
 
                     # Collect repo info
                     urldir = layer.get_fetch_dir()
