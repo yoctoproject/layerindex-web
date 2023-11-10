@@ -293,7 +293,7 @@ def main():
 
     utils.setup_django()
     import settings
-    from layerindex.models import LayerItem, LayerBranch, Recipe, RecipeFileDependency, Machine, Distro, BBAppend, BBClass, IncFile
+    from layerindex.models import LayerItem, LayerBranch, LayerDependency, Recipe, RecipeFileDependency, Machine, Distro, BBAppend, BBClass, IncFile
     from django.db import transaction
 
     logger.setLevel(options.loglevel)
@@ -374,10 +374,25 @@ def main():
             layerappends = BBAppend.objects.filter(layerbranch=layerbranch)
             layerclasses = BBClass.objects.filter(layerbranch=layerbranch)
             layerincfiles = IncFile.objects.filter(layerbranch=layerbranch)
+            layerdependencies = LayerDependency.objects.filter(layerbranch=layerbranch)
             if layerbranch.vcs_last_rev != topcommit.hexsha or options.reload or options.initial:
                 # Check out appropriate branch
                 if not options.nocheckout:
                     utils.checkout_layer_branch(layerbranch, repodir, logger=logger)
+                    # Ensure dependent layers are checked out at the same release
+                    for layerdependency in layerdependencies:
+                        logger.debug("layerdependency: %s" % layerdependency)
+                        try:
+                            # bitbake and openembedded-core are handled elsewhere
+                            if layerdependency.dependency == 'openembedded-core':
+                                continue
+                            dep_layer = utils.get_layer(layerdependency.dependency)
+                            dep_layerbranch = dep_layer.get_layerbranch(options.branch)
+                            dep_urldir = dep_layer.get_fetch_dir()
+                            dep_repodir = os.path.join(fetchdir, dep_urldir)
+                            utils.checkout_layer_branch(dep_layerbranch, dep_repodir, logger=logger)
+                        except Exception as e:
+                            logger.warn("Unable to checkout dependent layer %s - %s" % (layerdependency.dependency, str(e)))
 
                 logger.info("Collecting data for layer %s on branch %s" % (layer.name, branchdesc))
                 try:
