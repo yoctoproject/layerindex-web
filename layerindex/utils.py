@@ -75,13 +75,20 @@ def is_deps_satisfied(req_col, req_ver, collections):
     # Return False when not found
     return False
 
-def get_dependency_layer(depname, version_str=None, logger=None):
+def get_dependency_layer(depname, branch=None, version_str=None, logger=None):
     from layerindex.models import LayerItem, LayerBranch
 
-    # Get any LayerBranch with a layer that has a name that matches depmod, or
-    # a LayerBranch that has the collection name depmod.
-    res = list(LayerBranch.objects.filter(layer__name=depname)) + \
-          list(LayerBranch.objects.filter(collection=depname))
+    if branch:
+        # Get LayerBranch with a layer that has a name that matches depname, or
+        # a LayerBranch that has the collection name depname
+        # AND also match branch [YOCTO #15221]
+        res = list(LayerBranch.objects.filter(layer__name=depname,branch__name=branch)) + \
+              list(LayerBranch.objects.filter(collection=depname,branch__name=branch))
+    else:
+        # Get any LayerBranch with a layer that has a name that matches depname, or
+        # a LayerBranch that has the collection name depname.
+        res = list(LayerBranch.objects.filter(layer__name=depname)) + \
+              list(LayerBranch.objects.filter(collection=depname))
 
     # Nothing found, return.
     if not res:
@@ -119,6 +126,7 @@ def _add_dependency(var, name, layerbranch, config_data, logger=None, required=T
     from layerindex.models import LayerBranch, LayerDependency
 
     layer_name = layerbranch.layer.name
+    branch_name = layerbranch.branch.name
     var_name = layer_name
 
     if layerbranch.collection:
@@ -143,10 +151,10 @@ def _add_dependency(var, name, layerbranch, config_data, logger=None, required=T
             ver_str = ver_list[0]
 
         try:
-            dep_layer = get_dependency_layer(dep, ver_str, logger)
+            dep_layer = get_dependency_layer(dep, branch_name, ver_str, logger)
         except bb.utils.VersionStringException as vse:
             if logger:
-                logger.error('Error getting %s %s for %s\n%s' %(name, dep. layer_name, str(vse)))
+                logger.error('Error getting %s %s for %s:%s\n%s' %(name, dep. layer_name, branch_name, str(vse)))
             continue
 
         # No layer found.
