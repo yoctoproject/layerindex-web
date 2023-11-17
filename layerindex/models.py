@@ -550,7 +550,7 @@ class Source(models.Model):
     def __str__(self):
         return '%s - %s - %s' % (self.recipe.layerbranch, self.recipe.pn, self.url)
 
-patch_status_re = re.compile(r"^[\t ]*(Upstream[-_ ]Status:?)[\t ]*(\w+)([\t ]+.*)?", re.IGNORECASE | re.MULTILINE)
+patch_status_re = re.compile(r"^[\t ]*(Upstream[-_ ]Status:?)[\t ]*([\w\-]+)([\t ]+.*)?", re.IGNORECASE | re.MULTILINE)
 
 class Patch(models.Model):
     PATCH_STATUS_CHOICES = [
