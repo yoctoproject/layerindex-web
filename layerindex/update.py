@@ -522,7 +522,7 @@ def main():
                         for layer, value in deps_dict_all.items():
                             logger.warn('%s: LAYERDEPENDS: %s LAYERRECOMMENDS: %s' % (layer.name, value['deps'], value['recs']))
                             if value['deps']:
-                                failed_layers[branch].append('%s: Failed to add since LAYERDEPENDS is not satisfied' % layer.name)
+                                failed_layers[branch].append('%s: Failed to add since LAYERDEPENDS [%s ...] is not satisfied' % (layer.name, next(iter(value['deps'])))
                             else:
                                 # Should never come here
                                 logger.error("Unexpected errors when sorting layers")
