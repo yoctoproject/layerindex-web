@@ -426,7 +426,7 @@ def main():
                             continue
 
                         if not os.path.exists(os.path.join(layerdir, 'conf/layer.conf')):
-                            logger.error("conf/layer.conf not found for layer %s - is subdirectory set correctly?" % layer.name)
+                            logger.error("conf/layer.conf not found for layer %s (branch %s) - is subdirectory set correctly?" % (layer.name, branch))
                             continue
 
                     cmd = prepare_update_layer_command(options, branchobj, layer, initial=True)
