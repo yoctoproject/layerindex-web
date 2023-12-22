@@ -66,6 +66,7 @@ def get_args():
     parser.add_argument('--cert', type=str, help='Existing SSL certificate to use for HTTPS web serving', required=False)
     parser.add_argument('--cert-key', type=str, help='Existing SSL certificate key to use for HTTPS web serving', required=False)
     parser.add_argument('--letsencrypt', action="store_true", default=False, help='Use Let\'s Encrypt for HTTPS')
+    parser.add_argument('--letsencrypt-production', action="store_true", default=False, help='Use Production server for Let\'s Encrypt. Default is %(default)s')
     parser.add_argument('--no-migrate', action="store_true", default=False, help='Skip running database migrations')
     parser.add_argument('--no-admin-user', action="store_true", default=False, help='Skip adding admin user')
     parser.add_argument('--no-connectivity', action="store_true", default=False, help='Skip checking external network connectivity')
@@ -473,7 +474,7 @@ def edit_dockerfile_web(hostname, no_https):
     writefile("Dockerfile.web", ''.join(newlines))
 
 
-def setup_https(hostname, http_port, https_port, letsencrypt, cert, cert_key, emailaddr):
+def setup_https(hostname, http_port, https_port, letsencrypt, letsencrypt_production, cert, cert_key, emailaddr):
     local_cert_dir = os.path.abspath('docker/certs')
     container_cert_dir = '/opt/cert'
     if letsencrypt:
@@ -548,7 +549,7 @@ def setup_https(hostname, http_port, https_port, letsencrypt, cert, cert_key, em
             shutil.rmtree(tempdir)
 
         # Now run certbot to register SSL certificate
-        staging_arg = '--staging'
+        staging_arg = '--force-renewal --test-cert' if not letsencrypt_production else '--keep-until-expiring'
         if emailaddr:
             email_arg = '--email %s' % quote(emailaddr)
         else:
@@ -560,7 +561,7 @@ def setup_https(hostname, http_port, https_port, letsencrypt, cert, cert_key, em
     -d %s \
     --rsa-key-size 4096 \
     --agree-tos \
-    --force-renewal" layerscertbot' % (staging_arg, email_arg, quote(hostname)), shell=True)
+    " layerscertbot' % (staging_arg, email_arg, quote(hostname)), shell=True)
         if return_code != 0:
             print("Running certbot failed")
             sys.exit(1)
@@ -757,7 +758,7 @@ else:
     edit_options_file(args.project_name)
 
     if not args.no_https:
-        setup_https(args.hostname, http_port, https_port, args.letsencrypt, args.cert, args.cert_key, emailaddr)
+        setup_https(args.hostname, http_port, https_port, args.letsencrypt, args.letsencrypt_production, args.cert, args.cert_key, emailaddr)
 
 ## Start up containers
 return_code = subprocess.call(['docker-compose', 'up', '-d', '--build'], shell=False)
