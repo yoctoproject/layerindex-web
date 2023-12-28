@@ -1791,7 +1791,7 @@ class BranchCompareView(FormView):
         for _, recipe in sorted(recipes.items(), key=lambda item: item[0]):
             recipe.from_versions = sorted(recipe.from_versions, key=lambda item: parse_version(item.pv))
             from_version_exprs = [x.version_expr() for x in recipe.from_versions]
-            recipe.to_versions = sorted(recipe.to_versions, key=lambda item: parser_version(item.pv))
+            recipe.to_versions = sorted(recipe.to_versions, key=lambda item: parse_version(item.pv))
             to_version_exprs = [x.version_expr() for x in recipe.to_versions]
             if not from_version_exprs:
                 added.append(recipe)
