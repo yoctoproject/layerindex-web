@@ -47,6 +47,9 @@
                                     <a href="{% url 'delete_layer' layeritem.name %}" class="btn btn-warning">Delete layer</a>
                                     <a href="{% url 'publish' layeritem.name %}" class="btn btn-primary">Publish layer</a>
                                 {% endif %}
+                                {% if user.is_staff %}
+                                    <a href="{% url 'update_layer' 'master' layeritem.name %}" class="btn btn-info">Update layer</a>
+                                {% endif %}
                             </span>
                         {% endif %}
                     </h1>

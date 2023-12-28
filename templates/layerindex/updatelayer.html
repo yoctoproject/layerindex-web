@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load extrafilters %}
+
+{% comment %}
+
+  layerindex-web - update page
+
+  Copyright (C) 2016, 2018 Intel Corporation
+  Licensed under the MIT license, see COPYING.MIT for details
+
+{% endcomment %}
+
+<!--
+{% block title_append %} - {{ update.started }} {% endblock %}
+-->
+
+{% block content %}
+{% autoescape on %}
+
+        <ul class="breadcrumb">
+            <li><a href="{% url 'update_list' %}">Updates</a></li>
+            <li class="active">{{ update.started }}</li>
+        </ul>
+
+
+<h2>{{ update.started }} {% if update.reload %}(reload){% endif %}
+<span id="status-label" class="label {% if update.finished %}{% if update.retcode %}label-danger{% else %}label-success{% endif %}{% endif %} pull-right">{% if update.finished %}{% if update.retcode < 0 %}TERMINATED ({{ update.retcode }}){% elif update.retcode %}FAILED{% endif %}{% endif %}</span>
+</h2>
+
+{% if update.log %}
+    <pre>{{ update.log }}</pre>
+{% endif %}
+
+{% for layerupdate in layerupdates %}
+    <table class="table table-bordered">
+        <thead>
+            {% with layerbranch_exists=layerupdate.layerbranch_exists %}
+            <tr><td{% if layerupdate.errors > 0 or layerupdate.retcode != 0 %} class="error"{% elif layerupdate.warnings %} class="warning"{% endif %}>
+            {% if layerbranch_exists %}<a href="{% url 'layer_item' layerupdate.branch.name layerupdate.layer.name %}">{% endif %}<strong>{{ layerupdate.layer.name }} {{ layerupdate.branch.name }}</strong>{% if layerbranch_exists %}</a>{% endif %}
+            {% if layerupdate.vcs_before_rev != layerupdate.vcs_after_rev %}
+            <span class="pull-right">
+                {% if layerbranch_exists %}
+                {% with before_url=layerupdate.vcs_before_commit_url after_url=layerupdate.vcs_after_commit_url %}
+                {% if before_url %}<a href="{{ before_url }}">{% endif %}{{ layerupdate.vcs_before_rev|truncatesimple:10 }}{% if before_url %}</a>{% endif %} &rarr; {% if after_url %}<a href="{{ after_url }}">{% endif %}{{ layerupdate.vcs_after_rev|truncatesimple:10 }}{% if after_url %}</a>{% endif %}
+                {% endwith %}
+                {% else %}
+                {{ layerupdate.vcs_before_rev|truncatesimple:10 }} → {{ layerupdate.vcs_after_rev|truncatesimple:10 }}
+                {% endif %}
+            </span>
+            {% endif %}
+            </td></tr>
+            {% endwith %}
+        </thead>
+        <tbody>
+            {% if layerupdate.log %}
+            <tr><td class="td-pre">
+            <pre class="pre-scrollable pre-plain">{{ layerupdate.log }}</pre>
+            </td></tr>
+            {% endif %}
+        </tbody>
+    </table>
+{% endfor %}
+
+{% if not update.log and not layerupdates %}
+    <p>No messages or layer updates</p>
+{% endif %}
+
+{% if update.comparisonrecipeupdate_set.exists %}
+<h3>Updated comparison recipes</h3>
+<ul>
+{% for recipeupdate in update.comparisonrecipeupdate_set.all %}
+    <li><a href="{% url 'comparison_recipe' recipeupdate.recipe.id %}">{{ recipeupdate.recipe.pn }}</a> {% if recipeupdate.meta_updated and recipeupdate.link_updated %}(meta, link){% elif recipeupdate.link_updated %}(link){% elif recipeupdate.meta_updated %}(meta){% endif %}</li>
+{% endfor %}
+</ul>
+{% endif %}
+
+{% endautoescape %}
+
+{% endblock %}
+{% if updates.count > 0 %}
+<div class="tab-pane" id="updates">
+    <nav class="navbar navbar-default">
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <a class="navbar-brand">{{ layeritem.name }} updates</a>
+            </div>
+        </div>
+    </nav>
+
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Date/time</th>
+                <th>Errors</th>
+                <th>Warnings</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for update in updates %}
+                <tr>
+                    <td>
+                        {% if update.log %}
+                            <a href="{% url 'layerupdate' update.id %}">{{ update.started }}{% if update.update.reload %} (reload){% endif%}</a>
+                        {% else %}
+                            <span class="text-muted">{{ update.started }}{% if update.update.reload %} (reload){% endif%}</span>
+                        {% endif %}
+                    </td>
+                    <td>{% if update.errors %}<span class="badge badge-important">{{ update.errors }}</span>{% endif %}</td>
+                    <td>{% if update.warnings %}<span class="badge badge-warning">{{ update.warnings }}</span>{% endif %}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{% block scripts %}
+{% endblock %}
