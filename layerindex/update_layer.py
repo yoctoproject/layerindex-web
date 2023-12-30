@@ -272,6 +272,9 @@ def main():
     parser.add_option("-i", "--initial",
             help = "Print initial values parsed from layer.conf only",
             action="store_true")
+    parser.add_option("-a", "--actual-branch",
+            help = "Specify actual_branch for git checkout",
+            action="store", dest="actual_branch", default=None)
     parser.add_option("-d", "--debug",
             help = "Enable debug output",
             action="store_const", const=logging.DEBUG, dest="loglevel", default=logging.INFO)
@@ -326,6 +329,9 @@ def main():
         if layerbranch.actual_branch:
             branchname = layerbranch.actual_branch
             branchdesc = "%s (%s)" % (options.branch, branchname)
+    elif options.actual_branch:
+        branchname = options.actual_branch
+        branchdesc = "%s (%s)" % (options.branch, branchname)
 
     # Collect repo info
     repo = git.Repo(repodir)
@@ -347,6 +353,8 @@ def main():
                 layerbranch = LayerBranch()
                 layerbranch.layer = layer
                 layerbranch.branch = branch
+                if options.actual_branch:
+                    layerbranch.actual_branch = options.actual_branch
                 layerbranch_source = layer.get_layerbranch(branch)
                 if not layerbranch_source:
                     layerbranch_source = layer.get_layerbranch(None)
