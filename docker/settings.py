@@ -276,7 +276,7 @@ SUBMIT_EMAIL_SUBJECT = 'OE Layerindex layer submission'
 SEND_PUBLISH_EMAIL = True
 
 # RabbitMQ settings
-RABBIT_BROKER = 'amqp://' + os.getenv('RABBITMQ_DEFAULT_USER') + ':' + os.getenv('RABBITMQ_DEFAULT_PASS') + '@layersrabbit:5672/'
+RABBIT_BROKER = 'amqp://' + os.getenv('RABBITMQ_DEFAULT_USER', 'guest') + ':' + os.getenv('RABBITMQ_DEFAULT_PASS', 'guest') + '@layersrabbit:5672/'
 RABBIT_BACKEND = 'rpc://layersrabbit/'
 
 # Used for fetching repo
