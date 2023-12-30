@@ -76,6 +76,7 @@ LayerMaintainerFormSet = inlineformset_factory(LayerBranch, LayerMaintainer, for
 class EditLayerForm(StyledModelForm):
     # Additional form fields
     vcs_subdir = forms.CharField(label='Repository subdirectory', max_length=40, required=False, help_text='Subdirectory within the repository where the layer is located, if not in the root (usually only used if the repository contains more than one layer)')
+    actual_branch = forms.CharField(label='Actual branch', max_length=80, required=False, help_text='Name of the actual branch in the repository matching the core branch (e.g. the development branch is "master" by default)')
     deps = forms.ModelMultipleChoiceField(label='Other layers this layer depends upon', queryset=LayerItem.objects.filter(comparison=False), required=False)
     captcha = CaptchaField(label='Verification', help_text='Please enter the letters displayed for verification purposes', error_messages={'invalid':'Incorrect entry, please try again'})
 
@@ -98,11 +99,16 @@ class EditLayerForm(StyledModelForm):
         field_order.pop(field_order.index('vcs_subdir'))
         name_pos = field_order.index('vcs_url') + 1
         field_order.insert(name_pos, 'vcs_subdir')
+        # Ensure actual branch appears after repo subdir
+        field_order.pop(field_order.index('actual_branch'))
+        name_pos = name_pos + 1
+        field_order.insert(name_pos, 'actual_branch')
         new_fields = OrderedDict()
         for field in field_order:
             new_fields[field] = self.fields[field]
         self.fields = new_fields
         self.fields['vcs_subdir'].initial = layerbranch.vcs_subdir
+        self.fields['actual_branch'].initial = layerbranch.actual_branch
         self.was_saved = False
         self.allow_base_type = allow_base_type
 
@@ -177,6 +183,15 @@ class EditLayerForm(StyledModelForm):
             val = URLValidator()
             val(usage)
         return usage
+
+    def clean_actual_branch(self):
+        import subprocess
+        actual_branch = self.cleaned_data['actual_branch'].strip()
+        process = subprocess.Popen(["git", "check-ref-format", "--branch", actual_branch])
+        exit_status = process.wait()
+        if exit_status != 0:
+            raise forms.ValidationError("Actual branch should be a valid git branch short name")
+        return actual_branch
 
 
 class EditNoteForm(StyledModelForm):

@@ -162,6 +162,11 @@ def edit_layer_view(request, template_name, branch='master', slug=None):
                     layerbranch.vcs_subdir = new_subdir
                     reset_last_rev = True
                 layerbranch.save()
+                new_actual_branch = form.cleaned_data['actual_branch']
+                if layerbranch.actual_branch != new_actual_branch:
+                    layerbranch.actual_branch = new_actual_branch
+                    reset_last_rev = True
+                layerbranch.save()
                 maintainerformset.save()
                 if slug:
                     new_deps = form.cleaned_data['deps']
