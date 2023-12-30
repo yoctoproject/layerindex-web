@@ -38,6 +38,9 @@
                         {% endif %}
                         {% if user.is_authenticated %}
                             <span class="pull-right">
+                                {% if user.is_staff %}
+                                    <a href="{% url 'update_layer' url_branch layeritem.name %}" class="btn btn-info">Update layer</a>
+                                {% endif %}
                                 {% if perms.layerindex.publish_layer or useredit %}
                                     <a href="{% url 'edit_layer' url_branch layeritem.name %}" class="btn btn-default">Edit layer</a>
                                     {% if layeritem.layernote_set.count == 0 %}

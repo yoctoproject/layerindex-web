@@ -16,7 +16,7 @@ from layerindex.views import LayerListView, LayerReviewListView, LayerReviewDeta
     ClassicRecipeSearchView, ClassicRecipeDetailView, ClassicRecipeStatsView, LayerUpdateDetailView, UpdateListView, \
     UpdateDetailView, StatsView, publish_view, LayerCheckListView, BBClassCheckListView, TaskStatusView, \
     ComparisonRecipeSelectView, ComparisonRecipeSelectDetailView, task_log_view, task_stop_view, email_test_view, \
-    BranchCompareView, RecipeDependenciesView
+    BranchCompareView, RecipeDependenciesView, update_layer_view
 from layerindex.models import LayerItem, Recipe, RecipeChangeset
 from rest_framework import routers
 from . import restviews

@@ -8,7 +8,7 @@
 
 from django.views.defaults import page_not_found
 from django.urls import include, re_path, reverse_lazy
-from layerindex.views import LayerListView, RecipeSearchView, MachineSearchView, DistroSearchView, ClassSearchView, LayerDetailView, edit_layer_view, delete_layer_view, edit_layernote_view, delete_layernote_view, RedirectParamsView, DuplicatesView, LayerUpdateDetailView, layer_export_recipes_csv_view, comparison_update_view
+from layerindex.views import LayerListView, RecipeSearchView, MachineSearchView, DistroSearchView, ClassSearchView, LayerDetailView, edit_layer_view, delete_layer_view, edit_layernote_view, delete_layernote_view, RedirectParamsView, DuplicatesView, LayerUpdateDetailView, layer_export_recipes_csv_view, comparison_update_view, update_layer_view
 
 urlpatterns = [
     re_path(r'^$',
@@ -41,6 +41,7 @@ urlpatterns = [
             template_name='layerindex/classes.html'),
             name='class_search'),
     re_path(r'^edit/(?P<slug>[-\w]+)/$', edit_layer_view, {'template_name': 'layerindex/editlayer.html'}, name="edit_layer"),
+    re_path(r'^update/(?P<slug>[-\w]+)/$', update_layer_view, {'template_name': 'layerindex/updatelayer.html'}, name="update_layer"),
     re_path(r'^duplicates/$',
         DuplicatesView.as_view(
             template_name='layerindex/duplicates.html'),

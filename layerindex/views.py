@@ -121,6 +121,41 @@ def delete_layer_view(request, template_name, slug):
             'cancel_url': layeritem.get_absolute_url()
         })
 
+def update_layer_view(request, template_name, branch='master', slug=None):
+    if not (request.user.is_authenticated and request.user.is_staff):
+        raise PermissionDenied
+    return_url = None
+    branchobj = Branch.objects.filter(name=branch)[:1].get()
+    if slug:
+        # Existing Layer Update
+        layeritem = get_object_or_404(LayerItem, name=slug)
+        layerbranch = get_object_or_404(LayerBranch, layer=layeritem, branch=branchobj)
+        returnto = request.GET.get('returnto', 'layer_item')
+        if returnto:
+            if returnto == 'layer_review':
+                return_url = reverse_lazy(returnto, args=(layeritem.name,))
+            else:
+                return_url = reverse_lazy(returnto, args=(branch, layeritem.name))
+    else:
+        # Pre-Publish Layer Update attempt
+        layeritem = LayerItem()
+        layerbranch = LayerBranch(layer=layeritem, branch=branchobj)
+
+    from celery import uuid
+
+    cmd = 'layerindex/update.py --layer %s --branch %s;' % (layeritem.name, branch)
+
+    task_id = uuid()
+    # Create this here first, because inside the task we don't have all of the required info
+    update = Update(task_id=task_id)
+    update.started = datetime.now()
+    update.triggered_by = request.user
+    update.save()
+
+    res = tasks.run_update_command.apply_async((branch, cmd), task_id=task_id)
+
+    return HttpResponseRedirect(reverse_lazy('task_status', kwargs={'task_id': task_id}))
+
 def edit_layer_view(request, template_name, branch='master', slug=None):
     return_url = None
     branchobj = Branch.objects.filter(name=branch)[:1].get()
