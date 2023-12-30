@@ -43,6 +43,8 @@ def prepare_update_layer_command(options, branch, layer, initial=False):
     else:
         cmdprefix = 'python3'
     cmd = '%s update_layer.py -l %s -b %s' % (cmdprefix, layer.name, branch.name)
+    if options.actual_branch and options.force_create:
+        cmd += ' --actual-branch=%s' % options.actual_branch
     if options.reload:
         cmd += ' --reload'
     if options.fullreload:
@@ -86,15 +88,18 @@ def update_actual_branch(layerquery, fetchdir, branch, options, update_bitbake, 
             logger.info("Skipping update actual_branch for %s - branch %s doesn't exist" % (layer.name, actual_branch))
             continue
         layerbranch = layer.get_layerbranch(branch)
-        if not layerbranch:
-            logger.info("Skipping update actual_branch for %s - layerbranch %s doesn't exist" % (layer.name, branch))
-            continue
-        if actual_branch != layerbranch.actual_branch:
-            logger.info("%s: %s.actual_branch: %s -> %s" % (layer.name, branch, layerbranch.actual_branch, actual_branch))
-            layerbranch.actual_branch = actual_branch
-            to_save.add(layerbranch)
+        if not options.force_create:
+            if not layerbranch:
+                logger.info("Skipping update actual_branch for %s - layerbranch %s doesn't exist" % (layer.name, branch))
+                continue
+            if actual_branch != layerbranch.actual_branch:
+                logger.info("%s: %s.actual_branch: %s -> %s" % (layer.name, branch, layerbranch.actual_branch, actual_branch))
+                layerbranch.actual_branch = actual_branch
+                to_save.add(layerbranch)
+            else:
+                logger.info("%s: %s.actual_branch is already %s, so no change" % (layer.name, branch, actual_branch))
         else:
-            logger.info("%s: %s.actual_branch is already %s, so no change" % (layer.name, branch, actual_branch))
+            logger.info("%s: Allowing branch %s with actual_branch %s to attempt to be created" % (layer.name, branch, actual_branch))
 
     # At last, do the save
     if not options.dryrun:
@@ -169,6 +174,9 @@ def main():
     parser.add_option("-a", "--actual-branch",
             help = "Update actual branch for layer and bitbake",
             action="store", dest="actual_branch", default='')
+    parser.add_option("", "--force-create",
+            help = "Create layer branch if it does not already exist",
+            action="store_true", dest="force_create", default=False)
     parser.add_option("-d", "--debug",
             help = "Enable debug output",
             action="store_const", const=logging.DEBUG, dest="loglevel", default=logging.INFO)
@@ -196,6 +204,10 @@ def main():
         for branch in branches:
             if not utils.get_branch(branch):
                 logger.error("Specified branch %s is not valid" % branch)
+                sys.exit(1)
+            branchquery = Branch.objects.filter(updates_enabled=True).filter(name=branch)
+            if not branchquery.count() > 0:
+                logger.warning("Updates are disabled for specified branch %s" % branch)
                 sys.exit(1)
     else:
         branchquery = Branch.objects.filter(updates_enabled=True)
@@ -315,7 +327,7 @@ def main():
                     logger.error("No repositories could be fetched, exiting")
                     sys.exit(1)
 
-            if options.actual_branch:
+            if options.actual_branch and not options.force_create:
                 update_actual_branch(layerquery, fetchdir, branches[0], options, update_bitbake, bitbakepath)
                 return
 
@@ -389,6 +401,10 @@ def main():
                         logger.error('Repository %s is bare, not supported' % repodir)
                         continue
                     try:
+                        # Allow stable branches to be created if actual_branch exists
+                        if options.actual_branch:
+                            branchname = options.actual_branch
+                            branchdesc = "%s (%s)" % (branch, branchname)
                         # Always get origin/branchname, so it raises error when branch doesn't exist when nocheckout
                         topcommit = repo.commit('origin/%s' % branchname)
                         if options.nocheckout:
@@ -419,7 +435,10 @@ def main():
                     else:
                         # Check out appropriate branch
                         if not options.nocheckout:
-                            utils.checkout_layer_branch(layerbranch, repodir, logger=logger)
+                            if not options.actual_branch:
+                                utils.checkout_layer_branch(layerbranch, repodir, logger=logger)
+                            else:
+                                utils.checkout_layer_branch(layerbranch, repodir, actual_branch=options.actual_branch, logger=logger)
                         layerdir = os.path.join(repodir, layerbranch.vcs_subdir)
                         if layerbranch.vcs_subdir and not os.path.exists(layerdir):
                             print_subdir_error(newbranch, layer.name, layerbranch.vcs_subdir, branchdesc)

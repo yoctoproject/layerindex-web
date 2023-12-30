@@ -297,8 +297,11 @@ def checkout_repo(repodir, commit, logger, force=False):
         # Now check out the revision
         runcmd(['git', 'checkout', commit], repodir, logger=logger)
 
-def checkout_layer_branch(layerbranch, repodir, logger=None):
-    branchname = layerbranch.get_checkout_branch()
+def checkout_layer_branch(layerbranch, repodir, actual_branch=None, logger=None):
+    if actual_branch:
+        branchname = actual_branch
+    else:
+        branchname = layerbranch.get_checkout_branch()
     checkout_repo(repodir, 'origin/%s' % branchname, logger)
 
 def is_layer_valid(layerdir):
