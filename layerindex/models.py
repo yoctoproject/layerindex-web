@@ -784,18 +784,59 @@ class BBAppend(models.Model):
 class BBClass(models.Model):
     layerbranch = models.ForeignKey(LayerBranch, on_delete=models.CASCADE)
     name = models.CharField(max_length=100)
+    # Type field
+    TYPE_CHOICES = [
+        ('', 'Class'),
+        ('Global', 'Global'),
+        ('Recipe', 'Recipe')
+        ]
+    bbclass_type = models.CharField(max_length=25, choices=TYPE_CHOICES, default='')
 
     class Meta:
         verbose_name = "Class"
         verbose_name_plural = "Classes"
 
     def vcs_web_url(self):
-        url = self.layerbranch.file_url(os.path.join('classes', "%s.bbclass" % self.name))
+        # We cannot override vcs_web_url in the sub-classes without defining self.url
+        # but we want url to be dynamic
+        if self.bbclass_type == 'Global':
+            url = self.layerbranch.file_url(os.path.join('classes-global', "%s.bbclass" % self.name))
+        elif self.bbclass_type == 'Recipe':
+            url = self.layerbranch.file_url(os.path.join('classes-recipe', "%s.bbclass" % self.name))
+        else:
+            url = self.layerbranch.file_url(os.path.join('classes', "%s.bbclass" % self.name))
         return url or ''
 
     def __str__(self):
         return '%s (%s)' % (self.name, self.layerbranch.layer.name)
 
+class BBClassGlobalManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().filter(bbclass_type='Global')
+
+class BBClassGlobal(BBClass):
+    objects = BBClassGlobalManager()
+
+    class Meta:
+        proxy = True
+
+    def save(self, *args, **kwargs):
+        self.bbclass_type = 'Global'
+        return super(BBClassGlobal, self).save(*args, **kwargs)
+
+class BBClassRecipeManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().filter(bbclass_type='Recipe')
+
+class BBClassRecipe(BBClass):
+    objects = BBClassRecipeManager()
+
+    class Meta:
+        proxy = True
+
+    def save(self, *args, **kwargs):
+        self.bbclass_type = 'Recipe'
+        return super(BBClassRecipe, self).save(*args, **kwargs)
 
 class IncFile(models.Model):
     layerbranch = models.ForeignKey(LayerBranch, on_delete=models.CASCADE)
