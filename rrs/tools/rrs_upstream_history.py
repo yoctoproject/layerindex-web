@@ -70,7 +70,10 @@ def set_regexes(d):
 
             localdata.setVar('OVERRIDES', "pn-" + pnstripped + ":" +
                     d.getVar('OVERRIDES', True))
-            bb.data.update_data(localdata)
+            try:
+                bb.data.update_data(localdata)
+            except AttributeError:
+                pass
 
             for var in variables:
                 new_value = localdata.getVar(var, True)
@@ -107,7 +110,7 @@ def get_upstream_info(layerbranch, recipe_data, result):
         ru.date = ru_info['datetime']
 
         pv, _, _ = get_recipe_pv_without_srcpv(recipe_pv,
-                get_pv_type(recipe_pv)) 
+                get_pv_type(recipe_pv))
         upv, _, _ = get_recipe_pv_without_srcpv(ru_info['version'],
                 get_pv_type(ru_info['version']))
 
@@ -143,7 +146,7 @@ if __name__=="__main__":
     parser.add_option("-d", "--debug",
             help = "Enable debug output",
             action="store_const", const=logging.DEBUG, dest="loglevel", default=logging.INFO)
-    
+
     parser.add_option("--dry-run",
             help = "Do not write any data back to the database",
             action="store_true", dest="dry_run", default=False)
