@@ -37,7 +37,7 @@ MAINTAINERS_INCLUDE_PATH = 'conf/distro/include/maintainers.inc'
 """
 def get_recipe_maintainer(line, logger):
     import re
-    regex = re.compile('^RECIPE_MAINTAINER_pn-(?P<pn>.*)\s=\s"(?P<name>.+) <(?P<email>.*)>"$')
+    regex = re.compile('^RECIPE_MAINTAINER[:_]pn-(?P<pn>.*)\s=\s"(?P<name>.+) <(?P<email>.*)>"$')
 
     match = regex.search(line)
     if match:
