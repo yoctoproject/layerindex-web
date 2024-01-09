@@ -136,7 +136,7 @@ def maintainers_inc_history(options, logger, maintplan, layerbranch, repodir, la
                         rm.history = rms
                         rm.save()
                         if link_maintainer:
-                            logger.debug("%s: linked to maintainer for %s" % (recipe.pn, link_maintainer.recipe.pn))
+                            logger.debug("%s: linked to maintainer for %s" % (recipe.pn, link_maintainer.recipesymbol.pn))
                         else:
                             logger.debug("%s: Not found maintainer in commit %s set to 'No maintainer'." % \
                                             (recipe.pn, rms.sha1))
@@ -155,7 +155,7 @@ def maintainers_inc_history(options, logger, maintplan, layerbranch, repodir, la
                     rm.history = rms
                     rm.save()
                     if link_maintainer:
-                        logger.debug("%s: New recipe linked to maintainer for %s" % (recipe.pn, link_maintainer.recipe.pn))
+                        logger.debug("%s: New recipe linked to maintainer for %s" % (recipe.pn, link_maintainer.recipesymbol.pn))
                     else:
                         logger.debug("%s: New recipe not found maintainer set to 'No maintainer'." % \
                                     (recipe.pn))
