@@ -182,6 +182,7 @@ def upgrade_history(options, logger):
                 # Filter out some bad commits
                 remap_range('fef18b445c0cb6b266cd939b9c78d7cbce38663f', '39780b1ccbd76579db0fc6fb9369c848a3bafa9d')
                 remap_range('5796ed550d127853808f38257f8dcc8c1cf59342', '547128731e62b36d2271c4390b3fee2b16c535dc')
+                remap_range('a06619951a43acb80b80d92e0caac560657ca249', '2117db3146ce38bb4a6e2df40b6cd2ab11b514d5')
 
                 if options.stop_commit and (options.stop_commit not in [x.split()[0] for x in commit_list]):
                     logger.error('Stop commit %s is not in repository %s' % (options.stop_commit, repodir))
