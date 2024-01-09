@@ -87,8 +87,11 @@ def set_regexes(d):
 
 def get_upstream_info(layerbranch, recipe_data, result):
     from bb.utils import vercmp_string
-    from oe.recipeutils import get_recipe_upstream_version, \
-            get_recipe_pv_without_srcpv
+    from oe.recipeutils import get_recipe_upstream_version
+    try:
+        from oe.recipeutils import get_recipe_pv_without_srcpv
+    except ImportError:
+        from oe.recipeutils import get_recipe_pv_with_pfx_sfx
 
     pn = recipe_data.getVar('PN', True)
 
@@ -109,10 +112,16 @@ def get_upstream_info(layerbranch, recipe_data, result):
         ru.type = ru_info['type']
         ru.date = ru_info['datetime']
 
-        pv, _, _ = get_recipe_pv_without_srcpv(recipe_pv,
-                get_pv_type(recipe_pv))
-        upv, _, _ = get_recipe_pv_without_srcpv(ru_info['version'],
-                get_pv_type(ru_info['version']))
+        try:
+            pv, _, _ = get_recipe_pv_without_srcpv(recipe_pv,
+                       get_pv_type(recipe_pv))
+            upv, _, _ = get_recipe_pv_without_srcpv(ru_info['version'],
+                        get_pv_type(ru_info['version']))
+        except NameError:
+            pv, _, _ = get_recipe_pv_with_pfx_sfx(recipe_pv,
+                       get_pv_type(recipe_pv))
+            upv, _, _ = get_recipe_pv_with_pfx_sfx(ru_info['version'],
+                        get_pv_type(ru_info['version']))
 
         if pv and upv:
             cmp_ver = vercmp_string(pv, upv)
