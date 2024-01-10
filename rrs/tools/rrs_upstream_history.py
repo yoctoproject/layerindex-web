@@ -143,7 +143,7 @@ def get_upstream_info(layerbranch, recipe_data, result):
     ru.no_update_reason = recipe_data.getVar('RECIPE_NO_UPDATE_REASON',
             True) or ''
 
-    result.append((recipe, ru))
+    result.append(ru)
 
 if __name__=="__main__":
     parser = optparse.OptionParser(usage = """%prog [options]""")
