@@ -23,26 +23,26 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update \
         && update-locale \
     && apt-get install -y --no-install-recommends \
 	autoconf \
+	cpio \
+	curl \
 	g++ \
 	gcc \
-	make \
-	python2 \
-	python3-pip \
-	python3-mysqldb \
-	python3-dev \
-	python3-wheel \
-	zlib1g-dev \
+	git \
 	libfreetype6-dev \
 	libjpeg-dev \
 	libmariadb-dev-compat \
+	make \
 	netcat-openbsd \
-	curl \
-	wget \
-	git \
-	vim \
-	rpm2cpio \
+	python2 \
+	python3-dev \
+	python3-mysqldb \
+	python3-pip \
+	python3-wheel \
 	rpm \
-	cpio \
+	rpm2cpio \
+	vim \
+	wget \
+	zlib1g-dev \
     && echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen \
 	&& locale-gen en_US.UTF-8 \
 	&& update-locale \
