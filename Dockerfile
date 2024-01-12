@@ -30,12 +30,12 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update \
 	git \
 	libfreetype6-dev \
 	libjpeg-dev \
-	libmariadb-dev-compat \
+	default-libmysqlclient-dev \
 	make \
 	netcat-openbsd \
+	pkg-config \
 	python2 \
 	python3-dev \
-	python3-mysqldb \
 	python3-pip \
 	python3-wheel \
 	rpm \
@@ -46,10 +46,11 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update \
     && echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen \
 	&& locale-gen en_US.UTF-8 \
 	&& update-locale \
+    && pip3 install pip --upgrade \
+    && pip3 install setuptools --upgrade \
     && pip3 install gunicorn \
-    && pip3 install setuptools \
     && pip3 install -r /requirements.txt \
-    && apt-get purge -y autoconf g++ make python3-dev libjpeg-dev \
+    && apt-get purge -y autoconf g++ make python3-dev pkg-config libjpeg-dev \
 	&& apt-get autoremove -y \
 	&& rm -rf /var/lib/apt/lists/* \
 	&& apt-get clean
