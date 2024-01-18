@@ -19,7 +19,7 @@ import re
 import tempfile
 import shutil
 import errno
-from pkg_resources import parse_version
+from packaging_legacy.version import parse as parse_version
 import itertools
 import utils
 import recipeparse

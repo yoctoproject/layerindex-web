@@ -17,7 +17,7 @@ import codecs
 import logging
 import subprocess
 from datetime import datetime, timedelta
-from pkg_resources import parse_version
+from packaging_legacy.version import parse as parse_version
 import utils
 import operator
 import re

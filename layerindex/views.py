@@ -11,7 +11,7 @@ import sys
 import re
 from datetime import datetime
 from itertools import islice
-from pkg_resources import parse_version
+from packaging_legacy.version import parse as parse_version
 
 import reversion
 from django import forms

@@ -16,7 +16,7 @@ import os
 import optparse
 import logging
 import re
-from pkg_resources import parse_version
+from packaging_legacy.version import parse as parse_version
 import git
 from datetime import datetime
 import calendar
