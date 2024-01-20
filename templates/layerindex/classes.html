@@ -54,7 +54,10 @@
                     <tbody>
                         {% for class in class_list %}
                             <tr>
-                                <td><a href="{{ class.vcs_web_url }}">{{ class.name }}</a></td>
+                                <td>
+                                    <a href="{{ class.vcs_web_url }}">{{ class.name }}</a>
+                                     <span class="badge badge-info" id="id_bbclass_type">{{ class.bbclass_type }}</span>
+                                </td>
                                 <td><a href="{% url 'layer_item' url_branch class.layerbranch.layer.name %}">{{ class.layerbranch.layer.name }}</a></td>
                             </tr>
                         {% endfor %}

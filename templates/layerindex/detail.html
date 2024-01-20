@@ -311,7 +311,10 @@
                         <tbody>
                             {% for class in classes %}
                                 <tr>
-                                    <td><a href="{{ class.vcs_web_url }}">{{ class.name }}</a></td>
+                                    <td>
+                                        <a href="{{ class.vcs_web_url }}">{{ class.name }}</a>
+                                        <span class="badge badge-info" id="id_bbclass_typ">{{ class.bbclass_type }}</span>
+                                    </td>
                                 </tr>
                             {% endfor %}
                         </tbody>
