@@ -296,7 +296,10 @@ def main():
 
     utils.setup_django()
     import settings
-    from layerindex.models import LayerItem, LayerBranch, LayerDependency, Recipe, RecipeFileDependency, Machine, Distro, BBAppend, BBClass, IncFile
+    from layerindex.models import (LayerItem, LayerBranch, LayerDependency,
+                                   Recipe, RecipeFileDependency, Machine,
+                                   Distro, BBAppend, BBClass,
+                                   BBClassGlobal, BBClassRecipe, IncFile)
     from django.db import transaction
 
     logger.setLevel(options.loglevel)
@@ -644,7 +647,12 @@ def main():
                                 update_distro_conf_file(os.path.join(repodir, path), distro, config_data_copy)
                                 distro.save()
                             elif typename == 'bbclass':
-                                bbclass = BBClass()
+                                if '/classes-global/' in path:
+                                    bbclass = BBClassGlobal()
+                                elif '/classes-recipe/' in path:
+                                    bbclass = BBClassRecipe()
+                                else:
+                                    bbclass = BBClass()
                                 bbclass.layerbranch = layerbranch
                                 bbclass.name = filename
                                 bbclass.save()
@@ -765,7 +773,12 @@ def main():
                                 update_distro_conf_file(fullpath, distro, config_data_copy)
                                 distro.save()
                             elif typename == 'bbclass':
-                                bbclass = BBClass()
+                                if '/classes-global/' in fullpath:
+                                    bbclass = BBClassGlobal()
+                                elif '/classes-recipe/' in fullpath:
+                                    bbclass = BBClassRecipe()
+                                else:
+                                    bbclass = BBClass()
                                 bbclass.layerbranch = layerbranch
                                 bbclass.name = filename
                                 bbclass.save()
