@@ -130,7 +130,7 @@ def setup_layer(config_data, fetchdir, layerdir, layer, layerbranch, logger):
 
 machine_conf_re = re.compile(r'conf/machine/([^/.]*).conf$')
 distro_conf_re = re.compile(r'conf/distro/([^/.]*).conf$')
-bbclass_re = re.compile(r'classes/([^/.]*).bbclass$')
+bbclass_re = re.compile(r'classes(?P<subtype>-global|-recipe)?/(?P<name>[^/.]*).bbclass$')
 def detect_file_type(path, subdir_start):
     typename = None
     if fnmatch.fnmatch(path, "*.bb"):
@@ -149,7 +149,7 @@ def detect_file_type(path, subdir_start):
         res = bbclass_re.match(subpath)
         if res:
             typename = 'bbclass'
-            return (typename, None, res.group(1))
+            return (typename, None, res.group('name'))
         res = distro_conf_re.match(subpath)
         if res:
             typename = 'distro'
