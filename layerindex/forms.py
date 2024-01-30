@@ -187,10 +187,11 @@ class EditLayerForm(StyledModelForm):
     def clean_actual_branch(self):
         import subprocess
         actual_branch = self.cleaned_data['actual_branch'].strip()
-        process = subprocess.Popen(["git", "check-ref-format", "--branch", actual_branch])
-        exit_status = process.wait()
-        if exit_status != 0:
-            raise forms.ValidationError("Actual branch should be a valid git branch short name")
+        if len(actual_branch) > 0:
+            process = subprocess.Popen(["git", "check-ref-format", "--branch", actual_branch])
+            exit_status = process.wait()
+            if exit_status != 0:
+                raise forms.ValidationError("Actual branch should be a valid git branch short name")
         return actual_branch
 
 
