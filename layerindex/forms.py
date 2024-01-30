@@ -118,8 +118,8 @@ class EditLayerForm(StyledModelForm):
 
     def clean_name(self):
         name = self.cleaned_data['name'].strip()
-        if re.compile(r'[^a-z0-9-]').search(name):
-            raise forms.ValidationError("Name must only contain alphanumeric characters and dashes")
+        if re.compile(r'[^a-z0-9-\.]').search(name):
+            raise forms.ValidationError("Name must only contain alphanumeric characters, dashes or periods")
         if name.startswith('-'):
             raise forms.ValidationError("Name must not start with a dash")
         if name.endswith('-'):

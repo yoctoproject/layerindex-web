@@ -17,11 +17,11 @@ urlpatterns = [
         LayerListView.as_view(
             template_name='layerindex/layers.html'),
             name='layer_list'),
-    re_path(r'^layer/(?P<slug>[-\w]+)/$',
+    re_path(r'^layer/(?P<slug>[-\.\w]+)/$',
         LayerDetailView.as_view(
             template_name='layerindex/detail.html'),
             name='layer_item'),
-    re_path(r'^layer/(?P<slug>[-\w]+)/recipes/csv/$',
+    re_path(r'^layer/(?P<slug>[-\.\w]+)/recipes/csv/$',
         layer_export_recipes_csv_view,
         name='layer_export_recipes_csv'),
     re_path(r'^recipes/$',
@@ -40,8 +40,8 @@ urlpatterns = [
         ClassSearchView.as_view(
             template_name='layerindex/classes.html'),
             name='class_search'),
-    re_path(r'^edit/(?P<slug>[-\w]+)/$', edit_layer_view, {'template_name': 'layerindex/editlayer.html'}, name="edit_layer"),
-    re_path(r'^update/(?P<slug>[-\w]+)/$', update_layer_view, {'template_name': 'layerindex/updatelayer.html'}, name="update_layer"),
+    re_path(r'^edit/(?P<slug>[-\.\w]+)/$', edit_layer_view, {'template_name': 'layerindex/editlayer.html'}, name="edit_layer"),
+    re_path(r'^update/(?P<slug>[-\.\w]+)/$', update_layer_view, {'template_name': 'layerindex/updatelayer.html'}, name="update_layer"),
     re_path(r'^duplicates/$',
         DuplicatesView.as_view(
             template_name='layerindex/duplicates.html'),

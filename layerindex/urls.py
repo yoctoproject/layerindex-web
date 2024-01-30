@@ -46,7 +46,7 @@ urlpatterns = [
 
     re_path(r'^layers/$',
         RedirectView.as_view(url=reverse_lazy('layer_list', args=('master',)), permanent=False)),
-    re_path(r'^layer/(?P<slug>[-\w]+)/$',
+    re_path(r'^layer/(?P<slug>[-\.\w]+)/$',
         RedirectParamsView.as_view(permanent=False), {'redirect_name': 'layer_item', 'branch': 'master'}),
     re_path(r'^recipes/$',
         RedirectView.as_view(url=reverse_lazy('recipe_search', args=('master',)), permanent=False)),
@@ -65,23 +65,23 @@ urlpatterns = [
         LayerReviewListView.as_view(
             template_name='layerindex/reviewlist.html'),
         name='layer_list_review'),
-    re_path(r'^review/(?P<slug>[-\w]+)/$',
+    re_path(r'^review/(?P<slug>[-\.\w]+)/$',
         LayerReviewDetailView.as_view(
             template_name='layerindex/reviewdetail.html'),
         name='layer_review'),
-    re_path(r'^layer/(?P<slug>[-\w]+)/addnote/$',
+    re_path(r'^layer/(?P<slug>[-\.\w]+)/addnote/$',
         edit_layernote_view, {'template_name': 'layerindex/editlayernote.html'}, name="add_layernote"),
-    re_path(r'^layer/(?P<slug>[-\w]+)/editnote/(?P<pk>[-\w]+)/$',
+    re_path(r'^layer/(?P<slug>[-\.\w]+)/editnote/(?P<pk>[-\w]+)/$',
         edit_layernote_view, {'template_name': 'layerindex/editlayernote.html'}, name="edit_layernote"),
-    re_path(r'^layer/(?P<slug>[-\w]+)/deletenote/(?P<pk>[-\w]+)/$',
+    re_path(r'^layer/(?P<slug>[-\.\w]+)/deletenote/(?P<pk>[-\w]+)/$',
         delete_layernote_view, {'template_name': 'layerindex/deleteconfirm.html'}, name="delete_layernote"),
-    re_path(r'^layer/(?P<slug>[-\w]+)/delete/$',
+    re_path(r'^layer/(?P<slug>[-\.\w]+)/delete/$',
         delete_layer_view, {'template_name': 'layerindex/deleteconfirm.html'}, name="delete_layer"),
     re_path(r'^recipe/(?P<pk>[-\w]+)/$',
         RecipeDetailView.as_view(
             template_name='layerindex/recipedetail.html'),
         name='recipe'),
-    re_path(r'^layer/(?P<name>[-\w]+)/publish/$', publish_view, name="publish"),
+    re_path(r'^layer/(?P<name>[-\.\w]+)/publish/$', publish_view, name="publish"),
     re_path(r'^layerupdate/(?P<pk>[-\w]+)/$',
         LayerUpdateDetailView.as_view(
             template_name='layerindex/layerupdate.html'),
