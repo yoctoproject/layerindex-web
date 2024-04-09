@@ -431,7 +431,8 @@ The latest version of the code can always be found here:
   http://git.yoctoproject.org/cgit/cgit.cgi/layerindex-web/
 
 Contributions are welcome. Please send patches / pull requests to
-yocto@lists.yoctoproject.org with '[layerindex-web]' in the subject.
+yocto-patches@lists.yoctoproject.org with '[layerindex-web]' in the
+subject.
 
 
 
