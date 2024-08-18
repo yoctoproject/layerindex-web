@@ -1672,7 +1672,7 @@ def email_test_view(request):
         'help_contact': _get_help_contact(),
     }
     subject = '%s: test email' % site_name
-    from_email = settings.SUBMIT_EMAIL_FROM
+    from_email = settings.DEFAULT_FROM_EMAIL if settings.DEFAULT_FROM_EMAIL else settings.SUBMIT_EMAIL_FROM
     to_email = request.user.email
     text_content = plaintext.render(d)
     tasks.send_email.apply_async((subject, text_content, from_email, [to_email]))
