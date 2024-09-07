@@ -174,13 +174,13 @@ def main():
                 sys.exit(1)
 
             for recipe in layerbranch.recipe_set.all():
-                recipe_upstream_query = RecipeUpstream.objects.filter(recipe =
-                        recipe, history = recipe_upstream_history)
+                recipe_upstream_query = RecipeUpstream.objects.filter(recipesymbol__pn =
+                        recipe.pn, history = recipe_upstream_history)
                 if recipe_upstream_query and recipe_upstream_query[0].status == 'N':
                     recipes[recipe] = {}
 
-                    recipe_maintainer = RecipeMaintainer.objects.filter(recipe =
-                            recipe, history = recipe_maintainer_history)[0]
+                    recipe_maintainer = RecipeMaintainer.objects.filter(recipesymbol__pn =
+                            recipe.pn, history = recipe_maintainer_history)[0]
                     recipes[recipe]['maintainer'] = recipe_maintainer
                     recipes[recipe]['upstream'] = recipe_upstream_query[0]
 
