@@ -33,7 +33,13 @@ if not fetchdir:
     sys.exit(1)
 
 # setup bitbake path
-bitbakepath = os.path.join(fetchdir, 'bitbake')
+from layerindex.models import LayerItem
+bitbakeitem = LayerItem()
+bitbakeitem.vcs_url = settings.BITBAKE_REPO_URL
+bitbakepath = os.path.join(fetchdir, bitbakeitem.get_fetch_dir())
+if getattr(settings, 'BITBAKE_PATH', ''):
+    bitbakepath = os.path.join(bitbakepath, settings.BITBAKE_PATH)
+
 sys.path.insert(0, os.path.join(bitbakepath, 'lib'))
 
 
