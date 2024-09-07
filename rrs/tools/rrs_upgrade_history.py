@@ -31,11 +31,16 @@ import settings
 
 logger = get_logger("HistoryUpgrade", settings)
 fetchdir = settings.LAYER_FETCH_DIR
-bitbakepath = os.path.join(fetchdir, 'bitbake')
 if not fetchdir:
     logger.error("Please set LAYER_FETCH_DIR in settings.py")
     sys.exit(1)
 
+from layerindex.models import LayerItem
+bitbakeitem = LayerItem()
+bitbakeitem.vcs_url = settings.BITBAKE_REPO_URL
+bitbakepath = os.path.join(fetchdir, bitbakeitem.get_fetch_dir())
+if getattr(settings, 'BITBAKE_PATH', ''):
+    bitbakepath = os.path.join(bitbakepath, settings.BITBAKE_PATH)
 
 def run_internal(maintplanlayerbranch, commit, commitdate, options, logger, bitbake_map, initial=False):
     from layerindex.models import PythonEnvironment
