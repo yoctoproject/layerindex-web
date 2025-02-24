@@ -24,7 +24,8 @@ import settings
 from layerindex.models import (Branch, ClassicRecipe,
                                LayerBranch, LayerItem, LayerMaintainer,
                                LayerNote, RecipeChange, RecipeChangeset,
-                               SecurityQuestion, UserProfile, PatchDisposition)
+                               SecurityQuestion, UserProfile, PatchDisposition,
+                               YPCompatibleVersion)
 
 
 class StyledForm(forms.Form):
@@ -77,6 +78,7 @@ class EditLayerForm(StyledModelForm):
     # Additional form fields
     vcs_subdir = forms.CharField(label='Repository subdirectory', max_length=60, required=False, help_text='Subdirectory within the repository where the layer is located, if not in the root (usually only used if the repository contains more than one layer)')
     actual_branch = forms.CharField(label='Actual branch', max_length=80, required=False, help_text='Name of the actual branch in the repository matching the core branch (e.g. the development branch is "master" by default)')
+    yp_compatible_version = forms.ModelChoiceField(label='Yocto Project Compatible version', queryset=YPCompatibleVersion.objects.all(), required=False)
     deps = forms.ModelMultipleChoiceField(label='Other layers this layer depends upon', queryset=LayerItem.objects.filter(comparison=False), required=False)
     captcha = CaptchaField(label='Verification', help_text='Please enter the letters displayed for verification purposes', error_messages={'invalid':'Incorrect entry, please try again'})
 
@@ -109,6 +111,9 @@ class EditLayerForm(StyledModelForm):
         self.fields = new_fields
         self.fields['vcs_subdir'].initial = layerbranch.vcs_subdir
         self.fields['actual_branch'].initial = layerbranch.actual_branch
+        self.fields['yp_compatible_version'].initial = layerbranch.yp_compatible_version
+        if not user.is_staff:
+            self.fields['yp_compatible_version'].widget.attrs['disabled'] = True
         self.was_saved = False
         self.allow_base_type = allow_base_type
 
