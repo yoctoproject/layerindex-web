@@ -31,9 +31,9 @@ fi
 # This will ask for the password twice, not much we can really do about
 # that though
 # First, get the structure without data
-mysqldump $1 -u root -p --no-data > $2
+mariadb-dump $1 -u root -p --no-data > $2
 # Second, the data with a number of exclusions
-mysqldump $1 -u root -p --no-create-info \
+mariadb-dump $1 -u root -p --no-create-info \
   --ignore-table=$1.auth_group \
   --ignore-table=$1.auth_group_permissions \
   --ignore-table=$1.auth_permission \

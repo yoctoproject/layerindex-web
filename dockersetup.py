@@ -798,7 +798,7 @@ while True:
     env = os.environ.copy()
     env['MYSQL_PWD'] = dbapassword
     # Dummy command, we just want to establish that the db can be connected to
-    return_code = subprocess.call("echo | docker-compose exec -T -e MYSQL_PWD layersdb mysql -uroot layersdb", shell=True, env=env)
+    return_code = subprocess.call("echo | docker-compose exec -T -e MYSQL_PWD layersdb mariadb -uroot layersdb", shell=True, env=env)
     if return_code == 0:
         break
     else:
@@ -820,7 +820,7 @@ if not args.update:
             catcmd = 'cat'
         env = os.environ.copy()
         env['MYSQL_PWD'] = dbapassword
-        return_code = subprocess.call("%s %s | docker-compose exec -T -e MYSQL_PWD layersdb mysql -uroot layersdb" % (catcmd, quote(args.databasefile)), shell=True, env=env)
+        return_code = subprocess.call("%s %s | docker-compose exec -T -e MYSQL_PWD layersdb mariadb -uroot layersdb" % (catcmd, quote(args.databasefile)), shell=True, env=env)
         if return_code != 0:
             print("Database import failed")
             sys.exit(1)
@@ -848,7 +848,7 @@ if not args.update:
         # (avoids password being visible through ps or /proc/<pid>/cmdline)
         env = os.environ.copy()
         env['MYSQL_PWD'] = dbapassword
-        return_code = subprocess.call("docker-compose exec -T -e MYSQL_PWD layersdb mysql -uroot layersdb < " + quote(sqlscriptfile), shell=True, env=env)
+        return_code = subprocess.call("docker-compose exec -T -e MYSQL_PWD layersdb mariadb -uroot layersdb < " + quote(sqlscriptfile), shell=True, env=env)
         if return_code != 0:
             print("Creating database user failed")
             sys.exit(1)
