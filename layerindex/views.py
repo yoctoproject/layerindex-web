@@ -204,6 +204,11 @@ def edit_layer_view(request, template_name, branch='master', slug=None):
                     reset_last_rev = True
                 layerbranch.save()
                 maintainerformset.save()
+                if (request.user.is_authenticated and request.user.is_staff):
+                    new_yp_compatible = form.cleaned_data['yp_compatible_version']
+                    if layerbranch.yp_compatible_version != new_yp_compatible:
+                        layerbranch.yp_compatible_version = new_yp_compatible
+                    layerbranch.save()
                 if slug:
                     new_deps = form.cleaned_data['deps']
                     existing_deps = [deprec.dependency for deprec in layerbranch.dependencies_set.all()]
