@@ -184,7 +184,7 @@ def handle_recipe_depends(recipe, depends, packageconfig_opts, logger):
     dynamicdeps = list(recipe.dynamicbuilddep_set.values_list('name', flat=True))
     PackageConfig.objects.filter(recipe=recipe).delete()
     for key, value in packageconfig_opts.items():
-        if key == "doc":
+        if key in ["doc", "vardeps"]:
             continue
         package_config = PackageConfig()
         package_config.feature = key
