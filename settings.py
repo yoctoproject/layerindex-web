@@ -7,7 +7,7 @@
 
 import os
 
-DEBUG = False
+DEBUG = bool(os.getenv('DEBUG', False))
 
 ADMINS = (
     # ('Your Name', 'your_email@example.com'),
@@ -17,12 +17,12 @@ MANAGERS = ADMINS
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.', # Add 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
-        'NAME': '',                      # Or path to database file if using sqlite3 (full path recommended).
-        'USER': '',                      # Not used with sqlite3.
-        'PASSWORD': '',                  # Not used with sqlite3.
-        'HOST': '',                      # Set to empty string for localhost. Not used with sqlite3.
-        'PORT': '',                      # Set to empty string for default. Not used with sqlite3.
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'layersdb',
+        'USER': os.getenv('DATABASE_USER', 'root'),
+        'PASSWORD': os.getenv('DATABASE_PASSWORD', 'testingpw'),
+        'HOST': os.getenv('DATABASE_HOST', 'layersdb'),
+        'PORT': '',
     }
 }
 
@@ -33,7 +33,7 @@ DATABASES = {
 # timezone as the operating system.
 # If running in a Windows environment this must be set to the same as your
 # system time zone.
-TIME_ZONE = 'Europe/London'
+TIME_ZONE = 'Etc/UTC'
 
 # Language code for this installation. All choices can be found here:
 # http://www.i18nguy.com/unicode/language-identifiers.html
@@ -65,7 +65,7 @@ MEDIA_URL = ''
 # Don't put anything in this directory yourself; store your static files
 # in apps' "static/" subdirectories and in STATICFILES_DIRS.
 # Example: "/home/media/media.lawrence.com/static/"
-STATIC_ROOT = ''
+STATIC_ROOT = os.getenv('STATIC_ROOT', '')
 
 # URL prefix for static files.
 # Example: "http://media.lawrence.com/static/"
@@ -92,7 +92,7 @@ STATICFILES_FINDERS = (
 )
 
 # Make this unique, and don't share it with anybody.
-SECRET_KEY = ''
+SECRET_KEY = os.getenv('SECRET_KEY', '')
 
 MIDDLEWARE = (
     'corsheaders.middleware.CorsMiddleware',
@@ -231,12 +231,17 @@ MESSAGE_TAGS = {
 
 # Registration settings
 ACCOUNT_ACTIVATION_DAYS = 2
-EMAIL_HOST = 'smtp.example.com'
-DEFAULT_FROM_EMAIL = 'noreply@example.com'
+EMAIL_HOST = os.getenv('EMAIL_HOST', 'layers.test')
+EMAIL_PORT = os.getenv('EMAIL_PORT', '25')
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', False)
+EMAIL_USE_SSL = os.getenv('EMAIL_USE_SSL', False)
+EMAIL_HOST_USER = os.getenv('EMAIL_USER', '')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_PASSWORD', '')
+DEFAULT_FROM_EMAIL = 'noreply@' + os.getenv('HOSTNAME', 'layers.test')
 LOGIN_REDIRECT_URL = '/layerindex'
 
 # Full path to directory where layers should be fetched into by the update script
-LAYER_FETCH_DIR = ""
+LAYER_FETCH_DIR = os.getenv('LAYER_FETCH_DIR', '/opt/workdir')
 
 # Base temporary directory in which to create a directory in which to run BitBake
 TEMP_BASE_DIR = "/tmp"
@@ -258,21 +263,21 @@ REMOVE_LAYER_DEPENDENCIES = False
 
 # Always use https:// for review URLs in emails (since it may be redirected to
 # the login page)
-FORCE_REVIEW_HTTPS = False
+FORCE_REVIEW_HTTPS = os.getenv('FORCE_REVIEW_HTTPS', False)
 
 # False to allow accounts without security questions to reset their password
 SECURITY_QUESTIONS_REQUIRED = True
 
 # Settings for layer submission feature
-SUBMIT_EMAIL_FROM = 'noreply@example.com'
+SUBMIT_EMAIL_FROM = 'noreply@' + os.getenv('HOSTNAME', 'layers.test')
 SUBMIT_EMAIL_SUBJECT = 'OE Layerindex layer submission'
 
 # Send email to maintainer(s) when their layer is published
 SEND_PUBLISH_EMAIL = True
 
 # RabbitMQ settings
-RABBIT_BROKER = 'amqp://'
-RABBIT_BACKEND = 'rpc://'
+RABBIT_BROKER = os.getenv('RABBIT_BROKER')
+RABBIT_BACKEND = os.getenv('RABBIT_BACKEND', 'rpc://layersrabbit/')
 
 # Used for fetching repo
 PARALLEL_JOBS = "4"
@@ -299,3 +304,11 @@ TASK_LOG_DIR = "/tmp/layerindex-task-logs"
 
 # Full path to directory where rrs tools stores logs
 TOOLS_LOG_DIR = ""
+
+USE_X_FORWARDED_HOST = bool(os.getenv('USE_X_FORWARDED_HOST', True))
+ALLOWED_HOSTS = [os.getenv('HOSTNAME', 'layers.test')]
+CSRF_TRUSTED_ORIGINS = ['https://' + os.getenv('HOSTNAME', 'layers.test')]
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+
