@@ -227,6 +227,7 @@ MESSAGE_TAGS = {
 
 # Registration settings
 ACCOUNT_ACTIVATION_DAYS = 2
+EMAIL_BACKEND = os.getenv("EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend")
 EMAIL_HOST = os.getenv("EMAIL_HOST", "layers.test")
 EMAIL_PORT = os.getenv("EMAIL_PORT", "25")
 EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", False)
