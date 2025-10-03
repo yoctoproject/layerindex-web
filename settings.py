@@ -7,7 +7,7 @@
 
 import os
 
-DEBUG = bool(os.getenv('DEBUG', False))
+DEBUG = bool(os.getenv("DEBUG", 0))
 
 ADMINS = (
     # ('Your Name', 'your_email@example.com'),
@@ -16,13 +16,13 @@ ADMINS = (
 MANAGERS = ADMINS
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'layersdb',
-        'USER': os.getenv('DATABASE_USER', 'root'),
-        'PASSWORD': os.getenv('DATABASE_PASSWORD', 'testingpw'),
-        'HOST': os.getenv('DATABASE_HOST', 'layersdb'),
-        'PORT': '',
+    "default": {
+        "ENGINE": "django.db.backends.mysql",
+        "NAME": "layerindex",
+        "USER": os.getenv("DATABASE_USER", "root"),
+        "PASSWORD": os.getenv("DATABASE_PASSWORD", "testingpw"),
+        "HOST": os.getenv("DATABASE_HOST", "db"),
+        "PORT": "",
     }
 }
 
@@ -33,11 +33,11 @@ DATABASES = {
 # timezone as the operating system.
 # If running in a Windows environment this must be set to the same as your
 # system time zone.
-TIME_ZONE = 'Etc/UTC'
+TIME_ZONE = "Etc/UTC"
 
 # Language code for this installation. All choices can be found here:
 # http://www.i18nguy.com/unicode/language-identifiers.html
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = "en-us"
 
 SITE_ID = 1
 
@@ -54,27 +54,27 @@ BASE_DIR = os.path.dirname(__file__)
 
 # Absolute filesystem path to the directory that will hold user-uploaded files.
 # Example: "/home/media/media.lawrence.com/media/"
-MEDIA_ROOT = ''
+MEDIA_ROOT = ""
 
 # URL that handles the media served from MEDIA_ROOT. Make sure to use a
 # trailing slash.
 # Examples: "http://media.lawrence.com/media/", "http://example.com/media/"
-MEDIA_URL = ''
+MEDIA_URL = ""
 
 # Absolute path to the directory static files should be collected to.
 # Don't put anything in this directory yourself; store your static files
 # in apps' "static/" subdirectories and in STATICFILES_DIRS.
 # Example: "/home/media/media.lawrence.com/static/"
-STATIC_ROOT = os.getenv('STATIC_ROOT', '')
+STATIC_ROOT = os.getenv("STATIC_ROOT", "")
 
 # URL prefix for static files.
 # Example: "http://media.lawrence.com/static/"
-STATIC_URL = '/static/'
+STATIC_URL = "/static/"
 
 # URL prefix for admin static files -- CSS, JavaScript and images.
 # Make sure to use a trailing slash.
 # Examples: "http://foo.com/static/admin/", "/static/admin/".
-ADMIN_MEDIA_PREFIX = '/static/admin/'
+ADMIN_MEDIA_PREFIX = "/static/admin/"
 
 # Additional locations of static files
 STATICFILES_DIRS = (
@@ -86,115 +86,113 @@ STATICFILES_DIRS = (
 # List of finder classes that know how to find static files in
 # various locations.
 STATICFILES_FINDERS = (
-    'django.contrib.staticfiles.finders.FileSystemFinder',
-    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
-#    'django.contrib.staticfiles.finders.DefaultStorageFinder',
+    "django.contrib.staticfiles.finders.FileSystemFinder",
+    "django.contrib.staticfiles.finders.AppDirectoriesFinder",
+    #    'django.contrib.staticfiles.finders.DefaultStorageFinder',
 )
 
 # Make this unique, and don't share it with anybody.
-SECRET_KEY = os.getenv('SECRET_KEY', '')
+SECRET_KEY = os.getenv("SECRET_KEY", "")
 
 MIDDLEWARE = (
-    'corsheaders.middleware.CorsMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'axes.middleware.AxesMiddleware',
-    'layerindex.middleware.NonAtomicRevisionMiddleware',
+    "corsheaders.middleware.CorsMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "axes.middleware.AxesMiddleware",
+    "layerindex.middleware.NonAtomicRevisionMiddleware",
 )
 
 # We allow CORS calls from everybody
 CORS_ORIGIN_ALLOW_ALL = True
 # for the API pages
-CORS_URLS_REGEX = r'.*/api/.*';
+CORS_URLS_REGEX = r".*/api/.*"
 
 
 # Clickjacking protection
-X_FRAME_OPTIONS = 'DENY'
+X_FRAME_OPTIONS = "DENY"
 
-ROOT_URLCONF = 'urls'
+ROOT_URLCONF = "urls"
 
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [
             BASE_DIR + "/templates",
         ],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.contrib.auth.context_processors.auth',
-                'django.template.context_processors.debug',
-                'django.template.context_processors.i18n',
-                'django.template.context_processors.media',
-                'django.template.context_processors.static',
-                'django.template.context_processors.tz',
-                'django.contrib.messages.context_processors.messages',
-                'django.template.context_processors.request',
-                'layerindex.context_processors.layerindex_context',
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.contrib.auth.context_processors.auth",
+                "django.template.context_processors.debug",
+                "django.template.context_processors.i18n",
+                "django.template.context_processors.media",
+                "django.template.context_processors.static",
+                "django.template.context_processors.tz",
+                "django.contrib.messages.context_processors.messages",
+                "django.template.context_processors.request",
+                "layerindex.context_processors.layerindex_context",
             ],
         },
     },
 ]
 
 # New in Django 3.2
-DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
+DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 
 INSTALLED_APPS = (
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.sites',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-    'django.contrib.admin',
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.sites",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
+    "django.contrib.admin",
     # Uncomment the next line to enable admin documentation:
     # 'django.contrib.admindocs',
-    'layerindex',
-    'django_registration',
-    'reversion',
-    'reversion_compare',
-    'captcha',
-    'axes',
-    'rest_framework',
-    'corsheaders',
+    "layerindex",
+    "django_registration",
+    "reversion",
+    "reversion_compare",
+    "captcha",
+    "axes",
+    "rest_framework",
+    "corsheaders",
 )
 
 AUTHENTICATION_BACKENDS = [
-    'axes.backends.AxesBackend',
-    'django.contrib.auth.backends.ModelBackend',
+    "axes.backends.AxesBackend",
+    "django.contrib.auth.backends.ModelBackend",
 ]
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
     {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-        'OPTIONS': {
-            'min_length': 8,
-        }
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+        "OPTIONS": {
+            "min_length": 8,
+        },
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
     {
-        'NAME': 'password_validation.ComplexityValidator',
+        "NAME": "password_validation.ComplexityValidator",
     },
 ]
 
 REST_FRAMEWORK = {
-    'DEFAULT_PERMISSION_CLASSES': (
-        'layerindex.restperm.ReadOnlyPermission',
-    ),
-    'DATETIME_FORMAT': '%Y-%m-%dT%H:%m:%S+0000',
+    "DEFAULT_PERMISSION_CLASSES": ("layerindex.restperm.ReadOnlyPermission",),
+    "DATETIME_FORMAT": "%Y-%m-%dT%H:%m:%S+0000",
 }
 
 # A sample logging configuration. The only tangible logging
@@ -203,45 +201,43 @@ REST_FRAMEWORK = {
 # See http://docs.djangoproject.com/en/dev/topics/logging for
 # more details on how to customize your logging configuration.
 LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'handlers': {
-        'mail_admins': {
-            'level': 'ERROR',
-            'class': 'django.utils.log.AdminEmailHandler'
-        }
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "mail_admins": {"level": "ERROR", "class": "django.utils.log.AdminEmailHandler"}
     },
-    'loggers': {
-        'django.request': {
-            'handlers': ['mail_admins'],
-            'level': 'ERROR',
-            'propagate': True,
+    "loggers": {
+        "django.request": {
+            "handlers": ["mail_admins"],
+            "level": "ERROR",
+            "propagate": True,
         },
-    }
+    },
 }
 
 # Set bootstrap alert CSS styles for each message level
 from django.contrib.messages import constants as messages
+
 MESSAGE_TAGS = {
-    messages.SUCCESS: 'alert-success',
-    messages.INFO: 'alert-info',
-    messages.WARNING: 'alert-warning',
-    messages.ERROR: 'alert-danger',
+    messages.SUCCESS: "alert-success",
+    messages.INFO: "alert-info",
+    messages.WARNING: "alert-warning",
+    messages.ERROR: "alert-danger",
 }
 
 # Registration settings
 ACCOUNT_ACTIVATION_DAYS = 2
-EMAIL_HOST = os.getenv('EMAIL_HOST', 'layers.test')
-EMAIL_PORT = os.getenv('EMAIL_PORT', '25')
-EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', False)
-EMAIL_USE_SSL = os.getenv('EMAIL_USE_SSL', False)
-EMAIL_HOST_USER = os.getenv('EMAIL_USER', '')
-EMAIL_HOST_PASSWORD = os.getenv('EMAIL_PASSWORD', '')
-DEFAULT_FROM_EMAIL = 'noreply@' + os.getenv('HOSTNAME', 'layers.test')
-LOGIN_REDIRECT_URL = '/layerindex'
+EMAIL_HOST = os.getenv("EMAIL_HOST", "layers.test")
+EMAIL_PORT = os.getenv("EMAIL_PORT", "25")
+EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", False)
+EMAIL_USE_SSL = os.getenv("EMAIL_USE_SSL", False)
+EMAIL_HOST_USER = os.getenv("EMAIL_USER", "")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_PASSWORD", "")
+DEFAULT_FROM_EMAIL = "noreply@" + os.getenv("HOSTNAME", "layers.test")
+LOGIN_REDIRECT_URL = "/layerindex"
 
 # Full path to directory where layers should be fetched into by the update script
-LAYER_FETCH_DIR = os.getenv('LAYER_FETCH_DIR', '/opt/workdir')
+LAYER_FETCH_DIR = os.getenv("LAYER_FETCH_DIR", "/opt/workdir")
 
 # Base temporary directory in which to create a directory in which to run BitBake
 TEMP_BASE_DIR = "/tmp"
@@ -263,36 +259,36 @@ REMOVE_LAYER_DEPENDENCIES = False
 
 # Always use https:// for review URLs in emails (since it may be redirected to
 # the login page)
-FORCE_REVIEW_HTTPS = os.getenv('FORCE_REVIEW_HTTPS', False)
+FORCE_REVIEW_HTTPS = os.getenv("FORCE_REVIEW_HTTPS", False)
 
 # False to allow accounts without security questions to reset their password
 SECURITY_QUESTIONS_REQUIRED = True
 
 # Settings for layer submission feature
-SUBMIT_EMAIL_FROM = 'noreply@' + os.getenv('HOSTNAME', 'layers.test')
-SUBMIT_EMAIL_SUBJECT = 'OE Layerindex layer submission'
+SUBMIT_EMAIL_FROM = "noreply@" + os.getenv("HOSTNAME", "layers.test")
+SUBMIT_EMAIL_SUBJECT = "OE Layerindex layer submission"
 
 # Send email to maintainer(s) when their layer is published
 SEND_PUBLISH_EMAIL = True
 
 # RabbitMQ settings
-RABBIT_BROKER = os.getenv('RABBIT_BROKER')
-RABBIT_BACKEND = os.getenv('RABBIT_BACKEND', 'rpc://layersrabbit/')
+RABBIT_BROKER = os.getenv("RABBIT_BROKER")
+RABBIT_BACKEND = os.getenv("RABBIT_BACKEND", "rpc://layersrabbit/")
 
 # Used for fetching repo
 PARALLEL_JOBS = "4"
 
 # Install flite & sox and set these to enable audio for CAPTCHA challenges (for accessibility)
-#CAPTCHA_FLITE_PATH = "/usr/bin/flite"
-#CAPTCHA_SOX_PATH = "/usr/bin/sox"
+# CAPTCHA_FLITE_PATH = "/usr/bin/flite"
+# CAPTCHA_SOX_PATH = "/usr/bin/sox"
 
 CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
     },
-    'axes_cache': {
-        'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
-    }
+    "axes_cache": {
+        "BACKEND": "django.core.cache.backends.dummy.DummyCache",
+    },
 }
 AXES_CACHE = "axes_cache"
 AXES_LOCKOUT_TEMPLATE = "registration/account_lockout.html"
@@ -305,10 +301,9 @@ TASK_LOG_DIR = "/tmp/layerindex-task-logs"
 # Full path to directory where rrs tools stores logs
 TOOLS_LOG_DIR = ""
 
-USE_X_FORWARDED_HOST = bool(os.getenv('USE_X_FORWARDED_HOST', True))
-ALLOWED_HOSTS = [os.getenv('HOSTNAME', 'layers.test')]
-CSRF_TRUSTED_ORIGINS = ['https://' + os.getenv('HOSTNAME', 'layers.test')]
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+USE_X_FORWARDED_HOST = bool(os.getenv("USE_X_FORWARDED_HOST", True))
+ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "localhost").split(",")
+CSRF_TRUSTED_ORIGINS = ["https://" + os.getenv("HOSTNAME", "layers.test")]
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
-

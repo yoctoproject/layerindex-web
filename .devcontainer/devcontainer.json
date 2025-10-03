@@ -1,0 +1,54 @@
+{
+  "name": "Layerindex Web Development Container",
+  "dockerComposeFile": "../docker-compose.yml",
+  "service": "app",
+  "workspaceFolder": "/app",
+  "postCreateCommand": "python manage.py migrate",
+  "remoteUser": "layerindex",
+  "features": {
+    // Install git
+    "ghcr.io/devcontainers/features/git:1": {},
+    "ghcr.io/devcontainers/features/python:1": "none",
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "username": "layerindex"
+    }
+  },
+  "forwardPorts": [
+    8000
+  ],
+  "mounts": [
+    // Expose ~/.ssh to the container - read only - so we can push to git
+    "source=${localEnv:HOME}/.ssh,target=/home/layerindex/.ssh,type=bind,ro,consistency=cached"
+  ],
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        // Python extensions, since this is a Python/Django project
+        "ms-python.python",
+        // Include Pylance for type checking
+        "ms-python.vscode-pylance",
+        // Debugging support
+        "ms-python.debugpy",
+        // Ruff linter
+        "charliermarsh.ruff",
+        // Beautiful syntax and scoped snippets for Django
+        "batisteo.vscode-django"
+      ],
+      // Set *default* container specific settings.json values on container create.
+      "settings": {
+        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "remote.autoForwardPorts": false,
+        // following settings keep in sync with .vscode/settings.json
+        "editor.formatOnSaveMode": "modifications",
+        "[jsonc]": {
+          "editor.defaultFormatter": "vscode.json-language-features"
+        },
+        "[python]": {
+          "editor.defaultFormatter": "charliermarsh.ruff"
+        },
+        "python.testing.unittestEnabled": false,
+        "python.testing.pytestEnabled": true
+      }
+    }
+  }
+}

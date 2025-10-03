@@ -1,94 +1,53 @@
 services:
-  layersdb:
+  db:
     image: mariadb:lts
+    environment:
+      MARIADB_DATABASE: layerindex
+      MARIADB_ROOT_PASSWORD: testingpw
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      start_period: 10s
+      interval: 5s
+      timeout: 5s
+      retries: 5
     command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --wait_timeout=28800 --max_allowed_packet=128M
-    environment:
-     - "MYSQL_DATABASE=layersdb"
-     - "MYSQL_ROOT_PASSWORD=testingpw"
-    restart: unless-stopped
-  layersapp:
-    depends_on:
-      - layersdb
-    build: .
-    image: halstead/layerindex-app
-    hostname: localhost
-    volumes:
-     - layersmeta:/opt/workdir
-     - logvolume:/opt/layerindex-task-logs:z
-    environment:
-     #- "SECRET_KEY=<set this here>"
-     - "DATABASE_USER=root"
-     - "DATABASE_PASSWORD=testingpw"
-     - "DATABASE_HOST=layersdb"
-     - "RABBITMQ_DEFAULT_USER=guest"
-     - "RABBITMQ_DEFAULT_PASS=guest"
-     #- "EMAIL_HOST=<set this here>"
-     #- "EMAIL_PORT=<set this here if not the default>"
-     #- "EMAIL_USER=<set this here if needed>"
-     #- "EMAIL_PASSWORD=<set this here if needed>"
-     #- "EMAIL_USE_SSL=<set this here if needed>"
-     #- "EMAIL_USE_TLS=<set this here if needed>"
-     #- "DEBUG=1"
-    restart: unless-stopped
-  layersweb:
-    depends_on:
-      - layersapp
-    build:
-      context: .
-      dockerfile: Dockerfile.web
-    image: halstead/layerindex-web
-    hostname: localhost
-    ports:
-     - "8080:80"
-    ## For production you want these instead
-    # - "80:80"
-    # - "443:443"
-    volumes:
-     - layersstatic:/usr/share/nginx/html
-     - ./docker/certs:/opt/cert
-     - certbotwww:/var/www/certbot:z
-    command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
-    restart: unless-stopped
-  layersrabbit:
+
+  rabbitmq:
     image: rabbitmq:alpine
-    restart: unless-stopped
-    environment:
-     - "RABBITMQ_DEFAULT_USER=guest"
-     - "RABBITMQ_DEFAULT_PASS=guest"
-  layerscelery:
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      start_period: 10s
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
     depends_on:
-      - layersdb
-      - layersapp
-      - layersrabbit
-    image: halstead/layerindex-app
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    build: .
+    image: yoctoproject/layerindex-web
     volumes:
-     - layersmeta:/opt/workdir
-     - logvolume:/opt/layerindex-task-logs:z
-    environment:
-     #- "SECRET_KEY=<set this here>"
-     - "DATABASE_USER=layers"
-     - "DATABASE_PASSWORD=testingpw"
-     - "DATABASE_HOST=layersdb"
-     - "RABBITMQ_DEFAULT_USER=guest"
-     - "RABBITMQ_DEFAULT_PASS=guest"
-     #- "EMAIL_HOST=<set this here>"
-     #- "EMAIL_PORT=<set this here if not the default>"
-     #- "EMAIL_USER=<set this here if needed>"
-     #- "EMAIL_PASSWORD=<set this here if needed>"
-     #- "EMAIL_USE_SSL=<set this here if needed>"
-     #- "EMAIL_USE_TLS=<set this here if needed>"
-     #- "DEBUG=1"
-    restart: unless-stopped
-    command: /usr/local/bin/celery --workdir=/opt/layerindex --app layerindex.tasks worker --loglevel=INFO
-  #layerscertbot:
-  #  image: certbot/certbot
-  #  volumes:
-  #   - ./docker/certs:/opt/cert
-  #   - certbotwww:/var/www/certbot:z
-  #  entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+      - .:/app
+      - layerindex-data:/opt/layerindex-data
+    env_file:
+      - .env.docker
+
+  celery:
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    image: yoctoproject/layerindex-web
+    volumes:
+      - .:/app:ro
+      - layerindex-data:/opt/layerindex-web
+    env_file:
+      - .env.docker
+    command: /usr/local/bin/celery --workdir=/app --app layerindex.tasks worker --loglevel=INFO
 
 volumes:
-  layersmeta:
-  layersstatic:
-  logvolume:
-  certbotwww:
+  layerindex-data:
