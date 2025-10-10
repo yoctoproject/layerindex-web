@@ -1,0 +1,51 @@
+VSCode + DevContainers Setup
+----------------------------
+
+If you already use VSCode and Docker, you can setup the local development
+environment using preconfigured DevContainers extension.
+
+Getting Started
+---------------
+
+1. Install Dev Containers extension (ms-vscode-remote.remote-containers)
+2. Open local clone of this repository in VSCode
+3. Click on "Reopen in Container" when prompted by VSCode
+4. Wait 1-2 minutes for VSCode to setup your DevContainer
+
+Once the DevContainer setup process is completed, you'll have access to:
+
+* fully functioning local version of layerindex-web with hot-reloading
+* all Django database migrations applied
+* layerindex-web HTTP port exposed on http://localhost:8000
+* pytest autodiscovery + functioning debugger in VSCode > Testing
+* preconfigured database client using mtxr.sqltools-driver-mysql
+* code linting and formatting with ruff
+* command line git support with your SSH keys mounted in the container
+
+FAQ
+---
+
+1.  How do I import master branch from the public instance?
+
+    Run the following command in the VSCode terminal:
+
+    $ layerindex/tools/import_layers.py https://layers.openembedded.org
+
+
+2.  How do I see emails sent by the system?
+
+    Emails are logged to the standard output of the layerindex-web container.
+
+    To see the logs:
+
+    1. Open the Command Palette: Ctrl+Shift+P / Cmd+Shift+P
+    2. Type: "Remote Explorer: Focus on Dev Containers View"
+    3. Right-click on the layerindex-web container
+    4. Select "Show Container Log"
+
+
+3.  How do I interact with Django's manage.py script?
+
+    Open a new terminal window in VSCode and type:
+
+    $ ./manage.py ...
