@@ -7,5 +7,22 @@
     "editor.defaultFormatter": "charliermarsh.ruff"
   },
   "python.testing.unittestEnabled": false,
-  "python.testing.pytestEnabled": true
+  "python.testing.pytestEnabled": true,
+  "sqltools.connections": [
+    {
+      "mysqlOptions": {
+        "authProtocol": "default",
+        "enableSsl": "Disabled"
+      },
+      "ssh": "Disabled",
+      "previewLimit": 50,
+      "server": "db",
+      "port": 3306,
+      "driver": "MariaDB",
+      "name": "layerindex",
+      "database": "layerindex",
+      "username": "root",
+      "password": "testingpw"
+    }
+  ]
 }
