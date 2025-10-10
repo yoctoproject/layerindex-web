@@ -400,7 +400,7 @@ def setup_django():
     # Get access to our Django model
     newpath = os.path.abspath(os.path.dirname(__file__) + '/..')
     sys.path.append(newpath)
-    os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "settings")
     django.setup()
 
 def logger_create(name):

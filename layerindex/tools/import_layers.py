@@ -61,7 +61,7 @@ def main():
         loglevel = logging.INFO
 
     utils.setup_django()
-    import settings
+    from django.conf import settings
     from layerindex.models import Branch, LayerItem, LayerBranch, LayerDependency, LayerMaintainer, LayerNote, Recipe, Source, Patch, PackageConfig, StaticBuildDep, DynamicBuildDep, RecipeFileDependency, Machine, Distro, BBClass, BBAppend, IncFile
     from django.db import transaction
 

@@ -31,7 +31,7 @@ def main():
     # Get access to our Django model
     newpath = os.path.abspath(os.path.dirname(os.path.abspath(sys.argv[0])) + '/..')
     sys.path.append(newpath)
-    os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "settings")
 
     from django.core.management import setup_environ
     from django.conf import settings
