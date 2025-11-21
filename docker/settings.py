@@ -50,7 +50,7 @@ USE_I18N = True
 USE_L10N = True
 
 # Avoid specific paths
-BASE_DIR = os.path.dirname(__file__)
+BASE_DIR = os.getenv('BASE_DIR', os.path.dirname(__file__))
 
 # Absolute filesystem path to the directory that will hold user-uploaded files.
 # Example: "/home/media/media.lawrence.com/media/"
@@ -231,6 +231,9 @@ MESSAGE_TAGS = {
 
 # Registration settings
 ACCOUNT_ACTIVATION_DAYS = 2
+EMAIL_BACKEND = os.getenv(
+    "EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend"
+)
 EMAIL_HOST = os.getenv('EMAIL_HOST', 'layers.test')
 EMAIL_PORT = os.getenv('EMAIL_PORT', '25')
 EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', False)
