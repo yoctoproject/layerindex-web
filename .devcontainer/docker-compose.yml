@@ -1,0 +1,56 @@
+services:
+  layersdb:
+    image: mariadb:lts
+    environment:
+      MARIADB_DATABASE: layersdb
+      MARIADB_ROOT_PASSWORD: testingpw
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      start_period: 10s
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --wait_timeout=28800 --max_allowed_packet=128M
+
+  layersrabbit:
+    image: rabbitmq:alpine
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      start_period: 10s
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    depends_on:
+      layersdb:
+        condition: service_healthy
+      layersrabbit:
+        condition: service_healthy
+    build: ..
+    image: yoctoproject/layerindex-web
+    working_dir: /opt/layerindex
+    volumes:
+      - ..:/opt/layerindex
+      - workdir:/opt/workdir
+    env_file:
+      - .env
+    command: ["python3", "manage.py", "runserver", "0.0.0.0:8000"]
+
+  celery:
+    depends_on:
+      layersdb:
+        condition: service_healthy
+      layersrabbit:
+        condition: service_healthy
+    image: yoctoproject/layerindex-web
+    working_dir: /opt/layerindex
+    volumes:
+      - ..:/opt/layerindex:ro
+      - workdir:/opt/workdir
+    env_file:
+      - .env
+    command: /usr/local/bin/celery --workdir=/opt/layerindex --app layerindex.tasks worker --loglevel=INFO
+
+volumes:
+  workdir:

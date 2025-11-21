@@ -1,0 +1,63 @@
+{
+  "name": "Layerindex Web Development Container",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "app",
+  "workspaceFolder": "/opt/layerindex",
+  "postCreateCommand": "pip install ruff pytest && python3 manage.py migrate",
+  "remoteUser": "layers",
+  "forwardPorts": [
+    8000
+  ],
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        // Python extensions, since this is a Python/Django project
+        "ms-python.python",
+        // Include Pylance for type checking
+        "ms-python.vscode-pylance",
+        // Debugging support
+        "ms-python.debugpy",
+        // Ruff linter
+        "charliermarsh.ruff",
+        // Beautiful syntax and scoped snippets for Django
+        "batisteo.vscode-django",
+        // SQL tools allowing to connect to the database
+        "mtxr.sqltools-driver-mysql"
+      ],
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "python.defaultInterpreterPath": "/usr/bin/python3",
+        "remote.autoForwardPorts": false,
+        "sqltools.connections": [
+          {
+            "mysqlOptions": {
+              "authProtocol": "default",
+              "enableSsl": "Disabled"
+            },
+            "ssh": "Disabled",
+            "previewLimit": 50,
+            "server": "layersdb",
+            "port": 3306,
+            "driver": "MariaDB",
+            "name": "layersdb",
+            "database": "layersdb",
+            "username": "root",
+            "password": "testingpw"
+          }
+        ],
+        "editor.formatOnSaveMode": "modifications",
+        "[jsonc]": {
+          "editor.defaultFormatter": "vscode.json-language-features"
+        },
+        "[python]": {
+          "editor.defaultFormatter": "charliermarsh.ruff"
+        },
+        "python.testing.unittestEnabled": false,
+        "python.testing.pytestEnabled": true,
+        "editor.rulers": [
+          80
+        ]
+      }
+    }
+  }
+}
