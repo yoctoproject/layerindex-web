@@ -531,12 +531,17 @@ class Source(models.Model):
     recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
     url = models.CharField(max_length=255)
     sha256sum = models.CharField(max_length=64, blank=True)
+    # Layer-relative path for local (file://) sources, used to link to the
+    # file in the layer's repository (empty for remote sources)
+    path = models.CharField(max_length=255, blank=True)
 
     def web_url(self):
         def drop_dotgit(url):
             if url.endswith('.git'):
                 url = url[:-4]
             return url
+        if self.path:
+            return self.recipe.layerbranch.file_url(self.path) or None
         if self.url and self.url.startswith(('http', 'ftp')):
             return self.url
         elif self.url.startswith('git://github.com'):

@@ -163,7 +163,7 @@
                     <tbody>
                         {% for source in recipe.source_set.all %}
                         <tr>
-                            <td>{% if source.web_url %}<a href="{{ source.web_url }}">{% endif %}{{ source.url }}{% if source.web_url %}</a>{% endif %}</td>
+                            <td>{% if source.web_url %}<a href="{{ source.web_url }}">{% endif %}{{ source.path|default:source.url }}{% if source.web_url %}</a>{% endif %}</td>
                         </tr>
                         {% endfor %}
                     </tbody>

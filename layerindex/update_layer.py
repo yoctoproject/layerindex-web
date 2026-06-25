@@ -138,15 +138,35 @@ def update_recipe_file(tinfoil, data, path, recipe, layerdir_start, repodir, sto
         recipe.save()
 
         # Handle sources
+        import bb.fetch2
+        import oe.patch
         old_urls = list(recipe.source_set.values_list('url', flat=True))
-        for url in (envdata.getVar('SRC_URI', True) or '').split():
-            if not url.startswith('file://'):
+        srcfetch = bb.fetch2.Fetch([], envdata)
+        for url in srcfetch.urls:
+            # Patches are recorded separately (shown in the Patches section),
+            # so skip them here - but keep other local file:// entries
+            # (e.g. run-ptest, init scripts, config files) as sources.
+            if oe.patch.patch_path(url, srcfetch, '', expand=False):
+                continue
+            path = ''
+            if url.startswith('file://'):
+                # Show local files without the file:// scheme (e.g. run-ptest)
+                # and, if the file lives in this layer, record its path so we
+                # can link to it in the layer's repository.
+                try:
+                    localpath = srcfetch.localpath(url)
+                except bb.fetch2.FetchError:
+                    localpath = ''
+                if localpath and localpath.startswith(layerdir_start):
+                    path = os.path.relpath(localpath, layerdir_start)
+                url = url[7:].split(';')[0]
+            else:
                 url = url.split(';')[0]
-                if url in old_urls:
-                    old_urls.remove(url)
-                else:
-                    src = Source(recipe=recipe, url=url)
-                    src.save()
+            if url in old_urls:
+                old_urls.remove(url)
+            else:
+                src = Source(recipe=recipe, url=url, path=path)
+                src.save()
         for url in old_urls:
             recipe.source_set.filter(url=url).delete()
 
