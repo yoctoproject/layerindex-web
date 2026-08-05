@@ -186,7 +186,7 @@ def _add_dependency(var, name, layerbranch, config_data, logger=None, required=T
         layerdep.save()
 
     if need_remove:
-        import settings
+        from django.conf import settings
         remove_layer_dependencies = getattr(settings, 'REMOVE_LAYER_DEPENDENCIES', False)
         if remove_layer_dependencies:
             logger.info('Removing obsolete dependencies "%s" for layer %s' % (need_remove, layer_name))

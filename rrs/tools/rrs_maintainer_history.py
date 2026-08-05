@@ -21,7 +21,7 @@ from layerindex import utils, recipeparse
 
 utils.setup_django()
 from django.db import transaction
-import settings
+from django.conf import settings
 
 from layerindex.models import Recipe, LayerBranch, LayerItem
 from rrs.models import MaintenancePlan, Maintainer, RecipeSymbol, RecipeMaintainerHistory, RecipeMaintainer, RecipeMaintenanceLink

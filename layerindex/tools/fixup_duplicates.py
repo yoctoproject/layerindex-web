@@ -44,7 +44,6 @@ def main():
     options, args = parser.parse_args(sys.argv)
 
     utils.setup_django()
-    import settings
     from layerindex.models import Recipe
     from django.db import transaction
 

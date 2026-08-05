@@ -72,7 +72,6 @@ def main():
     args = parser.parse_args()
 
     utils.setup_django()
-    import settings
     from layerindex.models import Branch, LayerBranch, LayerItem, YPCompatibleVersion
     from django.db import transaction
 

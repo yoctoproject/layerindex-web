@@ -160,7 +160,7 @@ class ImportProject:
     def add_core(self, layers):
         utils.setup_django()
         core = None
-        import settings
+        from django.conf import settings
         for layer in layers:
             layer_name = self.get_layer_name(layer)
             if layer_name == settings.CORE_LAYER_NAME:

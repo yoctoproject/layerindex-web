@@ -96,7 +96,7 @@ def main():
         sys.exit(1)
 
     utils.setup_django()
-    import settings
+    from django.conf import settings
 
     branch = utils.get_branch('master')
     fetchdir = settings.LAYER_FETCH_DIR

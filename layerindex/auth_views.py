@@ -28,7 +28,7 @@ from layerindex.auth_forms import (CaptchaPasswordResetForm,
 
 from .models import SecurityQuestion, SecurityQuestionAnswer, UserProfile
 from . import tasks
-import settings
+from django.conf import settings
 
 @method_decorator(never_cache, name='dispatch')
 class CaptchaRegistrationView(RegistrationView):

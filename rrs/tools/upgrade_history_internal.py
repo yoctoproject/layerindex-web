@@ -577,7 +577,7 @@ if __name__=="__main__":
     try:
         utils.setup_django()
         from django.db import transaction
-        import settings
+        from django.conf import settings
 
         logger = get_logger("HistoryUpgrade", settings)
 

@@ -43,7 +43,7 @@ from django.views.generic.edit import (CreateView, DeleteView, FormView,
 from django_registration.backends.activation.views import RegistrationView
 from reversion.models import Revision
 
-import settings
+from django.conf import settings
 from layerindex.forms import (AdvancedRecipeSearchForm, BulkChangeEditFormSet,
                               ClassicRecipeForm, ClassicRecipeSearchForm,
                               ComparisonRecipeSelectForm, EditLayerForm,

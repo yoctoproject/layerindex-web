@@ -20,7 +20,7 @@ from django_registration.validators import (DEFAULT_RESERVED_NAMES,
                                             ReservedNameValidator,
                                             validate_confusables)
 
-import settings
+from django.conf import settings
 from layerindex.models import (Branch, ClassicRecipe,
                                LayerBranch, LayerItem, LayerMaintainer,
                                LayerNote, RecipeChange, RecipeChangeset,

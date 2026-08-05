@@ -47,7 +47,7 @@ def main():
         loglevel = logging.INFO
 
     utils.setup_django()
-    import settings
+    from django.conf import settings
     from rrs.models import MaintenancePlan, Release, Milestone, RecipeUpgrade, RecipeSymbol
     import rrs.views
     from django.db import transaction

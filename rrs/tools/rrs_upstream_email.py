@@ -27,7 +27,7 @@ from django.template.loader import get_template
 from django.template import Context, Template
 from django.urls import reverse
 from django.contrib.sites.models import Site
-import settings
+from django.conf import settings
 
 from layerindex.models import LayerItem, LayerBranch, Recipe
 from rrs.models import Maintainer, RecipeMaintainerHistory, RecipeMaintainer, \

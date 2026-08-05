@@ -533,7 +533,7 @@ def import_specfiles(specfiles, layerbranch, existing, updateobj, reldir):
 
 def import_pkgspec(args):
     utils.setup_django()
-    import settings
+    from django.conf import settings
     from layerindex.models import LayerItem, LayerBranch, Recipe, ClassicRecipe, Machine, BBAppend, BBClass, ComparisonRecipeUpdate
     from django.db import transaction
 
@@ -595,7 +595,7 @@ def import_pkgspec(args):
 
 def try_specfile(args):
     utils.setup_django()
-    import settings
+    from django.conf import settings
     from layerindex.models import LayerItem, LayerBranch, Recipe, ClassicRecipe, Machine, BBAppend, BBClass
     from django.db import transaction
 
@@ -642,7 +642,7 @@ def try_specfile(args):
 
 def import_deblist(args):
     utils.setup_django()
-    import settings
+    from django.conf import settings
     from layerindex.models import LayerItem, LayerBranch, Recipe, ClassicRecipe, Machine, BBAppend, BBClass
     from django.db import transaction
 

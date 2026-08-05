@@ -16,7 +16,7 @@ import re
 
 class LayerConfParse:
     def __init__(self, enable_tracking=False, logger=None, bitbakepath=None, tinfoil=None):
-        import settings
+        from django.conf import settings
         self.logger = logger
 
         if not bitbakepath:

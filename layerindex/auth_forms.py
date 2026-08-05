@@ -14,7 +14,7 @@ from django.contrib.auth.models import User
 from django_registration.forms import RegistrationForm
 
 from layerindex.models import SecurityQuestion, UserProfile
-import settings
+from django.conf import settings
 
 
 class CaptchaRegistrationForm(RegistrationForm):

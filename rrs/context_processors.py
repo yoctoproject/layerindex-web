@@ -6,7 +6,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-import settings
+from django.conf import settings
 from django.contrib.sites.models import Site
 
 def rrs_context(request):

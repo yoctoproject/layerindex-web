@@ -95,7 +95,7 @@ def main():
         sys.exit(1)
 
     utils.setup_django()
-    import settings
+    from django.conf import settings
     from layerindex.models import LayerItem, LayerBranch, Recipe, ClassicRecipe, Machine, BBAppend, BBClass
     from django.db import transaction
 

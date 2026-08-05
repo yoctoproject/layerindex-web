@@ -12,7 +12,7 @@ from django.db.models import Q
 from datetime import datetime
 
 def layerindex_context(request):
-    import settings
+    from django.conf import settings
     site = Site.objects.get_current()
     if site and site.name and site.name != 'example.com':
         site_name = site.name

@@ -194,7 +194,7 @@ def main():
         sys.exit(1)
 
     utils.setup_django()
-    import settings
+    from django.conf import settings
     from layerindex.models import Branch, LayerItem, Update, LayerUpdate, LayerBranch
 
     logger.setLevel(options.loglevel)

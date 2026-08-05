@@ -27,7 +27,7 @@ from layerindex import utils
 import git
 
 utils.setup_django()
-import settings
+from django.conf import settings
 
 logger = get_logger("HistoryUpgrade", settings)
 fetchdir = settings.LAYER_FETCH_DIR

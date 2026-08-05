@@ -270,7 +270,7 @@ def main():
         github_login = None
         github_password = None
 
-    import settings
+    from django.conf import settings
     from layerindex.models import LayerItem, LayerBranch, LayerDependency, LayerMaintainer
     from django.db import transaction
 

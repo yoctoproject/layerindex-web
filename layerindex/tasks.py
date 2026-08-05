@@ -17,12 +17,12 @@ import shlex
 from datetime import datetime
 
 try:
-    import settings
+    from django.conf import settings
 except ImportError:
     # not in a full django env, so settings is inaccessible.
     # setup django to access settings.
     utils.setup_django()
-    import settings
+    from django.conf import settings
 
 tasks = Celery('layerindex',
     broker=settings.RABBIT_BROKER,

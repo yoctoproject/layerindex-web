@@ -30,7 +30,7 @@ logger = utils.logger_create('RrsExport')
 
 def rrs_export(args):
     utils.setup_django()
-    import settings
+    from django.conf import settings
     from rrs.models import RecipeUpstreamHistory, RecipeUpstream
 
     class DatetimeEncoder(json.JSONEncoder):
@@ -68,7 +68,7 @@ def rrs_export(args):
 
 def rrs_import(args):
     utils.setup_django()
-    import settings
+    from django.conf import settings
     from django.db import transaction
     from rrs.models import RecipeUpstreamHistory, RecipeUpstream
     from layerindex.models import Recipe
@@ -121,7 +121,7 @@ def rrs_import(args):
 
 def rrs_remove_duplicates(args):
     utils.setup_django()
-    import settings
+    from django.conf import settings
     from django.db import transaction
     from rrs.models import RecipeUpstreamHistory
     from layerindex.models import Recipe

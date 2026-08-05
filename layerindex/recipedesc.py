@@ -37,7 +37,6 @@ def main():
     from django.conf import settings
     from layerindex.models import LayerItem, Recipe
     from django.db import transaction
-    import settings
     from layerindex.utils import is_commit_ancestor
 
     setup_environ(settings)

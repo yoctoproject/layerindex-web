@@ -295,7 +295,7 @@ def main():
         options.reload = True
 
     utils.setup_django()
-    import settings
+    from django.conf import settings
     from layerindex.models import (LayerItem, LayerBranch, LayerDependency,
                                    Recipe, RecipeFileDependency, Machine,
                                    Distro, BBAppend, BBClass,

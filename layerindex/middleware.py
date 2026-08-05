@@ -10,8 +10,6 @@ from django.utils.deprecation import MiddlewareMixin
 from django.http import HttpResponseRedirect
 from django.urls import reverse
 from reversion.middleware import RevisionMiddleware
-import settings
-import re
 
 class NonAtomicRevisionMiddleware(RevisionMiddleware):
     atomic = False

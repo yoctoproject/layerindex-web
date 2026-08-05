@@ -14,7 +14,7 @@ from layerindex.auth_views import CaptchaRegistrationView, CaptchaPasswordResetV
 from django.contrib import admin
 admin.autodiscover()
 
-import settings
+from django.conf import settings
 
 urlpatterns = [
     re_path(r'^layerindex/', include('layerindex.urls')),

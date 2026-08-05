@@ -24,7 +24,7 @@ from layerindex import utils
 utils.setup_django()
 from django.db import transaction
 from django.core.exceptions import ObjectDoesNotExist
-import settings
+from django.conf import settings
 
 logger = get_logger("UpstreamHistory", settings)
 fetchdir = settings.LAYER_FETCH_DIR

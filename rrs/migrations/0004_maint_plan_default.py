@@ -2,7 +2,7 @@
 from __future__ import unicode_literals
 
 from django.db import migrations, models
-import settings
+from django.conf import settings
 
 
 def populate_plan(apps, schema_editor):
