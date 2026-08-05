@@ -3,7 +3,15 @@
   "dockerComposeFile": "docker-compose.yml",
   "service": "app",
   "workspaceFolder": "/opt/layerindex",
-  "postCreateCommand": "pip install ruff pytest && python3 manage.py migrate",
+  // Clone BitBake into the persistent workdir volume (once) so that `import bb`
+  // works, alongside the usual Python setup.
+  "postCreateCommand": {
+    "bitbake": "test -d /opt/workdir/https___git_openembedded_org_bitbake || git clone https://git.openembedded.org/bitbake /opt/workdir/https___git_openembedded_org_bitbake",
+    "python": "pip install ruff pytest && python3 manage.py migrate"
+  },
+  "remoteEnv": {
+    "PYTHONPATH": "/opt/workdir/https___git_openembedded_org_bitbake/lib:${containerEnv:PYTHONPATH}"
+  },
   "remoteUser": "layers",
   "forwardPorts": [
     8000
@@ -27,6 +35,10 @@
       "settings": {
         "terminal.integrated.defaultProfile.linux": "bash",
         "python.defaultInterpreterPath": "/usr/bin/python3",
+        // Let Pylance resolve `import bb` from the cloned BitBake checkout.
+        "python.analysis.extraPaths": [
+          "/opt/workdir/https___git_openembedded_org_bitbake/lib"
+        ],
         "remote.autoForwardPorts": false,
         "sqltools.connections": [
           {
