@@ -478,6 +478,12 @@ class Recipe(models.Model):
     configopts = models.CharField(max_length=4096, blank=True)
     srcrev = models.CharField(max_length=64, blank=True)
 
+    class Meta:
+        indexes = [
+            models.Index(fields=['layerbranch', 'pn'], name='recipe_layerbranch_pn'),
+            models.Index(fields=['pn', 'layerbranch'], name='recipe_pn_layerbranch'),
+        ]
+
     def vcs_web_url(self):
         url = self.layerbranch.file_url(os.path.join(self.filepath, self.filename))
         return url or ''
@@ -582,6 +588,9 @@ class Patch(models.Model):
     class Meta:
         verbose_name_plural = 'Patches'
         ordering = ['recipe', 'apply_order']
+        indexes = [
+            models.Index(fields=['recipe', 'status'], name='patch_recipe_status'),
+        ]
 
     def vcs_web_url(self):
         url = self.recipe.layerbranch.file_url(self.path)
@@ -769,6 +778,9 @@ class BBAppend(models.Model):
 
     class Meta:
         verbose_name = "Append"
+        indexes = [
+            models.Index(fields=['layerbranch', 'filename'], name='bbappend_lb_filename'),
+        ]
 
     def vcs_web_url(self):
         url = self.layerbranch.file_url(os.path.join(self.filepath, self.filename))
@@ -910,7 +922,7 @@ class SiteNotice(models.Model):
     text = models.TextField(help_text='Text to show in the notice. A limited subset of HTML is supported for formatting.')
     level = models.CharField(max_length=1, choices=NOTICE_LEVEL_CHOICES, default='I', help_text='Level of notice to display')
     disabled = models.BooleanField('Disabled', default=False, help_text='Use to temporarily disable this notice')
-    expires = models.DateTimeField(blank=True, null=True, help_text='Optional date/time when this notice will stop showing')
+    expires = models.DateTimeField(blank=True, null=True, db_index=True, help_text='Optional date/time when this notice will stop showing')
 
     def __str__(self):
         prefix = ''

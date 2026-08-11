@@ -214,6 +214,11 @@ class RecipeSymbol(models.Model):
             rsym.save()
         return rsym
 
+    class Meta:
+        indexes = [
+            models.Index(fields=['layerbranch', 'pn'], name='recipesymbol_lb_pn'),
+        ]
+
     def __str__(self):
         return "%s: %s" % (str(self.layerbranch), self.pn)
 
@@ -508,6 +513,11 @@ class RecipeUpgrade(models.Model):
     orig_filepath = models.CharField(max_length=512, blank=True)
     group = models.ForeignKey(RecipeUpgradeGroup, blank=True, null=True, on_delete=models.SET_NULL)
     prev_version = models.CharField(max_length=100, blank=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['recipesymbol', 'commit_date'], name='recipeupgrade_rs_date'),
+        ]
 
     @staticmethod
     def get_by_recipe_and_date(recipe, end_date):
