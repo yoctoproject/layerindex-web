@@ -164,11 +164,18 @@
                             {% if layerbranch.get_required.count > 0 %}
                                 <h3>Dependencies </h3>
                                 <p>The {{ layeritem.name }} layer depends upon:</p>
-                                <ul>
+                                <ul id="dependencies_list">
                                     {% for dep in layerbranch.get_required %}
-                                        <li><a href="{% url 'layer_item' url_branch dep.dependency.name %}">{{ dep.dependency.name }}</a></li>
+                                        <li data-layerbranch="{{ dep.dependency.id }}">
+                                            <a href="{% url 'layer_item' url_branch dep.dependency.name %}">{{ dep.dependency.name }}</a>
+                                        </li>
                                     {% endfor %}
                                 </ul>
+                                <div class="text-right">
+                                    <button type="button" class="btn btn-default btn-xs" id="expand_dependencies">
+                                        Expand
+                                    </button>
+                                </div>
                             {% endif %} <!-- end of layerbranch.get_required.count -->
                             {% if layerbranch.get_recommends.count > 0 %}
                                 <h3>Recommends </h3>
@@ -415,6 +422,82 @@
             $(".recipestable > tbody > tr").show();
         }
 
+        // api abstracts access to the REST API endpoints and adds caching
+        // to avoid making multiple requests for the same data.
+        var api = {
+            // each calls the given callback for each item returned by the API
+            // endpoint with the given filter.
+            // If no data is returned, callback is never called.
+            each: function(endpoint, filter, callback) {
+                var cacheKey = endpoint + filter;
+                if (!(cacheKey in this)) {
+                    var url = "{% url 'api-root' %}" + endpoint + "/";
+                    this[cacheKey] = $.getJSON(url, {filter: filter});
+                }
+
+                this[cacheKey].done(function(data) {
+                    $.each(data, function(_, item) {
+                        callback(item);
+                    });
+                });
+            }
+        }
+
+        // layerUrl returns the URL for the layer detail page for the given layer name.
+        function layerUrl(layerName) {
+            return "{% url 'layer_item' url_branch '__layername__' %}".replace(
+                '__layername__', layerName
+            );
+        }
+
+        // expandLayerDependencies expands the dependencies of the layer
+        // referenced by parentListItem from the API and append them as a nested list,
+        // recursing to build the full tree.
+        // The 'seen' array tracks the current path to break dependency cycles.
+        function expandLayerDependencies(layerBranchId, seen) {
+            var branchId = "{{ layerbranch.branch_id }}";
+
+            if (!layerBranchId) {
+                return;
+            }
+
+            // keep track of seen layer branch IDs to avoid infinite recursion
+            // in case of circular dependencies
+            seen = seen.concat([layerBranchId]);
+
+            var nestedList = $('<ul></ul>');
+
+            var filter = "layerbranch:" + layerBranchId;
+            api.each("layerDependencies", filter, function(dependency) {
+                if (!dependency.required) {
+                    return;
+                }
+
+                var filter = "id:" + dependency.dependency;
+                api.each("layerItems", filter, function(layerItem) {
+                    var filter = "branch!layer:" + branchId + "!" + layerItem.id;
+                    api.each("layerBranches", filter, function(layerBranch) {
+                        var listItem = $('<li></li>').
+                            attr('data-layerbranch', layerBranch.id).
+                            append($('<a></a>').
+                                attr('href', layerUrl(layerItem.name)).
+                                text(layerItem.name));
+
+                        // detect circular dependencies to avoid infinite recursion
+                        if (seen.includes(layerBranch.id)) {
+                            listItem.append(' <span class="text-muted">(circular)</span>');
+                        } else {
+                            listItem.append(expandLayerDependencies(layerBranch.id, seen));
+                        }
+
+                        nestedList.append(listItem);
+                    });
+                });
+            });
+
+            return nestedList;
+        }
+
         $(document).ready(function() {
 
             $(function() {
@@ -442,6 +525,23 @@
 
                 $('.glyphicon-hdd').tooltip({title:"Inherits image"});
                 $('.label-inverse').tooltip();
+            });
+
+            // When the "Expand" button is clicked, hide the button and start
+            // expanding dependencies for each top-level dependency.
+            $("#expand_dependencies").click(function() {
+                $(this).hide();
+
+                $("#dependencies_list > li").each(function() {
+                    if ($(this).children('ul').length > 0) {
+                        // already expanded, skip
+                        return;
+                    }
+
+                    var layerBranchId = $(this).data('layerbranch');
+
+                    $(this).append(expandLayerDependencies(layerBranchId, []));
+                });
             });
 
             clearRecipeSearch();
