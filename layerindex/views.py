@@ -31,7 +31,7 @@ from django.db.models.query import QuerySet
 from django.db.models.signals import pre_save
 from django.dispatch import receiver
 from django.http import Http404, HttpResponse, HttpResponseRedirect
-from django.shortcuts import get_list_or_404, get_object_or_404, render
+from django.shortcuts import get_object_or_404, render
 from django.template.loader import get_template
 from django.utils.decorators import method_decorator
 from django.utils.html import escape
@@ -376,31 +376,44 @@ def publish_view(request, name):
 
     if getattr(settings, 'SEND_PUBLISH_EMAIL', True):
         layeritem = get_object_or_404(LayerItem, name=name)
-        layerbranch = get_object_or_404(LayerBranch, layer=layeritem)
-        layer_url = request.build_absolute_uri(reverse('layer_item', args=(layerbranch.branch, layeritem.name)))
-        maintainers = get_list_or_404(LayerMaintainer, layerbranch=layerbranch)
-        from_email = settings.SUBMIT_EMAIL_FROM
-        subjecttext = get_template('layerindex/publishemailsubject.txt')
-        bodytext = get_template('layerindex/publishemail.txt')
-        maintainer_names = [m.name for m in maintainers]
+        layerbranches = list(LayerBranch.objects.filter(layer=layeritem).select_related('branch'))
 
-        # create subject from subject template
-        d = {
-            'layer_name': layeritem.name,
-            'site_name': request.META['HTTP_HOST'],
-        }
-        subject = subjecttext.render(d).rstrip()
+        # Collect active maintainers across all branches of this layer, keyed by
+        # email so names and addresses stay in step and the order is stable.
+        maintainers = {}
+        for m in LayerMaintainer.objects.filter(layerbranch__layer=layeritem,
+                                                 status='A').order_by('name', 'email'):
+            maintainers.setdefault(m.email, m.name)
 
-        #create body from body template
-        d = {
-            'maintainers': maintainer_names,
-            'layer_name': layeritem.name,
-            'layer_url': layer_url,
-            'help_contact': _get_help_contact(),
-        }
-        body = bodytext.render(d)
+        if layerbranches and maintainers:
+            branch_info = [{'branch': lb.branch.name,
+                             'url': request.build_absolute_uri(
+                                 reverse('layer_item', args=(lb.branch.name, layeritem.name)))}
+                            for lb in layerbranches]
 
-        tasks.send_email.apply_async((subject, body, from_email, [m.email for m in maintainers]))
+            # Prefer master as the primary link, otherwise the first branch
+            primary = next((b for b in branch_info if b['branch'] == 'master'), branch_info[0])
+
+            from_email = settings.SUBMIT_EMAIL_FROM
+            subjecttext = get_template('layerindex/publishemailsubject.txt')
+            bodytext = get_template('layerindex/publishemail.txt')
+
+            d = {
+                'layer_name': layeritem.name,
+                'site_name': request.META.get('HTTP_HOST', ''),
+            }
+            subject = subjecttext.render(d).rstrip()
+
+            d = {
+                'maintainers': list(maintainers.values()),
+                'layer_name': layeritem.name,
+                'layer_url': primary['url'],
+                'branches': branch_info,
+                'help_contact': _get_help_contact(),
+            }
+            body = bodytext.render(d)
+
+            tasks.send_email.apply_async((subject, body, from_email, list(maintainers.keys())))
 
     return _statuschange(request, name, 'P')
 
