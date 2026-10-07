@@ -12,13 +12,22 @@ from django.views.generic import RedirectView, TemplateView
 from layerindex.auth_views import CaptchaRegistrationView, CaptchaPasswordResetView, delete_account_view, \
     PasswordResetSecurityQuestions
 from django.contrib import admin
+from django.contrib.sitemaps.views import sitemap
+from layerindex.sitemaps import StaticViewSitemap, LayerSitemap
 admin.autodiscover()
 
 from django.conf import settings
 
+sitemaps = {
+    'static': StaticViewSitemap,
+    'layers': LayerSitemap,
+}
+
 urlpatterns = [
     re_path(r'^layerindex/', include('layerindex.urls')),
     re_path(r'^admin/', admin.site.urls),
+    re_path(r'^sitemap\.xml$', sitemap, {'sitemaps': sitemaps},
+        name='django.contrib.sitemaps.views.sitemap'),
     re_path(r'^accounts/password_reset/$',
         CaptchaPasswordResetView.as_view(
             email_template_name='registration/password_reset_email.txt',
