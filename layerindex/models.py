@@ -278,7 +278,7 @@ class LayerBranch(models.Model):
             url = base_url.replace('%branch%', branchname)
             if path:
                 splitpath = path.split('/')
-                for match in re.findall('(%pathelement\[([0-9]*)(:[0-9]*)?\]%)', url):
+                for match in re.findall(r'(%pathelement\[([0-9]*)(:[0-9]*)?\]%)', url):
                     if match[1] == '':
                         start = None
                     else:

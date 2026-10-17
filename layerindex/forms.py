@@ -136,7 +136,7 @@ class EditLayerForm(StyledModelForm):
     def clean_summary(self):
         # Compress whitespace and use only spaces
         summary = self.cleaned_data['summary'].strip()
-        summary = re.sub('\s+', ' ', summary)
+        summary = re.sub(r'\s+', ' ', summary)
         return summary
 
     def clean_layer_type(self):

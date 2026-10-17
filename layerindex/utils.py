@@ -528,7 +528,7 @@ def sanitise_html(html):
     return soup.renderContents()
 
 def squashspaces(string):
-    return re.sub("\s+", " ", string).strip()
+    return re.sub(r"\s+", " ", string).strip()
 
 def sha256_file(ifn):
     import hashlib
