@@ -6,6 +6,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+import logging
 import os
 import sys
 import re
@@ -62,6 +63,8 @@ from layerindex.models import (BBAppend, BBClass, BBClassGlobal, BBClassRecipe,
 
 
 from . import tasks, utils
+
+logger = logging.getLogger(__name__)
 
 def edit_layernote_view(request, template_name, slug, pk=None):
     layeritem = get_object_or_404(LayerItem, name=slug)
@@ -347,12 +350,11 @@ def bulk_change_patch_view(request, pk):
         return HttpResponse('No patch data generated', content_type='text/plain')
     except Exception as e:
         output = getattr(e, 'output', None)
-        if output:
-            if 'timeout' in output:
-                return HttpResponse('Failed to generate patches: timed out waiting for lock. Please try again shortly.', content_type='text/plain')
-            else:
-                return HttpResponse('Failed to generate patches: %s' % output, content_type='text/plain')
-        return HttpResponse('Failed to generate patches: %s' % e, content_type='text/plain')
+        if output and 'timeout' in output:
+            return HttpResponse('Failed to generate patches: timed out waiting for lock. Please try again shortly.', content_type='text/plain')
+        # Details can include paths and bitbake output, so keep them in the server log
+        logger.exception('Failed to generate patches for bulk change %s: %s', pk, output)
+        return HttpResponse('Failed to generate patches, please contact the site administrator.', content_type='text/plain', status=500)
     # FIXME better error handling
 
 

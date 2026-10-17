@@ -51,3 +51,14 @@ class TestBulkChangeAccess(TestCase):
         for name in ('bulk_change_edit', 'bulk_change_review'):
             response = self.client.get(self._url(name))
             self.assertEqual(response.status_code, 200, name)
+
+    def test_patch_error_details_not_exposed(self):
+        import subprocess
+        from unittest import mock
+        self.client.force_login(self.owner)
+        err = subprocess.CalledProcessError(1, 'bulkchange.py', output='Traceback: /opt/secret/path')
+        with mock.patch('layerindex.views.utils.runcmd', side_effect=err), \
+                self.assertLogs('layerindex.views', 'ERROR'):
+            response = self.client.get(self._url('bulk_change_patches'))
+        self.assertEqual(response.status_code, 500)
+        self.assertNotIn(b'/opt/secret/path', response.content)
