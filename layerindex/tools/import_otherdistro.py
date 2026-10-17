@@ -52,8 +52,8 @@ def update_recipe_file(path, recipe, repodir, raiseexceptions=False):
     # yes, yes, I know this is all crude as hell, but it gets the job done.
     # At the end of the day we are scraping the spec file, we aren't trying to build it
 
-    pnum_re = re.compile('-p[\s]*([0-9]+)')
-    configure_re = re.compile('[/%]configure\s')
+    pnum_re = re.compile(r'-p[\s]*([0-9]+)')
+    configure_re = re.compile(r'[/%]configure\s')
 
     try:
         logger.debug('Updating recipe %s' % path)
@@ -294,7 +294,7 @@ def update_recipe_file(path, recipe, repodir, raiseexceptions=False):
                     patchsplit = line.split()
                     if '-P' in line:
                         # Old style
-                        patchid = re.search('-P[\s]*([0-9]+)', line)
+                        patchid = re.search(r'-P[\s]*([0-9]+)', line)
                         if patchid:
                             patchid = patchid.groups()[0]
                         else:

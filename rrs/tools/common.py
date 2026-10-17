@@ -146,7 +146,7 @@ def get_recipe_pv_without_srcpv(pv, uri_type):
     sfx = ''
 
     if uri_type == 'git':
-        git_regex = re.compile("(?P<pfx>(v|r|))(?P<ver>((\d+[\.\-_]*)+))(?P<sfx>(\+|)(git|)(r|)(AUTOINC|)(\+|))(?P<rev>.*)")
+        git_regex = re.compile(r"(?P<pfx>(v|r|))(?P<ver>((\d+[\.\-_]*)+))(?P<sfx>(\+|)(git|)(r|)(AUTOINC|)(\+|))(?P<rev>.*)")
         m = git_regex.match(pv)
 
         if m:
@@ -154,7 +154,7 @@ def get_recipe_pv_without_srcpv(pv, uri_type):
             pfx = m.group('pfx')
             sfx = m.group('sfx')
     else:
-        regex = re.compile("(?P<pfx>(v|r|))(?P<ver>((\w+[\.\-_]*)+))")
+        regex = re.compile(r"(?P<pfx>(v|r|))(?P<ver>((\w+[\.\-_]*)+))")
         m = regex.match(pv)
         if m:
             pv = m.group('ver')

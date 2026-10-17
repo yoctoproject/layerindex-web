@@ -205,7 +205,7 @@ def get_layer_type_choices():
     return (help_str, choices)
 
 def main():
-    valid_layer_name = re.compile('[-\w]+$')
+    valid_layer_name = re.compile(r'[-\w]+$')
 
     parser = optparse.OptionParser(
         usage = """
