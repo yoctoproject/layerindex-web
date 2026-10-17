@@ -1599,7 +1599,7 @@ def layer_export_recipes_csv_view(request, branch, slug):
     recipe_fields = [f.name for f in Recipe._meta.get_fields() if not (f.auto_created and f.is_relation)]
     for field in fieldlist:
         if field not in recipe_fields:
-            return HttpResponse('Field %s is invalid' % field)
+            return HttpResponse('Field %s is invalid' % field, content_type='text/plain', status=400)
 
     writer = csv.writer(response)
     for recipe in layerbranch.sorted_recipes():
