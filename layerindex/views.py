@@ -1902,6 +1902,19 @@ class BranchCompareView(FormView):
                 changed.append(recipe)
         return added, changed, removed
 
+    def get_layer_ids(self):
+        # 'layers' is a comma-separated list of layer ids (also accept it
+        # repeated); ignore anything that isn't a selectable layer
+        valid_ids = set(LayerItem.objects.filter(status__in=['P', 'X']).values_list('id', flat=True))
+        values = self.request.GET.getlist('layers') or [str(LayerItem.objects.get(name=settings.CORE_LAYER_NAME).id)]
+        layer_ids = []
+        for value in values:
+            for layer_id in value.split(','):
+                layer_id = layer_id.strip()
+                if layer_id.isdigit() and int(layer_id) in valid_ids and int(layer_id) not in layer_ids:
+                    layer_ids.append(int(layer_id))
+        return layer_ids
+
     def form_valid(self, form):
         return HttpResponseRedirect(reverse_lazy('branch_comparison', args=(form.cleaned_data['from_branch'].name, form.cleaned_data['to_branch'].name)))
 
@@ -1913,7 +1926,7 @@ class BranchCompareView(FormView):
         to_branch_id = self.request.GET.get('to_branch', None)
         if to_branch_id is not None:
             initial['to_branch'] = get_object_or_404(Branch, id=to_branch_id)
-        initial['layers'] = self.request.GET.get('layers', str(LayerItem.objects.get(name=settings.CORE_LAYER_NAME).id))
+        initial['layers'] = ','.join(str(i) for i in self.get_layer_ids())
         return initial
 
     def get_context_data(self, **kwargs):
@@ -1921,7 +1934,7 @@ class BranchCompareView(FormView):
         from_branch_id = self.request.GET.get('from_branch', None)
         to_branch_id = self.request.GET.get('to_branch', None)
 
-        layer_ids = self.request.GET.get('layers', str(LayerItem.objects.get(name=settings.CORE_LAYER_NAME).id))
+        layer_ids = self.get_layer_ids()
         from_branch = None
         if from_branch_id is not None:
             from_branch = get_object_or_404(Branch, id=from_branch_id)
@@ -1936,7 +1949,7 @@ class BranchCompareView(FormView):
         context['layers'] = LayerItem.objects.filter(status__in=['P', 'X']).order_by('name')
         context['showlayers'] = layer_ids
         layerlist = dict(context['layers'].values_list('id', 'name'))
-        context['showlayers_text'] = ', '.join([layerlist[int(i)] for i in layer_ids])
+        context['showlayers_text'] = ', '.join([layerlist[i] for i in layer_ids])
 
         return context
 
