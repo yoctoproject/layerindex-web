@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block content %}
+
+{% if activation_error %}
+<div class="alert alert-danger">{{ activation_error.message }}</div>
+{% elif form.errors %}
+<div class="alert alert-danger">{% trans "This activation link is invalid or has expired." %}</div>
+{% else %}
+<p>{% trans "Click the button below to activate your account." %}</p>
+<form id="activation_form" method="post" action="">
+    {% for field in form %}
+        <input type="hidden" name="{{ field.html_name }}" value="{{ field.value|default_if_none:'' }}" />
+    {% endfor %}
+    <input type="submit" class="btn btn-default" value="{% trans 'Activate account' %}" />
+    {% csrf_token %}
+</form>
+{% endif %}
+
+{% endblock %}
