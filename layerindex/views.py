@@ -307,8 +307,9 @@ def edit_layer_view(request, template_name, branch='master', slug=None):
         'return_url': return_url,
     })
 
+@login_required
 def bulk_change_edit_view(request, template_name, pk):
-    changeset = get_object_or_404(RecipeChangeset, pk=pk)
+    changeset = get_object_or_404(RecipeChangeset, pk=pk, user=request.user)
 
     if request.method == 'POST':
         formset = BulkChangeEditFormSet(request.POST, queryset=changeset.recipechange_set.all())
@@ -322,8 +323,9 @@ def bulk_change_edit_view(request, template_name, pk):
         'formset': formset,
     })
 
+@login_required
 def bulk_change_patch_view(request, pk):
-    changeset = get_object_or_404(RecipeChangeset, pk=pk)
+    changeset = get_object_or_404(RecipeChangeset, pk=pk, user=request.user)
     # FIXME this couples the web server and machine running the update script together,
     # but given that it's a separate script the way is open to decouple them in future
     try:
@@ -855,9 +857,26 @@ class BaseDeleteView(DeleteView):
         return context
 
 
+class BulkChangeReviewView(DetailView):
+    model = RecipeChangeset
+    context_object_name = 'changeset'
+
+    @method_decorator(login_required)
+    def dispatch(self, request, *args, **kwargs):
+        return super(BulkChangeReviewView, self).dispatch(request, *args, **kwargs)
+
+    def get_queryset(self):
+        qs = super(BulkChangeReviewView, self).get_queryset()
+        return qs.filter(user=self.request.user)
+
+
 class BulkChangeDeleteView(BaseDeleteView):
     model = RecipeChangeset
     success_url = reverse_lazy('bulk_change')
+
+    @method_decorator(login_required)
+    def dispatch(self, request, *args, **kwargs):
+        return super(BulkChangeDeleteView, self).dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
         qs = super(BulkChangeDeleteView, self).get_queryset()

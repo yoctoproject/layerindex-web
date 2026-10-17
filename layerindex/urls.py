@@ -6,18 +6,18 @@
 #
 # SPDX-License-Identifier: MIT
 
-from django.views.generic import TemplateView, DetailView, ListView, RedirectView
+from django.views.generic import TemplateView, ListView, RedirectView
 from django.views.defaults import page_not_found
 from django.urls import include, re_path, reverse_lazy
 from layerindex.views import LayerListView, LayerReviewListView, LayerReviewDetailView, RecipeSearchView, \
     MachineSearchView, LayerDetailView, edit_layer_view, delete_layer_view, edit_layernote_view, delete_layernote_view, \
     HistoryListView, EditProfileFormView, AdvancedRecipeSearchView, BulkChangeView, BulkChangeSearchView, \
-    bulk_change_edit_view, bulk_change_patch_view, BulkChangeDeleteView, RecipeDetailView, RedirectParamsView, \
+    bulk_change_edit_view, bulk_change_patch_view, BulkChangeReviewView, BulkChangeDeleteView, RecipeDetailView, RedirectParamsView, \
     ClassicRecipeSearchView, ClassicRecipeDetailView, ClassicRecipeStatsView, LayerUpdateDetailView, UpdateListView, \
     UpdateDetailView, StatsView, publish_view, LayerCheckListView, BBClassCheckListView, TaskStatusView, \
     ComparisonRecipeSelectView, ComparisonRecipeSelectDetailView, task_log_view, task_stop_view, email_test_view, \
     BranchCompareView, RecipeDependenciesView, update_layer_view
-from layerindex.models import LayerItem, Recipe, RecipeChangeset
+from layerindex.models import LayerItem, Recipe
 from rest_framework import routers
 from . import restviews
 
@@ -97,9 +97,7 @@ urlpatterns = [
     re_path(r'^bulkchange/(?P<pk>\d+)/edit/$',
         bulk_change_edit_view, {'template_name': 'layerindex/bulkchangeedit.html'}, name="bulk_change_edit"),
     re_path(r'^bulkchange/(?P<pk>\d+)/review/$',
-        DetailView.as_view(
-            model=RecipeChangeset,
-            context_object_name='changeset',
+        BulkChangeReviewView.as_view(
             template_name='layerindex/bulkchangereview.html'),
         name="bulk_change_review"),
     re_path(r'^bulkchange/(?P<pk>\d+)/patches/$',
