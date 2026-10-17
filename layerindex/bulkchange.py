@@ -101,7 +101,7 @@ def main():
     branch = utils.get_branch('master')
     fetchdir = settings.LAYER_FETCH_DIR
 
-    import layerindex.models import LayerItem
+    from layerindex.models import LayerItem
     bitbakeitem = LayerItem()
     bitbakeitem.vcs_url = settings.BITBAKE_REPO_URL
     bitbakepath = os.path.join(fetchdir, bitbakeitem.get_fetch_dir())
