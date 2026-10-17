@@ -1927,7 +1927,7 @@ class BranchCompareView(FormView):
             from_branch = get_object_or_404(Branch, id=from_branch_id)
         context['from_branch'] = from_branch
         to_branch = None
-        if from_branch_id is not None:
+        if to_branch_id is not None:
             to_branch = get_object_or_404(Branch, id=to_branch_id)
         context['to_branch'] = to_branch
         if from_branch and to_branch:
