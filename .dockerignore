@@ -12,3 +12,10 @@ Dockerfile
 Dockerfile.web
 docker-compose.yml
 dockersetup.py
+*.pem
+*.log
+*.patch
+*.zst
+.venv
+.idea
+.DS_Store

@@ -1,0 +1,40 @@
+# SPDX-License-Identifier: MIT
+
+name: Safety
+
+on:
+  push:
+    branches: [master,master-next]
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SAFETY_API_KEY: ${{ secrets.SAFETY_API_KEY }}
+    # Steps are skipped where the secret isn't set, e.g. other forks.
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Build image
+        if: env.SAFETY_API_KEY != ''
+        run: docker build -t layerindex-test .
+
+      # Scans the versions actually installed in the image, so ranges in
+      # requirements.txt (e.g. Django) can't hide vulnerable releases.
+      - name: Safety scan
+        if: env.SAFETY_API_KEY != ''
+        run: |
+          mkdir safety-scan
+          cp .safety-project.ini safety-scan/
+          docker run --rm layerindex-test pip3 freeze > safety-scan/requirements.txt
+          # typer pinned: newer releases break safety 3.7.0 ("no active click context")
+          python3 -m venv /tmp/safety
+          /tmp/safety/bin/pip install -q safety==3.7.0 typer==0.23.0
+          /tmp/safety/bin/safety scan --target safety-scan --detailed-output
