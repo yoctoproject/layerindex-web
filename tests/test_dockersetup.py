@@ -156,3 +156,28 @@ def test_nginx_ssl_conf_round_trip(workdir):
     assert 'layers.openembedded.org' in (workdir / 'docker' / 'nginx-ssl.conf').read_text()
     assert dockersetup.read_nginx_ssl_conf('/opt/cert') == \
         ('layers.example.com', '8081', '/opt/cert', 'cert.pem', 'key.pem')
+
+
+@pytest.mark.parametrize('result, expected', [
+    (0, ['docker', 'compose', 'up']),
+    (1, ['docker-compose', 'up']),
+    (FileNotFoundError(), ['docker-compose', 'up']),
+])
+def test_compose_command(monkeypatch, result, expected):
+    calls = []
+
+    def fake_call(cmd, **kwargs):
+        calls.append(cmd)
+        if isinstance(result, Exception):
+            raise result
+        return result
+
+    monkeypatch.setattr(dockersetup.subprocess, 'call', fake_call)
+    dockersetup.compose_command.cache_clear()
+    try:
+        assert dockersetup.compose('up') == expected
+        assert dockersetup.compose_sh() == ' '.join(expected[:-1])
+        # Detected once and then reused
+        assert calls == [['docker', 'compose', 'version']]
+    finally:
+        dockersetup.compose_command.cache_clear()
