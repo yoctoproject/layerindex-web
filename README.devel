@@ -7,9 +7,9 @@ covered in the main README.
 
 In order to run this application standalone, you will need:
 
-* Python 3.6+
-* Django 3.2.x (not compatible with 3.0 or older)
-* RabbitMQ 3.8.x
+* Python 3.10+
+* Django 5.2 LTS, as pinned in requirements.txt
+* RabbitMQ
 * For production usage, a web server set up to host Django applications
   (not needed for local-only testing/development)
 * A database system supported by Django (SQLite, MariaDB/MySQL, etc.).
@@ -22,8 +22,8 @@ In order to run this application standalone, you will need:
   have to have Django installed, have the same or similar configuration
   in settings.py and have access to the database used by the web
   application):
-  * Python 3.5+ to match with the version of BitBake
-    for the OpenEmbedded branch being parsed
+  * A Python version supported both by Django and by the BitBake of
+    the OpenEmbedded branches being parsed
   * Python dependencies as per requirements.txt (we still need Django
     etc. here since we interact with the database through Django's ORM.)
 
@@ -128,17 +128,47 @@ SMTP test server
 ----------------
 
 If you want to test email functionality (e.g. for password reset, layer
-submission or other notifications) you can do so without dealing with actual
-emails being sent by running python's built-in SMTP test server (in a
-separate shell session):
+submission or other notifications) without sending real emails, set Django's
+console email backend in settings.py:
 
-python3 -m smtpd -n -c DebuggingServer localhost:1025
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
-This will stay running and print out any email that is sent to it. All you
-need to do then is edit settings.py and set it to point to the server:
+Every email is then printed to the console running the server (or the Celery
+worker, for emails sent from background tasks) instead of being sent.
 
-EMAIL_HOST = 'localhost'
-EMAIL_PORT = 1025
+
+Running the tests
+-----------------
+
+The tests use pytest and pytest-django, which are not in requirements.txt:
+
+    pip install pytest pytest-django
+
+To run the full suite as CI does, in the Docker image against a throwaway
+MariaDB container, run this from the top of the source tree:
+
+    docker/run-tests.sh
+
+This is the only way to run tests/test_update.py, which fetches
+openembedded-core, meta-layerindex-test and BitBake from the network and runs
+the update scripts (BitBake only runs on Linux).
+
+To run the other tests directly, set SECRET_KEY in settings.py and point it
+at a MariaDB/MySQL server where your database user may create databases
+(pytest-django creates and removes a test_<name> database), then run:
+
+    pytest --ignore=tests/test_update.py tests/
+
+tests/test_dockersetup.py tests the files dockersetup.py writes. It needs only
+pytest and PyYAML, and is skipped inside the Docker image:
+
+    python3 -m pytest tests/test_dockersetup.py
+
+On GitHub, .github/workflows/ci.yml runs docker/run-tests.sh and
+tests/test_dockersetup.py for pushes to master and master-next and for pull
+requests to master. .github/workflows/safety.yml scans the packages
+installed in the Docker image for known vulnerabilities on each push and
+weekly, if the repository has a SAFETY_API_KEY secret.
 
 
 
