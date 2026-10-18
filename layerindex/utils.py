@@ -68,6 +68,9 @@ def is_deps_satisfied(req_col, req_ver, collections):
                 # If there is no version in the found layer, then don't use this layer.
                 if not existed_ver:
                     continue
+                # bb is not imported at module level; by now
+                # explode_dep_versions2() has put BitBake's lib on sys.path
+                import bb.utils
                 (op, dep_version) = req_ver.split()
                 success = bb.utils.vercmp_string_op(existed_ver, dep_version, op)
                 if success:
