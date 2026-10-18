@@ -631,84 +631,89 @@ def writefile(filename, data):
         f.write(data)
 
 
-## Get user arguments
-try:
-    args, socks_proxy_port, socks_proxy_host, email_host, email_port = get_args()
-except argparse.ArgumentTypeError as e:
-    print('error: %s' % e)
-    sys.exit(1)
-
-if args.update:
-    dbapassword = 'testingpw'
+# Read the database root password of an existing installation, from
+# .env.local.db or, for installations made before it existed, from
+# docker-compose.yml. Returns the development default if neither has one.
+def read_db_root_password():
     for filename in ('.env.local.db', 'docker-compose.yml'):
         if os.path.exists(filename):
             with open(filename, 'r') as f:
                 for line in f:
                     if 'MYSQL_ROOT_PASSWORD=' in line and not line.lstrip().startswith('#'):
-                        dbapassword = line.split('=')[1].rstrip().rstrip('"')
-                        break
-            if dbapassword != 'testingpw':
-                break
-    # Use last project name
+                        return line.split('=')[1].rstrip().rstrip('"')
+    return 'testingpw'
+
+
+def main():
+    ## Get user arguments
     try:
-        with open('.dockersetup-options', 'r') as f:
-            for line in f:
-                if line.startswith('project_name='):
-                    args.project_name = line.split('=', 1)[1].rstrip()
-    except FileNotFoundError:
-        pass
-else:
-    # Generate secret key and database password
-    secretkey = generatepasswords(50)
-    dbapassword = generatepasswords(10)
-    dbpassword = generatepasswords(10)
-    rmqpassword = generatepasswords(10)
-
-if args.project_name:
-    os.environ['COMPOSE_PROJECT_NAME'] = args.project_name
-else:
-    # Get the project name from the environment (so we can save it for a future upgrade)
-    args.project_name = os.environ.get('COMPOSE_PROJECT_NAME', '')
-
-https_port = None
-http_port = None
-if not args.update:
-    for portmap in args.portmapping.split(','):
-        outport, inport = portmap.split(':', 1)
-        if inport == '443':
-            https_port = outport
-        elif inport == '80':
-            http_port = outport
-    if (not https_port) and (not args.no_https):
-        print("No HTTPS port mapping (to port 443 inside the container) was specified and --no-https was not specified")
-        sys.exit(1)
-    if not http_port:
-        print("Port mapping must include a mapping to port 80 inside the container")
+        args, socks_proxy_port, socks_proxy_host, email_host, email_port = get_args()
+    except argparse.ArgumentTypeError as e:
+        print('error: %s' % e)
         sys.exit(1)
 
-## Check if it's installed
-installed = False
-return_code = subprocess.call("docker ps -a | grep -q layersapp", shell=True)
-if return_code == 0:
-    installed = True
+    if args.update:
+        dbapassword = read_db_root_password()
+        # Use last project name
+        try:
+            with open('.dockersetup-options', 'r') as f:
+                for line in f:
+                    if line.startswith('project_name='):
+                        args.project_name = line.split('=', 1)[1].rstrip()
+        except FileNotFoundError:
+            pass
+    else:
+        # Generate secret key and database password
+        secretkey = generatepasswords(50)
+        dbapassword = generatepasswords(10)
+        dbpassword = generatepasswords(10)
+        rmqpassword = generatepasswords(10)
 
-if args.uninstall:
-    if not installed:
-        print("Cannot uninstall - application does not appear to be installed")
-        sys.exit(1)
-elif args.update:
-    if not installed:
-        print("Application container not found - update mode can only be used on an existing installation")
-        sys.exit(1)
-    if dbapassword == 'testingpw':
-        print("Update mode can only be used when previous configuration is still present in docker-compose.yml and other files")
-        sys.exit(1)
-elif installed and not args.reinstall:
-    print('Application already installed. Please use -u/--update to update or -r/--reinstall to reinstall')
-    sys.exit(1)
+    if args.project_name:
+        os.environ['COMPOSE_PROJECT_NAME'] = args.project_name
+    else:
+        # Get the project name from the environment (so we can save it for a future upgrade)
+        args.project_name = os.environ.get('COMPOSE_PROJECT_NAME', '')
 
-if not args.uninstall:
-    print("""
+    https_port = None
+    http_port = None
+    if not args.update:
+        for portmap in args.portmapping.split(','):
+            outport, inport = portmap.split(':', 1)
+            if inport == '443':
+                https_port = outport
+            elif inport == '80':
+                http_port = outport
+        if (not https_port) and (not args.no_https):
+            print("No HTTPS port mapping (to port 443 inside the container) was specified and --no-https was not specified")
+            sys.exit(1)
+        if not http_port:
+            print("Port mapping must include a mapping to port 80 inside the container")
+            sys.exit(1)
+
+    ## Check if it's installed
+    installed = False
+    return_code = subprocess.call("docker ps -a | grep -q layersapp", shell=True)
+    if return_code == 0:
+        installed = True
+
+    if args.uninstall:
+        if not installed:
+            print("Cannot uninstall - application does not appear to be installed")
+            sys.exit(1)
+    elif args.update:
+        if not installed:
+            print("Application container not found - update mode can only be used on an existing installation")
+            sys.exit(1)
+        if dbapassword == 'testingpw':
+            print("Update mode can only be used when previous configuration is still present in docker-compose.yml and other files")
+            sys.exit(1)
+    elif installed and not args.reinstall:
+        print('Application already installed. Please use -u/--update to update or -r/--reinstall to reinstall')
+        sys.exit(1)
+
+    if not args.uninstall:
+        print("""
 OE Layer Index Docker setup script
 ----------------------------------
 
@@ -723,232 +728,236 @@ Note that this script does have interactive prompts, so be prepared to
 provide information as needed.
 """)
 
-if not (args.update or args.uninstall) and not email_host:
-    print("""  WARNING: no email host has been specified - functions that require email
+    if not (args.update or args.uninstall) and not email_host:
+        print("""  WARNING: no email host has been specified - functions that require email
   (such as and new account registraion, password reset and error reports will
   not work without it. If you wish to correct this, press Ctrl+C now and then
   re-run specifying the email host with the --email-host option.
 """)
 
-if args.reinstall:
-    print("""  WARNING: continuing will wipe out any existing data in the database and set
+    if args.reinstall:
+        print("""  WARNING: continuing will wipe out any existing data in the database and set
   up the application from scratch! Press Ctrl+C now if this is not what you
   want.
 """)
 
-if args.uninstall:
-    print("""
+    if args.uninstall:
+        print("""
   WARNING: continuing will wipe out any existing data in the database and
   uninstall the application. Press Ctrl+C now if this is not what you want.
 """)
 
-try:
-    if args.uninstall:
-        promptstr = 'Press Enter to begin uninstallation (or Ctrl+C to exit)...'
-    elif args.update:
-        promptstr = 'Press Enter to begin update (or Ctrl+C to exit)...'
-    else:
-        promptstr = 'Press Enter to begin setup (or Ctrl+C to exit)...'
-    input(promptstr)
-except KeyboardInterrupt:
-    print('')
-    sys.exit(2)
-
-if not (args.update or args.uninstall):
-    # Get email address
-    print('')
-    if args.letsencrypt:
-        print('You will now be asked for an email address. This will be used for the superuser account, to send error reports to and for Let\'s Encrypt.')
-    else:
-        print('You will now be asked for an email address. This will be used for the superuser account and to send error reports to.')
-    emailaddr = None
-    while True:
-        emailaddr = input('Enter your email address: ')
-        if '@' in emailaddr:
-            break
+    try:
+        if args.uninstall:
+            promptstr = 'Press Enter to begin uninstallation (or Ctrl+C to exit)...'
+        elif args.update:
+            promptstr = 'Press Enter to begin update (or Ctrl+C to exit)...'
         else:
-            print('Entered email address is not valid')
+            promptstr = 'Press Enter to begin setup (or Ctrl+C to exit)...'
+        input(promptstr)
+    except KeyboardInterrupt:
+        print('')
+        sys.exit(2)
 
-if args.reinstall or args.uninstall:
-    return_code = subprocess.call(['docker-compose', 'down', '-v'], shell=False)
-
-if args.uninstall:
-    # We're done
-    print('Uninstallation completed')
-    sys.exit(0)
-
-if args.update:
-    args.no_https = read_dockerfile_web()
-    if not args.no_https:
-        container_cert_dir = args.app_dir + '/cert'
-        args.hostname, https_port, certdir, certfile, keyfile = read_nginx_ssl_conf(container_cert_dir)
-        edit_nginx_ssl_conf(args.hostname, https_port, certdir, certfile, keyfile)
-else:
-    # Always edit these in case we switch from proxy to no proxy
-    edit_gitproxy(socks_proxy_host, socks_proxy_port, args.no_proxy)
-    edit_dockerfile(args.http_proxy, args.https_proxy, args.no_proxy)
-    write_env_file(args.app_dir)
-
-    write_service_env_files(dbpassword, dbapassword, secretkey, rmqpassword, email_host, email_port, args.email_user, args.email_password, args.email_ssl, args.email_tls)
-    edit_dockercompose(args.hostname, args.portmapping, args.letsencrypt, args.app_dir)
-
-    edit_dockerfile_web(args.hostname, args.no_https)
-
-    edit_settings_py(emailaddr, args.app_dir)
-
-    edit_options_file(args.project_name)
-
-    if not args.no_https:
-        setup_https(args.hostname, http_port, https_port, args.letsencrypt, args.letsencrypt_production, args.cert, args.cert_key, emailaddr, args.app_dir)
-
-## Start up containers
-return_code = subprocess.call(['docker-compose', 'up', '-d', '--build'], shell=False)
-if return_code != 0:
-    print("docker-compose up failed")
-    sys.exit(1)
-
-if not (args.update or args.no_connectivity):
-    ## Run connectivity check
-    check_connectivity(args.app_dir)
-
-# Get real project name (if only there were a reasonable way to do this... ugh)
-real_project_name = ''
-output = subprocess.check_output(['docker-compose', 'ps', '-q'], shell=False)
-if output:
-    output = output.decode('utf-8')
-    for contid in output.splitlines():
-        output = subprocess.check_output(['docker', 'inspect', '-f', '{{ .Mounts }}', contid], shell=False)
-        if output:
-            output = output.decode('utf-8')
-            for volume in re.findall('volume ([^ ]+)', output):
-                if '_' in volume:
-                    real_project_name = volume.rsplit('_', 1)[0]
-                    break
-            if real_project_name:
+    if not (args.update or args.uninstall):
+        # Get email address
+        print('')
+        if args.letsencrypt:
+            print('You will now be asked for an email address. This will be used for the superuser account, to send error reports to and for Let\'s Encrypt.')
+        else:
+            print('You will now be asked for an email address. This will be used for the superuser account and to send error reports to.')
+        emailaddr = None
+        while True:
+            emailaddr = input('Enter your email address: ')
+            if '@' in emailaddr:
                 break
-if not real_project_name:
-    print('Failed to detect docker-compose project name')
-    sys.exit(1)
+            else:
+                print('Entered email address is not valid')
 
-# Database might not be ready yet; have to wait then poll.
-time.sleep(8)
-while True:
-    time.sleep(2)
-    # Pass credentials through environment for slightly better security
-    # (avoids password being visible through ps or /proc/<pid>/cmdline)
-    env = os.environ.copy()
-    env['MYSQL_PWD'] = dbapassword
-    # Dummy command, we just want to establish that the db can be connected to
-    return_code = subprocess.call("echo | docker-compose exec -T -e MYSQL_PWD layersdb mariadb -uroot layersdb", shell=True, env=env)
-    if return_code == 0:
-        break
+    if args.reinstall or args.uninstall:
+        return_code = subprocess.call(['docker-compose', 'down', '-v'], shell=False)
+
+    if args.uninstall:
+        # We're done
+        print('Uninstallation completed')
+        sys.exit(0)
+
+    if args.update:
+        args.no_https = read_dockerfile_web()
+        if not args.no_https:
+            container_cert_dir = args.app_dir + '/cert'
+            args.hostname, https_port, certdir, certfile, keyfile = read_nginx_ssl_conf(container_cert_dir)
+            edit_nginx_ssl_conf(args.hostname, https_port, certdir, certfile, keyfile)
     else:
-        print("Database server may not be ready; will try again.")
+        # Always edit these in case we switch from proxy to no proxy
+        edit_gitproxy(socks_proxy_host, socks_proxy_port, args.no_proxy)
+        edit_dockerfile(args.http_proxy, args.https_proxy, args.no_proxy)
+        write_env_file(args.app_dir)
 
-if not args.update:
-    # Import the user's supplied data
-    if args.databasefile:
-        filename, file_extension = os.path.splitext(args.databasefile)
-        if file_extension == ".zst":
-            return_code = subprocess.call("zstd -t %s > /dev/null 2>&1" % quote(args.databasefile), shell=True)
-            if return_code == 0:
-                catcmd = 'zstdcat'
-        elif file_extension == ".gz":
-            return_code = subprocess.call("gunzip -t %s > /dev/null 2>&1" % quote(args.databasefile), shell=True)
-            if return_code == 0:
-                catcmd = 'zcat'
-        else:
-            catcmd = 'cat'
-        env = os.environ.copy()
-        env['MYSQL_PWD'] = dbapassword
-        return_code = subprocess.call("%s %s | docker-compose exec -T -e MYSQL_PWD layersdb mariadb -uroot layersdb" % (catcmd, quote(args.databasefile)), shell=True, env=env)
-        if return_code != 0:
-            print("Database import failed")
-            sys.exit(1)
+        write_service_env_files(dbpassword, dbapassword, secretkey, rmqpassword, email_host, email_port, args.email_user, args.email_password, args.email_ssl, args.email_tls)
+        edit_dockercompose(args.hostname, args.portmapping, args.letsencrypt, args.app_dir)
 
-if not args.no_migrate:
-    # Apply any pending layerindex migrations / initialize the database.
-    env = os.environ.copy()
-    env['DATABASE_USER'] = 'root'
-    env['DATABASE_PASSWORD'] = dbapassword
-    return_code = subprocess.call(['docker-compose', 'run', '--rm', '-e', 'DATABASE_USER', '-e', 'DATABASE_PASSWORD', 'layersapp', args.app_dir + '/migrate.sh'], shell=False, env=env)
+        edit_dockerfile_web(args.hostname, args.no_https)
+
+        edit_settings_py(emailaddr, args.app_dir)
+
+        edit_options_file(args.project_name)
+
+        if not args.no_https:
+            setup_https(args.hostname, http_port, https_port, args.letsencrypt, args.letsencrypt_production, args.cert, args.cert_key, emailaddr, args.app_dir)
+
+    ## Start up containers
+    return_code = subprocess.call(['docker-compose', 'up', '-d', '--build'], shell=False)
     if return_code != 0:
-        print("Applying migrations failed")
+        print("docker-compose up failed")
         sys.exit(1)
 
-if not args.update:
-    # Create normal database user for app to use
-    with tempfile.NamedTemporaryFile('w', dir=os.getcwd(), delete=False) as tf:
-        sqlscriptfile = tf.name
-        tf.write("DROP USER IF EXISTS layers;")
-        tf.write("CREATE USER layers IDENTIFIED BY '%s';\n" % dbpassword)
-        tf.write("GRANT SELECT, UPDATE, INSERT, DELETE ON layersdb.* TO layers;\n")
-        tf.write("FLUSH PRIVILEGES;\n")
-    try:
+    if not (args.update or args.no_connectivity):
+        ## Run connectivity check
+        check_connectivity(args.app_dir)
+
+    # Get real project name (if only there were a reasonable way to do this... ugh)
+    real_project_name = ''
+    output = subprocess.check_output(['docker-compose', 'ps', '-q'], shell=False)
+    if output:
+        output = output.decode('utf-8')
+        for contid in output.splitlines():
+            output = subprocess.check_output(['docker', 'inspect', '-f', '{{ .Mounts }}', contid], shell=False)
+            if output:
+                output = output.decode('utf-8')
+                for volume in re.findall('volume ([^ ]+)', output):
+                    if '_' in volume:
+                        real_project_name = volume.rsplit('_', 1)[0]
+                        break
+                if real_project_name:
+                    break
+    if not real_project_name:
+        print('Failed to detect docker-compose project name')
+        sys.exit(1)
+
+    # Database might not be ready yet; have to wait then poll.
+    time.sleep(8)
+    while True:
+        time.sleep(2)
         # Pass credentials through environment for slightly better security
         # (avoids password being visible through ps or /proc/<pid>/cmdline)
         env = os.environ.copy()
         env['MYSQL_PWD'] = dbapassword
-        return_code = subprocess.call("docker-compose exec -T -e MYSQL_PWD layersdb mariadb -uroot layersdb < " + quote(sqlscriptfile), shell=True, env=env)
+        # Dummy command, we just want to establish that the db can be connected to
+        return_code = subprocess.call("echo | docker-compose exec -T -e MYSQL_PWD layersdb mariadb -uroot layersdb", shell=True, env=env)
+        if return_code == 0:
+            break
+        else:
+            print("Database server may not be ready; will try again.")
+
+    if not args.update:
+        # Import the user's supplied data
+        if args.databasefile:
+            filename, file_extension = os.path.splitext(args.databasefile)
+            if file_extension == ".zst":
+                return_code = subprocess.call("zstd -t %s > /dev/null 2>&1" % quote(args.databasefile), shell=True)
+                if return_code == 0:
+                    catcmd = 'zstdcat'
+            elif file_extension == ".gz":
+                return_code = subprocess.call("gunzip -t %s > /dev/null 2>&1" % quote(args.databasefile), shell=True)
+                if return_code == 0:
+                    catcmd = 'zcat'
+            else:
+                catcmd = 'cat'
+            env = os.environ.copy()
+            env['MYSQL_PWD'] = dbapassword
+            return_code = subprocess.call("%s %s | docker-compose exec -T -e MYSQL_PWD layersdb mariadb -uroot layersdb" % (catcmd, quote(args.databasefile)), shell=True, env=env)
+            if return_code != 0:
+                print("Database import failed")
+                sys.exit(1)
+
+    if not args.no_migrate:
+        # Apply any pending layerindex migrations / initialize the database.
+        env = os.environ.copy()
+        env['DATABASE_USER'] = 'root'
+        env['DATABASE_PASSWORD'] = dbapassword
+        return_code = subprocess.call(['docker-compose', 'run', '--rm', '-e', 'DATABASE_USER', '-e', 'DATABASE_PASSWORD', 'layersapp', args.app_dir + '/migrate.sh'], shell=False, env=env)
         if return_code != 0:
-            print("Creating database user failed")
-            sys.exit(1)
-    finally:
-        os.remove(sqlscriptfile)
-
-    ## Set the volume permissions using debian:stretch since we recently fetched it
-    volumes = ['layersmeta', 'layersstatic', 'logvolume']
-    with open('docker-compose.yml', 'r') as f:
-        for line in f:
-            if line.lstrip().startswith('- srcvolume:'):
-                volumes.append('srcvolume')
-                break
-    for volume in volumes:
-        volname = '%s_%s' % (real_project_name, volume)
-        return_code = subprocess.call(['docker', 'run', '--rm', '-v', '%s:%s/mount' % (volname, args.app_dir), 'debian:stretch', 'chown', '500', args.app_dir + '/mount'], shell=False)
-        if return_code != 0:
-            print("Setting volume permissions for volume %s failed" % volume)
-            sys.exit(1)
-
-## Generate static assets. Run this command again to regenerate at any time (when static assets in the code are updated)
-return_code = subprocess.call("docker-compose run --rm -e STATIC_ROOT=/usr/share/nginx/html -v %s_layersstatic:/usr/share/nginx/html layersapp %s/layerindex/manage.py collectstatic --noinput" % (quote(real_project_name), args.app_dir), shell = True)
-if return_code != 0:
-    print("Collecting static files failed")
-    sys.exit(1)
-
-if https_port and not args.no_https:
-    protocol = 'https'
-    port = https_port
-    defport = '443'
-else:
-    protocol = 'http'
-    port = http_port
-    defport = '80'
-if port == defport:
-    host = args.hostname
-else:
-    host = '%s:%s' % (args.hostname, port)
-
-if not args.update:
-    if not args.databasefile:
-        ## Set site name
-        return_code = subprocess.call(['docker-compose', 'run', '--rm', 'layersapp', args.app_dir + '/layerindex/layerindex/tools/site_name.py', host, 'OpenEmbedded Layer Index'], shell=False)
-
-    if not args.no_admin_user:
-        ## For a fresh database, create an admin account
-        print("Creating database superuser. Input user name and password when prompted.")
-        return_code = subprocess.call(['docker-compose', 'run', '--rm', 'layersapp', args.app_dir + '/layerindex/manage.py', 'createsuperuser', '--email', emailaddr], shell=False)
-        if return_code != 0:
-            print("Creating superuser failed")
+            print("Applying migrations failed")
             sys.exit(1)
 
+    if not args.update:
+        # Create normal database user for app to use
+        with tempfile.NamedTemporaryFile('w', dir=os.getcwd(), delete=False) as tf:
+            sqlscriptfile = tf.name
+            tf.write("DROP USER IF EXISTS layers;")
+            tf.write("CREATE USER layers IDENTIFIED BY '%s';\n" % dbpassword)
+            tf.write("GRANT SELECT, UPDATE, INSERT, DELETE ON layersdb.* TO layers;\n")
+            tf.write("FLUSH PRIVILEGES;\n")
+        try:
+            # Pass credentials through environment for slightly better security
+            # (avoids password being visible through ps or /proc/<pid>/cmdline)
+            env = os.environ.copy()
+            env['MYSQL_PWD'] = dbapassword
+            return_code = subprocess.call("docker-compose exec -T -e MYSQL_PWD layersdb mariadb -uroot layersdb < " + quote(sqlscriptfile), shell=True, env=env)
+            if return_code != 0:
+                print("Creating database user failed")
+                sys.exit(1)
+        finally:
+            os.remove(sqlscriptfile)
 
-if args.update:
-    print("Update complete")
-else:
-    if args.project_name:
+        ## Set the volume permissions using debian:stretch since we recently fetched it
+        volumes = ['layersmeta', 'layersstatic', 'logvolume']
+        with open('docker-compose.yml', 'r') as f:
+            for line in f:
+                if line.lstrip().startswith('- srcvolume:'):
+                    volumes.append('srcvolume')
+                    break
+        for volume in volumes:
+            volname = '%s_%s' % (real_project_name, volume)
+            return_code = subprocess.call(['docker', 'run', '--rm', '-v', '%s:%s/mount' % (volname, args.app_dir), 'debian:stretch', 'chown', '500', args.app_dir + '/mount'], shell=False)
+            if return_code != 0:
+                print("Setting volume permissions for volume %s failed" % volume)
+                sys.exit(1)
+
+    ## Generate static assets. Run this command again to regenerate at any time (when static assets in the code are updated)
+    return_code = subprocess.call("docker-compose run --rm -e STATIC_ROOT=/usr/share/nginx/html -v %s_layersstatic:/usr/share/nginx/html layersapp %s/layerindex/manage.py collectstatic --noinput" % (quote(real_project_name), args.app_dir), shell = True)
+    if return_code != 0:
+        print("Collecting static files failed")
+        sys.exit(1)
+
+    if https_port and not args.no_https:
+        protocol = 'https'
+        port = https_port
+        defport = '443'
+    else:
+        protocol = 'http'
+        port = http_port
+        defport = '80'
+    if port == defport:
+        host = args.hostname
+    else:
+        host = '%s:%s' % (args.hostname, port)
+
+    if not args.update:
+        if not args.databasefile:
+            ## Set site name
+            return_code = subprocess.call(['docker-compose', 'run', '--rm', 'layersapp', args.app_dir + '/layerindex/layerindex/tools/site_name.py', host, 'OpenEmbedded Layer Index'], shell=False)
+
+        if not args.no_admin_user:
+            ## For a fresh database, create an admin account
+            print("Creating database superuser. Input user name and password when prompted.")
+            return_code = subprocess.call(['docker-compose', 'run', '--rm', 'layersapp', args.app_dir + '/layerindex/manage.py', 'createsuperuser', '--email', emailaddr], shell=False)
+            if return_code != 0:
+                print("Creating superuser failed")
+                sys.exit(1)
+
+
+    if args.update:
+        print("Update complete")
+    else:
+        if args.project_name:
+            print("")
+            print("NOTE: you may need to use -p %s (or set COMPOSE_PROJECT_NAME=\"%s\" ) if running docker-compose directly in future" % (args.project_name, args.project_name))
         print("")
-        print("NOTE: you may need to use -p %s (or set COMPOSE_PROJECT_NAME=\"%s\" ) if running docker-compose directly in future" % (args.project_name, args.project_name))
-    print("")
-    print("The application should now be accessible at %s://%s" % (protocol, host))
-    print("")
+        print("The application should now be accessible at %s://%s" % (protocol, host))
+        print("")
+
+
+if __name__ == '__main__':
+    main()
