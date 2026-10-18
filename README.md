@@ -29,12 +29,13 @@ containers, and do the initial database setup. It is advised that you start
 with a .sql database file to prepopulate your database. The following
 instructions will walk you through the setup.
 
-1. Install docker and docker-compose per instructions:
+1. Install Docker Engine (or Docker Desktop) with the Compose plugin, which
+   provides the `docker compose` command, per instructions:
 
    https://docs.docker.com/compose/install/
 
-   **Note:** for latest docker-compose version follow the directions above,
-   rather than using a perhaps outdated one provided by your distribution.
+   `dockersetup.py` uses `docker compose`, or the older standalone
+   `docker-compose` if the plugin is not installed.
 
 2. Run the setup script (`dockersetup.py`). You can optionally supply your
    hostname, proxy settings, a sql database file of layer mappings to import,
@@ -135,7 +136,7 @@ setup within it:
    public instance at layers.openembedded.org you can run the following:
 
    ```sh
-   docker-compose run --rm layersapp /opt/layerindex/layerindex/tools/import_layers.py https://layers.openembedded.org
+   docker compose run --rm layersapp /opt/layerindex/layerindex/tools/import_layers.py https://layers.openembedded.org
    ```
 
    Alternatively, you can populate the database manually -
@@ -205,21 +206,21 @@ following:
 Incremental update:
 
 ```sh
-docker-compose run --rm layersapp /opt/layerindex/layerindex/update.py
+docker compose run --rm layersapp /opt/layerindex/layerindex/update.py
 ```
 
 Reload all data (should only be needed if the database structure has
 changed as part of an upgrade of the application code):
 
 ```sh
-docker-compose run --rm layersapp /opt/layerindex/layerindex/update.py -r
+docker compose run --rm layersapp /opt/layerindex/layerindex/update.py -r
 ```
 
 Alternatively, you can update the data from an existing layer index instance
 (as per above during setup):
 
 ```sh
-docker-compose run --rm layersapp /opt/layerindex/layerindex/tools/import_layers.py https://layers.openembedded.org
+docker compose run --rm layersapp /opt/layerindex/layerindex/tools/import_layers.py https://layers.openembedded.org
 ```
 
 
@@ -430,7 +431,7 @@ Some things to be aware of from a security perspective:
   backend you can run the following command:
 
   ```sh
-  docker-compose exec layersapp /opt/layerindex/manage.py changepassword <username>
+  docker compose exec layersapp /opt/layerindex/manage.py changepassword <username>
   ```
 
 - The web-based password reset function will ask the user answers to
@@ -463,7 +464,7 @@ Some things to be aware of from a security perspective:
     immediately using the following command:
 
     ```sh
-    docker-compose exec layersapp /opt/layerindex/manage.py axes_reset
+    docker compose exec layersapp /opt/layerindex/manage.py axes_reset
     ```
 
     If you wish to disable this, remove or comment out "axes" in
@@ -488,14 +489,14 @@ following command (no need to substitute `${MYSQL_ROOT_PASSWORD}`, it's
 already present within the container environment):
 
 ```sh
-docker-compose exec layersdb /bin/sh -c '/usr/bin/mariadb-dump -u root --password=${MYSQL_ROOT_PASSWORD} --max_allowed_packet=512M layersdb' | gzip > backup-`date +%Y_%m_%d_%H%M`.sql.gz
+docker compose exec layersdb /bin/sh -c '/usr/bin/mariadb-dump -u root --password=${MYSQL_ROOT_PASSWORD} --max_allowed_packet=512M layersdb' | gzip > backup-`date +%Y_%m_%d_%H%M`.sql.gz
 ```
 
 To restore one of these backups you would run the following command (take
 care, this will overwrite the data immediately without prompting!):
 
 ```sh
-zcat backupfile.sql.gz | docker-compose exec -T layersdb /bin/sh -c '/usr/bin/mariadb -u root --password=${MYSQL_ROOT_PASSWORD} layersdb'
+zcat backupfile.sql.gz | docker compose exec -T layersdb /bin/sh -c '/usr/bin/mariadb -u root --password=${MYSQL_ROOT_PASSWORD} layersdb'
 ```
 
 
