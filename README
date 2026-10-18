@@ -98,6 +98,14 @@ credentials, email server, DEBUG) from .env.<context>.<service> files, where
 
 The .env* files are excluded from the Docker images.
 
+Other settings the app and celery files can set:
+
+  - DEBUG: 1, true or yes enables Django's debug mode; anything else, or
+    leaving it unset, keeps it off. Never enable it on a public site.
+  - ENABLE_RRS: 1 enables the Recipe Reporting System (see README.rrs).
+  - DATABASE_PORT (default 3306) and STATIC_ROOT (default
+    /usr/share/nginx/html/static/).
+
 
 
 TROUBLESHOOTING:
@@ -209,11 +217,33 @@ Alternatively, you can update the data from an existing layer index instance
 Upgrading from an earlier version
 ---------------------------------
 
-To upgrade the Docker-based setup from a previous release, simply run:
+To upgrade the Docker-based setup from a previous release, update the code
+(e.g. with git pull) and then run:
 
 ./dockersetup.py -u
 
-This will update the code and run any required database migrations.
+This will rebuild the containers and run any required database migrations.
+
+Installations set up by dockersetup.py before it used environment files
+(see "Environment files" above) have their secret key and passwords in the
+environment sections of docker-compose.yml. Carry them over by hand once:
+
+1. Copy docker-compose.yml somewhere safe, then restore the tracked version
+   (git checkout docker-compose.yml) and update the code.
+
+2. For each of app, celery, db and rabbit, copy .env.dev.<service> to
+   .env.local.<service> and fill in the values from the matching service
+   in the old file: SECRET_KEY, DATABASE_USER, DATABASE_PASSWORD,
+   MYSQL_ROOT_PASSWORD, RABBITMQ_DEFAULT_USER, RABBITMQ_DEFAULT_PASS and any
+   EMAIL_* settings. Set DEBUG=0 in .env.local.app, and make the files
+   readable only by you (chmod 600 .env.local.*).
+
+3. In docker-compose.yml, change the env_file entries from .env.dev.* to
+   .env.local.*, and reapply your other changes from the old file (hostname,
+   ports, certificate volumes and, if you use Let's Encrypt, the
+   layerscertbot service).
+
+4. Run ./dockersetup.py -u as above.
 
 
 
@@ -371,7 +401,7 @@ REGISTRATION_OPEN = False
   also enable HSTS in your configuration. Refer to the Django Security
   guide for details on how to do that:
 
-  https://docs.djangoproject.com/en/1.11/topics/security/#ssl-https
+  https://docs.djangoproject.com/en/stable/topics/security/#ssl-https
 
 * To reset a forgotten account password, you can either use the password
   reset function ( /accounts/password_reset/ ) or alternatively from the
