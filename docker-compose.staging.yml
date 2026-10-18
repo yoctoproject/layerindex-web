@@ -1,0 +1,74 @@
+services:
+  layersdb:
+    image: mariadb:lts
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --wait_timeout=28800 --max_allowed_packet=128M
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    env_file:
+     - ".env.staging.db"
+    restart: unless-stopped
+
+  layersapp:
+    depends_on:
+      - layersdb
+    build: .
+    image: halstead/layerindex-app
+    hostname: localhost
+    volumes:
+     - layersmeta:/opt/workdir
+     - logvolume:/opt/layerindex-task-logs
+    env_file:
+     - ".env.staging.app"
+    restart: unless-stopped
+
+  layersweb:
+    depends_on:
+      - layersapp
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    image: halstead/layerindex-web
+    hostname: localhost
+    ports:
+     - "443:443"
+     - "80:80"
+    volumes:
+     - layersstatic:/usr/share/nginx/html
+     - ./docker/certs:/opt/cert
+     - certbotwww:/var/www/certbot
+    command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
+    restart: unless-stopped
+
+  layersrabbit:
+    image: rabbitmq:alpine
+    restart: unless-stopped
+    env_file:
+     - ".env.staging.rabbit"
+
+  layerscelery:
+    depends_on:
+      - layersdb
+      - layersapp
+      - layersrabbit
+    image: halstead/layerindex-app
+    volumes:
+     - layersmeta:/opt/workdir
+     - logvolume:/opt/layerindex-task-logs
+    env_file:
+     - ".env.staging.celery"
+    restart: unless-stopped
+    command: /usr/local/bin/celery --workdir=/opt/layerindex --app layerindex.tasks worker --loglevel=INFO
+
+  layerscertbot:
+    image: certbot/certbot
+    volumes:
+     - ./docker/certs:/opt/cert
+     - certbotwww:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+
+volumes:
+  layersmeta:
+  layersstatic:
+  mariadb_data:
+  logvolume:
+  certbotwww:

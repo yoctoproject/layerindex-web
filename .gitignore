@@ -18,3 +18,5 @@ requirements.txt.updated
 requirements_outdated.txt
 requirements_safety_check.txt
 requirements_deptree.txt
+.env
+.env.local.*

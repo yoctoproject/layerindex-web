@@ -75,7 +75,28 @@ instructions will walk you through the setup.
 
    Note that updating with -u/--update will only work if the configuration
    changes originally made by dockersetup.py upon installation (e.g. passwords,
-   hostname, etc.) are still present in the source tree.
+   hostname, etc.) are still present in the source tree. The generated
+   passwords and secret key are written to .env.local.* files, which git
+   ignores; keep them, and do not commit them.
+
+Environment files:
+
+The containers read their settings (secret key, database and RabbitMQ
+credentials, email server, DEBUG) from .env.<context>.<service> files, where
+<context> is dev, staging or prod and <service> is app, celery, db or rabbit:
+
+  - docker-compose.yml uses the .env.dev.* files, which hold development-only
+    values. dockersetup.py copies them to .env.local.*, fills in the secrets
+    it generates, and points docker-compose.yml at those copies.
+  - docker-compose.staging.yml and docker-compose.prod.yml use the
+    .env.staging.* and .env.prod.* files. Their secrets are commented out, so
+    nothing starts with a known password. Set the real values, and the
+    hostname in the compose file, in a local commit on the server and never
+    push them. Then run, for example:
+
+        docker compose -f docker-compose.prod.yml up -d --build
+
+The .env* files are excluded from the Docker images.
 
 
 

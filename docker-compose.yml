@@ -2,9 +2,8 @@ services:
   layersdb:
     image: mariadb:lts
     command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --wait_timeout=28800 --max_allowed_packet=128M
-    environment:
-     - "MYSQL_DATABASE=layersdb"
-     - "MYSQL_ROOT_PASSWORD=testingpw"
+    env_file:
+     - ".env.dev.db"
     restart: unless-stopped
   layersapp:
     depends_on:
@@ -15,20 +14,8 @@ services:
     volumes:
      - layersmeta:/opt/workdir
      - logvolume:/opt/layerindex-task-logs:z
-    environment:
-     #- "SECRET_KEY=<set this here>"
-     - "DATABASE_USER=root"
-     - "DATABASE_PASSWORD=testingpw"
-     - "DATABASE_HOST=layersdb"
-     - "RABBITMQ_DEFAULT_USER=guest"
-     - "RABBITMQ_DEFAULT_PASS=guest"
-     #- "EMAIL_HOST=<set this here>"
-     #- "EMAIL_PORT=<set this here if not the default>"
-     #- "EMAIL_USER=<set this here if needed>"
-     #- "EMAIL_PASSWORD=<set this here if needed>"
-     #- "EMAIL_USE_SSL=<set this here if needed>"
-     #- "EMAIL_USE_TLS=<set this here if needed>"
-     #- "DEBUG=1"
+    env_file:
+     - ".env.dev.app"
     restart: unless-stopped
   layersweb:
     depends_on:
@@ -52,9 +39,8 @@ services:
   layersrabbit:
     image: rabbitmq:alpine
     restart: unless-stopped
-    environment:
-     - "RABBITMQ_DEFAULT_USER=guest"
-     - "RABBITMQ_DEFAULT_PASS=guest"
+    env_file:
+     - ".env.dev.rabbit"
   layerscelery:
     depends_on:
       - layersdb
@@ -64,20 +50,8 @@ services:
     volumes:
      - layersmeta:/opt/workdir
      - logvolume:/opt/layerindex-task-logs:z
-    environment:
-     #- "SECRET_KEY=<set this here>"
-     - "DATABASE_USER=layers"
-     - "DATABASE_PASSWORD=testingpw"
-     - "DATABASE_HOST=layersdb"
-     - "RABBITMQ_DEFAULT_USER=guest"
-     - "RABBITMQ_DEFAULT_PASS=guest"
-     #- "EMAIL_HOST=<set this here>"
-     #- "EMAIL_PORT=<set this here if not the default>"
-     #- "EMAIL_USER=<set this here if needed>"
-     #- "EMAIL_PASSWORD=<set this here if needed>"
-     #- "EMAIL_USE_SSL=<set this here if needed>"
-     #- "EMAIL_USE_TLS=<set this here if needed>"
-     #- "DEBUG=1"
+    env_file:
+     - ".env.dev.celery"
     restart: unless-stopped
     command: /usr/local/bin/celery --workdir=/opt/layerindex --app layerindex.tasks worker --loglevel=INFO
   #layerscertbot:

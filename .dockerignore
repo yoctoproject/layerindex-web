@@ -19,3 +19,4 @@ dockersetup.py
 .venv
 .idea
 .DS_Store
+.env*

@@ -253,8 +253,9 @@ def yaml_comment(line):
     return out
 
 
-# Add hostname, secret key, db info, and email host in docker-compose.yml
-def edit_dockercompose(hostname, dbpassword, dbapassword, secretkey, rmqpassword, portmapping, letsencrypt, email_host, email_port, email_user, email_password, email_ssl, email_tls, app_dir='/opt'):
+# Add hostname, port mapping and certificates in docker-compose.yml, and use
+# the .env.local.* files written by write_service_env_files()
+def edit_dockercompose(hostname, portmapping, letsencrypt, app_dir='/opt'):
 
     in_layersapp_build = False
 
@@ -341,60 +342,8 @@ def edit_dockercompose(hostname, dbpassword, dbapassword, secretkey, rmqpassword
         elif "hostname:" in line:
             format = line[0:line.find("hostname")].replace("#", "")
             newlines.append(format +"hostname: " + hostname + "\n")
-        elif '- "SECRET_KEY' in line:
-            format = line[0:line.find('- "SECRET_KEY')].replace("#", "")
-            newlines.append(format + '- "SECRET_KEY=' + secretkey + '"\n')
-        elif '- "DATABASE_USER' in line:
-            format = line[0:line.find('- "DATABASE_USER')].replace("#", "")
-            newlines.append(format + '- "DATABASE_USER=layers"\n')
-        elif '- "DATABASE_PASSWORD' in line:
-            format = line[0:line.find('- "DATABASE_PASSWORD')].replace("#", "")
-            newlines.append(format + '- "DATABASE_PASSWORD=' + dbpassword + '"\n')
-        elif '- "MYSQL_ROOT_PASSWORD' in line:
-            format = line[0:line.find('- "MYSQL_ROOT_PASSWORD')].replace("#", "")
-            newlines.append(format + '- "MYSQL_ROOT_PASSWORD=' + dbapassword + '"\n')
-        elif '- "RABBITMQ_DEFAULT_USER' in line:
-            format = line[0:line.find('- "RABBITMQ_DEFAULT_USER')].replace("#", "")
-            newlines.append(format + '- "RABBITMQ_DEFAULT_USER=layermq"\n')
-        elif '- "RABBITMQ_DEFAULT_PASS' in line:
-            format = line[0:line.find('- "RABBITMQ_DEFAULT_PASS')].replace("#", "")
-            newlines.append(format + '- "RABBITMQ_DEFAULT_PASS=' + rmqpassword + '"\n')
-        elif '- "EMAIL_HOST' in line:
-            format = line[0:line.find('- "EMAIL_HOST')].replace("#", "")
-            if email_host:
-                newlines.append(format + '- "EMAIL_HOST=' + email_host + '"\n')
-            else:
-                newlines.append(format + '#- "EMAIL_HOST=<set this here>"\n')
-        elif '- "EMAIL_PORT' in line:
-            format = line[0:line.find('- "EMAIL_PORT')].replace("#", "")
-            if email_port:
-                newlines.append(format + '- "EMAIL_PORT=' + email_port + '"\n')
-            else:
-                newlines.append(format + '#- "EMAIL_PORT=<set this here if not the default>"\n')
-        elif '- "EMAIL_USER' in line:
-            format = line[0:line.find('- "EMAIL_USER')].replace("#", "")
-            if email_user:
-                newlines.append(format + '- "EMAIL_USER=' + email_user + '"\n')
-            else:
-                newlines.append(format + '#- "EMAIL_USER=<set this here if needed>"\n')
-        elif '- "EMAIL_PASSWORD' in line:
-            format = line[0:line.find('- "EMAIL_PASSWORD')].replace("#", "")
-            if email_password:
-                newlines.append(format + '- "EMAIL_PASSWORD=' + email_password + '"\n')
-            else:
-                newlines.append(format + '#- "EMAIL_PASSWORD=<set this here if needed>"\n')
-        elif '- "EMAIL_USE_SSL' in line:
-            format = line[0:line.find('- "EMAIL_USE_SSL')].replace("#", "")
-            if email_ssl:
-                newlines.append(format + '- "EMAIL_USE_SSL=' + str(email_ssl) + '"\n')
-            else:
-                newlines.append(format + '#- "EMAIL_USE_SSL=<set this here if needed>"\n')
-        elif '- "EMAIL_USE_TLS' in line:
-            format = line[0:line.find('- "EMAIL_USE_TLS')].replace("#", "")
-            if email_tls:
-                newlines.append(format + '- "EMAIL_USE_TLS=' + str(email_tls) + '"\n')
-            else:
-                newlines.append(format + '#- "EMAIL_USE_TLS=<set this here if needed>"\n')
+        elif '".env.dev.' in line:
+            newlines.append(line.replace('.env.dev.', '.env.local.') + '\n')
         elif "ports:" in line:
             if in_layersweb:
                 in_layersweb_ports = True
@@ -629,6 +578,40 @@ def write_env_file(app_dir):
             f.write('%s=%s\n' % (k, v))
 
 
+# Write the generated secrets and email settings to .env.local.<service>,
+# starting from the tracked .env.dev.<service> defaults. These files hold
+# secrets and are ignored by git.
+def write_service_env_files(dbpassword, dbapassword, secretkey, rmqpassword, email_host, email_port, email_user, email_password, email_ssl, email_tls):
+    values = {
+        'SECRET_KEY': secretkey,
+        'DATABASE_USER': 'layers',
+        'DATABASE_PASSWORD': dbpassword,
+        'MYSQL_ROOT_PASSWORD': dbapassword,
+        'RABBITMQ_DEFAULT_USER': 'layermq',
+        'RABBITMQ_DEFAULT_PASS': rmqpassword,
+        'EMAIL_HOST': email_host,
+        'EMAIL_PORT': email_port,
+        'EMAIL_USER': email_user,
+        'EMAIL_PASSWORD': email_password,
+        'EMAIL_USE_SSL': str(email_ssl) if email_ssl else None,
+        'EMAIL_USE_TLS': str(email_tls) if email_tls else None,
+        'DEBUG': '0',
+    }
+    for service in ('app', 'celery', 'db', 'rabbit'):
+        newlines = ['# Written by dockersetup.py. Contains secrets; do not commit.\n']
+        for line in readfile('.env.dev.' + service).splitlines():
+            if line.startswith('# '):
+                continue
+            key = line.lstrip('#').split('=', 1)[0]
+            if values.get(key):
+                newlines.append('%s=%s\n' % (key, values[key]))
+            else:
+                newlines.append(line + '\n')
+        filename = '.env.local.' + service
+        with open(os.open(filename, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600), 'w') as f:
+            f.write(''.join(newlines))
+
+
 def check_connectivity(app_dir='/opt'):
     return_code = subprocess.call(['docker-compose', 'run', '--rm', 'layersapp', app_dir + '/connectivity_check.sh'], shell=False)
     if return_code != 0:
@@ -656,10 +639,15 @@ except argparse.ArgumentTypeError as e:
     sys.exit(1)
 
 if args.update:
-    with open('docker-compose.yml', 'r') as f:
-        for line in f:
-            if 'MYSQL_ROOT_PASSWORD=' in line:
-                dbapassword = line.split('=')[1].rstrip().rstrip('"')
+    dbapassword = 'testingpw'
+    for filename in ('.env.local.db', 'docker-compose.yml'):
+        if os.path.exists(filename):
+            with open(filename, 'r') as f:
+                for line in f:
+                    if 'MYSQL_ROOT_PASSWORD=' in line and not line.lstrip().startswith('#'):
+                        dbapassword = line.split('=')[1].rstrip().rstrip('"')
+                        break
+            if dbapassword != 'testingpw':
                 break
     # Use last project name
     try:
@@ -801,7 +789,8 @@ else:
     edit_dockerfile(args.http_proxy, args.https_proxy, args.no_proxy)
     write_env_file(args.app_dir)
 
-    edit_dockercompose(args.hostname, dbpassword, dbapassword, secretkey, rmqpassword, args.portmapping, args.letsencrypt, email_host, email_port, args.email_user, args.email_password, args.email_ssl, args.email_tls, args.app_dir)
+    write_service_env_files(dbpassword, dbapassword, secretkey, rmqpassword, email_host, email_port, args.email_user, args.email_password, args.email_ssl, args.email_tls)
+    edit_dockercompose(args.hostname, args.portmapping, args.letsencrypt, args.app_dir)
 
     edit_dockerfile_web(args.hostname, args.no_https)
 
