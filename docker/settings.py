@@ -7,7 +7,7 @@
 
 import os
 
-DEBUG = os.getenv('DEBUG', False)
+DEBUG = os.getenv('DEBUG', '0').lower() in ('1', 'true', 'yes')
 
 ADMINS = (
     # ('Your Name', 'your_email@example.com'),
