@@ -195,7 +195,7 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'layerindex.restperm.ReadOnlyPermission',
     ),
-    'DATETIME_FORMAT': '%Y-%m-%dT%H:%m:%S+0000',
+    'DATETIME_FORMAT': '%Y-%m-%dT%H:%M:%S+0000',
 }
 
 # A sample logging configuration. The only tangible logging
