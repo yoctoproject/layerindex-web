@@ -508,9 +508,14 @@ The latest version of the code can always be found here:
 
 https://git.yoctoproject.org/layerindex-web/
 
-Contributions are welcome. Please send patches / pull requests to
+Contributions are welcome. Please send patches with git send-email to
 yocto-patches@lists.yoctoproject.org with '[layerindex-web]' in the
-subject.
+subject. To set this up in your clone:
+
+```sh
+git config format.subjectPrefix "layerindex-web][PATCH"
+git config sendemail.to yocto-patches@lists.yoctoproject.org
+```
 
 
 ## License
