@@ -121,7 +121,7 @@ Other settings the app and celery files can set:
   `/etc/docker/daemon.json`:
 
   ```json
-  {"dns": ["xx.xx.xx.xx] }
+  {"dns": ["xx.xx.xx.xx"]}
   ```
 
 
@@ -473,12 +473,12 @@ Some things to be aware of from a security perspective:
 
   - By account for too many incorrect password reset attempts. To remove
     this lockout, log into the admin interface, go to Users, click on the
-    the user, tick the Active checkbox and then save.
+    user, tick the Active checkbox and then save.
 
-- The REST API inherited from the OpenEmbedded layerindex upon which this
-  application is based has been disabled, since it has no access controls
-  on querying data (since the OE layer index operates entirely on publicly
-  accessible information, whereas this application may not in actual usage).
+- The REST API at `/layerindex/api/` is read-only and needs no login. It
+  serves the same information as the public web pages for published layers,
+  including the names and email addresses of layer maintainers, and is used
+  by tools such as `bitbake-layers layerindex-fetch` and Toaster.
 
 
 ## Backup and restore
