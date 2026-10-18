@@ -15,7 +15,7 @@ This requirement may be removed in future.
 
 Setup procedure:
 
-1. Follow the layer index setup instructions in the README file first.
+1. Follow the layer index setup instructions in the README.md file first.
    The openembedded-core layer (or whatever replacement you have pointed
    CORE_LAYER_NAME to in settings.py) must be present in order to run the
    Recipe Reporting System database migrations.
@@ -24,7 +24,7 @@ Setup procedure:
 
    * Add 'rrs' to INSTALLED_APPS. In the Docker-based setup, set
      ENABLE_RRS=1 in the app and celery environment files instead (see
-     "Environment files" in README)
+     "Environment files" in README.md)
 
    * Configure TOOLS_LOG_DIR if you wish the logs to be written somewhere
      other than the current directory when the scripts are run

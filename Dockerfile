@@ -1,4 +1,4 @@
-# See README for how to use this.
+# See README.md for how to use this.
 
 FROM ubuntu:jammy
 LABEL maintainer="Michael Halstead <mhalstead@linuxfoundation.org>"

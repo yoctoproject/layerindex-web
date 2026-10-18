@@ -3,7 +3,7 @@ Standalone Setup
 
 NOTE: The standalone setup is most suitable for development and is not
 recommended for production; for production use the Docker-based setup
-covered in the main README.
+covered in the main README.md.
 
 In order to run this application standalone, you will need:
 

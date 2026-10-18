@@ -9,7 +9,7 @@ There are two main methods of setting up this application - within
 a set of Docker containers, or standalone. The Docker-based setup
 is more suited for production whereas standalone is a bit easier
 for development. This document will consider only the Docker-based
-setup; for standalone please see README.devel.
+setup; for standalone please see README.devel.md.
 
 
 Docker Setup
@@ -102,7 +102,7 @@ Other settings the app and celery files can set:
 
   - DEBUG: 1, true or yes enables Django's debug mode; anything else, or
     leaving it unset, keeps it off. Never enable it on a public site.
-  - ENABLE_RRS: 1 enables the Recipe Reporting System (see README.rrs).
+  - ENABLE_RRS: 1 enables the Recipe Reporting System (see README.rrs.md).
   - DATABASE_PORT (default 3306) and STATIC_ROOT (default
     /usr/share/nginx/html/static/).
 
