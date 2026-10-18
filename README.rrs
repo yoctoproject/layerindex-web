@@ -22,7 +22,9 @@ Setup procedure:
 
 2. Edit settings.py:
 
-   * Add 'rrs' to INSTALLED_APPS
+   * Add 'rrs' to INSTALLED_APPS. In the Docker-based setup, set
+     ENABLE_RRS=1 in the app and celery environment files instead (see
+     "Environment files" in README)
 
    * Configure TOOLS_LOG_DIR if you wish the logs to be written somewhere
      other than the current directory when the scripts are run
