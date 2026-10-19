@@ -389,7 +389,7 @@ def main():
                         layerbranch.branch = branchobj
                         layerbranch_source = layer.get_layerbranch(branchobj)
                         if not layerbranch_source:
-                            layerbranch_source = layer.get_layerbranch(None)
+                            layerbranch_source = layer.get_latest_layerbranch()
                         if layerbranch_source:
                             layerbranch.vcs_subdir = layerbranch_source.vcs_subdir
 

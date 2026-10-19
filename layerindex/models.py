@@ -162,6 +162,15 @@ class LayerItem(models.Model):
             return res[0]
         return None
 
+    def get_latest_layerbranch(self):
+        """
+        Return the layer branch for the newest non-comparison branch (by
+        branch sort priority), e.g. to copy settings such as vcs_subdir from
+        when the layer is first seen on a new branch.
+        """
+        return self.layerbranch_set.filter(branch__comparison=False).order_by(
+            models.F('branch__sort_priority').asc(nulls_last=True), '-id').first()
+
     def active_maintainers(self):
         matches = None
         for layerbranch in self.layerbranch_set.all():
