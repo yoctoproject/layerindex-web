@@ -494,11 +494,7 @@ def main():
                 layerrecipes_add = []
 
                 # Check if any paths should be ignored because there are layers within this layer
-                removedirs = []
-                for root, dirs, files in os.walk(layerdir):
-                    for diritem in dirs:
-                        if os.path.exists(os.path.join(root, diritem, 'conf', 'layer.conf')):
-                            removedirs.append(os.path.join(root, diritem) + os.sep)
+                removedirs = utils.nested_layer_dirs(layerdir)
 
                 if diff:
                     # Apply git changes to existing recipe list
@@ -515,17 +511,15 @@ def main():
                     for diffitem in diff.iter_change_type('R'):
                         oldpath = diffitem.a_blob.path
                         newpath = diffitem.b_blob.path
-                        skip = False
-                        for removedir in removedirs:
-                            # FIXME what about files moved into removedirs?
-                            if oldpath.startswith(removedir):
-                                skip = True
-                                break
-                        if skip:
+                        if utils.in_nested_layer(oldpath, removedirs, repodir):
                             continue
                         if oldpath.startswith(subdir_start):
                             if not newpath.startswith(subdir_start):
                                 logger.debug("Treating rename of %s to %s as a delete since new path is outside layer" % (oldpath, newpath))
+                                other_deletes.append(diffitem)
+                                continue
+                            if utils.in_nested_layer(newpath, removedirs, repodir):
+                                logger.debug("Treating rename of %s to %s as a delete since new path is in a layer within this layer" % (oldpath, newpath))
                                 other_deletes.append(diffitem)
                                 continue
                             (oldtypename, oldfilepath, oldfilename) = recipeparse.detect_file_type(oldpath, subdir_start)
@@ -606,12 +600,7 @@ def main():
                     for diffitem in itertools.chain(diff.iter_change_type('D'), other_deletes):
                         path = diffitem.a_blob.path
                         if path.startswith(subdir_start):
-                            skip = False
-                            for removedir in removedirs:
-                                if path.startswith(removedir):
-                                    skip = True
-                                    break
-                            if skip:
+                            if utils.in_nested_layer(path, removedirs, repodir):
                                 continue
                             (typename, filepath, filename) = recipeparse.detect_file_type(path, subdir_start)
                             if typename == 'recipe':
@@ -636,12 +625,7 @@ def main():
                     for diffitem in itertools.chain(diff.iter_change_type('A'), other_adds):
                         path = diffitem.b_blob.path
                         if path.startswith(subdir_start):
-                            skip = False
-                            for removedir in removedirs:
-                                if path.startswith(removedir):
-                                    skip = True
-                                    break
-                            if skip:
+                            if utils.in_nested_layer(path, removedirs, repodir):
                                 continue
                             (typename, filepath, filename) = recipeparse.detect_file_type(path, subdir_start)
                             if typename == 'recipe':
@@ -685,12 +669,7 @@ def main():
                     for diffitem in diff.iter_change_type('M'):
                         path = diffitem.b_blob.path
                         if path.startswith(subdir_start):
-                            skip = False
-                            for removedir in removedirs:
-                                if path.startswith(removedir):
-                                    skip = True
-                                    break
-                            if skip:
+                            if utils.in_nested_layer(path, removedirs, repodir):
                                 continue
                             (typename, filepath, filename) = recipeparse.detect_file_type(path, subdir_start)
                             if typename == 'recipe':

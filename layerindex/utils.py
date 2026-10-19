@@ -57,6 +57,28 @@ def get_layer_var(config_data, var, logger):
         value = config_data.getVar(var, True)
     return value or ''
 
+def nested_layer_dirs(layerdir):
+    """
+    Return the directories below layerdir that contain a conf/layer.conf of
+    their own, i.e. other layers within this layer, each with a trailing
+    separator.
+    """
+    dirs = []
+    for root, subdirs, _ in os.walk(layerdir):
+        for subdir in subdirs:
+            if os.path.exists(os.path.join(root, subdir, 'conf', 'layer.conf')):
+                dirs.append(os.path.join(root, subdir) + os.sep)
+    return dirs
+
+def in_nested_layer(path, nested_dirs, repodir):
+    """
+    Check whether path is within one of nested_dirs (as returned by
+    nested_layer_dirs()). path may be relative to repodir, as git diff paths
+    are, or absolute.
+    """
+    fullpath = os.path.join(repodir, path)
+    return any(fullpath.startswith(nested_dir) for nested_dir in nested_dirs)
+
 def is_deps_satisfied(req_col, req_ver, collections):
     """ Check whether required collection and version are in collections"""
     for existed_col, existed_ver in collections:

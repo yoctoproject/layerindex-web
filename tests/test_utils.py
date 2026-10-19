@@ -5,6 +5,7 @@
 # SPDX-License-Identifier: MIT
 
 import operator
+import os
 import sys
 import types
 
@@ -40,3 +41,47 @@ def fake_bb(monkeypatch):
 ])
 def test_is_deps_satisfied(fake_bb, req_ver, collections, expected):
     assert utils.is_deps_satisfied('core', req_ver, collections) is expected
+
+
+def make_layer(path):
+    (path / 'conf').mkdir(parents=True)
+    (path / 'conf' / 'layer.conf').write_text('')
+
+
+@pytest.fixture
+def repo_with_nested_layers(tmp_path):
+    """A repository whose layer (in subdirectory 'meta-top') contains other
+    layers, as when layers are vendored with git subtree."""
+    repodir = tmp_path / 'repo'
+    layerdir = repodir / 'meta-top'
+    make_layer(layerdir)
+    (layerdir / 'recipes-core' / 'foo').mkdir(parents=True)
+    make_layer(layerdir / 'meta-sub')
+    make_layer(layerdir / 'meta-openembedded' / 'meta-oe')
+    # A directory whose name starts like a nested layer's, but isn't one
+    (layerdir / 'meta-subsidiary' / 'recipes-x').mkdir(parents=True)
+    return str(repodir), str(layerdir)
+
+
+def test_nested_layer_dirs(repo_with_nested_layers):
+    repodir, layerdir = repo_with_nested_layers
+    assert sorted(utils.nested_layer_dirs(layerdir)) == [
+        os.path.join(layerdir, 'meta-openembedded', 'meta-oe') + os.sep,
+        os.path.join(layerdir, 'meta-sub') + os.sep,
+    ]
+
+
+@pytest.mark.parametrize('path, expected', [
+    # Paths relative to the repository, as git diff reports them
+    ('meta-top/meta-openembedded/meta-oe/recipes-a/a/a_1.0.bb', True),
+    ('meta-top/meta-sub/recipes-b/b/b_1.0.bb', True),
+    ('meta-top/recipes-core/foo/foo_1.0.bb', False),
+    ('meta-top/meta-subsidiary/recipes-x/x/x_1.0.bb', False),
+    ('meta-top/meta-openembedded/README', False),
+])
+def test_in_nested_layer(repo_with_nested_layers, path, expected):
+    repodir, layerdir = repo_with_nested_layers
+    nested = utils.nested_layer_dirs(layerdir)
+    assert utils.in_nested_layer(path, nested, repodir) is expected
+    # Absolute paths give the same answer
+    assert utils.in_nested_layer(os.path.join(repodir, path), nested, repodir) is expected
