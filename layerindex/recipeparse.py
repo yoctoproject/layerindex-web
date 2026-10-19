@@ -66,10 +66,11 @@ def init_parser(settings, branch, bitbakepath, enable_tracking=False, nocheckout
             utils.checkout_repo(core_repodir, "origin/%s" % core_branchname, logger=logger)
         if not os.path.exists(os.path.join(core_layerdir, 'conf/bitbake.conf')):
             raise RecipeParseError("conf/bitbake.conf not found in core layer %s - is subdirectory set correctly?" % core_layer.name)
-        # The directory above where this script exists should contain our conf/layer.conf,
-        # so add it to BBPATH along with the core layer directory
+        # The directory above where this script exists should contain our conf/local.conf,
+        # so add it to BBPATH. The core layer is added by its layer.conf via BBLAYERS
+        # below; listing it here as well would put it in BBPATH twice.
         confparentdir = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
-        os.environ['BBPATH'] = str("%s:%s" % (confparentdir, core_layerdir))
+        os.environ['BBPATH'] = str(confparentdir)
 
     # Change into a temporary directory so we don't write the cache and other files to the current dir
     if not os.path.exists(settings.TEMP_BASE_DIR):
@@ -84,7 +85,7 @@ def init_parser(settings, branch, bitbakepath, enable_tracking=False, nocheckout
         if not classic:
             # We need this to avoid problems with AVAILABLE_LICENSES
             f.write('COREBASE = "%s"\n' % core_repodir)
-            f.write('BBLAYERS = "%s/meta"\n' % core_repodir)
+            f.write('BBLAYERS = "%s"\n' % core_layerdir)
         pass
 
     if logger:
