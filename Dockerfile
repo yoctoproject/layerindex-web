@@ -1,11 +1,12 @@
 # See README.md for how to use this.
 
-FROM ubuntu:jammy
+FROM ubuntu:noble
 LABEL maintainer="Michael Halstead <mhalstead@linuxfoundation.org>"
 
 ARG APP_DIR=/opt
 ENV APP_DIR=${APP_DIR}
 ENV PYTHONUNBUFFERED=1 \
+    PIP_BREAK_SYSTEM_PACKAGES=1 \
     LANGUAGE=en_US \
     LANG=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8 \
@@ -24,6 +25,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update \
         && locale-gen en_US.UTF-8 \
         && update-locale \
     && apt-get install -y --no-install-recommends \
+	adduser \
 	autoconf \
 	cpio \
 	curl \
@@ -36,7 +38,6 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update \
 	make \
 	netcat-openbsd \
 	pkg-config \
-	python2 \
 	python3-dev \
 	python3-pip \
 	python3-wheel \
@@ -48,8 +49,6 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update \
     && echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen \
 	&& locale-gen en_US.UTF-8 \
 	&& update-locale \
-    && pip3 install pip --upgrade \
-    && pip3 install setuptools --upgrade \
     && pip3 install gunicorn \
     && pip3 install -r /requirements.txt \
     && apt-get purge -y autoconf g++ make python3-dev pkg-config libjpeg-dev \
@@ -66,7 +65,7 @@ COPY docker/migrate.sh ${APP_DIR}/migrate.sh
 COPY docker/connectivity_check.sh ${APP_DIR}/connectivity_check.sh
 
 RUN mkdir ${APP_DIR}/workdir \
-	&& adduser --system --uid=500 layers \
+	&& adduser --system --uid=500 --home /home/layers layers \
 	&& chown -R layers ${APP_DIR}/workdir
 USER layers
 
