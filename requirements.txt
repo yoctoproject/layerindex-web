@@ -26,7 +26,7 @@ GitPython==3.2.1
 kombu==5.6.2
 mysqlclient==2.2.8
 packaging_legacy==23.0.post0
-Pillow==12.3.0
+Pillow==13.0.0
 prompt-toolkit==3.0.53
 pyasyncore==1.0.5
 python-dateutil==2.9.0.post0
