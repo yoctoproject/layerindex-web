@@ -582,7 +582,7 @@ def write_env_file(app_dir):
 # Write the generated secrets and email settings to .env.local.<service>,
 # starting from the tracked .env.dev.<service> defaults. These files hold
 # secrets and are ignored by git.
-def write_service_env_files(dbpassword, dbapassword, secretkey, rmqpassword, email_host, email_port, email_user, email_password, email_ssl, email_tls):
+def write_service_env_files(dbpassword, dbapassword, secretkey, rmqpassword, email_host, email_port, email_user, email_password, email_ssl, email_tls, site_origin=None):
     values = {
         'SECRET_KEY': secretkey,
         'DATABASE_USER': 'layers',
@@ -596,6 +596,7 @@ def write_service_env_files(dbpassword, dbapassword, secretkey, rmqpassword, ema
         'EMAIL_PASSWORD': email_password,
         'EMAIL_USE_SSL': str(email_ssl) if email_ssl else None,
         'EMAIL_USE_TLS': str(email_tls) if email_tls else None,
+        'CSRF_TRUSTED_ORIGINS': site_origin,
         'DEBUG': '0',
     }
     for service in ('app', 'celery', 'db', 'rabbit'):
@@ -611,6 +612,17 @@ def write_service_env_files(dbpassword, dbapassword, secretkey, rmqpassword, ema
         filename = '.env.local.' + service
         with open(os.open(filename, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600), 'w') as f:
             f.write(''.join(newlines))
+
+
+# Return the protocol and host[:port] that the site is served on
+def site_protocol_host(hostname, http_port, https_port, no_https):
+    if https_port and not no_https:
+        protocol, port, defport = 'https', https_port, '443'
+    else:
+        protocol, port, defport = 'http', http_port, '80'
+    if port == defport:
+        return protocol, hostname
+    return protocol, '%s:%s' % (hostname, port)
 
 
 def check_connectivity(app_dir='/opt'):
@@ -813,7 +825,8 @@ provide information as needed.
         edit_dockerfile(args.http_proxy, args.https_proxy, args.no_proxy)
         write_env_file(args.app_dir)
 
-        write_service_env_files(dbpassword, dbapassword, secretkey, rmqpassword, email_host, email_port, args.email_user, args.email_password, args.email_ssl, args.email_tls)
+        protocol, host = site_protocol_host(args.hostname, http_port, https_port, args.no_https)
+        write_service_env_files(dbpassword, dbapassword, secretkey, rmqpassword, email_host, email_port, args.email_user, args.email_password, args.email_ssl, args.email_tls, '%s://%s' % (protocol, host))
         edit_dockercompose(args.hostname, args.portmapping, args.letsencrypt, args.app_dir)
 
         edit_dockerfile_web(args.hostname, args.no_https)
@@ -940,18 +953,7 @@ provide information as needed.
         print("Collecting static files failed")
         sys.exit(1)
 
-    if https_port and not args.no_https:
-        protocol = 'https'
-        port = https_port
-        defport = '443'
-    else:
-        protocol = 'http'
-        port = http_port
-        defport = '80'
-    if port == defport:
-        host = args.hostname
-    else:
-        host = '%s:%s' % (args.hostname, port)
+    protocol, host = site_protocol_host(args.hostname, http_port, https_port, args.no_https)
 
     if not args.update:
         if not args.databasefile:

@@ -11,4 +11,5 @@ RABBITMQ_DEFAULT_PASS=guest
 #EMAIL_PASSWORD=<set this here if needed>
 #EMAIL_USE_SSL=<set this here if needed>
 #EMAIL_USE_TLS=<set this here if needed>
+#CSRF_TRUSTED_ORIGINS=<set this if the site is not served on https://HOSTNAME>
 DEBUG=1

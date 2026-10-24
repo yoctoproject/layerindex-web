@@ -314,7 +314,9 @@ TOOLS_LOG_DIR = ""
 
 USE_X_FORWARDED_HOST = True
 ALLOWED_HOSTS = [os.getenv('HOSTNAME', 'layers.test')]
-CSRF_TRUSTED_ORIGINS = ['https://' + os.getenv('HOSTNAME', 'layers.test')]
+# Comma-separated; set it when the site is not served on https://HOSTNAME,
+# e.g. on a non-standard port
+CSRF_TRUSTED_ORIGINS = (os.getenv('CSRF_TRUSTED_ORIGINS') or 'https://' + os.getenv('HOSTNAME', 'layers.test')).split(',')
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True

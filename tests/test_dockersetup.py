@@ -77,8 +77,27 @@ def test_env_files_are_private_and_leave_unset_email_commented(workdir):
     app = read_env(workdir / '.env.local.app')
     assert 'EMAIL_HOST' not in app
     assert 'EMAIL_USE_TLS' not in app
+    assert 'CSRF_TRUSTED_ORIGINS' not in app
     # The tracked defaults are left alone
     assert read_env(workdir / '.env.dev.db')['MYSQL_ROOT_PASSWORD'] == 'testingpw'
+
+
+def test_env_files_get_site_origin(workdir):
+    # The default port 8081 is not the standard https port, so the browser
+    # sends it in the Origin header and Django's CSRF check must allow it
+    dockersetup.write_service_env_files('dbpw', 'rootpw', 'sekrit', 'mqpw', None, None,
+                                        None, None, False, False, 'https://localhost:8081')
+    assert read_env(workdir / '.env.local.app')['CSRF_TRUSTED_ORIGINS'] == 'https://localhost:8081'
+
+
+@pytest.mark.parametrize('http_port, https_port, no_https, expected', [
+    ('8080', '8081', False, ('https', 'localhost:8081')),
+    ('80', '443', False, ('https', 'localhost')),
+    ('8080', None, True, ('http', 'localhost:8080')),
+    ('80', '8081', True, ('http', 'localhost')),
+])
+def test_site_protocol_host(http_port, https_port, no_https, expected):
+    assert dockersetup.site_protocol_host('localhost', http_port, https_port, no_https) == expected
 
 
 def load_compose(workdir):
