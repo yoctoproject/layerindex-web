@@ -166,7 +166,7 @@
                                 <p>The {{ layeritem.name }} layer depends upon:</p>
                                 <ul id="dependencies_list">
                                     {% for dep in layerbranch.get_required %}
-                                        <li data-layerbranch="{{ dep.dependency.id }}">
+                                        <li data-layerbranch="{{ dep.dependency_layerbranch.id }}">
                                             <a href="{% url 'layer_item' url_branch dep.dependency.name %}">{{ dep.dependency.name }}</a>
                                         </li>
                                     {% endfor %}
@@ -540,7 +540,7 @@
 
                     var layerBranchId = $(this).data('layerbranch');
 
-                    $(this).append(expandLayerDependencies(layerBranchId, []));
+                    $(this).append(expandLayerDependencies(layerBranchId, [{{ layerbranch.id }}]));
                 });
             });
 

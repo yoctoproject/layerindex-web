@@ -409,6 +409,10 @@ class LayerDependency(models.Model):
     def __str__(self):
         return "%s depends on %s" % (self.layerbranch.layer.name, self.dependency.name)
 
+    def dependency_layerbranch(self):
+        """Return the dependency's LayerBranch on the same branch, if any"""
+        return LayerBranch.objects.filter(layer=self.dependency, branch_id=self.layerbranch.branch_id).first()
+
 
 class LayerNote(models.Model):
     layer = models.ForeignKey(LayerItem, on_delete=models.CASCADE)
