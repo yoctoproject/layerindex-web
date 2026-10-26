@@ -18,6 +18,9 @@ ENV PYTHONUNBUFFERED=1 \
 
 # NOTE: we don't purge gcc below as we have some places in the OE metadata that look for it
 
+# Debian's setuptools and wheel can't be upgraded by pip in place, so install
+# current releases alongside them in /usr/local, which takes precedence
+
 COPY requirements.txt /
 RUN DEBIAN_FRONTEND=noninteractive apt-get update \
     && apt-get install -y locales \
@@ -49,6 +52,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update \
     && echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen \
 	&& locale-gen en_US.UTF-8 \
 	&& update-locale \
+    && pip3 install --ignore-installed setuptools wheel \
     && pip3 install gunicorn \
     && pip3 install -r /requirements.txt \
     && apt-get purge -y autoconf g++ make python3-dev pkg-config libjpeg-dev \
