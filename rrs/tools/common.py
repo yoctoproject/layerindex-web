@@ -93,7 +93,6 @@ def get_recipe_files(layerdir):
 def load_recipes(layerbranch, bitbakepath, fetchdir, settings, logger,
         recipe_files=None, nocheckout=False):
     from layerindex import recipeparse
-    from bb.fetch import FetchError
 
     try:
         (tinfoil, tempdir) = recipeparse.init_parser(settings,
@@ -102,6 +101,9 @@ def load_recipes(layerbranch, bitbakepath, fetchdir, settings, logger,
     except recipeparse.RecipeParseError as e:
         logger.error(str(e))
         sys.exit(1)
+    # Only now that init_parser() has checked out the BitBake revision for the
+    # branch, or bb would be loaded from whichever one was checked out before
+    from bb.fetch import FetchError
 
     layer = layerbranch.layer
     urldir = str(layer.get_fetch_dir())
