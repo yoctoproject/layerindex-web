@@ -92,7 +92,7 @@ def get_recipe_files(layerdir):
 
 def load_recipes(layerbranch, bitbakepath, fetchdir, settings, logger,
         recipe_files=None, nocheckout=False):
-    from layerindex import recipeparse
+    from layerindex import recipeparse, utils
 
     try:
         (tinfoil, tempdir) = recipeparse.init_parser(settings,
@@ -109,6 +109,17 @@ def load_recipes(layerbranch, bitbakepath, fetchdir, settings, logger,
     urldir = str(layer.get_fetch_dir())
     repodir = os.path.join(fetchdir, urldir)
     layerdir = os.path.join(repodir, str(layerbranch.vcs_subdir))
+
+    if not nocheckout:
+        # The repositories are left on whichever branch was updated last;
+        # check out this branch of the layer and of the layers it depends on
+        # (init_parser() has done BitBake and the core layer)
+        utils.checkout_layer_branch(layerbranch, repodir, logger=logger)
+        for dep in layerbranch.dependencies_set.all():
+            deplayerbranch = dep.dependency.get_layerbranch(layerbranch.branch.name)
+            if deplayerbranch:
+                utils.checkout_layer_branch(deplayerbranch,
+                        os.path.join(fetchdir, dep.dependency.get_fetch_dir()), logger=logger)
 
     d = recipeparse.setup_layer(tinfoil.config_data, fetchdir, layerdir,
             layer, layerbranch, logger)
