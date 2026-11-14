@@ -34,12 +34,16 @@ def get_logger(name, settings):
     handler.setFormatter(formatter)
     logger.addHandler(handler)
 
-    filename = os.path.join(settings.TOOLS_LOG_DIR, name)
-    maxBytes = 8388608 # 8MB
-    handler = RotatingFileHandler(filename, maxBytes=maxBytes)
+    # Also log to a file if a directory is set for it; otherwise the console
+    # output is all there is (as collected by cron, systemd or docker)
+    log_dir = getattr(settings, 'TOOLS_LOG_DIR', '')
+    if log_dir:
+        filename = os.path.join(log_dir, name)
+        maxBytes = 8388608 # 8MB
+        handler = RotatingFileHandler(filename, maxBytes=maxBytes)
 
-    handler.setFormatter(formatter)
-    logger.addHandler(handler)
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
 
     logger.setLevel(logging.INFO)
 

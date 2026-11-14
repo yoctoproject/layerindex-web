@@ -298,5 +298,5 @@ AXES_COOLOFF_TIME = 1
 # Full path to directory to store logs for dynamically executed tasks
 TASK_LOG_DIR = "/tmp/layerindex-task-logs"
 
-# Full path to directory where rrs tools stores logs
+# Full path to a directory where the rrs tools also write their logs, if any
 TOOLS_LOG_DIR = ""
