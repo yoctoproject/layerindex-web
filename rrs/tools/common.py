@@ -24,6 +24,24 @@ def common_setup():
     os.environ['GIT_ASKPASS'] = ''
     os.environ['GIT_TERMINAL_PROMPT'] = '0'
 
+def create_distro_packages_list(distro_check, fetchdir, d):
+    """
+    Download the distros' package lists with OE-Core's oe.distro_check,
+    keeping this process's environment as it was.
+
+    distro_check's create_socket() calls bb.utils.export_proxies(), which
+    exports PATH and HOME from the datastore along with the proxy
+    variables. OE-Core's PATH puts its scripts/git wrapper first, with no
+    python3 beside it, so left in place it breaks every later git command
+    in this process.
+    """
+    saved_environ = os.environ.copy()
+    try:
+        distro_check.create_distro_packages_list(fetchdir, d)
+    finally:
+        os.environ.clear()
+        os.environ.update(saved_environ)
+
 def get_logger(name, settings):
     from logging.handlers import RotatingFileHandler
 

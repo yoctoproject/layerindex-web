@@ -17,7 +17,8 @@ from datetime import datetime
 
 sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__))))
 from common import common_setup, load_recipes, \
-        get_pv_type, get_logger, DryRunRollbackException
+        get_pv_type, get_logger, DryRunRollbackException, \
+        create_distro_packages_list
 common_setup()
 from layerindex import utils
 
@@ -138,7 +139,7 @@ if __name__=="__main__":
                             # Only need to do this once
                             from oe import distro_check
                             logger.debug("Downloading distro's package information ...")
-                            distro_check.create_distro_packages_list(fetchdir, d)
+                            create_distro_packages_list(distro_check, fetchdir, d)
                             pkglst_dir = os.path.join(fetchdir, "package_lists")
 
                         RecipeDistro.objects.filter(recipe__layerbranch = layerbranch).delete()
