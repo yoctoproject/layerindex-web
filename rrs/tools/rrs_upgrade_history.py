@@ -16,7 +16,7 @@ import sys
 import os.path
 import optparse
 import logging
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 
 sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__))))
 from common import common_setup, get_logger
@@ -42,6 +42,16 @@ bitbakepath = os.path.join(fetchdir, bitbakeitem.get_fetch_dir())
 if getattr(settings, 'BITBAKE_PATH', ''):
     bitbakepath = os.path.join(bitbakepath, settings.BITBAKE_PATH)
 
+def remapped_bitbake_rev(bitbake_rev, commitdate, bitbake_map, logger):
+    """The bitbake revision to use for a layer commit made at commitdate
+    (local time), given the latest bitbake revision before it"""
+    check_rev, until = bitbake_map.get(bitbake_rev, (None, None))
+    # until is timezone-aware, so compare as timestamps
+    if check_rev and (until is None or commitdate.timestamp() < until.timestamp()):
+        logger.debug('Preferring bitbake revision %s over %s' % (check_rev, bitbake_rev))
+        return check_rev
+    return bitbake_rev
+
 def run_internal(maintplanlayerbranch, commit, commitdate, options, logger, bitbake_map, initial=False):
     from layerindex.models import PythonEnvironment
     from rrs.models import Release
@@ -63,10 +73,7 @@ def run_internal(maintplanlayerbranch, commit, commitdate, options, logger, bitb
 
     bitbake_rev = utils.runcmd(['git', 'rev-list', '-1', '--before=%s' % str(commitdate), 'origin/master'],
                     bitbakepath, logger=logger)
-    check_rev = bitbake_map.get(bitbake_rev, None)
-    if check_rev:
-        logger.debug('Preferring bitbake revision %s over %s' % (check_rev, bitbake_rev))
-        bitbake_rev = check_rev
+    bitbake_rev = remapped_bitbake_rev(bitbake_rev, commitdate, bitbake_map, logger)
 
     cmd = '%s upgrade_history_internal.py %s %s' % (cmdprefix, maintplanlayerbranch.layerbranch.id, commit)
     if initial:
@@ -174,7 +181,10 @@ def upgrade_history(options, logger):
                 commit_list = commits.split('\n')
 
                 bitbake_map = {}
-                def remap_range(start, end, replacewith=None):
+                def remap_range(start, end, replacewith=None, until=None):
+                    """Use replacewith (by default end) instead of the
+                    bitbake revisions from start up to end, for layer
+                    commits before until (all if None)"""
                     if replacewith is None:
                         replacewith = end
                     bitbake_commits = utils.runcmd(['git', 'rev-list', '%s^..%s^' % (start, end)],
@@ -182,12 +192,20 @@ def upgrade_history(options, logger):
                                         logger=logger)
                     bitbake_commit_list = bitbake_commits.splitlines()
                     for commit in bitbake_commit_list:
-                        bitbake_map[commit] = replacewith
+                        bitbake_map[commit] = (replacewith, until)
 
                 # Filter out some bad commits
                 remap_range('fef18b445c0cb6b266cd939b9c78d7cbce38663f', '39780b1ccbd76579db0fc6fb9369c848a3bafa9d')
                 remap_range('5796ed550d127853808f38257f8dcc8c1cf59342', '547128731e62b36d2271c4390b3fee2b16c535dc')
                 remap_range('a06619951a43acb80b80d92e0caac560657ca249', '2117db3146ce38bb4a6e2df40b6cd2ab11b514d5')
+                # "parse/ast: add support for 'built-in' fragments" changed the
+                # addfragments syntax, which OE-Core only followed in
+                # e959f916b4 "bitbake.conf: enable built-in fragments for MACHINE
+                # and DISTRO" (2025-06-20 11:03:34 UTC); before that use the
+                # bitbake revision before the change
+                remap_range('3b9d7bea915dc7f10e845854f1dae325743f9456', 'f1175778108a559e1dd0d55cb68f42816c86f393',
+                            replacewith='378db0fdd95f8704fccd852452555bfddcad384d',
+                            until=datetime(2025, 6, 20, 11, 3, 34, tzinfo=timezone.utc))
 
                 if options.stop_commit and (options.stop_commit not in [x.split()[0] for x in commit_list]):
                     logger.error('Stop commit %s is not in repository %s' % (options.stop_commit, repodir))
