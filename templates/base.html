@@ -22,6 +22,7 @@
     <link rel="stylesheet" href="{% static "css/bootstrap-theme.css" %}" />
     <link rel="stylesheet" href="{% static "css/additional.css" %}" />
     <link rel="icon" type="image/vnd.microsoft.icon" href="{% static "img/favicon.ico" %}" />
+    <link rel="alternate" type="application/rss+xml" title="Recently published layers" href="{% url 'published_layers_feed' %}" />
     <title>{{ site_name }}{% block title_append %} - {% endblock %}</title>
     {% block head_extra %}
     {% endblock %}
@@ -128,6 +129,7 @@
         <hr />
         <div class="footer">
             <a href="{% url 'history_list' %}">change history</a>
+            &bull; <a href="{% url 'published_layers_feed' %}">new layers feed</a>
             &bull; <a href="{% url 'about' %}">about this site</a>
             &bull; <a href="https://www.openembedded.org/wiki/Layers_FAQ">FAQ</a>
             &bull; <a href="https://bugzilla.yoctoproject.org/enter_bug.cgi?product=Layer%20Index">report a bug</a>

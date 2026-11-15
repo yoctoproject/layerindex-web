@@ -20,6 +20,7 @@ from layerindex.views import LayerListView, LayerReviewListView, LayerReviewDeta
 from layerindex.models import LayerItem, Recipe
 from rest_framework import routers
 from . import restviews
+from .feeds import PublishedLayersFeed
 
 router = routers.DefaultRouter()
 router.register(r'branches', restviews.BranchViewSet)
@@ -82,6 +83,7 @@ urlpatterns = [
             template_name='layerindex/recipedetail.html'),
         name='recipe'),
     re_path(r'^layer/(?P<name>[-\.\w]+)/publish/$', publish_view, name="publish"),
+    re_path(r'^layers/published/rss/$', PublishedLayersFeed(), name='published_layers_feed'),
     re_path(r'^layerupdate/(?P<pk>[-\w]+)/$',
         LayerUpdateDetailView.as_view(
             template_name='layerindex/layerupdate.html'),

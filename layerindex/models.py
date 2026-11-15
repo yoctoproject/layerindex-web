@@ -7,6 +7,7 @@
 # SPDX-License-Identifier: MIT
 
 from django.db import models
+from django.utils import timezone
 from datetime import datetime
 from django.contrib.auth.models import User
 from django.urls import reverse
@@ -143,12 +144,20 @@ class LayerItem(models.Model):
     index_preference = models.IntegerField('Preference', default=0, help_text='Number used to find preferred recipes in recipe search results (higher number is greater preference)')
     comparison = models.BooleanField('Comparison', default=False, help_text='Is this a comparison layer?')
     updated = models.DateTimeField(auto_now=True)
+    published = models.DateTimeField(null=True, blank=True, editable=False, db_index=True, help_text='When the layer was last published')
 
     class Meta:
         verbose_name = "Layer"
         permissions = (
             ("publish_layer", "Can publish layers"),
         )
+
+    def save(self, *args, **kwargs):
+        # Record the time when the layer becomes published.
+        if self.status == 'P' and not LayerItem.objects.filter(pk=self.pk, status='P').exists():
+            self.published = timezone.now()
+
+        super().save(*args, **kwargs)
 
     def change_status(self, newstatus, username):
         self.status = newstatus

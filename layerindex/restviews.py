@@ -53,7 +53,9 @@ class BranchViewSet(ParametricSearchableModelViewSet):
 class LayerItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = LayerItem
-        fields = '__all__'
+        # published is internal bookkeeping for the RSS feed; keeping it out
+        # also stops import_layers.py copying it from a remote index
+        exclude = ('published',)
 
 class LayerItemViewSet(ParametricSearchableModelViewSet):
     queryset = LayerItem.objects.filter(status__in=['P', 'X'])
