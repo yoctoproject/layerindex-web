@@ -74,16 +74,21 @@ def search_package_in_distros(pkglst_dir, recipe, data):
         (distro, distro_release) = distro_file.split("-")
 
         if distro.lower() in distro_aliases:
-            pn = distro_aliases[distro.lower()]
+            names = [distro_aliases[distro.lower()]]
         else:
-            pn = recipe_name
+            names = [recipe_name]
+            # Fedora and openSUSE call the source package for a Python
+            # module python-<name>. Debian's lists have the python3-<name>
+            # binary package, which OE-Core's distro_check records too.
+            if recipe_name.startswith('python3-'):
+                names.append('python-' + recipe_name[len('python3-'):])
 
         with open(os.path.join(pkglst_dir, distro_file), "r") as f:
             for line in f:
                 (pkg, section) = line.split(":")
-                if pn == pkg:
+                if pkg in names:
                     distro_complete = distro + "-" + section[:-1]
-                    distros[distro_complete] = pn
+                    distros[distro_complete] = pkg
                     break
 
     return distros

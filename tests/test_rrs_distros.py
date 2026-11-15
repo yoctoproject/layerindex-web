@@ -43,3 +43,13 @@ def test_native_suffix_is_ignored(rrs_distros, pkglst_dir):
 def test_distro_pn_alias(rrs_distros, pkglst_dir):
     assert search(rrs_distros, pkglst_dir, 'liblz4', alias='Debian=lz4 Fedora=lz4') == {'Debian-main': 'lz4', 'Fedora-main': 'lz4'}
 
+
+def test_python3_recipe(rrs_distros, pkglst_dir):
+    # [YOCTO #16513] Debian's list has the python3-brotli binary package,
+    # Fedora's has the python-brotli source package
+    assert search(rrs_distros, pkglst_dir, 'python3-brotli') == {'Debian-main': 'python3-brotli', 'Fedora-main': 'python-brotli'}
+
+
+def test_python3_recipe_not_matched_by_bare_name(rrs_distros, pkglst_dir):
+    # lz4 is the C library, not the Python module
+    assert search(rrs_distros, pkglst_dir, 'python3-lz4') == {}
