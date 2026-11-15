@@ -251,7 +251,9 @@ $(document).ready(function() {
             $('.summary_column').show()            
         }
 
-        if (upstreamStatus == 'Up-to-date' || upstreamStatus == 'All') {
+        // Up-to-date recipes are at the upstream version already; everywhere
+        // else (including All) show which version a recipe could move to
+        if (upstreamStatus == 'Up-to-date') {
             $('.upstream_version_column').hide();
         } else {
             $('.upstream_version_column').show();
