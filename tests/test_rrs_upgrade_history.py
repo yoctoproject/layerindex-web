@@ -41,3 +41,43 @@ def test_bitbake_revision_without_limit():
     log = logging.getLogger('test')
     assert remapped_bitbake_rev('a', datetime(2030, 1, 1), {'a': ('b', None)}, log) == 'b'
     assert remapped_bitbake_rev('c', datetime(2030, 1, 1), {'a': ('b', None)}, log) == 'c'
+
+
+def run_internal_with(monkeypatch, result):
+    import subprocess
+    import types
+    from layerindex import utils
+    import rrs_upgrade_history
+
+    def run(cmd, timeout=None):
+        if isinstance(result, Exception):
+            raise result
+        return result, ''
+
+    # The test settings don't install the rrs app; run_internal() only needs
+    # Release for an initial import
+    monkeypatch.setitem(sys.modules, 'rrs.models', types.SimpleNamespace(Release=None))
+    monkeypatch.setattr(utils, 'runcmd', lambda *args, **kwargs: 'abc123')
+    monkeypatch.setattr(utils, 'run_command_interruptible', run)
+    plan_branch = types.SimpleNamespace(python3_switch_date=datetime(2016, 6, 2),
+                                        python3_environment=None,
+                                        layerbranch=types.SimpleNamespace(id=1))
+    options = types.SimpleNamespace(commit_timeout=5, filter_files='', dry_run=False, loglevel=logging.INFO)
+    return rrs_upgrade_history.run_internal(plan_branch, 'deadbeef', datetime(2026, 2, 27),
+                                            options, logging.getLogger('test'), {})
+
+
+def test_run_internal_success(monkeypatch):
+    assert run_internal_with(monkeypatch, 0) is True
+
+
+def test_run_internal_failure(monkeypatch, caplog):
+    # [YOCTO #16515] a failed commit must not be saved as the checkpoint
+    with caplog.at_level(logging.ERROR):
+        assert run_internal_with(monkeypatch, 1) is False
+    assert 'deadbeef failed with exit code 1' in caplog.text
+
+
+def test_run_internal_timeout_is_skipped(monkeypatch):
+    import subprocess
+    assert run_internal_with(monkeypatch, subprocess.TimeoutExpired('cmd', 5)) is True

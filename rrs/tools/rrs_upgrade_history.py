@@ -97,11 +97,17 @@ def run_internal(maintplanlayerbranch, commit, commitdate, options, logger, bitb
         ret, output = utils.run_command_interruptible(cmd, timeout=options.commit_timeout or None)
     except subprocess.TimeoutExpired:
         logger.error('Analysing commit %s timed out after %d seconds; skipping it' % (commit, options.commit_timeout))
-        return
+        return True
     if ret == 254:
         # Interrupted by user, break out of loop
         logger.info('Update interrupted, exiting')
         sys.exit(254)
+    if ret:
+        # The caller then doesn't save this commit as the checkpoint, so the
+        # next run tries it again (AI-generated, Claude Opus 5.5)
+        logger.error('Analysing commit %s failed with exit code %d' % (commit, ret))
+        return False
+    return True
 
 """
     Upgrade history handler.
@@ -137,6 +143,7 @@ def upgrade_history(options, logger):
     if not lockfile:
         logger.error("Layer index lock timeout expired")
         sys.exit(1)
+    failed = False
     try:
         for maintplan in maintplans:
             # Check releases and milestones
@@ -221,7 +228,10 @@ def upgrade_history(options, logger):
 
                     ct, ctepoch = commit_list.pop(0).split()
                     ctdate = datetime.fromtimestamp(int(ctepoch))
-                    run_internal(maintplanbranch, ct, ctdate, options, logger, bitbake_map, initial=True)
+                    if not run_internal(maintplanbranch, ct, ctdate, options, logger, bitbake_map, initial=True):
+                        logger.error('%s: initial import failed, skipping this layer branch' % layerbranch)
+                        failed = True
+                        continue
 
                 if layerbranch.vcs_subdir:
                     layersubdir_start = layerbranch.vcs_subdir
@@ -263,13 +273,19 @@ def upgrade_history(options, logger):
                             logger.debug("Skipping commit %s" % ct)
                             continue
                         logger.debug("Analysing commit %s ..." % ct)
-                        run_internal(maintplanbranch, ct, ctdate, options, logger, bitbake_map)
+                        if not run_internal(maintplanbranch, ct, ctdate, options, logger, bitbake_map):
+                            # Stop here so the next run starts again from this commit
+                            logger.error('%s: stopping at commit %s' % (layerbranch, ct))
+                            failed = True
+                            break
                         if not (options.dry_run or options.filter_files):
                             maintplanbranch.upgrade_rev = ct
                             maintplanbranch.upgrade_date = ctdate
                             maintplanbranch.save()
     finally:
         utils.unlock_file(lockfile)
+    if failed:
+        sys.exit(1)
 
 if __name__=="__main__":
     parser = optparse.OptionParser(usage = """%prog [options]""")
