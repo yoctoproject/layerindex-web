@@ -300,8 +300,8 @@ def _get_milestone_statistics(milestone, maintainer_name=None):
                 Raw.get_reup_statistics(milestone.release.plan, milestone.end_date, recipe_upstream_history)
             milestone_statistics['all'] += \
                 t_updated + t_not_updated + t_cant + t_unknown
-            milestone_statistics['up_to_date'] = +t_updated
-            milestone_statistics['not_updated'] = +t_not_updated
+            milestone_statistics['up_to_date'] += t_updated
+            milestone_statistics['not_updated'] += t_not_updated
             milestone_statistics['cant_be_updated'] += t_cant
             milestone_statistics['unknown'] += t_unknown
 
