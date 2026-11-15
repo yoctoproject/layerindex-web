@@ -15,6 +15,7 @@
 import sys
 import os.path
 import optparse
+import subprocess
 import logging
 from datetime import date, datetime, timedelta, timezone
 
@@ -92,7 +93,11 @@ def run_internal(maintplanlayerbranch, commit, commitdate, options, logger, bitb
     if options.loglevel == logging.DEBUG:
         cmd += ' --debug'
     logger.debug('Running %s' % cmd)
-    ret, output = utils.run_command_interruptible(cmd)
+    try:
+        ret, output = utils.run_command_interruptible(cmd, timeout=options.commit_timeout or None)
+    except subprocess.TimeoutExpired:
+        logger.error('Analysing commit %s timed out after %d seconds; skipping it' % (commit, options.commit_timeout))
+        return
     if ret == 254:
         # Interrupted by user, break out of loop
         logger.info('Update interrupted, exiting')
@@ -298,6 +303,10 @@ if __name__=="__main__":
     parser.add_option("-p", "--plan",
             help="Specify maintenance plan to operate on (default is all plans that have updates enabled)",
             action="store", dest="plan", default=None)
+
+    parser.add_option("--commit-timeout",
+            help="Seconds after which analysing one commit is stopped and the commit skipped, 0 for no limit (default %default)",
+            action="store", type="int", dest="commit_timeout", default=3600)
 
     parser.add_option("-F", "--filter-files",
             help="Only operate on a specified subset of files (filepath 'startswith')",

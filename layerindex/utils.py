@@ -18,6 +18,7 @@ import signal
 import errno
 import shutil
 import codecs
+import threading
 import re
 from datetime import datetime
 from bs4 import BeautifulSoup
@@ -537,19 +538,50 @@ def setup_core_layer_sys_path(settings, branchname):
         sys.path.insert(0, os.path.join(core_layerdir, 'lib'))
 
 
-def run_command_interruptible(cmd):
+def run_command_interruptible(cmd, timeout=None):
     """
     Run a command with output displayed on the console, but ensure any Ctrl+C is
     processed only by the child process.
+
+    If timeout is given (in seconds) and the command is still running after
+    it, the command and every process it started are killed and
+    subprocess.TimeoutExpired is raised, with the output so far.
     """
     def reenable_sigint():
         signal.signal(signal.SIGINT, signal.SIG_DFL)
 
-    signal.signal(signal.SIGINT, signal.SIG_IGN)
+    process = None
+    timer = None
+    timed_out = threading.Event()
+
+    def forward_sigint(signum, frame):
+        if process:
+            os.killpg(process.pid, signal.SIGINT)
+
+    def kill_group():
+        # The command's own children (e.g. a BitBake server) may be the ones
+        # that hang, and they keep the output pipe open, so kill them all
+        timed_out.set()
+        for sig, wait in ((signal.SIGTERM, 10), (signal.SIGKILL, 0)):
+            try:
+                os.killpg(process.pid, sig)
+            except ProcessLookupError:
+                return
+            deadline = time.monotonic() + wait
+            while process.poll() is None and time.monotonic() < deadline:
+                time.sleep(0.1)
+
+    # With a timeout the command runs in its own process group so that it
+    # can be killed as a whole; Ctrl+C then reaches only us, so pass it on
+    signal.signal(signal.SIGINT, forward_sigint if timeout else signal.SIG_IGN)
     try:
         process = subprocess.Popen(
-            cmd, cwd=os.path.dirname(sys.argv[0]), shell=True, preexec_fn=reenable_sigint, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
+            cmd, cwd=os.path.dirname(sys.argv[0]), shell=True, preexec_fn=reenable_sigint, start_new_session=bool(timeout), stdout=subprocess.PIPE, stderr=subprocess.STDOUT
         )
+        if timeout:
+            timer = threading.Timer(timeout, kill_group)
+            timer.daemon = True
+            timer.start()
 
         reader = codecs.getreader('utf-8')(process.stdout, errors='surrogateescape')
         buf = ''
@@ -563,7 +595,11 @@ def run_command_interruptible(cmd):
                 break
 
     finally:
+        if timer:
+            timer.cancel()
         signal.signal(signal.SIGINT, signal.SIG_DFL)
+    if timed_out.is_set():
+        raise subprocess.TimeoutExpired(cmd, timeout, output=buf)
     return process.returncode, buf
 
 
