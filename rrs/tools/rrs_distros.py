@@ -59,7 +59,7 @@ def search_package_in_distros(pkglst_dir, recipe, data):
 
     removes = ['nativesdk-', '-native', '-cross', '-initial']
     for r in removes:
-        recipe_name.replace(r, '')
+        recipe_name = recipe_name.replace(r, '')
 
     distro_alias = data.getVar('DISTRO_PN_ALIAS', True)
     if distro_alias:
