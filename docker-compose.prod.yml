@@ -13,6 +13,9 @@ services:
       - layersdb
     build: .
     image: halstead/layerindex-app
+    # "docker compose run" of update.py and the RRS tools: reap the
+    # bitbake servers that recipe parsing leaves behind
+    init: true
     hostname: localhost
     volumes:
      - layersmeta:/opt/workdir

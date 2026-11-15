@@ -214,3 +214,20 @@ def test_compose_command(monkeypatch, result, expected):
         assert calls == [['docker', 'compose', 'version']]
     finally:
         dockersetup.compose_command.cache_clear()
+
+
+@pytest.mark.parametrize('compose_file', ['docker-compose.yml', 'docker-compose.prod.yml',
+                                          'docker-compose.staging.yml'])
+def test_compose_layersapp_has_init(compose_file):
+    # [YOCTO #16515] in "docker compose run --rm layersapp ..." the script is
+    # process 1; without an init process the bitbake servers started by
+    # recipe parsing stay as zombies until the container's process limit is hit
+    with open(os.path.join(basepath, compose_file)) as f:
+        services = yaml.safe_load(f)['services']
+    assert services['layersapp'].get('init') is True
+
+
+def test_compose_keeps_init(workdir):
+    dockersetup.edit_dockercompose('layers.example.com', '8080:80,8081:443', False)
+    services = load_compose(workdir)['services']
+    assert services['layersapp']['init'] is True
