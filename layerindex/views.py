@@ -1979,33 +1979,35 @@ class BranchCompareView(FormView):
                     layer_ids.append(int(layer_id))
         return layer_ids
 
+    def get_branch(self, param):
+        # A non-numeric id is a 404, not a ValueError (AI-generated, Claude Opus 5.5)
+        branch_id = self.request.GET.get(param, None)
+        if branch_id is None:
+            return None
+        if not (branch_id.isascii() and branch_id.isdigit()):
+            raise Http404
+        return get_object_or_404(Branch, id=branch_id)
+
     def form_valid(self, form):
         return HttpResponseRedirect(reverse_lazy('branch_comparison', args=(form.cleaned_data['from_branch'].name, form.cleaned_data['to_branch'].name)))
 
     def get_initial(self):
         initial = super(BranchCompareView, self).get_initial()
-        from_branch_id = self.request.GET.get('from_branch', None)
-        if from_branch_id is not None:
-            initial['from_branch'] = get_object_or_404(Branch, id=from_branch_id)
-        to_branch_id = self.request.GET.get('to_branch', None)
-        if to_branch_id is not None:
-            initial['to_branch'] = get_object_or_404(Branch, id=to_branch_id)
+        from_branch = self.get_branch('from_branch')
+        if from_branch is not None:
+            initial['from_branch'] = from_branch
+        to_branch = self.get_branch('to_branch')
+        if to_branch is not None:
+            initial['to_branch'] = to_branch
         initial['layers'] = ','.join(str(i) for i in self.get_layer_ids())
         return initial
 
     def get_context_data(self, **kwargs):
         context = super(BranchCompareView, self).get_context_data(**kwargs)
-        from_branch_id = self.request.GET.get('from_branch', None)
-        to_branch_id = self.request.GET.get('to_branch', None)
-
         layer_ids = self.get_layer_ids()
-        from_branch = None
-        if from_branch_id is not None:
-            from_branch = get_object_or_404(Branch, id=from_branch_id)
+        from_branch = self.get_branch('from_branch')
         context['from_branch'] = from_branch
-        to_branch = None
-        if to_branch_id is not None:
-            to_branch = get_object_or_404(Branch, id=to_branch_id)
+        to_branch = self.get_branch('to_branch')
         context['to_branch'] = to_branch
         if from_branch and to_branch:
             context['added'], context['changed'], context['removed'] = self.get_recipes(from_branch, to_branch, layer_ids)

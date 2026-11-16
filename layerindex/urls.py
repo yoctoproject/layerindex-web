@@ -72,19 +72,19 @@ urlpatterns = [
         name='layer_review'),
     re_path(r'^layer/(?P<slug>[-\.\w]+)/addnote/$',
         edit_layernote_view, {'template_name': 'layerindex/editlayernote.html'}, name="add_layernote"),
-    re_path(r'^layer/(?P<slug>[-\.\w]+)/editnote/(?P<pk>[-\w]+)/$',
+    re_path(r'^layer/(?P<slug>[-\.\w]+)/editnote/(?P<pk>\d+)/$',
         edit_layernote_view, {'template_name': 'layerindex/editlayernote.html'}, name="edit_layernote"),
-    re_path(r'^layer/(?P<slug>[-\.\w]+)/deletenote/(?P<pk>[-\w]+)/$',
+    re_path(r'^layer/(?P<slug>[-\.\w]+)/deletenote/(?P<pk>\d+)/$',
         delete_layernote_view, {'template_name': 'layerindex/deleteconfirm.html'}, name="delete_layernote"),
     re_path(r'^layer/(?P<slug>[-\.\w]+)/delete/$',
         delete_layer_view, {'template_name': 'layerindex/deleteconfirm.html'}, name="delete_layer"),
-    re_path(r'^recipe/(?P<pk>[-\w]+)/$',
+    re_path(r'^recipe/(?P<pk>\d+)/$',
         RecipeDetailView.as_view(
             template_name='layerindex/recipedetail.html'),
         name='recipe'),
     re_path(r'^layer/(?P<name>[-\.\w]+)/publish/$', publish_view, name="publish"),
     re_path(r'^layers/published/rss/$', PublishedLayersFeed(), name='published_layers_feed'),
-    re_path(r'^layerupdate/(?P<pk>[-\w]+)/$',
+    re_path(r'^layerupdate/(?P<pk>\d+)/$',
         LayerUpdateDetailView.as_view(
             template_name='layerindex/layerupdate.html'),
         name='layerupdate'),
@@ -114,7 +114,7 @@ urlpatterns = [
         UpdateListView.as_view(
             template_name='layerindex/updatelist.html'),
         name='update_list'),
-    re_path(r'^updates/(?P<pk>[-\w]+)/$',
+    re_path(r'^updates/(?P<pk>\d+)/$',
         UpdateDetailView.as_view(
             template_name='layerindex/updatedetail.html'),
         name='update'),
@@ -143,7 +143,7 @@ urlpatterns = [
     re_path(r'^oe-classic/stats/$',
         RedirectView.as_view(url=reverse_lazy('comparison_recipe_stats', kwargs={'branch': 'oe-classic'}), permanent=False),
         name='classic_recipe_stats'),
-    re_path(r'^oe-classic/recipe/(?P<pk>[-\w]+)/$',
+    re_path(r'^oe-classic/recipe/(?P<pk>\d+)/$',
         ClassicRecipeDetailView.as_view(
             template_name='layerindex/classicrecipedetail.html'),
         name='classic_recipe'),
@@ -161,15 +161,15 @@ urlpatterns = [
         ClassicRecipeStatsView.as_view(
             template_name='layerindex/classicstats.html'),
         name='comparison_recipe_stats'),
-    re_path(r'^comparison/recipe/(?P<pk>[-\w]+)/$',
+    re_path(r'^comparison/recipe/(?P<pk>\d+)/$',
         ClassicRecipeDetailView.as_view(
             template_name='layerindex/classicrecipedetail.html'),
         name='comparison_recipe'),
-    re_path(r'^comparison/select/(?P<pk>[-\w]+)/$',
+    re_path(r'^comparison/select/(?P<pk>\d+)/$',
         ComparisonRecipeSelectView.as_view(
             template_name='layerindex/comparisonrecipeselect.html'),
         name='comparison_select'),
-    re_path(r'^comparison/selectdetail/(?P<selectfor>[-\w]+)/(?P<pk>[-\w]+)/$',
+    re_path(r'^comparison/selectdetail/(?P<selectfor>[-\w]+)/(?P<pk>\d+)/$',
         ComparisonRecipeSelectDetailView.as_view(
             template_name='layerindex/comparisonrecipeselectdetail.html'),
         name='comparison_select_detail'),
