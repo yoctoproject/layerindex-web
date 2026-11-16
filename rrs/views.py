@@ -17,6 +17,7 @@ from django.shortcuts import get_object_or_404
 from django.views.generic import TemplateView, ListView, DetailView, RedirectView
 from django.urls import resolve, reverse, reverse_lazy
 from django.db import connection
+from django.db.models import Count, Q
 from django.contrib import messages
 
 from layerindex.models import Recipe, StaticBuildDep, Patch
@@ -432,12 +433,29 @@ def _get_recipe_list(milestone):
                 for ma in maintainers_all:
                     maintainers_dict_all[ma['recipesymbol_id']] = ma['name']
 
+        # Fetch the recipe symbols, and the patch counts of their layer index
+        # recipes, in a few queries rather than several per recipe
+        # (AI-generated, Claude Opus 5.5)
+        recipesymbols = RecipeSymbol.objects.in_bulk([recipe['id'] for recipe in recipes])
+        patch_counts = {}
+        if recipesymbols:
+            recipeobjs = Recipe.objects.filter(
+                    layerbranch_id__in={rs.layerbranch_id for rs in recipesymbols.values()},
+                    pn__in={rs.pn for rs in recipesymbols.values()}) \
+                .order_by('id') \
+                .annotate(patches_total=Count('patch'),
+                          patches_pending=Count('patch', filter=Q(patch__status='P')))
+            for recipeobj in recipeobjs:
+                # Keep the first recipe by id for a pn, as .first() did
+                patch_counts.setdefault((recipeobj.layerbranch_id, recipeobj.pn),
+                                        (recipeobj.patches_total, recipeobj.patches_pending))
+
         for recipe in recipes:
             upstream_version = ''
             upstream_status = ''
             no_update_reason = ''
             outdated = ''
-            recipesymbol = RecipeSymbol.objects.filter(id=recipe['id']).first()
+            recipesymbol = recipesymbols.get(recipe['id'])
 
             if recipe_upstream_history:
                 recipe_upstream = recipe_upstream_dict_all.get(recipe['id'])
@@ -479,14 +497,8 @@ def _get_recipe_list(milestone):
             recipe_list_item.upstream_status = upstream_status
             recipe_list_item.upstream_version = upstream_version
             recipe_list_item.outdated = outdated
-            recipeobj = recipesymbol.layerbranch.recipe_set.filter(pn=recipesymbol.pn, layerbranch=recipesymbol.layerbranch).first()
-            if recipeobj:
-                patches = recipeobj.patch_set
-                recipe_list_item.patches_total = patches.count()
-                recipe_list_item.patches_pending = patches.filter(status='P').count()
-            else:
-                recipe_list_item.patches_total = 0
-                recipe_list_item.patches_pending = 0
+            recipe_list_item.patches_total, recipe_list_item.patches_pending = \
+                patch_counts.get((recipesymbol.layerbranch_id, recipesymbol.pn), (0, 0))
             recipe_list_item.maintainer_name = maintainer_name
             recipe_list_item.no_update_reason = no_update_reason
             recipe_list.append(recipe_list_item)
