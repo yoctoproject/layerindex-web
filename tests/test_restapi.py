@@ -60,3 +60,33 @@ class TestRestApiInvalidParameters(TestCase):
                                    {'filter': 'name:meta-test', 'format': 'json'})
         self.assertEqual(response.status_code, 200)
         self.assertEqual([i['name'] for i in response.json()], ['meta-test'])
+
+
+@pytest.mark.django_db
+class TestRestApiOrderby(TestCase):
+    """orderby sorts the results ([YOCTO #16518])"""
+
+    def setUp(self):
+        for name in ('meta-b', 'meta-a', 'meta-c'):
+            LayerItem.objects.create(name=name, status='P', layer_type='A',
+                                     summary='test', description='test',
+                                     vcs_url='git://example.com/%s.git' % name)
+
+    def names(self, orderby):
+        response = self.client.get('/layerindex/api/layerItems/',
+                                   {'orderby': orderby, 'format': 'json'})
+        self.assertEqual(response.status_code, 200)
+        return [i['name'] for i in response.json()]
+
+    def test_ascending(self):
+        self.assertEqual(self.names('name:+'), ['meta-a', 'meta-b', 'meta-c'])
+
+    def test_descending(self):
+        # DESCENDING in querysethelper.py
+        self.assertEqual(self.names('name:-'), ['meta-c', 'meta-b', 'meta-a'])
+
+    def test_unknown_related_field(self):
+        # "layerbranch" passes the field-name check; the rest of the path is wrong
+        response = self.client.get('/layerindex/api/layerItems/',
+                                   {'orderby': 'layerbranch__nosuchfield:+', 'format': 'json'})
+        self.assertEqual(response.status_code, 400)

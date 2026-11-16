@@ -8,7 +8,7 @@
 
 import operator
 import functools
-from django.core.exceptions import FieldError, ValidationError
+from django.core.exceptions import FieldDoesNotExist, FieldError, ValidationError
 from django.db.models import Q, CharField
 from rest_framework.exceptions import ParseError
 
@@ -124,6 +124,18 @@ def get_search_tuple(request, model):
     return (filter_string, search_term, ordering_string)
 
 
+def _check_field_path(model, path):
+    """Raise ParseError unless path (e.g. "layerbranch__layer__name") names a field"""
+    for name in path.split('__'):
+        if model is None:
+            raise ParseError("Invalid orderby: " + path)
+        try:
+            field = model._meta.get_field(name)
+        except FieldDoesNotExist:
+            raise ParseError("Invalid orderby: " + path)
+        model = field.related_model
+
+
 # returns a lazy-evaluated queryset for a filter/search/order combination
 def params_to_queryset(model, queryset, filter_string, search_term, ordering_string):
     if filter_string:
@@ -139,12 +151,19 @@ def params_to_queryset(model, queryset, filter_string, search_term, ordering_str
     if search_term:
         queryset = _get_search_results(search_term, queryset, model)
 
-    if ordering_string and queryset:
+    # insure only distinct records (e.g. from multiple search hits) are returned
+    queryset = queryset.distinct()
+
+    if ordering_string:
         column, order = ordering_string.split(':')
         if order.lower() == DESCENDING:
             column = '-' + column
+        # The ordering was worked out but never applied. A bad field path
+        # only fails when the query runs, so check it here (AI-generated,
+        # Claude Opus 5.5)
+        _check_field_path(model, column.lstrip('-'))
+        queryset = queryset.order_by(column)
 
-    # insure only distinct records (e.g. from multiple search hits) are returned
-    return queryset.distinct()
+    return queryset
 
 
