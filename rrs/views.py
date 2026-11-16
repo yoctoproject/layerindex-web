@@ -373,6 +373,68 @@ def _get_milestone_statistics(milestone, maintainer_name=None):
 
     return milestone_statistics
 
+def _get_maintainers_statistics(milestone, maintainer_names):
+    """
+    The statistics of _get_milestone_statistics(milestone, name) for every
+    name in maintainer_names, with a few queries per layer branch rather
+    than several per maintainer (AI-generated, Claude Opus 5.5)
+    """
+    statistics = {name: {'all': 0, 'up_to_date': 0, 'not_updated': 0,
+                         'cant_be_updated': 0, 'unknown': 0}
+                  for name in maintainer_names}
+    if not statistics:
+        return statistics
+
+    for maintplanlayer in milestone.release.plan.maintenanceplanlayerbranch_set.all():
+        layerbranch = maintplanlayer.layerbranch
+
+        recipe_upstream_history = RecipeUpstreamHistory.get_last_by_date_range(
+            layerbranch,
+            milestone.start_date,
+            milestone.end_date
+        )
+        recipe_maintainer_history = Raw.get_remahi_by_end_date(
+                layerbranch.id, milestone.end_date)
+        if not recipe_maintainer_history:
+            continue
+
+        maintainer_recipes = {}
+        for recipesymbol_id, name in RecipeMaintainer.objects.filter(
+                history_id=recipe_maintainer_history[0]).values_list(
+                'recipesymbol_id', 'maintainer__name'):
+            maintainer_recipes.setdefault(name, set()).add(recipesymbol_id)
+
+        recipe_upstreams = {}
+        if recipe_upstream_history and maintainer_recipes:
+            for ru in RecipeUpstream.objects.filter(
+                    history=recipe_upstream_history).values(
+                    'recipesymbol_id', 'status', 'no_update_reason'):
+                recipe_upstreams.setdefault(ru['recipesymbol_id'], []).append(ru)
+
+        for name, maintainer_statistics in statistics.items():
+            recipes = maintainer_recipes.get(name, set())
+            maintainer_statistics['all'] += len(recipes)
+            for recipesymbol_id in recipes:
+                for ru in recipe_upstreams.get(recipesymbol_id, []):
+                    if ru['status'] == 'Y':
+                        maintainer_statistics['up_to_date'] += 1
+                    elif ru['status'] == 'N':
+                        if ru['no_update_reason'] == '':
+                            maintainer_statistics['not_updated'] += 1
+                        else:
+                            maintainer_statistics['cant_be_updated'] += 1
+                    else:
+                        maintainer_statistics['unknown'] += 1
+
+    for maintainer_statistics in statistics.values():
+        maintainer_statistics['percentage'] = '0'
+        if maintainer_statistics['all'] > 0:
+            maintainer_statistics['percentage'] = "%.0f" % \
+                ((float(maintainer_statistics['up_to_date']) /
+                    float(maintainer_statistics['all'])) * 100)
+
+    return statistics
+
 class RecipeList():
     pk = None
     name = None
@@ -879,8 +941,18 @@ class MaintainerListView(ListView):
 
         self.intervals = sorted(intervals.keys())
         current_date = date.today()
+        maintainer_names = {ml.name for ml in maintainer_list}
+        all_statistics = _get_maintainers_statistics(milestone, maintainer_names)
+        # Upgrades per maintainer in each interval, one query per interval
+        interval_upgrades = []
+        for i in (self.intervals if maintainer_names else []):
+            interval_upgrades.append(dict(RecipeUpgrade.objects.filter(
+                    maintainer__name__in=maintainer_names,
+                    commit_date__gte=intervals[i]['start_date'],
+                    commit_date__lte=intervals[i]['end_date']).values_list(
+                    'maintainer__name').annotate(Count('id')).order_by()))
         for ml in maintainer_list:
-            milestone_statistics = _get_milestone_statistics(milestone, ml.name)
+            milestone_statistics = all_statistics[ml.name]
             ml.recipes_all = milestone_statistics['all']
             ml.recipes_up_to_date = ('' if milestone_statistics['up_to_date'] == 0
                     else milestone_statistics['up_to_date'])
@@ -901,9 +973,7 @@ class MaintainerListView(ListView):
                 if current_date >= start_date and current_date <= end_date:
                     self.current_interval = idx
 
-                number = RecipeUpgrade.objects.filter(maintainer__name = ml.name,
-                        commit_date__gte = start_date,
-                        commit_date__lte = end_date).count()
+                number = interval_upgrades[idx].get(ml.name, 0)
                 ml.interval_statistics.append('' if number == 0 else number)
 
         # To add Wk prefix after get statics to avoid sorting problems
