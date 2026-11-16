@@ -754,31 +754,63 @@ class RecipeUpgradeDetail():
         self.upgrade_type = upgrade_type
         self.group = group
 
-def _get_recipe_upgrade_detail(maintplan, recipe_upgrade):
+def _get_release_and_milestone(maintplan, commit_date, lookups):
+    """
+    Release.get_by_date() and Milestone.get_by_release_and_date() for
+    commit_date, from the plan's releases and milestones read once into
+    lookups (AI-generated, Claude Opus 5.5)
+    """
+    if 'releases' not in lookups:
+        # id breaks ties between releases with the same dates as the queries did
+        lookups['releases'] = list(Release.objects.filter(plan=maintplan).order_by('-end_date', 'id'))
+        lookups['milestones'] = {}
+        for milestone in Milestone.objects.filter(release__plan=maintplan) \
+                .exclude(name='All').order_by('-end_date', 'id'):
+            lookups['milestones'].setdefault(milestone.release_id, []).append(milestone)
+    # The queries compare the DateFields with the commit's date
+    commit_day = commit_date.date()
+    release = next((r for r in lookups['releases']
+                    if r.start_date <= commit_day <= r.end_date), None)
+    milestone = None
+    if release:
+        milestone = next((m for m in lookups['milestones'].get(release.id, [])
+                          if m.start_date <= commit_day <= m.end_date), None)
+    return release, milestone
+
+def _get_recipe_upgrade_detail(maintplan, recipe_upgrade, lookups=None):
+    # lookups keeps what several upgrades of a recipe share, so a caller
+    # that passes the same dict for each runs fewer queries
+    if lookups is None:
+        lookups = {}
     release_name = ''
     milestone_name = ''
     recipe_maintainer_history = None
 
-    release = Release.get_by_date(maintplan, recipe_upgrade.commit_date)
+    release, milestone = _get_release_and_milestone(maintplan, recipe_upgrade.commit_date, lookups)
     if release:
         release_name = release.name
-        milestone = Milestone.get_by_release_and_date(release,
-                recipe_upgrade.commit_date)
         if milestone:
             milestone_name = milestone.name
-            recipe_maintainer_history = RecipeMaintainerHistory.get_by_end_date(
-                recipe_upgrade.recipesymbol.layerbranch,
-                milestone.end_date)
+            key = ('maintainer_history', recipe_upgrade.recipesymbol.layerbranch_id, milestone.end_date)
+            if key not in lookups:
+                lookups[key] = RecipeMaintainerHistory.get_by_end_date(
+                    recipe_upgrade.recipesymbol.layerbranch,
+                    milestone.end_date)
+            recipe_maintainer_history = lookups[key]
 
     is_recipe_maintainer = False
     maintainer_name = ''
     if not recipe_upgrade.maintainer is None:
         maintainer_name = recipe_upgrade.maintainer.name
 
-        if not recipe_maintainer_history is None and \
-            RecipeMaintainer.objects.filter(maintainer__name
-            = maintainer_name, history = recipe_maintainer_history) \
-            .count() > 0:
+        key = ('is_maintainer', maintainer_name,
+               recipe_maintainer_history.id if recipe_maintainer_history else None)
+        if key not in lookups:
+            lookups[key] = not recipe_maintainer_history is None and \
+                RecipeMaintainer.objects.filter(maintainer__name
+                = maintainer_name, history = recipe_maintainer_history) \
+                .exists()
+        if lookups[key]:
             is_recipe_maintainer = True
 
     commit_date = recipe_upgrade.commit_date.date().isoformat()
@@ -849,8 +881,11 @@ class RecipeDetailView(DetailView):
         details = []
         multigroup = False
         lastgroup = '' # can't use None here
-        for ru in RecipeUpgrade.objects.filter(recipesymbol=recipesymbol).exclude(upgrade_type='M').order_by('group', '-commit_date', '-id'):
-            details.append(_get_recipe_upgrade_detail(maintplan, ru))
+        lookups = {}
+        # Through the related manager, each upgrade shares recipesymbol
+        for ru in recipesymbol.recipeupgrade_set.select_related('maintainer', 'group') \
+                .exclude(upgrade_type='M').order_by('group', '-commit_date', '-id'):
+            details.append(_get_recipe_upgrade_detail(maintplan, ru, lookups))
             if not multigroup:
                 if lastgroup == '':
                     lastgroup = ru.group
@@ -882,7 +917,7 @@ class RecipeDetailView(DetailView):
             context['recipe_depends'] = []
             context['recipe_distros'] = []
 
-        context['otherbranch_recipes'] = Recipe.objects.filter(layerbranch__layer=recipesymbol.layerbranch.layer, layerbranch__branch__comparison=False, pn=recipesymbol.pn).order_by('layerbranch__branch__sort_priority')
+        context['otherbranch_recipes'] = Recipe.objects.filter(layerbranch__layer=recipesymbol.layerbranch.layer, layerbranch__branch__comparison=False, pn=recipesymbol.pn).select_related('layerbranch__branch').order_by('layerbranch__branch__sort_priority')
 
         return context
 
