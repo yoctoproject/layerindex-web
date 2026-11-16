@@ -90,6 +90,9 @@ def api(client, seeded_index):
         response = client.get('/layerindex/api/' + path, params)
         assert response.status_code == 200, path
         assert response['Content-Type'] == 'application/json', path
+        # An unpaginated list is streamed (AI-generated, Claude Opus 5.5)
+        if response.streaming:
+            return json.loads(b''.join(response.streaming_content))
         return response.json()
     return get
 

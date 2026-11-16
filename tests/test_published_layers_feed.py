@@ -1,4 +1,5 @@
 import datetime
+import json
 import xml.etree.ElementTree as ET
 from email.utils import parsedate_to_datetime
 from urllib.parse import urlsplit
@@ -290,7 +291,8 @@ def test_published_date_is_not_in_the_rest_api(new_layer, publish, client):
 
     response = client.get('/layerindex/api/layerItems/', {'format': 'json'})
 
-    data = response.json()
+    # The list is streamed (AI-generated, Claude Opus 5.5)
+    data = json.loads(b''.join(response.streaming_content))
     items = data['results'] if isinstance(data, dict) else data
     (item,) = [i for i in items if i['name'] == 'meta-foo']
     assert 'published' not in item

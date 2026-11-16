@@ -7,7 +7,9 @@
 # SPDX-License-Identifier: MIT
 
 from layerindex.models import Branch, LayerItem, LayerMaintainer, YPCompatibleVersion, LayerNote, LayerBranch, LayerDependency, Recipe, Machine, Distro, BBClass, Source, Patch, PackageConfig, StaticBuildDep, DynamicBuildDep, RecipeFileDependency, BBAppend, IncFile
+from django.http import StreamingHttpResponse
 from rest_framework import viewsets, serializers, pagination
+from rest_framework.renderers import JSONRenderer
 from layerindex.querysethelper import params_to_queryset, get_search_tuple
 
 class LayerIndexPagination(pagination.PageNumberPagination):
@@ -40,6 +42,38 @@ class ParametricSearchableModelViewSet(viewsets.ReadOnlyModelViewSet):
         qs = self.queryset
         (filter_string, search_term, ordering_string) = get_search_tuple(self.request, model)
         return params_to_queryset(model, qs, filter_string, search_term, ordering_string)
+
+    # Objects serialised at a time when streaming a list
+    stream_chunk_size = 2000
+
+    def list(self, request, *args, **kwargs):
+        # An unpaginated list can be a whole table: all the recipes are 300 MB
+        # of JSON, which took a worker to 1.6 GB when built in one piece. Send
+        # JSON a chunk at a time instead, in the same format. Other renderers
+        # (e.g. the browsable API) build the whole response as before.
+        # (AI-generated, Claude Opus 5.5)
+        renderer = request.accepted_renderer
+        if self.paginator is not None or not isinstance(renderer, JSONRenderer):
+            return super().list(request, *args, **kwargs)
+        # Evaluated here, so that an invalid filter is still an error response
+        queryset = self.filter_queryset(self.get_queryset())
+        return StreamingHttpResponse(self.stream_json(queryset, renderer),
+                                     content_type=renderer.media_type)
+
+    def stream_json(self, queryset, renderer):
+        # The objects of each chunk, rendered as a list without its brackets
+        yield b'['
+        separator = b''
+        chunk = []
+        for obj in queryset.iterator(chunk_size=self.stream_chunk_size):
+            chunk.append(obj)
+            if len(chunk) == self.stream_chunk_size:
+                yield separator + renderer.render(self.get_serializer(chunk, many=True).data)[1:-1]
+                separator = b','
+                chunk = []
+        if chunk:
+            yield separator + renderer.render(self.get_serializer(chunk, many=True).data)[1:-1]
+        yield b']'
 
 class BranchSerializer(DynamicFieldsModelSerializer):
     class Meta:

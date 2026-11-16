@@ -5,6 +5,7 @@
 # SPDX-License-Identifier: MIT
 
 import datetime
+import json
 
 import pytest
 from django.test import TestCase
@@ -24,7 +25,8 @@ class TestRestApiDatetimes(TestCase):
 
         response = self.client.get('/layerindex/api/layerItems/', {'format': 'json'})
         self.assertEqual(response.status_code, 200)
-        data = response.json()
+        # Unpaginated lists are streamed
+        data = json.loads(b''.join(response.streaming_content))
         items = data['results'] if isinstance(data, dict) else data
         item = next(i for i in items if i['name'] == 'meta-test')
         self.assertEqual(item['updated'], '2026-10-18T14:37:05+0000')
@@ -59,7 +61,8 @@ class TestRestApiInvalidParameters(TestCase):
         response = self.client.get('/layerindex/api/layerItems/',
                                    {'filter': 'name:meta-test', 'format': 'json'})
         self.assertEqual(response.status_code, 200)
-        self.assertEqual([i['name'] for i in response.json()], ['meta-test'])
+        self.assertEqual([i['name'] for i in json.loads(b''.join(response.streaming_content))],
+                         ['meta-test'])
 
 
 @pytest.mark.django_db
@@ -76,7 +79,7 @@ class TestRestApiOrderby(TestCase):
         response = self.client.get('/layerindex/api/layerItems/',
                                    {'orderby': orderby, 'format': 'json'})
         self.assertEqual(response.status_code, 200)
-        return [i['name'] for i in response.json()]
+        return [i['name'] for i in json.loads(b''.join(response.streaming_content))]
 
     def test_ascending(self):
         self.assertEqual(self.names('name:+'), ['meta-a', 'meta-b', 'meta-c'])
