@@ -8,7 +8,9 @@
 
 import operator
 import functools
+from django.core.exceptions import FieldError, ValidationError
 from django.db.models import Q, CharField
+from rest_framework.exceptions import ParseError
 
 def _verify_parameters(g, mandatory_parameters):
     miss = []
@@ -109,12 +111,14 @@ def _get_search_results(search_term, queryset, model):
 # it uses the request and the model to validate input for the filter and orderby values
 def get_search_tuple(request, model):
     ordering_string, invalid = _validate_input(request.GET.get('orderby', ''), model)
+    # A 400 for the client: BaseException isn't caught by Django or the WSGI
+    # server, so it killed the worker (AI-generated, Claude Opus 5.5)
     if invalid:
-        raise BaseException("Invalid ordering model:" + str(model) + str(invalid))
+        raise ParseError("Invalid orderby: " + str(invalid))
 
     filter_string, invalid = _validate_input(request.GET.get('filter', ''), model)
     if invalid:
-        raise BaseException("Invalid filter " + str(invalid))
+        raise ParseError("Invalid filter: " + str(invalid))
 
     search_term = request.GET.get('search', '')
     return (filter_string, search_term, ordering_string)
@@ -123,8 +127,12 @@ def get_search_tuple(request, model):
 # returns a lazy-evaluated queryset for a filter/search/order combination
 def params_to_queryset(model, queryset, filter_string, search_term, ordering_string):
     if filter_string:
-        filter_query = _get_filtering_query(filter_string)
-        queryset = queryset.filter(filter_query)
+        try:
+            filter_query = _get_filtering_query(filter_string)
+            queryset = queryset.filter(filter_query)
+        except (ValueError, ValidationError, FieldError) as e:
+            # e.g. filter=id:abc (AI-generated, Claude Opus 5.5)
+            raise ParseError("Invalid filter: " + str(e))
     else:
         queryset = queryset.all()
 
