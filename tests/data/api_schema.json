@@ -1,0 +1,223 @@
+{
+    "branches": [{
+        "id": "int",
+        "name": "str",
+        "bitbake_branch": "str",
+        "short_description": "str",
+        "sort_priority": "int|null",
+        "updates_enabled": "bool",
+        "comparison": "bool",
+        "hidden": "bool",
+        "updated": "datetime",
+        "update_environment": "int|null"
+    }],
+    "layerItems": [{
+        "id": "int",
+        "name": "str",
+        "status": "str",
+        "layer_type": "str",
+        "summary": "str",
+        "description": "str",
+        "vcs_url": "str",
+        "vcs_web_url": "str",
+        "vcs_web_tree_base_url": "str",
+        "vcs_web_file_base_url": "str",
+        "vcs_web_commit_url": "str",
+        "usage_url": "str",
+        "mailing_list_url": "str",
+        "index_preference": "int",
+        "comparison": "bool",
+        "updated": "datetime"
+    }],
+    "layerBranches": [{
+        "id": "int",
+        "layer": "int",
+        "branch": "int",
+        "collection": "null|str",
+        "version": "null|str",
+        "vcs_subdir": "str",
+        "vcs_last_fetch": "datetime|null",
+        "vcs_last_rev": "str",
+        "vcs_last_commit": "datetime|null",
+        "actual_branch": "str",
+        "yp_compatible_version": "int|null",
+        "local_path": "str",
+        "updates_enabled": "bool",
+        "updated": "datetime"
+    }],
+    "layerDependencies": [{
+        "id": "int",
+        "layerbranch": "int",
+        "dependency": "int",
+        "required": "bool",
+        "from_layer_conf": "bool"
+    }],
+    "layerMaintainers": [{
+        "id": "int",
+        "layerbranch": "int",
+        "name": "str",
+        "email": "str",
+        "responsibility": "str",
+        "status": "str"
+    }],
+    "layerNotes": [{
+        "id": "int",
+        "layer": "int",
+        "text": "str"
+    }],
+    "recipes": [{
+        "id": "int",
+        "layerbranch": "int",
+        "filename": "str",
+        "filepath": "str",
+        "pn": "str",
+        "pv": "str",
+        "pr": "str",
+        "pe": "str",
+        "summary": "str",
+        "description": "str",
+        "section": "str",
+        "license": "str",
+        "homepage": "str",
+        "bugtracker": "str",
+        "provides": "str",
+        "bbclassextend": "str",
+        "inherits": "str",
+        "updated": "datetime",
+        "blacklisted": "str",
+        "configopts": "str",
+        "srcrev": "str"
+    }],
+    "recipesExtended": {
+        "count": "int",
+        "next": "null",
+        "previous": "null",
+        "results": [{
+            "id": "int",
+            "sources": [{
+                "url": "str",
+                "sha256sum": "str"
+            }],
+            "patches": [{
+                "path": "str",
+                "src_path": "str",
+                "status": "str",
+                "status_extra": "str",
+                "apply_order": "int|null",
+                "applied": "bool",
+                "striplevel": "int"
+            }],
+            "package_configs": [{
+                "feature": "str",
+                "with_option": "str",
+                "without_option": "str",
+                "builddeps": ["str"]
+            }],
+            "staticbuilddeps": ["str"],
+            "filedeps": [{
+                "layerbranch": "int",
+                "path": "str"
+            }],
+            "layerbranch": "int",
+            "filename": "str",
+            "filepath": "str",
+            "pn": "str",
+            "pv": "str",
+            "pr": "str",
+            "pe": "str",
+            "summary": "str",
+            "description": "str",
+            "section": "str",
+            "license": "str",
+            "homepage": "str",
+            "bugtracker": "str",
+            "provides": "str",
+            "bbclassextend": "str",
+            "inherits": "str",
+            "updated": "datetime",
+            "blacklisted": "str",
+            "configopts": "str",
+            "srcrev": "str"
+        }]
+    },
+    "machines": [{
+        "id": "int",
+        "layerbranch": "int",
+        "name": "str",
+        "description": "str",
+        "updated": "datetime"
+    }],
+    "distros": [{
+        "id": "int",
+        "layerbranch": "int",
+        "name": "str",
+        "description": "str",
+        "updated": "datetime"
+    }],
+    "classes": [{
+        "id": "int",
+        "layerbranch": "int",
+        "name": "str",
+        "bbclass_type": "str"
+    }],
+    "layers": [{
+        "id": "int",
+        "branch": {
+            "id": "int",
+            "name": "str"
+        },
+        "layer": {
+            "id": "int",
+            "name": "str",
+            "status": "str",
+            "layer_type": "str",
+            "summary": "str",
+            "description": "str",
+            "vcs_url": "str",
+            "vcs_web_url": "str",
+            "vcs_web_tree_base_url": "str",
+            "vcs_web_file_base_url": "str",
+            "vcs_web_commit_url": "str",
+            "usage_url": "str",
+            "mailing_list_url": "str",
+            "index_preference": "int",
+            "comparison": "bool",
+            "updated": "datetime"
+        },
+        "yp_compatible_version": {
+            "null|object": {
+                "id": "int",
+                "name": "str",
+                "description": "str",
+                "image_url": "str",
+                "link_url": "str"
+            }
+        },
+        "maintainers": [{
+            "name": "str",
+            "email": "str",
+            "responsibility": "str"
+        }],
+        "collection": "null|str",
+        "version": "null|str",
+        "vcs_subdir": "str",
+        "vcs_last_fetch": "datetime|null",
+        "vcs_last_rev": "str",
+        "vcs_last_commit": "datetime|null",
+        "actual_branch": "str",
+        "local_path": "str",
+        "updates_enabled": "bool",
+        "updated": "datetime"
+    }],
+    "appends": [{
+        "id": "int",
+        "layerbranch": "int",
+        "filename": "str",
+        "filepath": "str"
+    }],
+    "incFiles": [{
+        "id": "int",
+        "layerbranch": "int",
+        "path": "str"
+    }]
+}
