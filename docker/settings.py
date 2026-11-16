@@ -96,6 +96,7 @@ SECRET_KEY = os.getenv('SECRET_KEY', '')
 
 MIDDLEWARE = (
     'corsheaders.middleware.CorsMiddleware',
+    'layerindex.middleware.RejectNullCharactersMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
